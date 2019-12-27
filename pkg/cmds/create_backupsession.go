@@ -87,14 +87,14 @@ func NewCmdCreateBackupSession() *cobra.Command {
 
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.invokerName, "invokername", "", "Name of the invoker")
-	cmd.Flags().StringVar(&opt.invokerType, "invokertype", opt.invokerType, "Type of the backup invoker")
+	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", "", "Name of the invoker")
+	cmd.Flags().StringVar(&opt.invokerType, "invoker-type", opt.invokerType, "Type of the backup invoker")
 
 	return cmd
 }
 
 func (opt *options) createBackupSession() error {
-	invokerInfo, err := apis.BackupInfoForInvoker(opt.invokerType, opt.invokerName, opt.namespace, opt.stashClient)
+	invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerType, opt.invokerName, opt.namespace)
 	if err != nil {
 		return err
 	}
@@ -107,12 +107,12 @@ func (opt *options) createBackupSession() error {
 	}
 
 	// skip if backup invoker paused
-	if invokerInfo.Paused {
-		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Backup invoker %s/%s is paused.", opt.namespace, invokerInfo.ObjMeta.Name)
+	if invoker.Paused {
+		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Backup invoker %s/%s is paused.", opt.namespace, invoker.ObjectMeta.Name)
 		log.Infoln(msg)
 
 		// write event to backup invoker denoting that backup session has been skipped
-		return writeBackupSessionSkippedEvent(opt.k8sClient, invokerInfo.InvokerRef, msg)
+		return writeBackupSessionSkippedEvent(opt.k8sClient, invoker.ObjectRef, msg)
 	}
 
 	wc := util.WorkloadClients{
@@ -122,31 +122,31 @@ func (opt *options) createBackupSession() error {
 		OcClient:         opt.ocClient,
 	}
 
-	for _, targetInfo := range invokerInfo.TargetsInfo {
+	for _, targetInfo := range invoker.TargetsInfo {
 		if targetInfo.Target != nil && !wc.IsTargetExist(targetInfo.Target.Ref, opt.namespace) {
 			msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
 				strings.ToLower(targetInfo.Target.Ref.Kind), targetInfo.Target.Ref.Name)
 			log.Infoln(msg)
 
 			// write event to backup invoker denoting that backup session has been skipped
-			return writeBackupSessionSkippedEvent(opt.k8sClient, invokerInfo.InvokerRef, msg)
+			return writeBackupSessionSkippedEvent(opt.k8sClient, invoker.ObjectRef, msg)
 		}
 	}
 
 	// create BackupSession
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
-		// Set invoker as BackupSession Owner
-		core_util.EnsureOwnerReference(&in.ObjectMeta, invokerInfo.InvokerRef)
+		// Set BackupConfiguration  as BackupSession Owner
+		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 		in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
 			APIGroup: api_v1beta1.SchemeGroupVersion.Group,
 			Kind:     opt.invokerType,
 			Name:     opt.invokerName,
 		}
 
-		in.Labels = invokerInfo.OffShootLabels
+		in.Labels = invoker.Labels
 		// Add invoker name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
-		in.Labels[util.LabelInvokerName] = opt.invokerName
-		in.Labels[util.LabelInvokerType] = opt.invokerType
+		in.Labels[apis.LabelInvokerName] = opt.invokerName
+		in.Labels[apis.LabelInvokerType] = opt.invokerType
 
 		return in
 	})

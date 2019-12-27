@@ -47,7 +47,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 		return err
 	}
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
-	if caller != util.CallerWebhook {
+	if caller != apis.CallerWebhook {
 		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, w.Namespace, sa, nil)
 		if err != nil {
 			return err
@@ -129,18 +129,18 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 	}
 
 	if restic.Spec.Type == api_v1alpha1.BackupOffline {
-		w.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.InitContainers, util.StashContainer)
+		w.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.InitContainers, apis.StashContainer)
 	} else {
-		w.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.Containers, util.StashContainer)
+		w.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.Containers, apis.StashContainer)
 	}
 	// backup sidecar/init-container has been removed but workload still may have restore init-container
 	// so removed respective volumes that were added to the workload only if the workload does not have restore init-container
 	if !util.HasStashContainer(w) {
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.PodinfoVolumeName)
 
 		if restic.Spec.Backend.Local != nil {
-			w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.LocalVolumeName)
+			w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.LocalVolumeName)
 		}
 	}
 	if w.Annotations != nil {
@@ -149,7 +149,7 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 	}
 }
 
-func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo, caller string) error {
+func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Invoker, targetInfo apis.TargetInfo, caller string) error {
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	owner, err := ownerWorkload(w)
 	if err != nil {
@@ -157,17 +157,16 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invokerInfo apis
 	}
 
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
-	if caller != util.CallerWebhook {
-		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, bc.Namespace, sa, bc.OffshootLabels())
-		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, ref, sa, invokerInfo.OffShootLabels)
+	if caller != apis.CallerWebhook {
+		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, invoker.ObjectMeta.Namespace, sa, invoker.Labels)
 		if err != nil {
 			return err
 		}
 	}
 
-	repository, err := c.stashClient.StashV1alpha1().Repositories(invokerInfo.ObjMeta.Namespace).Get(invokerInfo.RepoName, metav1.GetOptions{})
+	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(invoker.Repository, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("unable to get repository %s/%s: Reason: %v", invokerInfo.ObjMeta.Namespace, invokerInfo.RepoName, err)
+		log.Errorf("unable to get repository %s/%s: Reason: %v", invoker.ObjectMeta.Namespace, invoker.Repository, err)
 		return err
 	}
 
@@ -185,7 +184,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invokerInfo apis
 		w.Spec.Template.Annotations = map[string]string{}
 	}
 	// mark pods with BackupConfiguration spec hash. used to force restart pods for rc/rs
-	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupConfigurationSpecHash] = invokerInfo.InvokerHash
+	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupBackupInvokerHash] = invoker.Hash
 
 	if targetInfo.Target == nil {
 		return fmt.Errorf("target is nil")
@@ -199,7 +198,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invokerInfo apis
 
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.Containers,
-		util.NewBackupSidecarContainer(invokerInfo, targetInfo, &repository.Spec.Backend, image),
+		util.NewBackupSidecarContainer(invoker, targetInfo, &repository.Spec.Backend, image),
 	)
 
 	// keep existing image pull secrets
@@ -226,8 +225,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invokerInfo apis
 	if w.Annotations == nil {
 		w.Annotations = make(map[string]string)
 	}
-	data, _ := meta.MarshalToJson(invokerInfo.InvokerRef, api_v1beta1.SchemeGroupVersion)
-	w.Annotations[api_v1beta1.KeyLastAppliedBackupConfiguration] = string(data)
+	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvoker] = string(invoker.ObjectJson)
 
 	return nil
 }
@@ -236,27 +234,26 @@ func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload) {
 	// remove resource hash annotation
 	if w.Spec.Template.Annotations != nil {
 		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupBatchSpecHash)
-		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupConfigurationSpecHash)
+		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupBackupInvokerHash)
 	}
 	// remove sidecar container
-	w.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.Containers, util.StashContainer)
+	w.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.Containers, apis.StashContainer)
 
 	// backup sidecar has been removed but workload still may have restore init-container
 	// so removed respective volumes that were added to the workload only if the workload does not have restore init-container
 	if !util.HasStashContainer(w) {
 		// remove the helpers volumes that were added for sidecar
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.StashSecretVolume)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.PodinfoVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.StashSecretVolume)
 
 		// if stash-local volume was added for local backend, remove it
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.LocalVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.LocalVolumeName)
 	}
 
 	// remove respective annotations
 	if w.Annotations != nil {
-		delete(w.Annotations, api_v1beta1.KeyLastAppliedBackupBatch)
-		delete(w.Annotations, api_v1beta1.KeyLastAppliedBackupConfiguration)
+		delete(w.Annotations, api_v1beta1.KeyLastAppliedBackupInvoker)
 	}
 }
 
@@ -281,7 +278,7 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 
 		workloadSidecarState := util.HasStashSidecar(w.Spec.Template.Spec.Containers)
 		workloadInitContainerState := util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers)
-		workloadBackupConfigurationResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupConfigurationSpecHash)
+		workloadBackupConfigurationResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupBackupInvokerHash)
 		workloadBackupBatchResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupBatchSpecHash)
 		workloadResticResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1alpha1.ResourceHash)
 		workloadRestoreResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
@@ -295,7 +292,7 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 			}
 			podSidecarState := util.HasStashSidecar(pod.Spec.Containers)
 			podInitContainerState := util.HasStashInitContainer(pod.Spec.InitContainers)
-			podBackupConfigurationResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupConfigurationSpecHash)
+			podBackupConfigurationResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupBackupInvokerHash)
 			podBackupBatchResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupBatchSpecHash)
 			podResticResourceHash := util.GetString(pod.Annotations, api_v1alpha1.ResourceHash)
 			podRestoreResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
@@ -339,47 +336,47 @@ func isPodOwnedByWorkload(w *wapi.Workload, pod core.Pod) bool {
 	return false
 }
 
-func (c *StashController) handleSidecarInjectionFailure(ref *core.ObjectReference, err error) error {
-	log.Warningf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, err error) error {
+	log.Warningf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
 		eventer.EventSourceWorkloadController,
-		ref,
+		w.Object,
 		core.EventTypeWarning,
 		eventer.EventReasonSidecarInjectionFailed,
-		fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+		fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err),
 	)
 	return err2
 }
 
-func (c *StashController) handleSidecarInjectionSuccess(ref *core.ObjectReference) error {
-	log.Infof("Successfully injected stash sidecar into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload) error {
+	log.Infof("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
 		eventer.EventSourceWorkloadController,
-		ref,
+		w.Object,
 		core.EventTypeWarning,
 		eventer.EventReasonSidecarInjectionSucceeded,
-		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name),
 	)
 	return err2
 }
 
-func (c *StashController) handleSidecarDeletionSuccess(ref *core.ObjectReference) error {
-	log.Infof("Successfully removed stash sidecar from %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+func (c *StashController) handleSidecarDeletionSuccess(w *wapi.Workload) error {
+	log.Infof("Successfully removed stash sidecar from %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
 		eventer.EventSourceWorkloadController,
-		ref,
+		w.Object,
 		core.EventTypeWarning,
 		eventer.EventReasonSidecarDeletionSucceeded,
-		fmt.Sprintf("Successfully stash sidecar from %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+		fmt.Sprintf("Successfully stash sidecar from %s %s/%s.", w.Kind, w.Namespace, w.Name),
 	)
 	return err2
 }

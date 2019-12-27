@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
@@ -87,9 +87,9 @@ func (f *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.B
 			Name:      rand.WithUniqSuffix(objMeta.Name),
 			Namespace: objMeta.Namespace,
 			Labels: map[string]string{
-				util.LabelApp:         util.AppLabelStash,
-				util.LabelInvokerType: v1beta1.ResourceKindBackupConfiguration,
-				util.LabelInvokerName: objMeta.Name,
+				apis.LabelApp:         apis.AppLabelStash,
+				apis.LabelInvokerType: v1beta1.ResourceKindBackupConfiguration,
+				apis.LabelInvokerName: objMeta.Name,
 			},
 		},
 		Spec: v1beta1.BackupSessionSpec{

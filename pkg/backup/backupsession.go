@@ -129,8 +129,8 @@ func (c *BackupSessionController) initBackupSessionWatcher() error {
 	// Respective CronJob creates BackupSession with invoker's name and kind as label.
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			util.LabelInvokerType: c.InvokerType,
-			util.LabelInvokerName: c.InvokerName,
+			apis.LabelInvokerType: c.InvokerType,
+			apis.LabelInvokerName: c.InvokerName,
 		},
 	})
 	if err != nil {
@@ -166,22 +166,22 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 		backupSession := obj.(*api_v1beta1.BackupSession)
 		glog.Infof("Sync/Add/Update for Backup Session %s", backupSession.GetName())
 
-		invokerInfo, err := apis.BackupInfoForInvoker(backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, c.Namespace, c.StashClient)
+		invoker, err := apis.ExtractBackupInvokerInfo(c.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, c.Namespace)
 		if err != nil {
 			return err
 		}
 
-		for _, targetInfo := range invokerInfo.TargetsInfo {
+		for _, targetInfo := range invoker.TargetsInfo {
 			if targetInfo.Target != nil &&
 				targetInfo.Target.Ref.Kind == c.BackupTargetKind &&
 				targetInfo.Target.Ref.Name == c.BackupTargetName {
-				backupOutput, err := c.startBackupProcess(backupSession, invokerInfo, targetInfo)
+				backupOutput, err := c.startBackupProcess(backupSession, invoker, targetInfo)
 				if err != nil {
-					return c.handleBackupFailure(backupSession.Name, invokerInfo, targetInfo, err)
+					return c.handleBackupFailure(backupSession.Name, invoker, targetInfo, err)
 				}
 
 				if backupOutput != nil {
-					return c.handleBackupSuccess(backupSession.Name, invokerInfo, targetInfo, backupOutput)
+					return c.handleBackupSuccess(backupSession.Name, invoker, targetInfo, backupOutput)
 				}
 			}
 		}
@@ -190,9 +190,9 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 	return nil
 }
 
-func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.BackupSession, invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
+func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.BackupSession, invoker apis.Invoker, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
 	// skip if backup invoker is paused
-	if invokerInfo.Paused {
+	if invoker.Paused {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup invoker is paused.", backupSession.Namespace, backupSession.Name)
 		return nil, nil
 	}
@@ -209,24 +209,24 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 	// step down from leadership so that another replica can acquire leadership and start taking backup.
 	switch targetInfo.Target.Ref.Kind {
 	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindDeploymentConfig:
-		return c.backup(invokerInfo, targetInfo)
+		return c.backup(invoker, targetInfo)
 	default:
-		return nil, c.electBackupLeader(backupSession, invokerInfo, targetInfo)
+		return nil, c.electBackupLeader(backupSession, invoker, targetInfo)
 	}
 }
 
-func (c *BackupSessionController) backup(invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
+func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
 
 	// If preBackup hook is specified, then execute those hooks first
-	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PreBackup != nil {
-		err := util.ExecuteHook(c.Config, backupConfiguration.Spec.Hooks, apis.PreBackupHook, os.Getenv(util.KeyPodName), c.Namespace)
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PreBackup != nil {
+		err := util.ExecuteHook(c.Config, targetInfo.Hooks, apis.PreBackupHook, os.Getenv(apis.KeyPodName), c.Namespace)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// get repository
-	repository, err := c.StashClient.StashV1alpha1().Repositories(c.Namespace).Get(invokerInfo.RepoName, metav1.GetOptions{})
+	repository, err := c.StashClient.StashV1alpha1().Repositories(c.Namespace).Get(invoker.Repository, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,7 @@ func (c *BackupSessionController) backup(invokerInfo apis.InvokerInfo, targetInf
 	}
 
 	// BackupOptions configuration
-	backupOpt := util.BackupOptionsForBackupConfig(targetInfo.Target, invokerInfo.RetentionPolicy, extraOpt)
+	backupOpt := util.BackupOptionsForBackupConfig(targetInfo.Target, invoker.RetentionPolicy, extraOpt)
 	// Run Backup
 	// If there is an error during backup, don't return.
 	// We will execute postBackup hook even if the backup failed.
@@ -275,8 +275,8 @@ func (c *BackupSessionController) backup(invokerInfo apis.InvokerInfo, targetInf
 	output, backupErr := resticWrapper.RunBackup(backupOpt)
 
 	// If postBackup hook is specified, then execute those hooks
-	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PostBackup != nil {
-		hookErr = util.ExecuteHook(c.Config, backupConfiguration.Spec.Hooks, apis.PostBackupHook, os.Getenv(util.KeyPodName), c.Namespace)
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup != nil {
+		hookErr = util.ExecuteHook(c.Config, targetInfo.Hooks, apis.PostBackupHook, os.Getenv(apis.KeyPodName), c.Namespace)
 	}
 	if backupErr != nil || hookErr != nil {
 		return nil, errors.NewAggregate([]error{backupErr, hookErr})
@@ -288,7 +288,7 @@ func (c *BackupSessionController) electLeaderPod(targetInfo apis.TargetInfo, inv
 	log.Infoln("Attempting to elect leader pod")
 
 	rlc := resourcelock.ResourceLockConfig{
-		Identity:      os.Getenv(util.KeyPodName),
+		Identity:      os.Getenv(apis.KeyPodName),
 		EventRecorder: eventer.NewEventRecorder(c.K8sClient, BackupEventComponent),
 	}
 	resLock, err := resourcelock.New(
@@ -342,11 +342,11 @@ func (c *BackupSessionController) electLeaderPod(targetInfo apis.TargetInfo, inv
 	return nil
 }
 
-func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.BackupSession, invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo) error {
+func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.BackupSession, invoker apis.Invoker, targetInfo apis.TargetInfo) error {
 	log.Infoln("Attempting to acquire leadership for backup")
 
 	rlc := resourcelock.ResourceLockConfig{
-		Identity:      os.Getenv(util.KeyPodName),
+		Identity:      os.Getenv(apis.KeyPodName),
 		EventRecorder: eventer.NewEventRecorder(c.K8sClient, BackupEventComponent),
 	}
 
@@ -377,9 +377,9 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 			OnStartedLeading: func(ctx context.Context) {
 				log.Infoln("Got leadership, preparing for backup")
 				// run backup process
-				backupOutput, backupErr := c.backup(invokerInfo, targetInfo)
+				backupOutput, backupErr := c.backup(invoker, targetInfo)
 				if backupErr != nil {
-					err := c.handleBackupFailure(backupSession.Name, invokerInfo, targetInfo, backupErr)
+					err := c.handleBackupFailure(backupSession.Name, invoker, targetInfo, backupErr)
 					if err != nil {
 						backupErr = errors.NewAggregate([]error{backupErr, err})
 					}
@@ -389,7 +389,7 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 					log.Warningf("failed to complete backup. Reason: %v", backupErr)
 				}
 				if backupOutput != nil {
-					err := c.handleBackupSuccess(backupSession.Name, invokerInfo, targetInfo, backupOutput)
+					err := c.handleBackupSuccess(backupSession.Name, invoker, targetInfo, backupOutput)
 					if err != nil {
 						// log failure. don't fail the container as it may interrupt user's service
 						log.Warningf("failed to complete backup. Reason: %v", err)
@@ -416,7 +416,7 @@ func (c *BackupSessionController) HandleBackupSetupFailure(ref *core.ObjectRefer
 		ref,
 		core.EventTypeWarning,
 		eventer.EventReasonFailedToStartBackupSessionController,
-		fmt.Sprintf("failed to start BackupSession controller in pod %s/%s Reason: %v", meta.Namespace(), os.Getenv(util.KeyPodName), setupErr),
+		fmt.Sprintf("failed to start BackupSession controller in pod %s/%s Reason: %v", meta.Namespace(), os.Getenv(apis.KeyPodName), setupErr),
 	)
 	return errors.NewAggregate([]error{setupErr, err})
 }
@@ -432,12 +432,12 @@ func (c *BackupSessionController) handleBackupSetupSuccess(invokerRef *core.Obje
 		invokerRef,
 		core.EventTypeNormal,
 		eventer.EventReasonBackupSessionControllerStarted,
-		fmt.Sprintf("BackupSession controller started successfully in pod %s/%s.", meta.Namespace(), os.Getenv(util.KeyPodName)),
+		fmt.Sprintf("BackupSession controller started successfully in pod %s/%s.", meta.Namespace(), os.Getenv(apis.KeyPodName)),
 	)
 	return err
 }
 
-func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo, backupOutput *restic.BackupOutput) error {
+func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, invoker apis.Invoker, targetInfo apis.TargetInfo, backupOutput *restic.BackupOutput) error {
 	// write log
 	log.Infof("Backup completed successfully for BackupSession %s", backupSessionName)
 
@@ -446,7 +446,7 @@ func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, 
 		KubeClient:    c.K8sClient,
 		StashClient:   c.StashClient,
 		Namespace:     c.Namespace,
-		Repository:    invokerInfo.RepoName,
+		Repository:    invoker.Repository,
 		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
 	}
@@ -454,10 +454,10 @@ func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, 
 		statusOpt.TargetRef = targetInfo.Target.Ref
 	}
 
-	return statusOpt.UpdatePostBackupStatus(backupOutput, invokerInfo, targetInfo)
+	return statusOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
 }
 
-func (c *BackupSessionController) handleBackupFailure(backupSessionName string, invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo, backupErr error) error {
+func (c *BackupSessionController) handleBackupFailure(backupSessionName string, invoker apis.Invoker, targetInfo apis.TargetInfo, backupErr error) error {
 	// write log
 	log.Warningf("Failed to take backup for BackupSession %s. Reason: %v", backupSessionName, backupErr)
 	backupOutput := &restic.BackupOutput{
@@ -475,13 +475,13 @@ func (c *BackupSessionController) handleBackupFailure(backupSessionName string, 
 		KubeClient:    c.K8sClient,
 		StashClient:   c.StashClient,
 		Namespace:     c.Namespace,
-		Repository:    invokerInfo.RepoName,
+		Repository:    invoker.Repository,
 		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
 		TargetRef:     targetInfo.Target.Ref,
 	}
 
-	return statusOpt.UpdatePostBackupStatus(backupOutput, invokerInfo, targetInfo)
+	return statusOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
 }
 
 func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1beta1.BackupSession, backupTarget *api_v1beta1.BackupTarget) bool {

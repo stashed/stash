@@ -39,7 +39,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 		}
 	}
 	sidecar := core.Container{
-		Name:  StashContainer,
+		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"backup",
@@ -82,11 +82,11 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      ScratchDirVolumeName,
+				Name:      apis.ScratchDirVolumeName,
 				MountPath: "/tmp",
 			},
 			{
-				Name:      PodinfoVolumeName,
+				Name:      apis.PodinfoVolumeName,
 				MountPath: "/etc/stash",
 			},
 		},
@@ -99,23 +99,23 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 		})
 	}
 	if r.Spec.Backend.Local != nil {
-		_, mnt := r.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
+		_, mnt := r.Spec.Backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, mnt)
 	}
 	return sidecar
 }
 
-func NewBackupSidecarContainer(invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo, backend *store.Backend, image docker.Docker) core.Container {
+func NewBackupSidecarContainer(invoker apis.Invoker, targetInfo apis.TargetInfo, backend *store.Backend, image docker.Docker) core.Container {
 	sidecar := core.Container{
-		Name:  StashContainer,
+		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"run-backup",
-			"--invokername=" + invokerInfo.ObjMeta.Name,
-			"--invokertype=" + invokerInfo.InvokerKind,
-			"--targetname=" + targetInfo.Target.Ref.Name,
-			"--targetkind=" + targetInfo.Target.Ref.Kind,
-			"--secret-dir=" + StashSecretMountDir,
+			"--invoker-name=" + invoker.ObjectMeta.Name,
+			"--invoker-type=" + invoker.ObjectRef.Kind,
+			"--target-name=" + targetInfo.Target.Ref.Name,
+			"--target-kind=" + targetInfo.Target.Ref.Kind,
+			"--secret-dir=" + apis.StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", backend.MaxConnections()),
 			"--metrics-enabled=true",
@@ -125,7 +125,7 @@ func NewBackupSidecarContainer(invokerInfo apis.InvokerInfo, targetInfo apis.Tar
 		}, cli.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
-				Name: KeyNodeName,
+				Name: apis.KeyNodeName,
 				ValueFrom: &core.EnvVarSource{
 					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "spec.nodeName",
@@ -133,7 +133,7 @@ func NewBackupSidecarContainer(invokerInfo apis.InvokerInfo, targetInfo apis.Tar
 				},
 			},
 			{
-				Name: KeyPodName,
+				Name: apis.KeyPodName,
 				ValueFrom: &core.EnvVarSource{
 					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "metadata.name",
@@ -143,12 +143,12 @@ func NewBackupSidecarContainer(invokerInfo apis.InvokerInfo, targetInfo apis.Tar
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      PodinfoVolumeName,
+				Name:      apis.PodinfoVolumeName,
 				MountPath: "/etc/stash",
 			},
 			{
-				Name:      StashSecretVolume,
-				MountPath: StashSecretMountDir,
+				Name:      apis.StashSecretVolume,
+				MountPath: apis.StashSecretMountDir,
 			},
 		},
 	}
@@ -166,7 +166,7 @@ func NewBackupSidecarContainer(invokerInfo apis.InvokerInfo, targetInfo apis.Tar
 	}
 	// if Repository uses local volume as backend, we have to mount it inside the sidecar
 	if backend.Local != nil {
-		_, mnt := backend.Local.ToVolumeAndMount(LocalVolumeName)
+		_, mnt := backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, mnt)
 	}
 	// pass container runtime settings from BackupConfiguration/BackupConfigurationTemplate to sidecar

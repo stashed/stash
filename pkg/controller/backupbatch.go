@@ -17,16 +17,11 @@ limitations under the License.
 package controller
 
 import (
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
 	"github.com/golang/glog"
-	"k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/client-go/tools/reference"
-	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
 )
 
@@ -54,7 +49,11 @@ func (c *StashController) runBackupBatchProcessor(key string) error {
 	backupBatch := obj.(*api_v1beta1.BackupBatch)
 	glog.Infof("Sync/Add/Update for BackupBatch %s", backupBatch.GetName())
 	// process syc/add/update event
-	err = c.applyBackupBatchReconciliationLogic(backupBatch)
+	invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupBatch, backupBatch.Name, backupBatch.Namespace)
+	if err != nil {
+		return err
+	}
+	err = c.applyBackupInvokerReconciliationLogic(invoker)
 	if err != nil {
 		return err
 	}
@@ -67,72 +66,4 @@ func (c *StashController) runBackupBatchProcessor(key string) error {
 	})
 
 	return err
-}
-
-func (c *StashController) applyBackupBatchReconciliationLogic(backupBatch *api_v1beta1.BackupBatch) error {
-	// check if BackupBatch is being deleted. if it is being deleted then delete respective resources.
-	if backupBatch.DeletionTimestamp != nil {
-		if core_util.HasFinalizer(backupBatch.ObjectMeta, api_v1beta1.StashKey) {
-			for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
-				if backupConfigTemp.Spec.Target != nil {
-					err := c.EnsureV1beta1SidecarDeleted(backupConfigTemp.Spec.Target.Ref, backupBatch.Namespace)
-					if err != nil {
-						ref, rerr := reference.GetReference(stash_scheme.Scheme, backupBatch)
-						if rerr != nil {
-							return errors.NewAggregate([]error{err, rerr})
-						}
-						return c.handleWorkloadControllerTriggerFailure(ref, err)
-					}
-				}
-			}
-
-			if err := c.EnsureCronJobDeletedForInvoker(backupBatch); err != nil {
-				return err
-			}
-			// Remove finalizer
-			_, _, err := v1beta1_util.PatchBackupBatch(c.stashClient.StashV1beta1(), backupBatch, func(in *api_v1beta1.BackupBatch) *api_v1beta1.BackupBatch {
-				in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-				return in
-
-			})
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		// add a finalizer so that we can remove respective resources before this BackupBatch is deleted
-		_, _, err := v1beta1_util.PatchBackupBatch(c.stashClient.StashV1beta1(), backupBatch, func(in *api_v1beta1.BackupBatch) *api_v1beta1.BackupBatch {
-			in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-			return in
-		})
-		if err != nil {
-			return err
-		}
-		// skip if BackupBatch paused
-		if backupBatch.Spec.Paused {
-			log.Infof("Skipping processing BackupBatch %s/%s. Reason: Backup Batch is paused.", backupBatch.Namespace, backupBatch.Name)
-			return nil
-		}
-
-		if len(backupBatch.Spec.BackupConfigurationTemplates) > 0 {
-			for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
-				if backupConfigTemp.Spec.Target != nil && backupBatch.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
-					util.BackupModel(backupConfigTemp.Spec.Target.Ref.Kind) == util.ModelSidecar {
-					if err := c.EnsureV1beta1Sidecar(backupConfigTemp.Spec.Target.Ref, backupBatch.Namespace); err != nil {
-						ref, rerr := reference.GetReference(stash_scheme.Scheme, backupBatch)
-						if rerr != nil {
-							return errors.NewAggregate([]error{err, rerr})
-						}
-						return c.handleWorkloadControllerTriggerFailure(ref, err)
-					}
-				}
-			}
-			// create a CronJob that will create BackupSession on each schedule
-			err = c.EnsureCronJobForInvoker(backupBatch)
-			if err != nil {
-				return c.handleCronJobCreationFailure(backupBatch, err)
-			}
-		}
-	}
-	return nil
 }

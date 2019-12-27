@@ -22,7 +22,6 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -101,7 +100,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -129,7 +128,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -157,7 +156,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -170,7 +169,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldStopBackupIfLabelChanged = func() {
@@ -187,7 +186,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -205,7 +204,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar to be removed")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldStopBackupIfSelectorChanged = func() {
@@ -222,7 +221,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -242,7 +241,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar to be removed")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldMutateAndBackupNewDaemonSet = func() {
@@ -260,7 +259,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 			// sidecar should be added as soon as daemonset created, we don't need to wait for it
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -284,7 +283,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar not added")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldRejectToCreateNewDaemonSet = func() {
@@ -319,7 +318,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -337,7 +336,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldAddSidecarInstantly = func() {
@@ -358,7 +357,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar not added")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + daemon.Name)
 			obj, _, err = apps_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
@@ -368,7 +367,7 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -605,7 +604,7 @@ var _ = XDescribe("DaemonSet", func() {
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.ScaledownCronPrefix + restic.Name
+				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -617,7 +616,7 @@ var _ = XDescribe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for init-container")
-				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveInitContainer(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -678,7 +677,7 @@ var _ = XDescribe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -759,7 +758,7 @@ var _ = XDescribe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -813,7 +812,7 @@ var _ = XDescribe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -861,7 +860,7 @@ var _ = XDescribe("DaemonSet", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying daemon with recovered volume")
 				daemon.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -913,7 +912,7 @@ var _ = XDescribe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -961,7 +960,7 @@ var _ = XDescribe("DaemonSet", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying daemon with recovered volume")
 				daemon.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -1019,7 +1018,7 @@ var _ = XDescribe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
@@ -1072,7 +1071,7 @@ var _ = XDescribe("DaemonSet", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying daemon with recovered volume")
 				daemon.Namespace = recoveryNamespace.Name

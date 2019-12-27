@@ -112,7 +112,7 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 	log.Infoln("Attempting to elect restore leader")
 
 	rlc := resourcelock.ResourceLockConfig{
-		Identity:      os.Getenv(util.KeyPodName),
+		Identity:      os.Getenv(apis.KeyPodName),
 		EventRecorder: eventer.NewEventRecorder(opt.KubeClient, eventer.EventSourceRestoreInitContainer),
 	}
 
@@ -182,7 +182,7 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 
 	// If preRestore hook is specified, then execute those hooks first
 	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
-		err := util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PreRestoreHook, os.Getenv(util.KeyPodName), opt.Namespace)
+		err := util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PreRestoreHook, os.Getenv(apis.KeyPodName), opt.Namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -203,7 +203,7 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 
 	// If postRestore hook is specified, then execute those hooks
 	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
-		hookErr = util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PostRestoreHook, os.Getenv(util.KeyPodName), opt.Namespace)
+		hookErr = util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PostRestoreHook, os.Getenv(apis.KeyPodName), opt.Namespace)
 	}
 
 	if restoreErr != nil || hookErr != nil {

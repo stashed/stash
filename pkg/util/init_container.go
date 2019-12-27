@@ -19,6 +19,7 @@ package util
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
 	v1alpha1_api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/docker"
@@ -50,12 +51,12 @@ func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedRe
 
 func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha1_api.Repository, image docker.Docker) core.Container {
 	initContainer := core.Container{
-		Name:  StashInitContainer,
+		Name:  apis.StashInitContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore",
 			"--restoresession=" + rs.Name,
-			"--secret-dir=" + StashSecretMountDir,
+			"--secret-dir=" + apis.StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !rs.Spec.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),
 			"--metrics-enabled=true",
@@ -65,7 +66,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 		}, cli.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
-				Name: KeyNodeName,
+				Name: apis.KeyNodeName,
 				ValueFrom: &core.EnvVarSource{
 					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "spec.nodeName",
@@ -73,7 +74,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 				},
 			},
 			{
-				Name: KeyPodName,
+				Name: apis.KeyPodName,
 				ValueFrom: &core.EnvVarSource{
 					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "metadata.name",
@@ -83,8 +84,8 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      StashSecretVolume,
-				MountPath: StashSecretMountDir,
+				Name:      apis.StashSecretVolume,
+				MountPath: apis.StashSecretMountDir,
 			},
 		},
 	}
@@ -103,7 +104,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 
 	// if Repository uses local volume as backend, we have to mount it inside the initContainer
 	if repository.Spec.Backend.Local != nil {
-		_, mnt := repository.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
+		_, mnt := repository.Spec.Backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
 		initContainer.VolumeMounts = append(initContainer.VolumeMounts, mnt)
 	}
 

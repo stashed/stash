@@ -3183,7 +3183,7 @@ spec:
                                     type: string
                                   optional:
                                     description: Specify whether the ConfigMap or
-                                      it's key must be defined
+                                      its key must be defined
                                     type: boolean
                                 required:
                                 - key
@@ -3241,7 +3241,7 @@ spec:
                                       uid?'
                                     type: string
                                   optional:
-                                    description: Specify whether the Secret or it's
+                                    description: Specify whether the Secret or its
                                       key must be defined
                                     type: boolean
                                 required:
@@ -3404,10 +3404,10 @@ spec:
                         preStop:
                           description: 'PreStop is called immediately before a container
                             is terminated due to an API request or management event
-                            such as liveness probe failure, preemption, resource contention,
-                            etc. The handler is not called if the container crashes
-                            or exits. The reason for termination is passed to the
-                            handler. The Pod''s termination grace period countdown
+                            such as liveness/startup probe failure, preemption, resource
+                            contention, etc. The handler is not called if the container
+                            crashes or exits. The reason for termination is passed
+                            to the handler. The Pod''s termination grace period countdown
                             begins before the PreStop hooked is executed. Regardless
                             of the outcome of the handler, the container will eventually
                             terminate within the Pod''s termination grace period.
@@ -3585,7 +3585,8 @@ spec:
                         successThreshold:
                           description: Minimum consecutive successes for the probe
                             to be considered successful after having failed. Defaults
-                            to 1. Must be 1 for liveness. Minimum value is 1.
+                            to 1. Must be 1 for liveness and startup. Minimum value
+                            is 1.
                           format: int32
                           type: integer
                         tcpSocket:
@@ -3710,7 +3711,8 @@ spec:
                         successThreshold:
                           description: Minimum consecutive successes for the probe
                             to be considered successful after having failed. Defaults
-                            to 1. Must be 1 for liveness. Minimum value is 1.
+                            to 1. Must be 1 for liveness and startup. Minimum value
+                            is 1.
                           format: int32
                           type: integer
                         tcpSocket:
@@ -3858,6 +3860,37 @@ spec:
                             user:
                               description: User is a SELinux user label that applies
                                 to the container.
+                              type: string
+                          type: object
+                        windowsOptions:
+                          description: The Windows specific settings applied to all
+                            containers. If unspecified, the options from the PodSecurityContext
+                            will be used. If set in both SecurityContext and PodSecurityContext,
+                            the value specified in SecurityContext takes precedence.
+                          properties:
+                            gmsaCredentialSpec:
+                              description: GMSACredentialSpec is where the GMSA admission
+                                webhook (https://github.com/kubernetes-sigs/windows-gmsa)
+                                inlines the contents of the GMSA credential spec named
+                                by the GMSACredentialSpecName field. This field is
+                                alpha-level and is only honored by servers that enable
+                                the WindowsGMSA feature flag.
+                              type: string
+                            gmsaCredentialSpecName:
+                              description: GMSACredentialSpecName is the name of the
+                                GMSA credential spec to use. This field is alpha-level
+                                and is only honored by servers that enable the WindowsGMSA
+                                feature flag.
+                              type: string
+                            runAsUserName:
+                              description: The UserName in Windows to run the entrypoint
+                                of the container process. Defaults to the user specified
+                                in image metadata if unspecified. May also be set
+                                in PodSecurityContext. If set in both SecurityContext
+                                and PodSecurityContext, the value specified in SecurityContext
+                                takes precedence. This field is alpha-level and it
+                                is only honored by servers that enable the WindowsRunAsUserName
+                                feature flag.
                               type: string
                           type: object
                       type: object
@@ -4675,6 +4708,38 @@ spec:
                             - value
                             type: object
                           type: array
+                        windowsOptions:
+                          description: The Windows specific settings applied to all
+                            containers. If unspecified, the options within a container's
+                            SecurityContext will be used. If set in both SecurityContext
+                            and PodSecurityContext, the value specified in SecurityContext
+                            takes precedence.
+                          properties:
+                            gmsaCredentialSpec:
+                              description: GMSACredentialSpec is where the GMSA admission
+                                webhook (https://github.com/kubernetes-sigs/windows-gmsa)
+                                inlines the contents of the GMSA credential spec named
+                                by the GMSACredentialSpecName field. This field is
+                                alpha-level and is only honored by servers that enable
+                                the WindowsGMSA feature flag.
+                              type: string
+                            gmsaCredentialSpecName:
+                              description: GMSACredentialSpecName is the name of the
+                                GMSA credential spec to use. This field is alpha-level
+                                and is only honored by servers that enable the WindowsGMSA
+                                feature flag.
+                              type: string
+                            runAsUserName:
+                              description: The UserName in Windows to run the entrypoint
+                                of the container process. Defaults to the user specified
+                                in image metadata if unspecified. May also be set
+                                in PodSecurityContext. If set in both SecurityContext
+                                and PodSecurityContext, the value specified in SecurityContext
+                                takes precedence. This field is alpha-level and it
+                                is only honored by servers that enable the WindowsRunAsUserName
+                                feature flag.
+                              type: string
+                          type: object
                       type: object
                     serviceAccountName:
                       description: 'ServiceAccountName is the name of the ServiceAccount

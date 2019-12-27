@@ -46,6 +46,10 @@ type hookOptions struct {
 	hookType           string
 	backupSessionName  string
 	restoreSessionName string
+	targetKind         string
+	targetName         string
+	invokerType        string
+	invokerName        string
 	hostname           string
 	config             *rest.Config
 	kubeClient         kubernetes.Interface
@@ -60,7 +64,7 @@ func NewCmdRunHook() *cobra.Command {
 		masterURL:      "",
 		kubeConfigPath: "",
 		namespace:      meta.Namespace(),
-		hostname:       util.DefaultHost,
+		hostname:       apis.DefaultHost,
 	}
 
 	cmd := &cobra.Command{
@@ -98,6 +102,10 @@ func NewCmdRunHook() *cobra.Command {
 	cmd.Flags().StringVar(&opt.kubeConfigPath, "kubeconfig", opt.kubeConfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.backupSessionName, "backupsession", opt.backupSessionName, "Name of the respective BackupSession object")
 	cmd.Flags().StringVar(&opt.restoreSessionName, "restoresession", opt.restoreSessionName, "Name of the respective RestoreSession")
+	cmd.Flags().StringVar(&opt.invokerType, "invoker-type", opt.invokerType, "Type of the backup invoker")
+	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", opt.invokerName, "Name of the respective backup invoker")
+	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetName, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.hookType, "hook-type", opt.hookType, "Type of hook to execute")
 	cmd.Flags().StringVar(&opt.hostname, "hostname", opt.hostname, "Name of the host that is being backed up or restored")
 	cmd.Flags().BoolVar(&opt.metricOpts.Enabled, "metrics-enabled", opt.metricOpts.Enabled, "Specify whether to export Prometheus metrics")
@@ -198,7 +206,7 @@ func (opt *hookOptions) getPodName(backupConfig *v1beta1.BackupConfiguration, re
 		// For AppBinding, we will execute the hooks in the respective app pod
 		return opt.getAppPodName(targetRef.Name)
 	default:
-		return os.Getenv(util.KeyPodName), nil
+		return os.Getenv(apis.KeyPodName), nil
 	}
 }
 
@@ -254,10 +262,18 @@ func (opt *hookOptions) handlePreTaskHookFailure(hookErr error) error {
 			},
 		}
 		statusOpt.BackupSession = opt.backupSessionName
-
-		err := statusOpt.UpdatePostBackupStatus(backupOutput)
+		// TODO: user real invoker
+		invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerType, opt.invokerName, opt.namespace)
 		if err != nil {
-			hookErr = errors.NewAggregate([]error{hookErr, err})
+			return err
+		}
+		for _, targetInfo := range invoker.TargetsInfo {
+			if targetInfo.Target != nil && targetInfo.Target.Ref.Kind == opt.targetKind && targetInfo.Target.Ref.Name == opt.targetName {
+				err := statusOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
+				if err != nil {
+					hookErr = errors.NewAggregate([]error{hookErr, err})
+				}
+			}
 		}
 	} else { // otherwise it is postRestore hook
 		restoreOutput := &restic.RestoreOutput{

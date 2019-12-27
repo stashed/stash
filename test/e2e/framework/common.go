@@ -102,23 +102,23 @@ func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1
 	By("Verifying that sidecar has been injected")
 	switch kind {
 	case apis.KindDeployment:
-		f.EventuallyDeployment(objMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyDeployment(objMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for Deployment to be ready with sidecar")
 		err = f.WaitUntilDeploymentReadyWithSidecar(objMeta)
 	case apis.KindDaemonSet:
-		f.EventuallyDaemonSet(objMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyDaemonSet(objMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for DaemonSet to be ready with sidecar")
 		err = f.WaitUntilDaemonSetReadyWithSidecar(objMeta)
 	case apis.KindStatefulSet:
-		f.EventuallyStatefulSet(objMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyStatefulSet(objMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for StatefulSet to be ready with sidecar")
 		err = f.WaitUntilStatefulSetReadyWithSidecar(objMeta)
 	case apis.KindReplicaSet:
-		f.EventuallyReplicaSet(objMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyReplicaSet(objMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for ReplicaSet to be ready with sidecar")
 		err = f.WaitUntilRSReadyWithSidecar(objMeta)
 	case apis.KindReplicationController:
-		f.EventuallyReplicationController(objMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyReplicationController(objMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for ReplicationController to be ready with sidecar")
 		err = f.WaitUntilRCReadyWithSidecar(objMeta)
 	}
@@ -186,15 +186,15 @@ func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Re
 	By("Verifying that init-container has been injected")
 	switch kind {
 	case apis.KindDeployment:
-		f.EventuallyDeployment(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		f.EventuallyDeployment(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
 	case apis.KindDaemonSet:
-		f.EventuallyDaemonSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		f.EventuallyDaemonSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
 	case apis.KindStatefulSet:
-		f.EventuallyStatefulSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		f.EventuallyStatefulSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
 	case apis.KindReplicaSet:
-		f.EventuallyReplicaSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		f.EventuallyReplicaSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
 	case apis.KindReplicationController:
-		f.EventuallyReplicationController(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		f.EventuallyReplicationController(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
 	}
 
 	By("Waiting for restore process to complete")
@@ -271,23 +271,23 @@ func (f *Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, 
 	By("Verifying that sidecar has been injected")
 	switch kind {
 	case apis.KindDeployment:
-		f.EventuallyDeployment(workloadMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyDeployment(workloadMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for Deployment to be ready with sidecar")
 		err = f.WaitUntilDeploymentReadyWithSidecar(workloadMeta)
 	case apis.KindDaemonSet:
-		f.EventuallyDaemonSet(workloadMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyDaemonSet(workloadMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for DaemonSet to be ready with sidecar")
 		err = f.WaitUntilDaemonSetReadyWithSidecar(workloadMeta)
 	case apis.KindStatefulSet:
-		f.EventuallyStatefulSet(workloadMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyStatefulSet(workloadMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for StatefulSet to be ready with sidecar")
 		err = f.WaitUntilStatefulSetReadyWithSidecar(workloadMeta)
 	case apis.KindReplicaSet:
-		f.EventuallyReplicaSet(workloadMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyReplicaSet(workloadMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for ReplicaSet to be ready with sidecar")
 		err = f.WaitUntilRSReadyWithSidecar(workloadMeta)
 	case apis.KindReplicationController:
-		f.EventuallyReplicationController(workloadMeta).Should(HaveSidecar(util.StashContainer))
+		f.EventuallyReplicationController(workloadMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for ReplicationController to be ready with sidecar")
 		err = f.WaitUntilRCReadyWithSidecar(workloadMeta)
 	}

@@ -24,7 +24,6 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -166,19 +165,19 @@ var _ = XDescribe("Snapshots", func() {
 
 		shouldHaveSidecar = func() {
 			By("Waiting for sidecar of DaemonSet")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for sidecar of Deployment")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for sidecar of ReplicationController")
-			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for sidecar of ReplicaSet")
-			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for sidecar of StatefulSet")
-			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldHaveRepositoryCRD = func() {

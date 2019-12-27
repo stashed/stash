@@ -170,7 +170,7 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      util.ScaledownCronPrefix + restic.Name,
+		Name:      apis.ScaledownCronPrefix + restic.Name,
 		Namespace: restic.Namespace,
 	}
 
@@ -193,8 +193,8 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels[util.AnnotationRestic] = restic.Name
-		in.Labels[util.AnnotationOperation] = util.OperationScaleDown
+		in.Labels[apis.AnnotationRestic] = restic.Name
+		in.Labels[apis.AnnotationOperation] = apis.OperationScaleDown
 		// ensure job gets deleted on completion
 		in.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
 
@@ -203,14 +203,14 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		if in.Spec.JobTemplate.Labels == nil {
 			in.Spec.JobTemplate.Labels = map[string]string{}
 		}
-		in.Spec.JobTemplate.Labels["app"] = util.AppLabelStash
-		in.Spec.JobTemplate.Labels[util.AnnotationRestic] = restic.Name
-		in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationScaleDown
+		in.Spec.JobTemplate.Labels["app"] = apis.AppLabelStash
+		in.Spec.JobTemplate.Labels[apis.AnnotationRestic] = restic.Name
+		in.Spec.JobTemplate.Labels[apis.AnnotationOperation] = apis.OperationScaleDown
 
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
 			core.Container{
-				Name:  util.StashContainer,
+				Name:  apis.StashContainer,
 				Image: image.ToContainerImage(),
 				Args: []string{
 					"scaledown",

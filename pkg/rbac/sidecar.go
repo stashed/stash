@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
@@ -51,7 +52,7 @@ func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels[util.LabelApp] = util.AppLabelStash
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{

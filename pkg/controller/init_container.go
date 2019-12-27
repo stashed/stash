@@ -19,6 +19,7 @@ package controller
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -39,7 +40,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
-	if caller != util.CallerWebhook {
+	if caller != apis.CallerWebhook {
 		owner, err := ownerWorkload(w)
 		if err != nil {
 			return err
@@ -133,18 +134,18 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) {
 		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
 	}
 	// remove init-container
-	w.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.InitContainers, util.StashInitContainer)
+	w.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.InitContainers, apis.StashInitContainer)
 
 	// restore init-container has been removed but workload still may have backup sidecar
 	// so removed respective volumes that were added to the workload only if the workload does not have backup sidecar
 	if !util.HasStashContainer(w) {
 		// remove the helpers volumes added for init-container
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.StashSecretVolume)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.PodinfoVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.StashSecretVolume)
 
 		// if stash-local volume was added for local backend, remove it
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.LocalVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.LocalVolumeName)
 	}
 
 	// remove respective annotations

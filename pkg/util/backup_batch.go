@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"reflect"
 
-	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	v1beta1_listers "stash.appscode.dev/stash/client/listers/stash/v1beta1"
 
 	"github.com/pkg/errors"
@@ -31,32 +31,32 @@ import (
 )
 
 // GetAppliedBackupBatch check whether BackupBatch was applied as annotation and returns the object definition if exist.
-func GetAppliedBackupBatch(m map[string]string) (*v1beta1_api.BackupBatch, error) {
-	data := GetString(m, v1beta1_api.KeyLastAppliedBackupBatch)
+func GetAppliedBackupBatch(m map[string]string) (*v1beta1.BackupBatch, error) {
+	data := GetString(m, v1beta1.KeyLastAppliedBackupInvoker)
 
 	if data == "" {
 		return nil, nil
 	}
-	obj, err := meta.UnmarshalFromJSON([]byte(data), v1beta1_api.SchemeGroupVersion)
+	obj, err := meta.UnmarshalFromJSON([]byte(data), v1beta1.SchemeGroupVersion)
 	if err != nil {
 		return nil, err
 	}
-	backupBatch, ok := obj.(*v1beta1_api.BackupBatch)
+	backupBatch, ok := obj.(*v1beta1.BackupBatch)
 	if !ok {
-		return nil, fmt.Errorf("%s annotations has invalid BackupBatch object", v1beta1_api.KeyLastAppliedBackupBatch)
+		return nil, fmt.Errorf("%s annotations has invalid BackupBatch object", v1beta1.KeyLastAppliedBackupInvoker)
 	}
 	return backupBatch, nil
 }
 
 // FindBackupBatch check if there is any BackupBatch exist for a particular workload.
 // If multiple BackupBatches are found for the workload, it returns error.
-func FindBackupBatch(lister v1beta1_listers.BackupBatchLister, w *wapi.Workload) (*v1beta1_api.BackupBatch, error) {
+func FindBackupBatch(lister v1beta1_listers.BackupBatchLister, w *wapi.Workload) (*v1beta1.BackupBatch, error) {
 	// list all BackupBatches from the lister
 	backupBatches, err := lister.BackupBatches(w.Namespace).List(labels.Everything())
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*v1beta1_api.BackupBatch, 0)
+	result := make([]*v1beta1.BackupBatch, 0)
 	// keep only those BackupBatches that has this workload as target
 	for _, backupBatch := range backupBatches {
 		for _, bct := range backupBatch.Spec.BackupConfigurationTemplates {
@@ -85,7 +85,7 @@ func FindBackupBatch(lister v1beta1_listers.BackupBatchLister, w *wapi.Workload)
 }
 
 // BackupBatchEqual check whether two BackupBatches has same specification.
-func BackupBatchEqual(old, new *v1beta1_api.BackupBatch) bool {
+func BackupBatchEqual(old, new *v1beta1.BackupBatch) bool {
 	if (old == nil && new != nil) || (old != nil && new == nil) {
 		return false
 	}

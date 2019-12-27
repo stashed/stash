@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/repositories"
 	stash "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/cli"
@@ -85,7 +86,7 @@ func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) 
 	snapshot := &repositories.Snapshot{}
 	for _, result := range results {
 		snapshot.Namespace = repository.Namespace
-		snapshot.Name = repository.Name + "-" + result.ID[0:util.SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
+		snapshot.Name = repository.Name + "-" + result.ID[0:apis.SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
 		snapshot.UID = types.UID(result.ID)
 
 		snapshot.Labels = map[string]string{
@@ -186,7 +187,7 @@ func (r *REST) execOnSidecar(repository *stash.Repository, cmd string, snapshotI
 				" Reason: Reposiotry uses local backend and no BackupConfiguration exists for it.", repository.Namespace, repository.Name)
 		}
 		// only allow sidecar model
-		if bc.Spec.Target == nil || util.BackupModel(bc.Spec.Target.Ref.Kind) == util.ModelCronJob {
+		if bc.Spec.Target == nil || util.BackupModel(bc.Spec.Target.Ref.Kind) == apis.ModelCronJob {
 			return nil, fmt.Errorf("can't list snapshots for loacl backend with backup model 'cronjob'")
 		}
 		workloadName = bc.Spec.Target.Ref.Name
@@ -228,7 +229,7 @@ func (r *REST) getPodWithStashSidecar(namespace, workloadname string) (*core.Pod
 
 func (r *REST) hasStashSidecar(pod *core.Pod) bool {
 	for _, c := range pod.Spec.Containers {
-		if c.Name == util.StashContainer {
+		if c.Name == apis.StashContainer {
 			return true
 		}
 	}
@@ -249,7 +250,7 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 		Namespace(pod.Namespace).
 		SubResource("exec")
 	req.VersionedParams(&core.PodExecOptions{
-		Container: util.StashContainer,
+		Container: apis.StashContainer,
 		Command:   command,
 		Stdout:    true,
 		Stderr:    true,
@@ -332,7 +333,7 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 	snapshot := &repositories.Snapshot{}
 	for _, result := range results {
 		snapshot.Namespace = repository.Namespace
-		snapshot.Name = repository.Name + "-" + result.ID[0:util.SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
+		snapshot.Name = repository.Name + "-" + result.ID[0:apis.SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
 		snapshot.UID = types.UID(result.ID)
 
 		snapshot.Labels = map[string]string{

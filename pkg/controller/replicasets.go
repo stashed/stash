@@ -52,7 +52,7 @@ func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
 				// if ReplicaSet is owned by a Deployment, don't process it.
 				if !apps_util.IsOwnedByDeployment(w.OwnerReferences) {
 					// apply stash backup/restore logic on this workload
-					_, err := c.applyStashLogic(w, util.CallerWebhook)
+					_, err := c.applyStashLogic(w, apis.CallerWebhook)
 					return w, err
 				}
 				return w, nil
@@ -62,7 +62,7 @@ func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
 				// if ReplicaSet is owned by a Deployment, don't process it.
 				if !apps_util.IsOwnedByDeployment(w.OwnerReferences) {
 					// apply stash backup/restore logic on this workload
-					_, err := c.applyStashLogic(w, util.CallerWebhook)
+					_, err := c.applyStashLogic(w, apis.CallerWebhook)
 					return w, err
 				}
 				return w, nil
@@ -118,7 +118,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		// if ReplicaSet is owned by a Deployment, don't process it.
 		if !apps_util.IsOwnedByDeployment(w.OwnerReferences) {
 			// apply stash backup/restore logic on this workload
-			modified, err := c.applyStashLogic(w, util.CallerController)
+			modified, err := c.applyStashLogic(w, apis.CallerController)
 			if err != nil {
 				return err
 			}

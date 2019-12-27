@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -77,7 +78,7 @@ func (c *StashController) runRepositoryReconciler(key string) error {
 		repo := obj.(*api.Repository)
 
 		if repo.DeletionTimestamp != nil {
-			if core_util.HasFinalizer(repo.ObjectMeta, util.RepositoryFinalizer) {
+			if core_util.HasFinalizer(repo.ObjectMeta, apis.RepositoryFinalizer) {
 				// ignore invalid repository objects (eg: created by xray).
 				if repo.IsValid() == nil && repo.Spec.WipeOut {
 					err = c.deleteResticRepository(repo)
@@ -86,14 +87,14 @@ func (c *StashController) runRepositoryReconciler(key string) error {
 					}
 				}
 				_, _, err = stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repo, func(in *api.Repository) *api.Repository {
-					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, util.RepositoryFinalizer)
+					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, apis.RepositoryFinalizer)
 					return in
 				})
 				return err
 			}
 		} else {
 			_, _, err = stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repo, func(in *api.Repository) *api.Repository {
-				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, util.RepositoryFinalizer)
+				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, apis.RepositoryFinalizer)
 				return in
 			})
 			return err

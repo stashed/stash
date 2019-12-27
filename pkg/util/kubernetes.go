@@ -41,50 +41,6 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-const (
-	StashContainer       = "stash"
-	StashInitContainer   = "stash-init"
-	LocalVolumeName      = "stash-local"
-	ScratchDirVolumeName = "stash-scratchdir"
-	TmpDirVolumeName     = "tmp-dir"
-	TmpDirMountPath      = "/tmp"
-	PodinfoVolumeName    = "stash-podinfo"
-
-	RecoveryJobPrefix   = "stash-recovery-"
-	ScaledownCronPrefix = "stash-scaledown-cron-"
-	CheckJobPrefix      = "stash-check-"
-
-	AnnotationRestic     = "restic"
-	AnnotationRecovery   = "recovery"
-	AnnotationOperation  = "operation"
-	AnnotationOldReplica = "old-replica"
-
-	OperationRecovery = "recovery"
-	OperationCheck    = "check"
-
-	AppLabelStash        = "stash"
-	AppLabelStashV1Beta1 = "stash-v1beta1"
-	OperationScaleDown   = "scale-down"
-
-	RepositoryFinalizer = "stash"
-	SnapshotIDLength    = 8
-
-	ModelSidecar        = "sidecar"
-	ModelCronJob        = "cronjob"
-	LabelApp            = "app"
-	LabelInvokerType    = apis.StashKey + "/invoker-type"
-	LabelInvokerName    = apis.StashKey + "/invoker-name"
-	StashSecretVolume   = "stash-secret-volume"
-	StashSecretMountDir = "/etc/stash/repository/secret"
-
-	KeyPodName    = "POD_NAME"
-	KeyNodeName   = "NODE_NAME"
-	KeyPodOrdinal = "POD_ORDINAL"
-
-	RetryInterval    = 50 * time.Millisecond
-	ReadinessTimeout = 2 * time.Minute
-)
-
 func IsBackupTarget(target *v1beta1_api.BackupTarget, w *wapi.Workload) bool {
 	if target != nil &&
 		target.Ref.APIVersion == w.APIVersion &&
@@ -114,7 +70,7 @@ func GetString(m map[string]string, key string) string {
 
 func UpsertScratchVolume(volumes []core.Volume) []core.Volume {
 	return core_util.UpsertVolume(volumes, core.Volume{
-		Name: ScratchDirVolumeName,
+		Name: apis.ScratchDirVolumeName,
 		VolumeSource: core.VolumeSource{
 			EmptyDir: &core.EmptyDirVolumeSource{},
 		},
@@ -123,7 +79,7 @@ func UpsertScratchVolume(volumes []core.Volume) []core.Volume {
 
 func UpsertTmpVolume(volumes []core.Volume, settings v1beta1_api.EmptyDirSettings) []core.Volume {
 	return core_util.UpsertVolume(volumes, core.Volume{
-		Name: TmpDirVolumeName,
+		Name: apis.TmpDirVolumeName,
 		VolumeSource: core.VolumeSource{
 			EmptyDir: &core.EmptyDirVolumeSource{
 				Medium:    settings.Medium,
@@ -135,15 +91,15 @@ func UpsertTmpVolume(volumes []core.Volume, settings v1beta1_api.EmptyDirSetting
 
 func UpsertTmpVolumeMount(volumeMounts []core.VolumeMount) []core.VolumeMount {
 	return core_util.UpsertVolumeMountByPath(volumeMounts, core.VolumeMount{
-		Name:      TmpDirVolumeName,
-		MountPath: TmpDirMountPath,
+		Name:      apis.TmpDirVolumeName,
+		MountPath: apis.TmpDirMountPath,
 	})
 }
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
 func UpsertDownwardVolume(volumes []core.Volume) []core.Volume {
 	return core_util.UpsertVolume(volumes, core.Volume{
-		Name: PodinfoVolumeName,
+		Name: apis.PodinfoVolumeName,
 		VolumeSource: core.VolumeSource{
 			DownwardAPI: &core.DownwardAPIVolumeSource{
 				Items: []core.DownwardAPIVolumeFile{
@@ -161,7 +117,7 @@ func UpsertDownwardVolume(volumes []core.Volume) []core.Volume {
 
 func UpsertSecretVolume(volumes []core.Volume, secretName string) []core.Volume {
 	return core_util.UpsertVolume(volumes, core.Volume{
-		Name: StashSecretVolume,
+		Name: apis.StashSecretVolume,
 		VolumeSource: core.VolumeSource{
 			Secret: &core.SecretVolumeSource{
 				SecretName: secretName,
@@ -272,7 +228,7 @@ func MergeLocalVolume(volumes []core.Volume, backend *store.Backend) []core.Volu
 	// check if stash-local volume already exist
 	oldPos := -1
 	for i, vol := range volumes {
-		if vol.Name == LocalVolumeName {
+		if vol.Name == apis.LocalVolumeName {
 			oldPos = i
 			break
 		}
@@ -280,7 +236,7 @@ func MergeLocalVolume(volumes []core.Volume, backend *store.Backend) []core.Volu
 
 	if backend != nil && backend.Local != nil {
 		// backend is local backend. we have to mount the local volume inside sidecar
-		vol, _ := backend.Local.ToVolumeAndMount(LocalVolumeName)
+		vol, _ := backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
 		if oldPos != -1 {
 			volumes[oldPos] = vol
 		} else {
@@ -444,11 +400,11 @@ func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, 
 
 	}
 
-	return meta.HasKey(workloadAnnotation, AnnotationOldReplica)
+	return meta.HasKey(workloadAnnotation, apis.AnnotationOldReplica)
 }
 
 func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, ReadinessTimeout, func() (bool, error) {
+	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
@@ -457,7 +413,7 @@ func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 }
 
 func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, ReadinessTimeout, func() (bool, error) {
+	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := kubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status.DesiredNumberScheduled == obj.Status.NumberReady, nil
 		}
@@ -466,7 +422,7 @@ func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.Object
 }
 
 func WaitUntilReplicaSetReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, ReadinessTimeout, func() (bool, error) {
+	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
@@ -475,7 +431,7 @@ func WaitUntilReplicaSetReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 }
 
 func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, ReadinessTimeout, func() (bool, error) {
+	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
@@ -485,7 +441,7 @@ func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 }
 
 func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, ReadinessTimeout, func() (bool, error) {
+	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := kubeClient.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
@@ -494,7 +450,7 @@ func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.Obje
 }
 
 func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, ReadinessTimeout, func() (bool, error) {
+	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Spec.Replicas == obj.Status.ReadyReplicas, nil
 		}
@@ -503,7 +459,7 @@ func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) e
 }
 
 func WaitUntilVolumeSnapshotReady(c snapshot_cs.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, 2*time.Hour, func() (bool, error) {
+	return wait.PollImmediate(apis.RetryInterval, 2*time.Hour, func() (bool, error) {
 		if obj, err := c.SnapshotV1beta1().VolumeSnapshots(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status.ReadyToUse != nil && *obj.Status.ReadyToUse, nil
 		}
@@ -512,7 +468,7 @@ func WaitUntilVolumeSnapshotReady(c snapshot_cs.Interface, meta metav1.ObjectMet
 }
 
 func WaitUntilPVCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, 2*time.Hour, func() (bool, error) {
+	return wait.PollImmediate(apis.RetryInterval, 2*time.Hour, func() (bool, error) {
 		if obj, err := c.CoreV1().PersistentVolumeClaims(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status.Phase == core.ClaimBound, nil
 		}

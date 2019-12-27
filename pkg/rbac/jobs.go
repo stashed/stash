@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	stash_cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1"
@@ -58,7 +58,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, owner *metav1.Owner
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = util.AppLabelStash
+		in.Labels["app"] = apis.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -98,7 +98,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, owner *metav1.Owner
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = util.AppLabelStash
+		in.Labels["app"] = apis.AppLabelStash
 		return in
 	})
 	if err != nil {
@@ -112,7 +112,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, owner *metav1.Owner
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = util.AppLabelStash
+		in.Labels["app"] = apis.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -157,7 +157,7 @@ func EnsureRecoveryRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerRefe
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = util.AppLabelStash
+		in.Labels["app"] = apis.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -199,7 +199,7 @@ func EnsureRepoReaderRBAC(kubeClient kubernetes.Interface, stashClient stash_cs.
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = util.AppLabelStash
+		in.Labels["app"] = apis.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -232,7 +232,7 @@ func ensureRepoReaderRole(kubeClient kubernetes.Interface, repo *api_v1alpha1.Re
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = util.AppLabelStash
+		in.Labels["app"] = apis.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -264,16 +264,16 @@ func GetRepoReaderRoleBindingName(name, namespace string) string {
 
 func EnsureRepoReaderRolebindingDeleted(kubeClient kubernetes.Interface, stashClient stash_cs.Interface, meta *metav1.ObjectMeta) error {
 	// if the job is not recovery job then don't do anything
-	if !strings.HasPrefix(meta.Name, util.RecoveryJobPrefix) {
+	if !strings.HasPrefix(meta.Name, apis.RecoveryJobPrefix) {
 		return nil
 	}
 
 	// read recovery name from label
-	if !meta_util.HasKey(meta.Labels, util.AnnotationRecovery) {
+	if !meta_util.HasKey(meta.Labels, apis.AnnotationRecovery) {
 		return fmt.Errorf("missing recovery name in job's label")
 	}
 
-	recoveryName, err := meta_util.GetStringValue(meta.Labels, util.AnnotationRecovery)
+	recoveryName, err := meta_util.GetStringValue(meta.Labels, apis.AnnotationRecovery)
 	if err != nil {
 		return err
 	}

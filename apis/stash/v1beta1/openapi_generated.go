@@ -17558,7 +17558,7 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"},
+			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"},
 	}
 }
 

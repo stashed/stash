@@ -71,12 +71,12 @@ func NewCmdRunBackup() *cobra.Command {
 			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
 			opt.Metrics.JobName = opt.InvokerName
 
-			invokerInfo, err := apis.BackupInfoForInvoker(opt.InvokerType, opt.InvokerName, opt.Namespace, opt.StashClient)
+			invoker, err := apis.ExtractBackupInvokerInfo(opt.StashClient, opt.InvokerType, opt.InvokerName, opt.Namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range invokerInfo.TargetsInfo {
+			for _, targetInfo := range invoker.TargetsInfo {
 				if targetInfo.Target != nil &&
 					targetInfo.Target.Ref.Kind == opt.BackupTargetKind &&
 					targetInfo.Target.Ref.Name == opt.BackupTargetName {
@@ -87,9 +87,9 @@ func NewCmdRunBackup() *cobra.Command {
 					}
 
 					// run backup
-					err = opt.RunBackup(targetInfo, invokerInfo.InvokerRef)
+					err = opt.RunBackup(targetInfo, invoker.ObjectRef)
 					if err != nil {
-						return opt.HandleBackupSetupFailure(invokerInfo.InvokerRef, err)
+						return opt.HandleBackupSetupFailure(invoker.ObjectRef, err)
 					}
 				}
 			}
@@ -99,10 +99,10 @@ func NewCmdRunBackup() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&opt.MasterURL, "master", opt.MasterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&opt.KubeconfigPath, "kubeconfig", opt.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.InvokerName, "invokername", opt.InvokerName, "Name of the respective BackupConfiguration object")
-	cmd.Flags().StringVar(&opt.InvokerType, "invokertype", opt.InvokerType, "BackupConfiguration/BackupBatch type object")
-	cmd.Flags().StringVar(&opt.BackupTargetName, "targetname", opt.BackupTargetName, "Name of the Target")
-	cmd.Flags().StringVar(&opt.BackupTargetKind, "targetkind", opt.BackupTargetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.InvokerType, "invoker-type", opt.InvokerType, "Type of the backup invoker")
+	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective backup invoker")
+	cmd.Flags().StringVar(&opt.BackupTargetName, "target-name", opt.BackupTargetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.BackupTargetKind, "target-kind", opt.BackupTargetKind, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.Host, "host", opt.Host, "Name of the host that will be backed up")
 	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")

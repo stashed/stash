@@ -92,17 +92,17 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 				return err
 			}
 
-			// get backup InvokerInfo
-			invokerInfo, err := apis.BackupInfoForInvoker(backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace, opt.stashClient)
+			// get backup Invoker
+			invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range invokerInfo.TargetsInfo {
+			for _, targetInfo := range invoker.TargetsInfo {
 				if targetInfo.Target != nil &&
 					targetInfo.Target.Ref.Kind == opt.backupTargetKind &&
 					targetInfo.Target.Ref.Name == opt.backupTargetName {
-					backupOutput, err := opt.createVolumeSnapshot(backupSession.ObjectMeta, invokerInfo, targetInfo)
+					backupOutput, err := opt.createVolumeSnapshot(backupSession.ObjectMeta, invoker, targetInfo)
 					if err != nil {
 						return err
 					}
@@ -118,7 +118,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 					statOpt.TargetRef.Name = opt.backupTargetName
 					statOpt.TargetRef.Kind = opt.backupTargetKind
 
-					return statOpt.UpdatePostBackupStatus(backupOutput, invokerInfo, targetInfo)
+					return statOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
 
 				}
 			}
@@ -127,15 +127,15 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.backupTargetName, "targetname", opt.backupTargetName, "Name of the Target")
-	cmd.Flags().StringVar(&opt.backupTargetKind, "targetkind", opt.backupTargetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.backupTargetName, "target-name", opt.backupTargetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.backupTargetKind, "target-kind", opt.backupTargetKind, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.backupsession, "backupsession", "", "Name of the respective BackupSession object")
 	cmd.Flags().BoolVar(&opt.metrics.Enabled, "metrics-enabled", opt.metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metrics.PushgatewayURL, "pushgateway-url", opt.metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
 	return cmd
 }
 
-func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
+func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invoker apis.Invoker, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
 	// Start clock to measure total session duration
 	startTime := time.Now()
 
@@ -144,13 +144,13 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invokerInfo 
 	}
 
 	// If preBackup hook is specified, then execute those hooks first
-	if backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PreBackup != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PreBackup != nil {
 		log.Infoln("Executing preBackup hooks........")
-		podName := os.Getenv(util.KeyPodName)
+		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preBackup hooks. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, backupConfig.Spec.Hooks.PreBackup, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, targetInfo.Hooks.PreBackup, podName, opt.namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -168,13 +168,14 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invokerInfo 
 	for _, pvcName := range pvcNames {
 		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
 		parts := strings.Split(bsMeta.Name, "-")
-		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, bsMeta.Namespace, pvcName, parts[len(parts)-1])
-		snapshot, err := opt.snapshotClient.SnapshotV1alpha1().VolumeSnapshots(opt.namespace).Create(&volumeSnapshot)
+		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, invoker.ObjectMeta.Namespace, pvcName, parts[len(parts)-1])
+		snapshot, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Create(&volumeSnapshot)
 		if err != nil {
 			return nil, err
 		}
 		vsMeta = append(vsMeta, snapshot.ObjectMeta)
 	}
+
 	// now wait for all the VolumeSnapshots are completed (ready to to use)
 	backupOutput := &restic.BackupOutput{}
 	for i, pvcName := range pvcNames {
@@ -195,19 +196,19 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invokerInfo 
 		}
 
 	}
-	err = volumesnapshot.CleanupSnapshots(invokerInfo.RetentionPolicy, backupOutput.HostBackupStats, bsMeta.Namespace, opt.snapshotClient)
+	err = volumesnapshot.CleanupSnapshots(invoker.RetentionPolicy, backupOutput.HostBackupStats, bsMeta.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
 	}
 
 	// If postBackup hook is specified, then execute those hooks after backup
-	if backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PostBackup != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup != nil {
 		log.Infoln("Executing postBackup hooks........")
-		podName := os.Getenv(util.KeyPodName)
+		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postBackup hook. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, backupConfig.Spec.Hooks.PostBackup, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, targetInfo.Hooks.PostBackup, podName, opt.namespace)
 		if err != nil {
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual backup process may be succeeded." +
 				"Hence, the backup snapshots might be present in the backend even if the overall BackupSession phase is 'Failed'")

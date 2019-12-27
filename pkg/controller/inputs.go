@@ -29,11 +29,11 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 )
 
-func (c *StashController) inputsForBackupConfig(invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo) (map[string]string, error) {
+func (c *StashController) inputsForBackupConfig(invoker apis.Invoker, targetInfo apis.TargetInfo) (map[string]string, error) {
 	// get inputs for target
 	inputs := c.inputsForBackupTarget(targetInfo.Target)
 	// append inputs for RetentionPolicy
-	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(invokerInfo.RetentionPolicy))
+	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(invoker.RetentionPolicy))
 
 	// get host name for target
 	host, err := util.GetHostName(targetInfo.Target)
@@ -50,11 +50,11 @@ func (c *StashController) inputsForBackupConfig(invokerInfo apis.InvokerInfo, ta
 		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
 	} else {
 		// if interim volume is not specified then use temp dir to store data temporarily
-		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", util.TmpDirMountPath)
+		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", apis.TmpDirMountPath)
 	}
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics(invokerInfo.ObjMeta.Name)
+	metricInputs := c.inputForMetrics(invoker.ObjectMeta.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil
@@ -86,7 +86,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
 	} else {
 		// if interim volume is not specified then use temp dir to store data temporarily
-		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", util.TmpDirMountPath)
+		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", apis.TmpDirMountPath)
 	}
 
 	// add PushgatewayURL as input

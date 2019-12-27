@@ -45,7 +45,7 @@ type TaskResolver struct {
 	PostTaskHookInput map[string]string
 }
 
-func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
+func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetName string) (core.PodSpec, error) {
 	task, err := o.StashClient.StashV1beta1().Tasks().Get(o.TaskName, metav1.GetOptions{})
 	if err != nil {
 		return core.PodSpec{}, err
@@ -128,7 +128,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 		// 3. Default hook specific inputs
 		inputs := core_util.UpsertMap(taskParams, o.Inputs)
 		inputs = core_util.UpsertMap(o.PreTaskHookInput, inputs)
-		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers)
+		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers, invokerType, invokerName, targetKind, targetName)
 
 		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook. Reason: %v", err)
@@ -145,7 +145,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	if o.PostTaskHookInput != nil {
 		inputs := core_util.UpsertMap(taskParams, o.Inputs)
 		inputs = core_util.UpsertMap(o.PostTaskHookInput, inputs)
-		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers)
+		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers, invokerType, invokerName, targetKind, targetName)
 
 		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook. Reason: %v", err)
@@ -206,7 +206,7 @@ func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []ofst.Persist
 	pvcList := make([]core.PersistentVolumeClaim, 0)
 	for i := range claimTemplates {
 		inputs := make(map[string]string)
-		inputs[util.KeyPodOrdinal] = strconv.Itoa(int(ordinal))
+		inputs[apis.KeyPodOrdinal] = strconv.Itoa(int(ordinal))
 		claim := claimTemplates[i].DeepCopy().ToCorePVC()
 		err := ResolvePVCSpec(claim, inputs)
 		if err != nil {

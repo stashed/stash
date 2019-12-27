@@ -23,7 +23,6 @@ import (
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/backup"
-	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
@@ -71,7 +70,7 @@ func (c *Controller) ScaleDownWorkload() error {
 				if obj.Annotations == nil {
 					obj.Annotations = make(map[string]string)
 				}
-				obj.Annotations[util.AnnotationOldReplica] = strconv.Itoa(int(*dp.Spec.Replicas))
+				obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*dp.Spec.Replicas))
 				obj.Spec.Replicas = &ZeroReplica
 				return obj
 			})
@@ -89,7 +88,7 @@ func (c *Controller) ScaleDownWorkload() error {
 				if obj.Annotations == nil {
 					obj.Annotations = make(map[string]string)
 				}
-				obj.Annotations[util.AnnotationOldReplica] = strconv.Itoa(int(*rc.Spec.Replicas))
+				obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*rc.Spec.Replicas))
 				obj.Spec.Replicas = &ZeroReplica
 				return obj
 			})
@@ -108,7 +107,7 @@ func (c *Controller) ScaleDownWorkload() error {
 					if obj.Annotations == nil {
 						obj.Annotations = make(map[string]string)
 					}
-					obj.Annotations[util.AnnotationOldReplica] = strconv.Itoa(int(*rs.Spec.Replicas))
+					obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*rs.Spec.Replicas))
 					obj.Spec.Replicas = &ZeroReplica
 					return obj
 				})
@@ -193,14 +192,14 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		replica, err := meta_util.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
+		replica, err := meta_util.GetIntValue(obj.Annotations, apis.AnnotationOldReplica)
 		if err != nil {
 			return err
 		}
 
 		_, _, err = apps_util.PatchDeployment(k8sClient, obj, func(dp *apps.Deployment) *apps.Deployment {
 			dp.Spec.Replicas = types.Int32P(int32(replica))
-			delete(dp.Annotations, util.AnnotationOldReplica)
+			delete(dp.Annotations, apis.AnnotationOldReplica)
 			return dp
 		})
 		if err != nil {
@@ -212,14 +211,14 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		replica, err := meta_util.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
+		replica, err := meta_util.GetIntValue(obj.Annotations, apis.AnnotationOldReplica)
 		if err != nil {
 			return err
 		}
 
 		_, _, err = core_util.PatchRC(k8sClient, obj, func(rc *core.ReplicationController) *core.ReplicationController {
 			rc.Spec.Replicas = types.Int32P(int32(replica))
-			delete(rc.Annotations, util.AnnotationOldReplica)
+			delete(rc.Annotations, apis.AnnotationOldReplica)
 			return rc
 		})
 		if err != nil {
@@ -231,14 +230,14 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		replica, err := meta_util.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
+		replica, err := meta_util.GetIntValue(obj.Annotations, apis.AnnotationOldReplica)
 		if err != nil {
 			return err
 		}
 
 		_, _, err = apps_util.PatchReplicaSet(k8sClient, obj, func(rs *apps.ReplicaSet) *apps.ReplicaSet {
 			rs.Spec.Replicas = types.Int32P(int32(replica))
-			delete(rs.Annotations, util.AnnotationOldReplica)
+			delete(rs.Annotations, apis.AnnotationOldReplica)
 			return rs
 		})
 		if err != nil {

@@ -62,8 +62,8 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	if err != nil {
 		return err
 	}
-	// get backup InvokerInfo
-	invokerInfo, err := apis.BackupInfoForInvoker(backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace, o.StashClient)
+	// get backup Invoker
+	invokerInfo, err := apis.ExtractBackupInvokerInfo(o.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 	return o.UpdatePostRestoreStatus(restoreOutput)
 }
 
-func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput, invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo) error {
+func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput, invoker apis.Invoker, targetInfo apis.TargetInfo) error {
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
 	}
@@ -163,7 +163,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	// if metrics enabled then send metrics to the Prometheus pushgateway
 
 	if o.Metrics.Enabled {
-		return o.Metrics.SendBackupHostMetrics(o.Config, o.Namespace, invokerInfo, targetInfo, backupOutput)
+		return o.Metrics.SendBackupHostMetrics(o.Config, invoker, targetInfo, backupOutput)
 	}
 	return nil
 }

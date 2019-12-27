@@ -19,6 +19,7 @@ package framework
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
@@ -85,7 +86,7 @@ func (f *Invocation) WaitUntilRCReadyWithSidecar(meta metav1.ObjectMeta) error {
 				for i := range pods {
 					hasSidecar := false
 					for _, c := range pods[i].Spec.Containers {
-						if c.Name == util.StashContainer {
+						if c.Name == apis.StashContainer {
 							hasSidecar = true
 						}
 					}
@@ -113,7 +114,7 @@ func (f *Invocation) WaitUntilRCReadyWithInitContainer(meta metav1.ObjectMeta) e
 				for i := range pods {
 					hasInitContainer := false
 					for _, c := range pods[i].Spec.InitContainers {
-						if c.Name == util.StashInitContainer {
+						if c.Name == apis.StashInitContainer {
 							hasInitContainer = true
 						}
 					}

@@ -111,30 +111,22 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 	// this means BackupConfiguration has been newly created/updated.
 	// in this case, we have to add/update sidecar container accordingly.
 	if newbc != nil && !util.BackupConfigurationEqual(oldbc, newbc) {
-		invokerInfo, err := apis.BackupInfoForInvoker(api_v1beta1.ResourceKindBackupConfiguration, newbc.Name, newbc.Namespace, c.stashClient)
+		invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupConfiguration, newbc.Name, newbc.Namespace)
 		if err != nil {
 			return true, err
 		}
-		for _, targetInfo := range invokerInfo.TargetsInfo {
+		for _, targetInfo := range invoker.TargetsInfo {
 			if targetInfo.Target != nil &&
 				targetInfo.Target.Ref.Kind == w.Kind &&
 				targetInfo.Target.Ref.Name == w.Name {
-				err = c.ensureBackupSidecar(w, invokerInfo, targetInfo, caller)
+				err = c.ensureBackupSidecar(w, invoker, targetInfo, caller)
 				if err != nil {
-					return true, err
+					return false, c.handleSidecarInjectionFailure(w, err)
 				}
+				break
 			}
 		}
-		// write sidecar injection failure/success event
-		ref, rerr := util.GetWorkloadReference(w)
-		if err != nil && rerr != nil {
-			return false, err
-		} else if err != nil && rerr == nil {
-			return false, c.handleSidecarInjectionFailure(ref, err)
-		} else if err == nil && rerr != nil {
-			return true, nil
-		}
-		return true, c.handleSidecarInjectionSuccess(ref)
+		return true, c.handleSidecarInjectionSuccess(w)
 
 	} else if oldbc != nil && newbc == nil {
 		// there was BackupConfiguration before but it does not exist now.
@@ -143,11 +135,7 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 		// and remove respective annotations from the workload.
 		c.ensureBackupSidecarDeleted(w)
 		// write sidecar deletion failure/success event
-		ref, rerr := util.GetWorkloadReference(w)
-		if rerr != nil {
-			return true, nil
-		}
-		return true, c.handleSidecarDeletionSuccess(ref)
+		return true, c.handleSidecarDeletionSuccess(w)
 	}
 	return false, nil
 }
@@ -169,30 +157,23 @@ func (c *StashController) applyBackupBatchLogic(w *wapi.Workload, caller string)
 	if newbb != nil && !util.BackupBatchEqual(oldbb, newbb) {
 		for _, backupConfigTemp := range newbb.Spec.BackupConfigurationTemplates {
 			if backupConfigTemp.Spec.Target != nil && backupConfigTemp.Spec.Target.Ref.Kind == w.Kind && backupConfigTemp.Spec.Target.Ref.Name == w.Name {
-				invokerInfo, err := apis.BackupInfoForInvoker(api_v1beta1.ResourceKindBackupBatch, newbb.Name, newbb.Namespace, c.stashClient)
+				invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupBatch, newbb.Name, newbb.Namespace)
 				if err != nil {
 					return true, err
 				}
-				for _, targetInfo := range invokerInfo.TargetsInfo {
+				for _, targetInfo := range invoker.TargetsInfo {
 					if targetInfo.Target != nil &&
 						targetInfo.Target.Ref.Kind == w.Kind &&
 						targetInfo.Target.Ref.Name == w.Name {
-						err = c.ensureBackupSidecar(w, invokerInfo, targetInfo, caller)
+						err = c.ensureBackupSidecar(w, invoker, targetInfo, caller)
 						if err != nil {
-							return true, err
+							return false, c.handleSidecarInjectionFailure(w, err)
 						}
+						break
 					}
 				}
 				// write sidecar injection failure/success event
-				ref, rerr := util.GetWorkloadReference(w)
-				if err != nil && rerr != nil {
-					return false, err
-				} else if err != nil && rerr == nil {
-					return false, c.handleSidecarInjectionFailure(ref, err)
-				} else if err == nil && rerr != nil {
-					return true, nil
-				}
-				return true, c.handleSidecarInjectionSuccess(ref)
+				return true, c.handleSidecarInjectionSuccess(w)
 			}
 		}
 	} else if oldbb != nil && newbb == nil {
@@ -202,11 +183,7 @@ func (c *StashController) applyBackupBatchLogic(w *wapi.Workload, caller string)
 		// and remove respective annotations from the workload.
 		c.ensureBackupSidecarDeleted(w)
 		// write sidecar deletion failure/success event
-		ref, rerr := util.GetWorkloadReference(w)
-		if rerr != nil {
-			return true, nil
-		}
-		return true, c.handleSidecarDeletionSuccess(ref)
+		return true, c.handleSidecarDeletionSuccess(w)
 	}
 	return false, nil
 }
