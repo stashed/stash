@@ -184,7 +184,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 		w.Spec.Template.Annotations = map[string]string{}
 	}
 	// mark pods with BackupConfiguration spec hash. used to force restart pods for rc/rs
-	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupBackupInvokerHash] = invoker.Hash
+	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupInvokerSpecHash] = invoker.Hash
 
 	if targetInfo.Target == nil {
 		return fmt.Errorf("target is nil")
@@ -195,7 +195,6 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 		Image:    docker.ImageStash,
 		Tag:      c.StashImageTag,
 	}
-
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.Containers,
 		util.NewBackupSidecarContainer(invoker, targetInfo, &repository.Spec.Backend, image),
@@ -226,6 +225,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 		w.Annotations = make(map[string]string)
 	}
 	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvoker] = string(invoker.ObjectJson)
+	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvokerKind] = invoker.ObjectRef.Kind
 
 	return nil
 }
@@ -233,8 +233,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload) {
 	// remove resource hash annotation
 	if w.Spec.Template.Annotations != nil {
-		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupBatchSpecHash)
-		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupBackupInvokerHash)
+		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupInvokerSpecHash)
 	}
 	// remove sidecar container
 	w.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.Containers, apis.StashContainer)
@@ -278,8 +277,7 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 
 		workloadSidecarState := util.HasStashSidecar(w.Spec.Template.Spec.Containers)
 		workloadInitContainerState := util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers)
-		workloadBackupConfigurationResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupBackupInvokerHash)
-		workloadBackupBatchResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupBatchSpecHash)
+		workloadBackupInvokerResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupInvokerSpecHash)
 		workloadResticResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1alpha1.ResourceHash)
 		workloadRestoreResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
 
@@ -292,15 +290,13 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 			}
 			podSidecarState := util.HasStashSidecar(pod.Spec.Containers)
 			podInitContainerState := util.HasStashInitContainer(pod.Spec.InitContainers)
-			podBackupConfigurationResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupBackupInvokerHash)
-			podBackupBatchResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupBatchSpecHash)
+			podBackupInvokerResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupInvokerSpecHash)
 			podResticResourceHash := util.GetString(pod.Annotations, api_v1alpha1.ResourceHash)
 			podRestoreResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
 
 			if workloadSidecarState != podSidecarState ||
 				workloadInitContainerState != podInitContainerState ||
-				workloadBackupConfigurationResourceHash != podBackupConfigurationResourceHash ||
-				workloadBackupBatchResourceHash != podBackupBatchResourceHash ||
+				workloadBackupInvokerResourceHash != podBackupInvokerResourceHash ||
 				workloadResticResourceHash != podResticResourceHash ||
 				workloadRestoreResourceHash != podRestoreResourceHash {
 

@@ -156,7 +156,7 @@ func NewBackupSidecarContainer(invoker apis.Invoker, targetInfo apis.TargetInfo,
 	// mount tmp volume
 	sidecar.VolumeMounts = UpsertTmpVolumeMount(sidecar.VolumeMounts)
 
-	// mount the volumes specified in BackupConfiguration/BackupConfigurationTemplate this sidecar
+	// mount the volumes specified in invoker this sidecar
 	for _, srcVol := range targetInfo.Target.VolumeMounts {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, core.VolumeMount{
 			Name:      srcVol.Name,
@@ -169,7 +169,7 @@ func NewBackupSidecarContainer(invoker apis.Invoker, targetInfo apis.TargetInfo,
 		_, mnt := backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, mnt)
 	}
-	// pass container runtime settings from BackupConfiguration/BackupConfigurationTemplate to sidecar
+	// pass container runtime settings from invoker to sidecar
 	if targetInfo.RuntimeSettings.Container != nil {
 		sidecar = ofst_util.ApplyContainerRuntimeSettings(sidecar, *targetInfo.RuntimeSettings.Container)
 	}

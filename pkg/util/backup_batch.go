@@ -33,8 +33,9 @@ import (
 // GetAppliedBackupBatch check whether BackupBatch was applied as annotation and returns the object definition if exist.
 func GetAppliedBackupBatch(m map[string]string) (*v1beta1.BackupBatch, error) {
 	data := GetString(m, v1beta1.KeyLastAppliedBackupInvoker)
+	invokerKind := GetString(m, v1beta1.KeyLastAppliedBackupInvokerKind)
 
-	if data == "" {
+	if data == "" || invokerKind != v1beta1.ResourceKindBackupBatch {
 		return nil, nil
 	}
 	obj, err := meta.UnmarshalFromJSON([]byte(data), v1beta1.SchemeGroupVersion)
@@ -43,7 +44,7 @@ func GetAppliedBackupBatch(m map[string]string) (*v1beta1.BackupBatch, error) {
 	}
 	backupBatch, ok := obj.(*v1beta1.BackupBatch)
 	if !ok {
-		return nil, fmt.Errorf("%s annotations has invalid BackupBatch object", v1beta1.KeyLastAppliedBackupInvoker)
+		return nil, fmt.Errorf("%s annotations has invalid invoker object", v1beta1.KeyLastAppliedBackupInvoker)
 	}
 	return backupBatch, nil
 }

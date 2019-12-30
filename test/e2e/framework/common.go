@@ -125,10 +125,62 @@ func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1
 	return createdBC, err
 }
 
-func (f *Invocation) TakeInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.BackupSession, error) {
+func (f *Invocation) SetupWorkloadBackupForBackupBatch(targetsRef []v1beta1.TargetRef, repo *api.Repository, transformFuncs ...func(in *v1beta1.BackupBatch)) (*v1beta1.BackupBatch, error) {
+	// Generate desired BackupBatch definition
+	backupBatch := f.BackupBatch(repo.Name)
+	// transformFunc provide a function that made test specific change on the backupBatch
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(backupBatch)
+	}
+
+	By("Creating BackupBatch: " + backupBatch.Name)
+	createdBackupBatch, err := f.StashClient.StashV1beta1().BackupBatches(backupBatch.Namespace).Create(backupBatch)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(createdBackupBatch)
+
+	By("Verifying that backup triggering CronJob has been created")
+	f.EventuallyCronJobCreated(backupBatch.ObjectMeta).Should(BeTrue())
+
+	By("Verifying that sidecar has been injected")
+	for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
+		objMeta := metav1.ObjectMeta{
+			Namespace: backupBatch.Namespace,
+			Name:      backupConfigTemp.Spec.Target.Ref.Name,
+		}
+		switch backupConfigTemp.Spec.Target.Ref.Kind {
+		case apis.KindDeployment:
+			f.EventuallyDeployment(objMeta).Should(HaveSidecar(apis.StashContainer))
+			By("Waiting for Deployment to be ready with sidecar")
+			err = f.WaitUntilDeploymentReadyWithSidecar(objMeta)
+		case apis.KindDaemonSet:
+			f.EventuallyDaemonSet(objMeta).Should(HaveSidecar(apis.StashContainer))
+			By("Waiting for DaemonSet to be ready with sidecar")
+			err = f.WaitUntilDaemonSetReadyWithSidecar(objMeta)
+		case apis.KindStatefulSet:
+			f.EventuallyStatefulSet(objMeta).Should(HaveSidecar(apis.StashContainer))
+			By("Waiting for StatefulSet to be ready with sidecar")
+			err = f.WaitUntilStatefulSetReadyWithSidecar(objMeta)
+		case apis.KindReplicaSet:
+			f.EventuallyReplicaSet(objMeta).Should(HaveSidecar(apis.StashContainer))
+			By("Waiting for ReplicaSet to be ready with sidecar")
+			err = f.WaitUntilRSReadyWithSidecar(objMeta)
+		case apis.KindReplicationController:
+			f.EventuallyReplicationController(objMeta).Should(HaveSidecar(apis.StashContainer))
+			By("Waiting for ReplicationController to be ready with sidecar")
+			err = f.WaitUntilRCReadyWithSidecar(objMeta)
+		}
+		if err != nil {
+			return createdBackupBatch, err
+		}
+	}
+	return createdBackupBatch, err
+}
+
+func (f *Invocation) TakeInstantBackup(objMeta metav1.ObjectMeta, targetRef v1beta1.TargetRef) (*v1beta1.BackupSession, error) {
 	// Trigger Instant Backup
 	By("Triggering Instant Backup")
-	backupSession, err := f.TriggerInstantBackup(objMeta)
+	backupSession, err := f.TriggerInstantBackup(objMeta, targetRef)
 	if err != nil {
 		return backupSession, err
 	}
