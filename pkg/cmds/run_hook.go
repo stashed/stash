@@ -250,6 +250,10 @@ func (opt *hookOptions) handlePreTaskHookFailure(hookErr error) error {
 		StashClient: opt.stashClient,
 		Namespace:   opt.namespace,
 		Metrics:     opt.metricOpts,
+		TargetRef: v1beta1.TargetRef{
+			Kind: opt.targetKind,
+			Name: opt.targetName,
+		},
 	}
 	if opt.hookType == apis.PreBackupHook {
 		backupOutput := &restic.BackupOutput{
