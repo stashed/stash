@@ -91,6 +91,8 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--namespace=${NAMESPACE:=default}",
 				"--backupsession=${BACKUP_SESSION:=}",
 				"--repository=${REPOSITORY_NAME:=}",
+				"--target-name=${TARGET_NAME:=}",
+				"--target-kind=${TARGET_KIND:=}",
 				"--restoresession=${RESTORE_SESSION:=}",
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",

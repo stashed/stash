@@ -27,7 +27,6 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -111,7 +110,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -139,7 +138,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -167,7 +166,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -180,7 +179,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldStopBackupIfLabelChanged = func() {
@@ -197,7 +196,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -215,7 +214,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldStopBackupIfSelectorChanged = func() {
@@ -232,7 +231,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -252,7 +251,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldElectLeaderAndBackupDeployment = func() {
@@ -270,7 +269,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for leader election")
 			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, api.ResourceKindRestic)
@@ -302,7 +301,7 @@ var _ = XDescribe("Deployment", func() {
 
 			// sidecar should be added as soon as deployment created, we don't need to wait for it
 			By("Checking sidecar created")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -326,7 +325,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar not added")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldRejectToCreateNewDeployment = func() {
@@ -361,7 +360,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -379,7 +378,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldAddSidecarInstantly = func() {
@@ -400,7 +399,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar not added")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + deployment.Name)
 			obj, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
@@ -410,7 +409,7 @@ var _ = XDescribe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -626,7 +625,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -640,7 +639,7 @@ var _ = XDescribe("Deployment", func() {
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
 
-				jobName := util.RecoveryJobPrefix + recovery.Name
+				jobName := apis.RecoveryJobPrefix + recovery.Name
 
 				By("Checking Job exists")
 				Eventually(func() bool {
@@ -733,7 +732,7 @@ var _ = XDescribe("Deployment", func() {
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.ScaledownCronPrefix + restic.Name
+				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -750,7 +749,7 @@ var _ = XDescribe("Deployment", func() {
 					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
 					By("Waiting for init-container")
-					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(apis.StashContainer))
 
 					By("Waiting for Repository CRD")
 					f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -795,7 +794,7 @@ var _ = XDescribe("Deployment", func() {
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.ScaledownCronPrefix + restic.Name
+				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -812,7 +811,7 @@ var _ = XDescribe("Deployment", func() {
 					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
 					By("Waiting for init-container")
-					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(apis.StashContainer))
 
 					By("Waiting for Repository CRD")
 					f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -894,7 +893,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -934,7 +933,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting to count failed setup event")
 				f.EventualWarning(restic.ObjectMeta, framework.KindRestic).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
@@ -1010,7 +1009,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -1096,7 +1095,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -1150,7 +1149,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -1197,7 +1196,7 @@ var _ = XDescribe("Deployment", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying deployment with recovered volume")
 				deployment.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -1238,7 +1237,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -1285,7 +1284,7 @@ var _ = XDescribe("Deployment", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying deployment with recovered volume")
 				deployment.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -1347,7 +1346,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -1399,7 +1398,7 @@ var _ = XDescribe("Deployment", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying deployment with recovered volume")
 				deployment.Namespace = recoveryNamespace.Name
@@ -1459,7 +1458,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -1529,7 +1528,7 @@ var _ = XDescribe("Deployment", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying deployment with recovered volume")
 				deployment.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -1667,7 +1666,7 @@ var _ = XDescribe("Deployment", func() {
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.ScaledownCronPrefix + restic.Name
+				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -1681,7 +1680,7 @@ var _ = XDescribe("Deployment", func() {
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -1698,7 +1697,7 @@ var _ = XDescribe("Deployment", func() {
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(int(*deployment.Spec.Replicas)))
 
 				By("Checking checkjob created")
-				checkJobName := util.CheckJobPrefix + restic.Name
+				checkJobName := apis.CheckJobPrefix + restic.Name
 				f.EventuallyJobSucceed(checkJobName).Should(BeTrue())
 
 			})

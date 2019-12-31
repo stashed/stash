@@ -10128,13 +10128,6 @@
         "retentionPolicy"
       ],
       "properties": {
-        "backupConfigurationTemplates": {
-          "description": "backupConfigurationTemplates is a list of backup configurations that are part of this batch",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationTemplate"
-          }
-        },
         "backupHistoryLimit": {
           "description": "BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep. This is helpful for debugging purpose. Default: 1",
           "type": "integer",
@@ -10148,6 +10141,13 @@
           "description": "Actions that Stash should take in response to backup sessions. Cannot be updated.",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupHooks"
         },
+        "members": {
+          "description": "members is a list of backup configurations that are part of this batch",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationTemplateSpec"
+          }
+        },
         "paused": {
           "description": "Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'",
           "type": "boolean"
@@ -10159,6 +10159,10 @@
         "retentionPolicy": {
           "description": "RetentionPolicy indicates the policy to follow to clean old backup snapshots",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1alpha1.RetentionPolicy"
+        },
+        "runtimeSettings": {
+          "description": "RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc, and used to create service account for CronJob.",
+          "$ref": "#/definitions/xyz.kmodules.offshoot-api.api.v1.RuntimeSettings"
         },
         "schedule": {
           "description": "Schedule specifies the schedule for invoking backup sessions",
@@ -10400,25 +10404,6 @@
         }
       }
     },
-    "dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationTemplate": {
-      "type": "object",
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-          "type": "string"
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "metadata": {
-          "$ref": "#/definitions/xyz.kmodules.offshoot-api.api.v1.PartialObjectMeta"
-        },
-        "spec": {
-          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationTemplateSpec"
-        }
-      }
-    },
     "dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationTemplateSpec": {
       "type": "object",
       "properties": {
@@ -10559,20 +10544,15 @@
           "type": "string"
         },
         "sessionDuration": {
-          "description": "SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)",
+          "description": "SessionDuration specify total time taken to complete current backup session (sum of backup duration of all targets)",
           "type": "string"
         },
-        "stats": {
-          "description": "Stats shows statistics of individual hosts for this backup session",
+        "targets": {
+          "description": "Targets specify the backup status of individual targets optional",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.HostBackupStats"
+            "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.Target"
           }
-        },
-        "totalHosts": {
-          "description": "TotalHosts specifies total number of hosts that will be backed up for this BackupSession",
-          "type": "integer",
-          "format": "int32"
         }
       }
     },
@@ -11071,6 +11051,31 @@
         "uploaded": {
           "description": "Uploaded indicates size of data uploaded to backend for this snapshot",
           "type": "string"
+        }
+      }
+    },
+    "dev.appscode.stash.stash.apis.stash.v1beta1.Target": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "description": "Phase indicates backup phase of this target",
+          "type": "string"
+        },
+        "ref": {
+          "description": "Ref refers to the backup target",
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.TargetRef"
+        },
+        "stats": {
+          "description": "Stats shows statistics of individual hosts for this backup session",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.HostBackupStats"
+          }
+        },
+        "totalHosts": {
+          "description": "TotalHosts specifies total number of hosts for this target that will be backed up for a BackupSession",
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

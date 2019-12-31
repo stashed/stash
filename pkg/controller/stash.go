@@ -108,18 +108,28 @@ func (c *StashController) applyRestoreLogic(w *wapi.Workload, caller string) (bo
 // and perform operation accordingly
 func (c *StashController) applyBackupLogic(w *wapi.Workload, caller string) (bool, error) {
 	//Don't create repository, BackupConfiguration stuff when the caller is webhook to make the webhooks side effect free.
-	if caller != util.CallerWebhook {
+	if caller != apis.CallerWebhook {
 		// check if the workload has backup annotations and perform respective operation accordingly
 		err := c.applyBackupAnnotationLogic(w)
 		if err != nil {
 			return false, err
 		}
 	}
-	// check if any BackupConfiguration exist for this workload. if exist then inject sidecar container
-	modified, err := c.applyBackupConfigurationLogic(w, caller)
+	// check if any BackupBatch exits for this workload. if exist then inject sidecar container
+	modified, err := c.applyBackupBatchLogic(w, caller)
 	if err != nil {
 		return false, err
 	}
+
+	// if no BackupBatch is configured then check any BackupConfiguration exist for this workload.
+	// if exist then inject sidecar container
+	if !modified {
+		modified, err = c.applyBackupConfigurationLogic(w, caller)
+		if err != nil {
+			return false, err
+		}
+	}
+
 	// if no BackupConfiguration is configured then check if Restic is configured (backward compatibility)
 	if !modified {
 		return c.applyResticLogic(w, caller)

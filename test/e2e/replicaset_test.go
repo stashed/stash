@@ -22,7 +22,6 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -107,7 +106,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -135,7 +134,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -163,7 +162,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -175,7 +174,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			err = f.DeleteRestic(restic.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldStopBackupIfLabelChanged = func() {
@@ -192,7 +191,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -209,7 +208,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldStopBackupIfSelectorChanged = func() {
@@ -226,7 +225,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -246,7 +245,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
-			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldElectLeaderAndBackupRS = func() {
@@ -264,7 +263,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for leader election")
 			f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet, api.ResourceKindRestic)
@@ -296,7 +295,7 @@ var _ = XDescribe("ReplicaSet", func() {
 
 			// sidecar should be added as soon as rs created, we don't need to wait for it
 			By("Checking sidecar created")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -320,7 +319,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar not added")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldRejectToCreateNewReplicaSet = func() {
@@ -355,7 +354,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -373,7 +372,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldAddSidecarInstantly = func() {
@@ -394,7 +393,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar not added")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + rs.Name)
 			obj, _, err = apps_util.PatchReplicaSet(f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
@@ -404,7 +403,7 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -664,7 +663,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.ScaledownCronPrefix + restic.Name
+				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -681,7 +680,7 @@ var _ = XDescribe("ReplicaSet", func() {
 					f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(1))
 
 					By("Waiting for init-container")
-					f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveInitContainer(apis.StashContainer))
 
 					By("Waiting for Repository CRD")
 					f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -726,7 +725,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.ScaledownCronPrefix + restic.Name
+				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -743,7 +742,7 @@ var _ = XDescribe("ReplicaSet", func() {
 					f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(1))
 
 					By("Waiting for init-container")
-					f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveInitContainer(apis.StashContainer))
 
 					By("Waiting for Repository CRD")
 					f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -796,7 +795,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -877,7 +876,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -930,7 +929,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -977,7 +976,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rs with recovered volume")
 				rs.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -1030,7 +1029,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -1077,7 +1076,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rs with recovered volume")
 				rs.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -1133,7 +1132,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
@@ -1185,7 +1184,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rs with recovered volume")
 				rs.Name = recoveryNamespace.Name

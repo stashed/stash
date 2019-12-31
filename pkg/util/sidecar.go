@@ -21,7 +21,6 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/docker"
 
 	"github.com/appscode/go/types"
@@ -40,7 +39,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 		}
 	}
 	sidecar := core.Container{
-		Name:  StashContainer,
+		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"backup",
@@ -83,11 +82,11 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      ScratchDirVolumeName,
+				Name:      apis.ScratchDirVolumeName,
 				MountPath: "/tmp",
 			},
 			{
-				Name:      PodinfoVolumeName,
+				Name:      apis.PodinfoVolumeName,
 				MountPath: "/etc/stash",
 			},
 		},
@@ -100,21 +99,24 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 		})
 	}
 	if r.Spec.Backend.Local != nil {
-		_, mnt := r.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
+		_, mnt := r.Spec.Backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, mnt)
 	}
 	return sidecar
 }
 
-func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *store.Backend, image docker.Docker) core.Container {
+func NewBackupSidecarContainer(invoker apis.Invoker, targetInfo apis.TargetInfo, backend *store.Backend, image docker.Docker) core.Container {
 	sidecar := core.Container{
-		Name:  StashContainer,
+		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"run-backup",
-			"--backupconfiguration=" + bc.Name,
-			"--secret-dir=" + StashSecretMountDir,
-			fmt.Sprintf("--enable-cache=%v", !bc.Spec.TempDir.DisableCaching),
+			"--invoker-name=" + invoker.ObjectMeta.Name,
+			"--invoker-type=" + invoker.ObjectRef.Kind,
+			"--target-name=" + targetInfo.Target.Ref.Name,
+			"--target-kind=" + targetInfo.Target.Ref.Kind,
+			"--secret-dir=" + apis.StashSecretMountDir,
+			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", backend.MaxConnections()),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + PushgatewayURL(),
@@ -123,7 +125,7 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 		}, cli.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
-				Name: KeyNodeName,
+				Name: apis.KeyNodeName,
 				ValueFrom: &core.EnvVarSource{
 					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "spec.nodeName",
@@ -131,7 +133,7 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 				},
 			},
 			{
-				Name: KeyPodName,
+				Name: apis.KeyPodName,
 				ValueFrom: &core.EnvVarSource{
 					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "metadata.name",
@@ -141,12 +143,12 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      PodinfoVolumeName,
+				Name:      apis.PodinfoVolumeName,
 				MountPath: "/etc/stash",
 			},
 			{
-				Name:      StashSecretVolume,
-				MountPath: StashSecretMountDir,
+				Name:      apis.StashSecretVolume,
+				MountPath: apis.StashSecretMountDir,
 			},
 		},
 	}
@@ -154,8 +156,8 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 	// mount tmp volume
 	sidecar.VolumeMounts = UpsertTmpVolumeMount(sidecar.VolumeMounts)
 
-	// mount the volumes specified in BackupConfiguration this sidecar
-	for _, srcVol := range bc.Spec.Target.VolumeMounts {
+	// mount the volumes specified in invoker this sidecar
+	for _, srcVol := range targetInfo.Target.VolumeMounts {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, core.VolumeMount{
 			Name:      srcVol.Name,
 			MountPath: srcVol.MountPath,
@@ -164,12 +166,12 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 	}
 	// if Repository uses local volume as backend, we have to mount it inside the sidecar
 	if backend.Local != nil {
-		_, mnt := backend.Local.ToVolumeAndMount(LocalVolumeName)
+		_, mnt := backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, mnt)
 	}
-	// pass container runtime settings from BackupConfiguration to sidecar
-	if bc.Spec.RuntimeSettings.Container != nil {
-		sidecar = ofst_util.ApplyContainerRuntimeSettings(sidecar, *bc.Spec.RuntimeSettings.Container)
+	// pass container runtime settings from invoker to sidecar
+	if targetInfo.RuntimeSettings.Container != nil {
+		sidecar = ofst_util.ApplyContainerRuntimeSettings(sidecar, *targetInfo.RuntimeSettings.Container)
 	}
 	return sidecar
 }

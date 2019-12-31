@@ -24,7 +24,6 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -82,7 +81,10 @@ var _ = Describe("PreRestore Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup of the Sample Data
-					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+						Name: backupConfig.Name,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has succeeded")
@@ -108,7 +110,7 @@ var _ = Describe("PreRestore Hook", func() {
 								Exec: &core.ExecAction{
 									Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
 								},
-								ContainerName: util.StashInitContainer,
+								ContainerName: apis.StashInitContainer,
 							},
 						}
 					})
@@ -151,7 +153,10 @@ var _ = Describe("PreRestore Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup of the Sample Data
-					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+						Name: backupConfig.Name,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has succeeded")
@@ -175,7 +180,7 @@ var _ = Describe("PreRestore Hook", func() {
 								Exec: &core.ExecAction{
 									Command: []string{"/bin/sh", "-c", "exit 1"},
 								},
-								ContainerName: util.StashInitContainer,
+								ContainerName: apis.StashInitContainer,
 							},
 						}
 					})
@@ -234,7 +239,10 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup of the Sample Data
-						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+							Name: backupConfig.Name,
+							Kind: v1beta1.ResourceKindBackupConfiguration,
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
@@ -304,7 +312,10 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup of the Sample Data
-						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+							Name: backupConfig.Name,
+							Kind: v1beta1.ResourceKindBackupConfiguration,
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
@@ -410,7 +421,10 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup of the Sample Data
-						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+							Name: backupConfig.Name,
+							Kind: v1beta1.ResourceKindBackupConfiguration,
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
@@ -511,7 +525,10 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup of the Sample Data
-						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+							Name: backupConfig.Name,
+							Kind: v1beta1.ResourceKindBackupConfiguration,
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")

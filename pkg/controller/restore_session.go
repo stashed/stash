@@ -117,7 +117,7 @@ func (c *StashController) applyRestoreSessionReconciliationLogic(restoreSession 
 		// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
 		// remove respective init-container and finally remove finalizer
 		if core_util.HasFinalizer(restoreSession.ObjectMeta, api_v1beta1.StashKey) {
-			if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
+			if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == apis.ModelSidecar {
 				// send event to workload controller. workload controller will take care of removing restore init-container
 				err := c.sendEventToWorkloadQueue(
 					restoreSession.Spec.Target.Ref.Kind,
@@ -181,7 +181,7 @@ func (c *StashController) applyRestoreSessionReconciliationLogic(restoreSession 
 		}
 
 		// if target is kubernetes workload i.e. Deployment, StatefulSet etc. then inject restore init-container
-		if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
+		if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == apis.ModelSidecar {
 			// send event to workload controller. workload controller will take care of injecting restore init-container
 			err := c.sendEventToWorkloadQueue(
 				restoreSession.Spec.Target.Ref.Kind,
@@ -356,7 +356,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		restoreJobTemplate.Spec = util.AttachPVC(restoreJobTemplate.Spec, volumes, restoreSession.Spec.Target.VolumeMounts)
 
 		ordinalEnv := core.EnvVar{
-			Name:  util.KeyPodOrdinal,
+			Name:  apis.KeyPodOrdinal,
 			Value: fmt.Sprintf("%d", ordinal),
 		}
 
@@ -449,7 +449,7 @@ func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.Restore
 	}
 	taskResolver.RuntimeSettings.Pod.SecurityContext = util.UpsertPodSecurityContext(defaultSecurityContext, taskResolver.RuntimeSettings.Pod.SecurityContext)
 
-	podSpec, err := taskResolver.GetPodSpec()
+	podSpec, err := taskResolver.GetPodSpec("", "", "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -584,7 +584,7 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 	// send restore session specific metrics
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: util.PushgatewayLocalURL,
+		PushgatewayURL: apis.PushgatewayLocalURL,
 		JobName:        PromJobRestoreSessionController,
 	}
 	return metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
@@ -614,7 +614,7 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	// send restore session specific metrics
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: util.PushgatewayLocalURL,
+		PushgatewayURL: apis.PushgatewayLocalURL,
 		JobName:        PromJobRestoreSessionController,
 	}
 	err = metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)

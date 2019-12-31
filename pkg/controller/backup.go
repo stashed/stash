@@ -111,17 +111,22 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 	// this means BackupConfiguration has been newly created/updated.
 	// in this case, we have to add/update sidecar container accordingly.
 	if newbc != nil && !util.BackupConfigurationEqual(oldbc, newbc) {
-		err := c.ensureBackupSidecar(w, newbc, caller)
-		// write sidecar injection failure/success event
-		ref, rerr := util.GetWorkloadReference(w)
-		if err != nil && rerr != nil {
-			return false, err
-		} else if err != nil && rerr == nil {
-			return false, c.handleSidecarInjectionFailure(ref, err)
-		} else if err == nil && rerr != nil {
-			return true, nil
+		invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupConfiguration, newbc.Name, newbc.Namespace)
+		if err != nil {
+			return true, err
 		}
-		return true, c.handleSidecarInjectionSuccess(ref)
+		for _, targetInfo := range invoker.TargetsInfo {
+			if targetInfo.Target != nil &&
+				targetInfo.Target.Ref.Kind == w.Kind &&
+				targetInfo.Target.Ref.Name == w.Name {
+				err = c.ensureBackupSidecar(w, invoker, targetInfo, caller)
+				if err != nil {
+					return false, c.handleSidecarInjectionFailure(w, err)
+				}
+				break
+			}
+		}
+		return true, c.handleSidecarInjectionSuccess(w)
 
 	} else if oldbc != nil && newbc == nil {
 		// there was BackupConfiguration before but it does not exist now.
@@ -130,11 +135,55 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 		// and remove respective annotations from the workload.
 		c.ensureBackupSidecarDeleted(w)
 		// write sidecar deletion failure/success event
-		ref, rerr := util.GetWorkloadReference(w)
-		if rerr != nil {
-			return true, nil
+		return true, c.handleSidecarDeletionSuccess(w)
+	}
+	return false, nil
+}
+
+func (c *StashController) applyBackupBatchLogic(w *wapi.Workload, caller string) (bool, error) {
+	// detect old BackupBatch from annotations if it does exist.
+	oldbb, err := util.GetAppliedBackupBatch(w.Annotations)
+	if err != nil {
+		return false, err
+	}
+	// find existing BackupBatch for this workload
+	newbb, err := util.FindBackupBatch(c.backupBatchLister, w)
+	if err != nil {
+		return false, err
+	}
+	// if BackupBatch currently exist for this workload but it is not same as old one,
+	// this means BackupBatch has been newly created/updated.
+	// in this case, we have to add/update sidecar container accordingly.
+	if newbb != nil && !util.BackupBatchEqual(oldbb, newbb) {
+		for _, member := range newbb.Spec.Members {
+			if member.Target != nil && member.Target.Ref.Kind == w.Kind && member.Target.Ref.Name == w.Name {
+				invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupBatch, newbb.Name, newbb.Namespace)
+				if err != nil {
+					return true, err
+				}
+				for _, targetInfo := range invoker.TargetsInfo {
+					if targetInfo.Target != nil &&
+						targetInfo.Target.Ref.Kind == w.Kind &&
+						targetInfo.Target.Ref.Name == w.Name {
+						err = c.ensureBackupSidecar(w, invoker, targetInfo, caller)
+						if err != nil {
+							return false, c.handleSidecarInjectionFailure(w, err)
+						}
+						break
+					}
+				}
+				// write sidecar injection failure/success event
+				return true, c.handleSidecarInjectionSuccess(w)
+			}
 		}
-		return true, c.handleSidecarDeletionSuccess(ref)
+	} else if oldbb != nil && newbb == nil {
+		// there was BackupBatch before but it does not exist now.
+		// this means BackupBatch has been removed.
+		// in this case, we have to delete the backup sidecar container
+		// and remove respective annotations from the workload.
+		c.ensureBackupSidecarDeleted(w)
+		// write sidecar deletion failure/success event
+		return true, c.handleSidecarDeletionSuccess(w)
 	}
 	return false, nil
 }

@@ -53,6 +53,7 @@ const (
 
 	// ====================== Event Sources ===================================
 	EventSourceBackupConfigurationController = "BackupConfiguration Controller"
+	EventSourceBackupBatchController         = "BackupBatch Controller"
 	EventSourceBackupSessionController       = "BackupSession Controller"
 	EventSourceRestoreSessionController      = "RestoreSession Controller"
 	EventSourceWorkloadController            = "Workload Controller"

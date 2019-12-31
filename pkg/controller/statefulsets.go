@@ -50,7 +50,7 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
 				// apply stash backup/restore logic on this workload
-				modified, err := c.applyStashLogic(w, util.CallerWebhook)
+				modified, err := c.applyStashLogic(w, apis.CallerWebhook)
 				if err != nil {
 					return w, err
 				}
@@ -66,7 +66,7 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
 				// apply stash backup/restore logic on this workload
-				modified, err := c.applyStashLogic(w, util.CallerWebhook)
+				modified, err := c.applyStashLogic(w, apis.CallerWebhook)
 				if err != nil {
 					return w, err
 				}
@@ -128,7 +128,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		}
 
 		// apply stash backup/restore logic on this workload
-		modified, err := c.applyStashLogic(w, util.CallerController)
+		modified, err := c.applyStashLogic(w, apis.CallerController)
 		if err != nil {
 			glog.Errorf("failed to apply stash logic on StatefulSet %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
 			return err

@@ -85,7 +85,10 @@ var _ = Describe("Auto-Backup", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+					Name: backupConfig.Name,
+					Kind: v1beta1.ResourceKindBackupConfiguration,
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
@@ -132,7 +135,10 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup of the Sample Data
-					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+						Name: backupConfig.Name,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
@@ -173,7 +179,10 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup of the Sample Data
-					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+						Name: backupConfig.Name,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")

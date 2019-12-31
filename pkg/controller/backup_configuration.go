@@ -33,7 +33,6 @@ import (
 	"github.com/golang/glog"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
@@ -70,7 +69,11 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 	backupConfiguration := obj.(*api_v1beta1.BackupConfiguration)
 	glog.Infof("Sync/Add/Update for BackupConfiguration %s", backupConfiguration.GetName())
 	// process syc/add/update event
-	err = c.applyBackupConfigurationReconciliationLogic(backupConfiguration)
+	invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupConfiguration, backupConfiguration.Name, backupConfiguration.Namespace)
+	if err != nil {
+		return err
+	}
+	err = c.applyBackupInvokerReconciliationLogic(invoker)
 	if err != nil {
 		return err
 	}
@@ -81,63 +84,51 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 		in.ObservedGeneration = backupConfiguration.Generation
 		return in
 	})
-
 	return err
 }
 
-func (c *StashController) applyBackupConfigurationReconciliationLogic(backupConfiguration *api_v1beta1.BackupConfiguration) error {
-	// check if BackupConfiguration is being deleted. if it is being deleted then delete respective resources.
-	if backupConfiguration.DeletionTimestamp != nil {
-		if core_util.HasFinalizer(backupConfiguration.ObjectMeta, api_v1beta1.StashKey) {
-			if err := c.EnsureV1beta1SidecarDeleted(backupConfiguration); err != nil {
-				ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-				if rerr != nil {
-					return errors.NewAggregate([]error{err, rerr})
+func (c *StashController) applyBackupInvokerReconciliationLogic(invoker apis.Invoker) error {
+	// check if BackupBatch is being deleted. if it is being deleted then delete respective resources.
+	if invoker.ObjectMeta.DeletionTimestamp != nil {
+		if core_util.HasFinalizer(invoker.ObjectMeta, api_v1beta1.StashKey) {
+			for _, targetInfo := range invoker.TargetsInfo {
+				if targetInfo.Target != nil {
+					err := c.EnsureV1beta1SidecarDeleted(targetInfo.Target.Ref, invoker.ObjectMeta.Namespace)
+					if err != nil {
+						return c.handleWorkloadControllerTriggerFailure(invoker.ObjectRef, err)
+					}
 				}
-				return c.handleWorkloadControllerTriggerFailure(ref, err)
 			}
-			if err := c.EnsureCronJobDeleted(backupConfiguration); err != nil {
+
+			if err := c.EnsureBackupTriggeringCronJobDeleted(invoker); err != nil {
 				return err
 			}
 			// Remove finalizer
-			_, _, err := v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
-				in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-				return in
-
-			})
-			if err != nil {
-				return err
-			}
+			return invoker.RemoveFinalizer()
 		}
 	} else {
-		// add a finalizer so that we can remove respective resources before this BackupConfiguration is deleted
-		_, _, err := v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
-			in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-			return in
-		})
+		err := invoker.AddFinalizer()
 		if err != nil {
 			return err
 		}
-		// skip if BackupConfiguration paused
-		if backupConfiguration.Spec.Paused {
-			log.Infof("Skipping processing BackupConfiguration %s/%s. Reason: Backup Configuration is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
+		// skip if BackupBatch paused
+		if invoker.Paused {
+			log.Infof("Skipping processing for invoker %s %s/%s. Reason: The invoker is paused.", invoker.ObjectRef.Kind, invoker.ObjectMeta.Namespace, invoker.ObjectMeta.Name)
 			return nil
 		}
-		if backupConfiguration.Spec.Target != nil &&
-			backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
-			util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
-			if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
-				ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-				if rerr != nil {
-					return errors.NewAggregate([]error{err, rerr})
+
+		for _, targetInfo := range invoker.TargetsInfo {
+			if targetInfo.Target != nil && invoker.Driver != api_v1beta1.VolumeSnapshotter &&
+				util.BackupModel(targetInfo.Target.Ref.Kind) == apis.ModelSidecar {
+				if err := c.EnsureV1beta1Sidecar(targetInfo.Target.Ref, invoker.ObjectMeta.Namespace); err != nil {
+					return c.handleWorkloadControllerTriggerFailure(invoker.ObjectRef, err)
 				}
-				return c.handleWorkloadControllerTriggerFailure(ref, err)
 			}
 		}
 		// create a CronJob that will create BackupSession on each schedule
-		err = c.EnsureCronJob(backupConfiguration)
+		err = c.EnsureBackupTriggeringCronJob(invoker)
 		if err != nil {
-			return c.handleCronJobCreationFailure(backupConfiguration, err)
+			return c.handleCronJobCreationFailure(invoker.ObjectRef, err)
 		}
 	}
 	return nil
@@ -145,32 +136,21 @@ func (c *StashController) applyBackupConfigurationReconciliationLogic(backupConf
 
 // EnsureV1beta1SidecarDeleted send an event to workload respective controller
 // the workload controller will take care of removing respective sidecar
-func (c *StashController) EnsureV1beta1SidecarDeleted(backupConfiguration *api_v1beta1.BackupConfiguration) error {
-	if backupConfiguration == nil {
-		return fmt.Errorf("BackupConfiguration is nil")
-	}
-
-	if backupConfiguration.Spec.Target != nil {
-		return c.sendEventToWorkloadQueue(
-			backupConfiguration.Spec.Target.Ref.Kind,
-			backupConfiguration.Namespace,
-			backupConfiguration.Spec.Target.Ref.Name,
-		)
-	}
-	return nil
+func (c *StashController) EnsureV1beta1SidecarDeleted(targetRef api_v1beta1.TargetRef, namespace string) error {
+	return c.sendEventToWorkloadQueue(
+		targetRef.Kind,
+		namespace,
+		targetRef.Name,
+	)
 }
 
 // EnsureV1beta1Sidecar send an event to workload respective controller
 // the workload controller will take care of injecting backup sidecar
-func (c *StashController) EnsureV1beta1Sidecar(backupConfiguration *api_v1beta1.BackupConfiguration) error {
-	if backupConfiguration == nil {
-		return fmt.Errorf("BackupConfiguration is nil")
-	}
-
+func (c *StashController) EnsureV1beta1Sidecar(targetRef api_v1beta1.TargetRef, namespace string) error {
 	return c.sendEventToWorkloadQueue(
-		backupConfiguration.Spec.Target.Ref.Kind,
-		backupConfiguration.Namespace,
-		backupConfiguration.Spec.Target.Ref.Name,
+		targetRef.Kind,
+		namespace,
+		targetRef.Name,
 	)
 }
 
@@ -229,15 +209,10 @@ func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resourceName
 	return nil
 }
 
-// EnsureCronJob creates a Kubernetes CronJob for a BackupConfiguration object
+// EnsureBackupTriggeringCronJob creates a Kubernetes CronJob for the respective backup invoker
 // the CornJob will create a BackupSession object in each schedule
 // respective BackupSession controller will watch this BackupSession object and take backup instantly
-func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupConfiguration) error {
-	offshootLabels := backupConfiguration.OffshootLabels()
-
-	if backupConfiguration == nil {
-		return fmt.Errorf("BackupConfiguration is nil")
-	}
+func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) error {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -245,26 +220,23 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      getBackupCronJobName(backupConfiguration),
-		Namespace: backupConfiguration.Namespace,
-		Labels:    offshootLabels,
+		Name:      getBackupCronJobName(invoker.ObjectMeta.Name),
+		Namespace: invoker.ObjectMeta.Namespace,
+		Labels:    invoker.Labels,
 	}
 
-	owner := metav1.NewControllerRef(backupConfiguration, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
-
-	// if RBAC is enabled then ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
+	// ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
 	var serviceAccountName string
 
-	if backupConfiguration.Spec.RuntimeSettings.Pod != nil &&
-		backupConfiguration.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
+	if invoker.RuntimeSettings.Pod != nil && invoker.RuntimeSettings.Pod.ServiceAccountName != "" {
 		// ServiceAccount has been specified, so use it.
-		serviceAccountName = backupConfiguration.Spec.RuntimeSettings.Pod.ServiceAccountName
+		serviceAccountName = invoker.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object.
 		serviceAccountName = meta.Name
 
 		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 			return in
 		})
 		if err != nil {
@@ -273,30 +245,30 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	}
 
 	// now ensure RBAC stuff for this CronJob
-	err := stash_rbac.EnsureCronJobRBAC(c.kubeClient, owner, backupConfiguration.Namespace, serviceAccountName, c.getBackupSessionCronJobPSPNames(), offshootLabels)
+	err := stash_rbac.EnsureCronJobRBAC(c.kubeClient, invoker.OwnerRef, invoker.ObjectMeta.Namespace, serviceAccountName, c.getBackupSessionCronJobPSPNames(), invoker.Labels)
 	if err != nil {
 		return err
 	}
 
 	_, _, err = batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
-		//set backup-configuration as cron-job owner
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+		//set backup invoker object as cron-job owner
+		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 
-		in.Spec.Schedule = backupConfiguration.Spec.Schedule
-		in.Spec.JobTemplate.Labels = offshootLabels
+		in.Spec.Schedule = invoker.Schedule
+		in.Spec.JobTemplate.Labels = invoker.Labels
 		// ensure that job gets deleted on completion
 		in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
 
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
 			core.Container{
-				Name:            util.StashContainer,
+				Name:            apis.StashContainer,
 				ImagePullPolicy: core.PullIfNotPresent,
 				Image:           image.ToContainerImage(),
 				Args: []string{
 					"create-backupsession",
-					fmt.Sprintf("--backupconfiguration=%s", backupConfiguration.Name),
-					fmt.Sprintf("--namespace=%s", backupConfiguration.Namespace),
+					fmt.Sprintf("--invoker-name=%s", invoker.OwnerRef.Name),
+					fmt.Sprintf("--invoker-type=%s", invoker.OwnerRef.Kind),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
@@ -309,42 +281,52 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	return err
 }
 
-// EnsureCronJobDelete ensure that respective CronJob of a BackupConfiguration has it as owner.
+// EnsureBackupTriggeringCronJobDeleted ensure that the CronJob of the respective backup invoker has it as owner.
 // Kuebernetes garbage collector will take care of removing the CronJob
-func (c *StashController) EnsureCronJobDeleted(backupConfiguration *api_v1beta1.BackupConfiguration) error {
-	owner := metav1.NewControllerRef(backupConfiguration, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
-
-	cur, err := c.kubeClient.BatchV1beta1().CronJobs(backupConfiguration.Namespace).Get(getBackupCronJobName(backupConfiguration), metav1.GetOptions{})
+func (c *StashController) EnsureBackupTriggeringCronJobDeleted(invoker apis.Invoker) error {
+	cur, err := c.kubeClient.BatchV1beta1().CronJobs(invoker.ObjectMeta.Namespace).Get(getBackupCronJobName(invoker.ObjectMeta.Name), metav1.GetOptions{})
 	if err != nil {
-		if kerr.IsNotFound(err) {
-			return nil
-		}
 		return err
 	}
-
 	_, _, err = batch_util.PatchCronJob(c.kubeClient, cur, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 		return in
 	})
 	return err
 }
 
-func getBackupCronJobName(backupConfiguration *api_v1beta1.BackupConfiguration) string {
-	return strings.ReplaceAll(backupConfiguration.Name, ".", "-")
+func getBackupCronJobName(name string) string {
+	return strings.ReplaceAll(name, ".", "-")
 }
 
-func (c *StashController) handleCronJobCreationFailure(backupConfig *api_v1beta1.BackupConfiguration, err error) error {
-	log.Warningf("failed to ensure cron job for BackupConfiguration %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err)
-
-	// write event to BackupConfiguration
+func (c *StashController) handleCronJobCreationFailure(obj interface{}, err error) error {
+	var (
+		eventComponent string
+		invokerRef     *core.ObjectReference
+		rerr           error
+	)
+	switch b := obj.(type) {
+	case *api_v1beta1.BackupConfiguration:
+		eventComponent = eventer.EventSourceBackupConfigurationController
+		invokerRef, rerr = reference.GetReference(stash_scheme.Scheme, b)
+		if err != nil {
+			return errors.NewAggregate([]error{err, rerr})
+		}
+	case *api_v1beta1.BackupBatch:
+		eventComponent = eventer.EventSourceBackupBatchController
+		invokerRef, rerr = reference.GetReference(stash_scheme.Scheme, b)
+		if err != nil {
+			return errors.NewAggregate([]error{err, rerr})
+		}
+	}
+	// write event to Backup invoker
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
-		eventer.EventSourceBackupConfigurationController,
-		backupConfig,
+		eventComponent,
+		invokerRef,
 		core.EventTypeWarning,
 		eventer.EventReasonCronJobCreationFailed,
-		fmt.Sprintf("failed to ensure CronJob for BackupConfiguration  %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err),
-	)
+		fmt.Sprintf("failed to ensure CronJob for Backup invoker  %s/%s. Reason: %v", invokerRef.Namespace, invokerRef.Name, err))
 	return errors.NewAggregate([]error{err, err2})
 }
 
@@ -353,13 +335,15 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.Objec
 	switch ref.Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:
 		eventSource = eventer.EventSourceBackupConfigurationController
+	case api_v1beta1.ResourceKindBackupBatch:
+		eventSource = eventer.EventSourceBackupBatchController
 	case api_v1beta1.ResourceKindRestoreSession:
 		eventSource = eventer.EventSourceRestoreSessionController
 	}
 
 	log.Warningf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
-	// write event to BackupConfiguration/RestoreSession
+	// write event to backup invoker/RestoreSession
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
 		eventSource,

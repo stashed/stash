@@ -35,9 +35,10 @@ import (
 
 // GetAppliedBackupConfiguration check whether BackupConfiguration was applied as annotation and returns the object definition if exist.
 func GetAppliedBackupConfiguration(m map[string]string) (*v1beta1_api.BackupConfiguration, error) {
-	data := GetString(m, v1beta1_api.KeyLastAppliedBackupConfiguration)
+	data := GetString(m, v1beta1_api.KeyLastAppliedBackupInvoker)
+	invokerKind := GetString(m, v1beta1_api.KeyLastAppliedBackupInvokerKind)
 
-	if data == "" {
+	if data == "" || invokerKind != v1beta1_api.ResourceKindBackupConfiguration {
 		return nil, nil
 	}
 	obj, err := meta.UnmarshalFromJSON([]byte(data), v1beta1_api.SchemeGroupVersion)
@@ -46,7 +47,7 @@ func GetAppliedBackupConfiguration(m map[string]string) (*v1beta1_api.BackupConf
 	}
 	backupConfiguration, ok := obj.(*v1beta1_api.BackupConfiguration)
 	if !ok {
-		return nil, fmt.Errorf("%s annotations has invalid BackupConfiguration object", v1beta1_api.KeyLastAppliedBackupConfiguration)
+		return nil, fmt.Errorf("%s annotations has invalid invoker object", v1beta1_api.KeyLastAppliedBackupInvoker)
 	}
 	return backupConfiguration, nil
 }

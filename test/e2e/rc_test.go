@@ -22,7 +22,6 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -105,7 +104,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -133,7 +132,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -161,7 +160,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -174,7 +173,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldStopBackupIfLabelChanged = func() {
@@ -191,7 +190,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -209,7 +208,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldStopBackupIfSelectorChanged = func() {
@@ -226,7 +225,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -246,7 +245,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldElectLeaderAndBackupRC = func() {
@@ -266,7 +265,7 @@ var _ = XDescribe("ReplicationController", func() {
 			f.CheckLeaderElection(rc.ObjectMeta, apis.KindReplicationController, api.ResourceKindRestic)
 
 			By("Waiting for sidecar")
-			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -295,7 +294,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 			// sidecar should be added as soon as rc created, we don't need to wait for it
 			By("Checking sidecar created")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -319,7 +318,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar not added")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldRejectToCreateNewReplicationController = func() {
@@ -354,7 +353,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -372,7 +371,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 		}
 
 		shouldAddSidecarInstantly = func() {
@@ -393,7 +392,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar not added")
-			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + rc.Name)
 			obj, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
@@ -403,7 +402,7 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
-			Expect(obj).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(apis.StashContainer))
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -663,7 +662,7 @@ var _ = XDescribe("ReplicationController", func() {
 				_, err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.ScaledownCronPrefix + restic.Name
+				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -680,7 +679,7 @@ var _ = XDescribe("ReplicationController", func() {
 					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(1))
 
 					By("Waiting for init-container")
-					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveInitContainer(apis.StashContainer))
 
 					By("Waiting for Repository CRD")
 					f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -725,7 +724,7 @@ var _ = XDescribe("ReplicationController", func() {
 				_, err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.ScaledownCronPrefix + restic.Name
+				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -742,7 +741,7 @@ var _ = XDescribe("ReplicationController", func() {
 					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(1))
 
 					By("Waiting for init-container")
-					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveInitContainer(apis.StashContainer))
 
 					By("Waiting for Repository CRD")
 					f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -795,7 +794,7 @@ var _ = XDescribe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -876,7 +875,7 @@ var _ = XDescribe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -930,7 +929,7 @@ var _ = XDescribe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -977,7 +976,7 @@ var _ = XDescribe("ReplicationController", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rc with recovered volume")
 				rc.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -1033,7 +1032,7 @@ var _ = XDescribe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -1080,7 +1079,7 @@ var _ = XDescribe("ReplicationController", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rc with recovered volume")
 				rc.Spec.Template.Spec.Volumes = f.RecoveredVolume()
@@ -1137,7 +1136,7 @@ var _ = XDescribe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
-				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(apis.StashContainer))
 
 				By("Waiting for Repository CRD")
 				f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
@@ -1189,7 +1188,7 @@ var _ = XDescribe("ReplicationController", func() {
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
-				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+				f.DeleteJobAndDependents(apis.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rc with recovered volume")
 				rc.Namespace = recoveryNamespace.Name

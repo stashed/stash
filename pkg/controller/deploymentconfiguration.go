@@ -52,14 +52,14 @@ func (c *StashController) NewDeploymentConfigWebhook() hooks.AdmissionHook {
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
 				// apply stash backup/restore logic on this workload
-				_, err := c.applyStashLogic(w, util.CallerWebhook)
+				_, err := c.applyStashLogic(w, apis.CallerWebhook)
 				return w, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
 				// apply stash backup/restore logic on this workload
-				_, err := c.applyStashLogic(w, util.CallerWebhook)
+				_, err := c.applyStashLogic(w, apis.CallerWebhook)
 				return w, err
 			},
 		},
@@ -115,7 +115,7 @@ func (c *StashController) runDeploymentConfigProcessor(key string) error {
 		}
 
 		// apply stash backup/restore logic on this workload
-		modified, err := c.applyStashLogic(w, util.CallerController)
+		modified, err := c.applyStashLogic(w, apis.CallerController)
 		if err != nil {
 			glog.Errorf("failed to apply stash logic on DeploymentConfig %s/%s. Reason: %v", dc.Namespace, dc.Name, err)
 			return err

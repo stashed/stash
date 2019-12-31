@@ -24,9 +24,10 @@ const (
 	KeyTargetPaths     = StashKey + "/target-paths"
 	KeyVolumeMounts    = StashKey + "/volume-mounts"
 
-	KeyLastAppliedRestoreSession      = StashKey + "/last-applied-restoresession"
-	KeyLastAppliedBackupConfiguration = StashKey + "/last-applied-backupconfiguration"
+	KeyLastAppliedRestoreSession    = StashKey + "/last-applied-restoresession"
+	KeyLastAppliedBackupInvoker     = StashKey + "/last-applied-backup-invoker"
+	KeyLastAppliedBackupInvokerKind = StashKey + "/last-applied-backup-invoker-kind"
 
-	AppliedBackupConfigurationSpecHash = StashKey + "/last-applied-backupconfiguration-hash"
-	AppliedRestoreSessionSpecHash      = StashKey + "/last-applied-restoresession-hash"
+	AppliedBackupInvokerSpecHash  = StashKey + "/last-applied-backup-invoker-hash"
+	AppliedRestoreSessionSpecHash = StashKey + "/last-applied-restoresession-hash"
 )

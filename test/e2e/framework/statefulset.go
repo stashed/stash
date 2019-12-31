@@ -19,7 +19,7 @@ package framework
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/pkg/util"
+	"stash.appscode.dev/stash/apis"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
@@ -155,7 +155,7 @@ func (f *Invocation) WaitUntilStatefulSetReadyWithSidecar(meta metav1.ObjectMeta
 				for i := range pods {
 					hasSidecar := false
 					for _, c := range pods[i].Spec.Containers {
-						if c.Name == util.StashContainer {
+						if c.Name == apis.StashContainer {
 							hasSidecar = true
 						}
 					}
@@ -183,7 +183,7 @@ func (f *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMet
 				for i := range pods {
 					hasInitContainer := false
 					for _, c := range pods[i].Spec.InitContainers {
-						if c.Name == util.StashInitContainer {
+						if c.Name == apis.StashInitContainer {
 							hasInitContainer = true
 						}
 					}

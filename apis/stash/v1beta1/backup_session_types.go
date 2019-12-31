@@ -68,17 +68,37 @@ const (
 	HostBackupFailed    HostBackupPhase = "Failed"
 )
 
+type TargetPhase string
+
+const (
+	TargetBackupSucceeded TargetPhase = "Succeeded"
+	TargetBackupRunning   TargetPhase = "Running"
+	TargetBackupFailed    TargetPhase = "Failed"
+)
+
 type BackupSessionStatus struct {
 	// Phase indicates the overall phase of the backup process for this BackupSession. Phase will be "Succeeded" only if
 	// phase of all hosts are "Succeeded". If any of the host fail to complete backup, Phase will be "Failed".
 	// +optional
 	Phase BackupSessionPhase `json:"phase,omitempty" protobuf:"bytes,1,opt,name=phase,casttype=BackupSessionPhase"`
-	// TotalHosts specifies total number of hosts that will be backed up for this BackupSession
+	// SessionDuration specify total time taken to complete current backup session (sum of backup duration of all targets)
+	// +optional
+	SessionDuration string `json:"sessionDuration,omitempty" protobuf:"bytes,2,opt,name=sessionDuration"`
+	// Targets specify the backup status of individual targets
+	// optional
+	Targets []Target `json:"targets,omitempty" protobuf:"bytes,3,rep,name=targets"`
+}
+
+type Target struct {
+	// Ref refers to the backup target
+	// +optional
+	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,1,opt,name=ref"`
+	// TotalHosts specifies total number of hosts for this target that will be backed up for a BackupSession
 	// +optional
 	TotalHosts *int32 `json:"totalHosts,omitempty" protobuf:"varint,2,opt,name=totalHosts"`
-	// SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)
+	// Phase indicates backup phase of this target
 	// +optional
-	SessionDuration string `json:"sessionDuration,omitempty" protobuf:"bytes,3,opt,name=sessionDuration"`
+	Phase TargetPhase `json:"phase,omitempty" protobuf:"bytes,3,opt,name=phase"`
 	// Stats shows statistics of individual hosts for this backup session
 	// +optional
 	Stats []HostBackupStats `json:"stats,omitempty" protobuf:"bytes,4,rep,name=stats"`

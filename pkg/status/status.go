@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	stash_util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
@@ -46,6 +48,7 @@ type UpdateStatusOptions struct {
 	OutputDir      string
 	OutputFileName string
 	Metrics        restic.MetricsOptions
+	TargetRef      v1beta1.TargetRef
 }
 
 func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
@@ -55,7 +58,23 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	if err != nil {
 		return err
 	}
-	return o.UpdatePostBackupStatus(backupOutput)
+	backupSession, err := o.StashClient.StashV1beta1().BackupSessions(o.Namespace).Get(o.BackupSession, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	// get backup Invoker
+	invokerInfo, err := apis.ExtractBackupInvokerInfo(o.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
+	if err != nil {
+		return err
+	}
+	for _, targetInfo := range invokerInfo.TargetsInfo {
+		if targetInfo.Target != nil &&
+			targetInfo.Target.Ref.Kind == o.TargetRef.Kind &&
+			targetInfo.Target.Ref.Name == o.TargetRef.Name {
+			return o.UpdatePostBackupStatus(backupOutput, invokerInfo, targetInfo)
+		}
+	}
+	return nil
 }
 
 func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
@@ -68,7 +87,7 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 	return o.UpdatePostRestoreStatus(restoreOutput)
 }
 
-func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput) error {
+func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput, invoker apis.Invoker, targetInfo apis.TargetInfo) error {
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
 	}
@@ -83,7 +102,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	// add or update entry for each host in BackupSession status + create event
 	for _, hostStats := range backupOutput.HostBackupStats {
 		log.Infof("Updating status of BackupSession: %s/%s for host: %s", backupSession.Namespace, backupSession.Name, hostStats.Hostname)
-		backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), backupSession, hostStats)
+		backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), o.TargetRef, backupSession, hostStats)
 		if err != nil {
 			return err
 		}
@@ -93,11 +112,11 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			overallBackupSucceeded = false
 			eventType = core.EventTypeWarning
 			eventReason = eventer.EventReasonHostBackupFailed
-			eventMessage = fmt.Sprintf("backup failed for host %q. Reason: %s", hostStats.Hostname, hostStats.Error)
+			eventMessage = fmt.Sprintf("backup failed for host %q of %q/%q. Reason: %s", hostStats.Hostname, o.TargetRef.Kind, o.TargetRef.Name, hostStats.Error)
 		} else {
 			eventType = core.EventTypeNormal
 			eventReason = eventer.EventReasonHostBackupSucceded
-			eventMessage = fmt.Sprintf("backup succeeded for host %s", hostStats.Hostname)
+			eventMessage = fmt.Sprintf("backup succeeded for host %s of %q/%q.", hostStats.Hostname, o.TargetRef.Kind, o.TargetRef.Name)
 		}
 		_, err = eventer.CreateEvent(
 			o.KubeClient,
@@ -142,12 +161,9 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		}
 	}
 	// if metrics enabled then send metrics to the Prometheus pushgateway
+
 	if o.Metrics.Enabled {
-		backupConfig, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		return o.Metrics.SendBackupHostMetrics(o.Config, backupConfig, backupOutput)
+		return o.Metrics.SendBackupHostMetrics(o.Config, invoker, targetInfo, backupOutput)
 	}
 	return nil
 }

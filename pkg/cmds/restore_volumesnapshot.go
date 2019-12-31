@@ -21,6 +21,7 @@ import (
 	"os"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/resolve"
@@ -108,7 +109,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	// If preRestore hook is specified, then execute those hooks first
 	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
 		log.Infoln("Executing preRestore hooks........")
-		podName := os.Getenv(util.KeyPodName)
+		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
 		}
@@ -230,7 +231,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	// If postRestore hook is specified, then execute those hooks after restore
 	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
 		log.Infoln("Executing postRestore hooks........")
-		podName := os.Getenv(util.KeyPodName)
+		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
 		}

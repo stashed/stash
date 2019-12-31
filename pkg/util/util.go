@@ -26,7 +26,6 @@ import (
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/restic"
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
@@ -52,13 +51,6 @@ var (
 	ServiceName string
 )
 
-const (
-	CallerWebhook       = "webhook"
-	CallerController    = "controller"
-	PushgatewayLocalURL = "http://localhost:56789"
-	DefaultHost         = "host-0"
-)
-
 type RepoLabelData struct {
 	WorkloadKind string
 	WorkloadName string
@@ -71,27 +63,27 @@ func GetHostName(target interface{}) (string, error) {
 	// target nil for cluster backup
 	var targetRef api_v1beta1.TargetRef
 	if target == nil {
-		return DefaultHost, nil
+		return apis.DefaultHost, nil
 	}
 
 	// read targetRef field from BackupTarget or RestoreTarget
 	switch t := target.(type) {
 	case *api_v1beta1.BackupTarget:
 		if t == nil {
-			return DefaultHost, nil
+			return apis.DefaultHost, nil
 		}
 		targetRef = t.Ref
 	case *api_v1beta1.RestoreTarget:
 		if t == nil {
-			return DefaultHost, nil
+			return apis.DefaultHost, nil
 		}
 
 		// if replicas or volumeClaimTemplate is specified then  restore is done via job.
 		// in this case, we need to know the ordinal to use as host suffix.
 		// stash operator sets desired ordinal as 'POD_ORDINAL' env while creating the job.
 		if t.Replicas != nil || len(t.VolumeClaimTemplates) != 0 {
-			if os.Getenv(KeyPodOrdinal) != "" {
-				return "host-" + os.Getenv(KeyPodOrdinal), nil
+			if os.Getenv(apis.KeyPodOrdinal) != "" {
+				return "host-" + os.Getenv(apis.KeyPodOrdinal), nil
 			}
 			return "", fmt.Errorf("'target.replicas' or 'target.volumeClaimTemplate' has been specified in RestoreSession" +
 				" but 'POD_ORDINAL' env not found")
@@ -104,7 +96,7 @@ func GetHostName(target interface{}) (string, error) {
 	case apis.KindStatefulSet:
 		// for StatefulSet, host name is 'host-<pod ordinal>'. stash operator set pod's name as 'POD_NAME' env
 		// in the sidecar/init-container through downward api. we have to parse the pod name to get ordinal.
-		podName := os.Getenv(KeyPodName)
+		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return "", fmt.Errorf("missing 'POD_NAME' env in StatefulSet: %s", apis.KindStatefulSet)
 		}
@@ -114,25 +106,14 @@ func GetHostName(target interface{}) (string, error) {
 	case apis.KindDaemonSet:
 		// for DaemonSet, host name is the node name. stash operator set the respective node name as 'NODE_NAME' env
 		// in the sidecar/init-container through downward api.
-		nodeName := os.Getenv(KeyNodeName)
+		nodeName := os.Getenv(apis.KeyNodeName)
 		if nodeName == "" {
 			return "", fmt.Errorf("missing 'NODE_NAME' env for DaemonSet: %s", apis.KindDaemonSet)
 		}
 		return nodeName, nil
 	default:
-		return DefaultHost, nil
+		return apis.DefaultHost, nil
 	}
-}
-
-func GetBackupHostName(stashClient cs.Interface, backupConfigName, namespace string) (string, error) {
-	backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(backupConfigName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	if backupConfig.Spec.Target != nil {
-		return GetHostName(backupConfig.Spec.Target)
-	}
-	return restic.DefaultHost, nil
 }
 
 func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace string) (string, error) {
@@ -143,7 +124,7 @@ func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace 
 	if restoreSession.Spec.Target != nil {
 		return GetHostName(restoreSession.Spec.Target)
 	}
-	return restic.DefaultHost, nil
+	return apis.DefaultHost, nil
 }
 
 func PushgatewayURL() string {
@@ -154,9 +135,9 @@ func PushgatewayURL() string {
 func BackupModel(kind string) string {
 	switch kind {
 	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindStatefulSet, apis.KindDaemonSet, apis.KindDeploymentConfig:
-		return ModelSidecar
+		return apis.ModelSidecar
 	default:
-		return ModelCronJob
+		return apis.ModelCronJob
 	}
 }
 
@@ -171,7 +152,7 @@ func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string,
 		return
 	}
 	snapshotId = tokens[len(tokens)-1]
-	if len(snapshotId) != SnapshotIDLength {
+	if len(snapshotId) != apis.SnapshotIDLength {
 		err = errors.New("invalid snapshot name")
 		return
 	}
@@ -248,7 +229,7 @@ func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelDat
 }
 
 func AttachLocalBackend(podSpec core.PodSpec, localSpec store.LocalSpec) core.PodSpec {
-	volume, mount := localSpec.ToVolumeAndMount(LocalVolumeName)
+	volume, mount := localSpec.ToVolumeAndMount(apis.LocalVolumeName)
 	podSpec.Volumes = core_util.UpsertVolume(podSpec.Volumes, volume)
 	for i := range podSpec.InitContainers {
 		podSpec.InitContainers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.InitContainers[i].VolumeMounts, mount)
@@ -402,7 +383,7 @@ func HasStashContainer(w *wapi.Workload) bool {
 func HasStashSidecar(containers []core.Container) bool {
 	// check if the workload has stash sidecar container
 	for _, c := range containers {
-		if c.Name == StashContainer {
+		if c.Name == apis.StashContainer {
 			return true
 		}
 	}
@@ -412,7 +393,7 @@ func HasStashSidecar(containers []core.Container) bool {
 func HasStashInitContainer(containers []core.Container) bool {
 	// check if the workload has stash init-container
 	for _, c := range containers {
-		if c.Name == StashInitContainer {
+		if c.Name == apis.StashInitContainer {
 			return true
 		}
 	}
@@ -536,7 +517,7 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 	return nil
 }
 
-func HookExecutorContainer(name string, shiblings []core.Container) core.Container {
+func HookExecutorContainer(name string, shiblings []core.Container, invokerType, invokerName, targetKind, targetName string) core.Container {
 	hookExecutor := core.Container{
 		Name:  name,
 		Image: "${STASH_DOCKER_REGISTRY:=appscode}/${STASH_DOCKER_IMAGE:=stash}:${STASH_IMAGE_TAG:=latest}",
@@ -544,6 +525,10 @@ func HookExecutorContainer(name string, shiblings []core.Container) core.Contain
 			"run-hook",
 			"--backupsession=${BACKUP_SESSION:=}",
 			"--restoresession=${RESTORE_SESSION:=}",
+			"--invoker-type=" + invokerType,
+			"--invoker-name=" + invokerName,
+			"--target-kind=" + targetKind,
+			"--target-name=" + targetName,
 			"--hook-type=${HOOK_TYPE:=}",
 			"--hostname=${HOSTNAME:=}",
 			"--output-dir=${outputDir:=}",
@@ -553,7 +538,7 @@ func HookExecutorContainer(name string, shiblings []core.Container) core.Contain
 		},
 		Env: []core.EnvVar{
 			{
-				Name: KeyPodName,
+				Name: apis.KeyPodName,
 				ValueFrom: &core.EnvVarSource{
 					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "metadata.name",

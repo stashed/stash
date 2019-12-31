@@ -54,41 +54,46 @@ message BackupBatchList {
 }
 
 message BackupBatchSpec {
-  // backupConfigurationTemplates is a list of backup configurations that are part of this batch
+  // members is a list of backup configurations that are part of this batch
   // +optional
-  repeated BackupConfigurationTemplate backupConfigurationTemplates = 1;
+  repeated BackupConfigurationTemplateSpec members = 1;
 
   // Schedule specifies the schedule for invoking backup sessions
   // +optional
   optional string schedule = 2;
 
+  // RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc,
+  // and used to create service account for CronJob.
+  // +optional
+  optional kmodules.xyz.offshoot_api.api.v1.RuntimeSettings runtimeSettings = 3;
+
   // Driver indicates the name of the agent to use to backup the target.
   // Supported values are "Restic", "VolumeSnapshotter".
   // Default value is "Restic".
   // +optional
-  optional string driver = 3;
+  optional string driver = 4;
 
   // Repository refer to the Repository crd that holds backend information
   // +optional
-  optional k8s.io.api.core.v1.LocalObjectReference repository = 4;
+  optional k8s.io.api.core.v1.LocalObjectReference repository = 5;
 
   // RetentionPolicy indicates the policy to follow to clean old backup snapshots
-  optional .stash.appscode.dev.stash.apis.stash.v1alpha1.RetentionPolicy retentionPolicy = 5;
+  optional .stash.appscode.dev.stash.apis.stash.v1alpha1.RetentionPolicy retentionPolicy = 6;
 
   // Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
   // +optional
-  optional bool paused = 6;
+  optional bool paused = 7;
 
   // BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
   // This is helpful for debugging purpose.
   // Default: 1
   // +optional
-  optional int32 backupHistoryLimit = 7;
+  optional int32 backupHistoryLimit = 8;
 
   // Actions that Stash should take in response to backup sessions.
   // Cannot be updated.
   // +optional
-  optional BackupHooks hooks = 8;
+  optional BackupHooks hooks = 9;
 }
 
 message BackupBatchStatus {
@@ -209,12 +214,6 @@ message BackupConfigurationStatus {
   optional int64 observedGeneration = 1;
 }
 
-message BackupConfigurationTemplate {
-  optional kmodules.xyz.offshoot_api.api.v1.PartialObjectMeta metadata = 1;
-
-  optional BackupConfigurationTemplateSpec spec = 2;
-}
-
 message BackupConfigurationTemplateSpec {
   // Task specify the Task crd that specifies the steps to take backup
   // +optional
@@ -303,17 +302,13 @@ message BackupSessionStatus {
   // +optional
   optional string phase = 1;
 
-  // TotalHosts specifies total number of hosts that will be backed up for this BackupSession
+  // SessionDuration specify total time taken to complete current backup session (sum of backup duration of all targets)
   // +optional
-  optional int32 totalHosts = 2;
+  optional string sessionDuration = 2;
 
-  // SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)
-  // +optional
-  optional string sessionDuration = 3;
-
-  // Stats shows statistics of individual hosts for this backup session
-  // +optional
-  repeated HostBackupStats stats = 4;
+  // Targets specify the backup status of individual targets
+  // optional
+  repeated Target targets = 3;
 }
 
 message BackupTarget {
@@ -661,6 +656,24 @@ message SnapshotStats {
 
   // FileStats shows statistics of files of this snapshot
   optional FileStats fileStats = 6;
+}
+
+message Target {
+  // Ref refers to the backup target
+  // +optional
+  optional TargetRef ref = 1;
+
+  // TotalHosts specifies total number of hosts for this target that will be backed up for a BackupSession
+  // +optional
+  optional int32 totalHosts = 2;
+
+  // Phase indicates backup phase of this target
+  // +optional
+  optional string phase = 3;
+
+  // Stats shows statistics of individual hosts for this backup session
+  // +optional
+  repeated HostBackupStats stats = 4;
 }
 
 message TargetRef {

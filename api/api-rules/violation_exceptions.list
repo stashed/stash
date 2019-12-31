@@ -187,11 +187,11 @@ API rule violation: list_type_missing,kmodules.xyz/prober/api/v1,FormEntry,Value
 API rule violation: list_type_missing,kmodules.xyz/prober/api/v1,HTTPPostAction,Form
 API rule violation: list_type_missing,kmodules.xyz/prober/api/v1,HTTPPostAction,HTTPHeaders
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupBatchList,Items
-API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupBatchSpec,BackupConfigurationTemplates
+API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupBatchSpec,Members
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupBlueprintList,Items
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupConfigurationList,Items
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupSessionList,Items
-API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupSessionStatus,Stats
+API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupSessionStatus,Targets
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupTarget,Paths
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,BackupTarget,VolumeMounts
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,FunctionList,Items
@@ -210,6 +210,7 @@ API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,Rule,Paths
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,Rule,Snapshots
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,Rule,TargetHosts
+API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,Target,Stats
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,TaskList,Items
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,TaskRef,Params
 API rule violation: list_type_missing,stash.appscode.dev/stash/apis/stash/v1beta1,TaskSpec,Steps

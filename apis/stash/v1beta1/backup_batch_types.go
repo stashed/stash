@@ -21,6 +21,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 const (
@@ -47,34 +48,38 @@ type BackupBatch struct {
 }
 
 type BackupBatchSpec struct {
-	// backupConfigurationTemplates is a list of backup configurations that are part of this batch
+	// members is a list of backup configurations that are part of this batch
 	// +optional
-	BackupConfigurationTemplates []BackupConfigurationTemplate `json:"backupConfigurationTemplates,omitempty" protobuf:"bytes,1,rep,name=backupConfigurationTemplates"`
+	Members []BackupConfigurationTemplateSpec `json:"members,omitempty" protobuf:"bytes,1,rep,name=members"`
 	// Schedule specifies the schedule for invoking backup sessions
 	// +optional
 	Schedule string `json:"schedule,omitempty" protobuf:"bytes,2,opt,name=schedule"`
+	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc,
+	// and used to create service account for CronJob.
+	// +optional
+	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty" protobuf:"bytes,3,opt,name=runtimeSettings"`
 	// Driver indicates the name of the agent to use to backup the target.
 	// Supported values are "Restic", "VolumeSnapshotter".
 	// Default value is "Restic".
 	// +optional
-	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,3,opt,name=driver,casttype=Snapshotter"`
+	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,4,opt,name=driver,casttype=Snapshotter"`
 	// Repository refer to the Repository crd that holds backend information
 	// +optional
-	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,4,opt,name=repository"`
+	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,5,opt,name=repository"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
-	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy" protobuf:"bytes,5,opt,name=retentionPolicy"`
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy" protobuf:"bytes,6,opt,name=retentionPolicy"`
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
 	// +optional
-	Paused bool `json:"paused,omitempty" protobuf:"varint,6,opt,name=paused"`
+	Paused bool `json:"paused,omitempty" protobuf:"varint,7,opt,name=paused"`
 	// BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
 	// This is helpful for debugging purpose.
 	// Default: 1
 	// +optional
-	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty" protobuf:"varint,7,opt,name=backupHistoryLimit"`
+	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty" protobuf:"varint,8,opt,name=backupHistoryLimit"`
 	// Actions that Stash should take in response to backup sessions.
 	// Cannot be updated.
 	// +optional
-	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,8,opt,name=hooks"`
+	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,9,opt,name=hooks"`
 }
 
 type BackupBatchStatus struct {

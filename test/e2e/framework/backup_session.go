@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
@@ -81,31 +81,22 @@ func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSes
 	return nil, fmt.Errorf("no BackupSession found")
 }
 
-func (f *Framework) EventuallyBackupSessionTotalHost(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(
-		func() (totalhost *int32) {
-			bs, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			return bs.Status.TotalHosts
-		},
-	)
-}
-
-func (f *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.BackupSession, error) {
+func (f *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta, targetRef v1beta1.TargetRef) (*v1beta1.BackupSession, error) {
 	backupSession := &v1beta1.BackupSession{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(objMeta.Name),
 			Namespace: objMeta.Namespace,
 			Labels: map[string]string{
-				util.LabelApp:                 util.AppLabelStash,
-				util.LabelBackupConfiguration: objMeta.Name,
+				apis.LabelApp:         apis.AppLabelStash,
+				apis.LabelInvokerType: targetRef.Kind,
+				apis.LabelInvokerName: targetRef.Name,
 			},
 		},
 		Spec: v1beta1.BackupSessionSpec{
 			Invoker: v1beta1.BackupInvokerRef{
 				APIGroup: v1beta1.SchemeGroupVersion.Group,
-				Kind:     v1beta1.ResourceKindBackupConfiguration,
-				Name:     objMeta.Name,
+				Kind:     targetRef.Kind,
+				Name:     targetRef.Name,
 			},
 		},
 	}

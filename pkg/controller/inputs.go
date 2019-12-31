@@ -29,32 +29,32 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 )
 
-func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfiguration) (map[string]string, error) {
+func (c *StashController) inputsForBackupConfig(invoker apis.Invoker, targetInfo apis.TargetInfo) (map[string]string, error) {
 	// get inputs for target
-	inputs := c.inputsForBackupTarget(backupConfig.Spec.Target)
+	inputs := c.inputsForBackupTarget(targetInfo.Target)
 	// append inputs for RetentionPolicy
-	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(backupConfig.Spec.RetentionPolicy))
+	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(invoker.RetentionPolicy))
 
 	// get host name for target
-	host, err := util.GetHostName(backupConfig.Spec.Target)
+	host, err := util.GetHostName(targetInfo.Target)
 	if err != nil {
 		return nil, err
 	}
 	inputs[apis.Hostname] = host
 
 	// always enable cache if nothing specified
-	inputs[apis.EnableCache] = strconv.FormatBool(!backupConfig.Spec.TempDir.DisableCaching)
+	inputs[apis.EnableCache] = strconv.FormatBool(!targetInfo.TempDir.DisableCaching)
 
 	// interim data volume input
-	if backupConfig.Spec.InterimVolumeTemplate != nil {
+	if targetInfo.InterimVolumeTemplate != nil {
 		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
 	} else {
 		// if interim volume is not specified then use temp dir to store data temporarily
-		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", util.TmpDirMountPath)
+		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", apis.TmpDirMountPath)
 	}
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics(backupConfig.Name)
+	metricInputs := c.inputForMetrics(invoker.ObjectMeta.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil
@@ -86,7 +86,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
 	} else {
 		// if interim volume is not specified then use temp dir to store data temporarily
-		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", util.TmpDirMountPath)
+		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", apis.TmpDirMountPath)
 	}
 
 	// add PushgatewayURL as input
@@ -131,6 +131,10 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 	if target != nil {
 		if target.Ref.Name != "" {
 			inputs[apis.TargetName] = target.Ref.Name
+		}
+
+		if target.Ref.Kind != "" {
+			inputs[apis.TargetKind] = target.Ref.Kind
 		}
 		// If target paths are provided then use them. Otherwise, use stash default mount path.
 		if len(target.Paths) > 0 {

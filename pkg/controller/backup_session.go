@@ -18,7 +18,9 @@ package controller
 
 import (
 	"fmt"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,98 +119,127 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 		return nil
 	}
 
+	// backup process for this BackupSession has not started. so let's start backup process
+	// get backup Invoker
+	invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
+	if err != nil {
+		return err
+	}
+
 	// check whether backup session is completed or running and set it's phase accordingly
 	phase, err := c.getBackupSessionPhase(backupSession)
+
+	// if backup process completed ( Failed or Succeeded), execute postBackup hook
+	if (phase == api_v1beta1.BackupSessionFailed || phase == api_v1beta1.BackupSessionSucceeded) &&
+		invoker.Hooks != nil && invoker.Hooks.PostBackup != nil {
+		err = util.ExecuteHook(c.clientConfig, invoker.Hooks.PostBackup, apis.PostBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
+		if err != nil {
+			return c.setBackupSessionFailed(invoker, backupSession, err)
+		}
+	}
 
 	if phase == api_v1beta1.BackupSessionFailed {
 		// one or more hosts has failed to complete their backup process.
 		// mark entire backup session as failure.
 		// individual hosts has updated their respective stats and has sent respective metrics.
 		// now, just set BackupSession phase "Failed" and create an event.
-		return c.setBackupSessionFailed(backupSession, err)
+		return c.setBackupSessionFailed(invoker, backupSession, err)
 	} else if phase == api_v1beta1.BackupSessionSucceeded {
 		// all hosts has completed their backup process successfully.
 		// individual hosts has updated their respective stats and has sent respective metrics.
 		// now, just set BackupSession phase "Succeeded" and create an event.
-		return c.setBackupSessionSucceeded(backupSession)
+		return c.setBackupSessionSucceeded(invoker, backupSession)
 	} else if phase == api_v1beta1.BackupSessionRunning {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
 		return nil
 	} else if phase == api_v1beta1.BackupSessionSkipped {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: previously skipped.", backupSession.Namespace, backupSession.Name)
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
 		return nil
 	}
 
-	// backup process for this BackupSession has not started. so let's start backup process
-	// get BackupConfiguration for BackupSession
-	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
-		backupSession.Spec.Invoker.Name,
-		metav1.GetOptions{},
-	)
-	if err != nil {
-		return fmt.Errorf("can't get BackupConfiguration for BackupSession %s/%s, Reason: %s", backupSession.Namespace, backupSession.Name, err)
-	}
-
-	// skip if BackupConfiguration paused
-	if backupConfig.Spec.Paused {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
-		return c.setBackupSessionSkipped(backupSession, fmt.Sprintf("BackupConfiguration %s/%s is paused", backupConfig.Namespace, backupConfig.Name))
+	// skip if backup invoker is paused
+	if invoker.Paused {
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: %s is paused.", backupSession.Namespace, backupSession.Name, invoker.ObjectRef.Kind)
+		return c.setBackupSessionSkipped(backupSession, fmt.Sprintf("backup invoker %s %s/%s is paused", invoker.ObjectRef.Kind, invoker.ObjectRef.Namespace, invoker.ObjectRef.Name))
 	}
 
 	// skip if backup model is sidecar.
 	// for sidecar model controller inside sidecar will take care of it.
-	if backupConfig.Spec.Target != nil && backupConfig.Spec.Driver != api_v1beta1.VolumeSnapshotter && util.BackupModel(backupConfig.Spec.Target.Ref.Kind) == util.ModelSidecar {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
-		return c.setBackupSessionRunning(backupSession)
+	for _, targetInfo := range invoker.TargetsInfo {
+		if targetInfo.Target != nil && invoker.Driver != api_v1beta1.VolumeSnapshotter && util.BackupModel(targetInfo.Target.Ref.Kind) == apis.ModelSidecar {
+			log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
+			backupSession, err = c.setBackupSessionRunning(targetInfo.Target, invoker.Driver, backupSession)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	// if VolumeSnapshotter driver is used then ensure VolumeSnapshotter job
-	if backupConfig.Spec.Target != nil && backupConfig.Spec.Driver == api_v1beta1.VolumeSnapshotter {
-		err := c.ensureVolumeSnapshotterJob(backupConfig, backupSession)
+	// if preBackup hook exist, then execute preBackupHook
+	if invoker.Hooks != nil && invoker.Hooks.PreBackup != nil {
+		err = util.ExecuteHook(c.clientConfig, invoker.Hooks.PreBackup, apis.PreBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
 		if err != nil {
-			return c.handleBackupJobCreationFailure(backupSession, err)
+			return c.setBackupSessionFailed(invoker, backupSession, err)
 		}
-		// VolumeSnapshotter job has been created successfully. Set BackupSession phase "Running"
-		return c.setBackupSessionRunning(backupSession)
+	}
+
+	// if VolumeSnapshotter driver is used then ensure VolumeSnapshotter job and return
+	if invoker.Driver == api_v1beta1.VolumeSnapshotter {
+		for _, targetInfo := range invoker.TargetsInfo {
+			if targetInfo.Target != nil {
+				err = c.ensureVolumeSnapshotterJob(invoker, targetInfo, backupSession)
+				if err != nil {
+					return c.handleBackupJobCreationFailure(invoker, backupSession, err)
+				}
+				backupSession, err = c.setBackupSessionRunning(targetInfo.Target, invoker.Driver, backupSession)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
 	}
 
 	// Restic driver has been used. Now, create a backup job
-	err = c.ensureBackupJob(backupSession, backupConfig)
-	if err != nil {
-		// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
-		return c.handleBackupJobCreationFailure(backupSession, err)
+	for i, targetInfo := range invoker.TargetsInfo {
+		if targetInfo.Target != nil && util.BackupModel(targetInfo.Target.Ref.Kind) != apis.ModelSidecar {
+			err = c.ensureBackupJob(invoker, targetInfo, backupSession, i)
+			if err != nil {
+				// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
+				return c.handleBackupJobCreationFailure(invoker, backupSession, err)
+			}
+			// Backup job has been created successfully. Set BackupSession phase "Running"
+			backupSession, err = c.setBackupSessionRunning(targetInfo.Target, invoker.Driver, backupSession)
+			if err != nil {
+				return err
+			}
+		}
 	}
-
-	// Backup job has been created successfully. Set BackupSession phase "Running"
-	return c.setBackupSessionRunning(backupSession)
+	return nil
 }
 
-func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSession, backupConfig *api_v1beta1.BackupConfiguration) error {
-	offshootLabels := backupConfig.OffshootLabels()
-
+func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.TargetInfo, backupSession *api_v1beta1.BackupSession, index int) error {
 	jobMeta := metav1.ObjectMeta{
-		Name:      getBackupJobName(backupSession),
+		Name:      getBackupJobName(backupSession, strconv.Itoa(index)),
 		Namespace: backupSession.Namespace,
-		Labels:    offshootLabels,
+		Labels:    invoker.Labels,
 	}
-
-	owner := metav1.NewControllerRef(backupConfig, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 
 	var serviceAccountName string
 
 	// if RBAC is enabled then ensure respective RBAC stuffs
-	if backupConfig.Spec.RuntimeSettings.Pod != nil && backupConfig.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
-		serviceAccountName = backupConfig.Spec.RuntimeSettings.Pod.ServiceAccountName
+	if targetInfo.RuntimeSettings.Pod != nil && targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
+		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one.
-		serviceAccountName = getBackupJobServiceAccountName(backupConfig)
+		serviceAccountName = getBackupJobServiceAccountName(invoker.ObjectMeta.Name)
 		saMeta := metav1.ObjectMeta{
 			Name:      serviceAccountName,
-			Namespace: backupConfig.Namespace,
-			Labels:    offshootLabels,
+			Namespace: invoker.ObjectMeta.Namespace,
+			Labels:    invoker.Labels,
 		}
 		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 			return in
 		})
 		if err != nil {
@@ -216,29 +247,25 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		}
 	}
 
-	psps, err := c.getBackupJobPSPNames(backupConfig)
+	psps, err := c.getBackupJobPSPNames(targetInfo.Task)
 	if err != nil {
 		return err
 	}
 
-	err = stash_rbac.EnsureBackupJobRBAC(c.kubeClient, owner, backupConfig.Namespace, serviceAccountName, psps, offshootLabels)
+	err = stash_rbac.EnsureBackupJobRBAC(c.kubeClient, invoker.OwnerRef, invoker.ObjectMeta.Namespace, serviceAccountName, psps, invoker.Labels)
 	if err != nil {
 		return err
 	}
 
 	// get repository for backupConfig
-	repository, err := c.stashClient.StashV1alpha1().Repositories(backupConfig.Namespace).Get(
-		backupConfig.Spec.Repository.Name,
-		metav1.GetOptions{},
-	)
+	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(invoker.Repository, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	// resolve task template
-
 	explicitInputs := make(map[string]string)
-	for _, param := range backupConfig.Spec.Task.Params {
+	for _, param := range targetInfo.Task.Params {
 		explicitInputs[param.Name] = param.Value
 	}
 
@@ -246,9 +273,14 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	if err != nil {
 		return fmt.Errorf("cannot resolve implicit inputs for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
 	}
-	bcInputs, err := c.inputsForBackupConfig(*backupConfig)
+
+	if backupSession.Spec.Invoker.Kind == api_v1beta1.ResourceKindBackupBatch {
+		repoInputs[apis.RepositoryPrefix] = fmt.Sprintf("%s/%s/%s", repoInputs[apis.RepositoryPrefix], targetInfo.Target.Ref.Kind, targetInfo.Target.Ref.Name)
+	}
+
+	bcInputs, err := c.inputsForBackupConfig(invoker, targetInfo)
 	if err != nil {
-		return fmt.Errorf("cannot resolve implicit inputs for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
+		return fmt.Errorf("cannot resolve implicit inputs for backup invoker  %s %s/%s, reason: %s", invoker.ObjectRef.Kind, invoker.ObjectRef.Namespace, invoker.ObjectRef.Name, err)
 	}
 
 	implicitInputs := core_util.UpsertMap(repoInputs, bcInputs)
@@ -262,25 +294,25 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
-		TaskName:        backupConfig.Spec.Task.Name,
+		TaskName:        targetInfo.Task.Name,
 		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs), // TODO: reverse priority ???
-		RuntimeSettings: backupConfig.Spec.RuntimeSettings,
-		TempDir:         backupConfig.Spec.TempDir,
+		RuntimeSettings: targetInfo.RuntimeSettings,
+		TempDir:         targetInfo.TempDir,
 	}
 
 	// if preBackup or postBackup Hook is specified, add their specific inputs
-	if backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PreBackup != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PreBackup != nil {
 		taskResolver.PreTaskHookInput = make(map[string]string)
 		taskResolver.PreTaskHookInput[apis.HookType] = apis.PreBackupHook
 	}
-	if backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PostBackup != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup != nil {
 		taskResolver.PostTaskHookInput = make(map[string]string)
 		taskResolver.PostTaskHookInput[apis.HookType] = apis.PostBackupHook
 	}
 
-	podSpec, err := taskResolver.GetPodSpec()
+	podSpec, err := taskResolver.GetPodSpec(invoker.ObjectRef.Kind, invoker.ObjectRef.Name, targetInfo.Target.Ref.Kind, targetInfo.Target.Ref.Name)
 	if err != nil {
-		return fmt.Errorf("can't get PodSpec for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
+		return fmt.Errorf("can't get PodSpec for backup invoker %s/%s, reason: %s", invoker.ObjectMeta.Namespace, invoker.ObjectMeta.Name, err)
 	}
 	// for local backend, attach volume to all containers
 	if repository.Spec.Backend.Local != nil {
@@ -290,7 +322,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	// upsert InterimVolume to hold the backup/restored data temporarily
 	ownerBackupSession := metav1.NewControllerRef(backupSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession))
 
-	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, backupConfig.Spec.InterimVolumeTemplate.ToCorePVC(), backupConfig.Namespace, owner)
+	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, targetInfo.InterimVolumeTemplate.ToCorePVC(), invoker.ObjectMeta.Namespace, invoker.OwnerRef)
 	if err != nil {
 		return err
 	}
@@ -309,34 +341,30 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	return err
 }
 
-func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.BackupConfiguration, backupSession *api_v1beta1.BackupSession) error {
-	offshootLabels := backupConfig.OffshootLabels()
-
+func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targetInfo apis.TargetInfo, backupSession *api_v1beta1.BackupSession) error {
 	jobMeta := metav1.ObjectMeta{
-		Name:      getVolumeSnapshotterJobName(backupSession),
+		Name:      getVolumeSnapshotterJobName(targetInfo.Target.Ref, backupSession.Name),
 		Namespace: backupSession.Namespace,
-		Labels:    offshootLabels,
+		Labels:    invoker.Labels,
 	}
-
-	owner := metav1.NewControllerRef(backupConfig, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 
 	//ensure respective RBAC stuffs
 	//Create new ServiceAccount
-	serviceAccountName := backupConfig.Name
+	serviceAccountName := invoker.ObjectMeta.Name
 	saMeta := metav1.ObjectMeta{
 		Name:      serviceAccountName,
-		Namespace: backupConfig.Namespace,
-		Labels:    offshootLabels,
+		Namespace: invoker.ObjectMeta.Namespace,
+		Labels:    invoker.Labels,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 		return in
 	})
 	if err != nil {
 		return err
 	}
 
-	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, owner, backupConfig.Namespace, serviceAccountName, offshootLabels)
+	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, invoker.OwnerRef, invoker.ObjectMeta.Namespace, serviceAccountName, invoker.Labels)
 	if err != nil {
 		return err
 	}
@@ -347,7 +375,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		Tag:      c.StashImageTag,
 	}
 
-	jobTemplate, err := util.NewVolumeSnapshotterJob(backupSession, backupConfig, image)
+	jobTemplate, err := util.NewVolumeSnapshotterJob(backupSession, targetInfo.Target, targetInfo.RuntimeSettings, image)
 	if err != nil {
 		return err
 	}
@@ -355,23 +383,28 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 	// Create VolumeSnapshotter job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 
-		in.Labels = offshootLabels
+		in.Labels = invoker.Labels
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+
 		in.Spec.BackoffLimit = types.Int32P(1)
+		if invoker.BackupHistoryLimit != nil {
+			in.Spec.BackoffLimit = invoker.BackupHistoryLimit
+		}
 		return in
 	})
 
 	return err
 }
 
-func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.BackupSession, backupErr error) error {
+func (c *StashController) setBackupSessionFailed(invoker apis.Invoker, backupSession *api_v1beta1.BackupSession, backupErr error) error {
 
 	// set BackupSession phase to "Failed"
 	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionFailed
+		in.Targets = backupSession.Status.Targets
 		return in
 	})
 	if err != nil {
@@ -389,22 +422,18 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	)
 
 	// send backup session specific metrics
-	backupConfig, err2 := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
-	if err2 != nil {
-		return errors.NewAggregate([]error{backupErr, err})
-	}
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: util.PushgatewayLocalURL,
+		PushgatewayURL: apis.PushgatewayLocalURL,
 		JobName:        PromJobBackupSessionController,
 	}
-	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
-	if err != nil {
-		return errors.NewAggregate([]error{backupErr, err})
-	}
 
+	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, invoker, updatedBackupSession.Status)
+	if err != nil {
+		return err
+	}
 	// cleanup old BackupSessions
-	err = c.cleanupBackupHistory(backupConfig)
+	err = c.cleanupBackupHistory(backupSession.Spec.Invoker, backupSession.Namespace, invoker.BackupHistoryLimit)
 	return errors.NewAggregate([]error{backupErr, err})
 }
 
@@ -412,6 +441,7 @@ func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.Bac
 	// set BackupSession phase to "Skipped"
 	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionSkipped
+		in.Targets = backupSession.Status.Targets
 		return in
 	})
 	if err != nil {
@@ -430,30 +460,29 @@ func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.Bac
 	return err
 }
 
-func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.BackupSession) error {
-
-	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
-		backupSession.Spec.Invoker.Name,
-		metav1.GetOptions{},
-	)
+func (c *StashController) setBackupSessionRunning(target *api_v1beta1.BackupTarget, driver api_v1beta1.Snapshotter, backupSession *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, error) {
+	// find out the total number of hosts in target that will be backed up in this backup session
+	totalHosts, err := c.getTotalHosts(target, backupSession.Namespace, driver)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	// find out the total number of hosts that will be backed up in this backup session
-	totalHosts, err := c.getTotalHosts(backupConfig.Spec.Target, backupConfig.Namespace, backupConfig.Spec.Driver)
-	if err != nil {
-		return err
-	}
-
 	// set BackupSession phase to "Running"
-	_, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+	backupSession, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionRunning
-		in.TotalHosts = totalHosts
+		if target != nil {
+			in.Targets = append(backupSession.Status.Targets, api_v1beta1.Target{
+				TotalHosts: totalHosts,
+				Ref: api_v1beta1.TargetRef{
+					Name: target.Ref.Name,
+					Kind: target.Ref.Kind,
+				},
+				Phase: api_v1beta1.TargetBackupRunning,
+			})
+		}
 		return in
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// write event to the BackupSession
@@ -465,10 +494,11 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 		eventer.EventReasonBackupSessionRunning,
 		fmt.Sprintf("Backup job has been created succesfully/sidecar is watching the BackupSession."),
 	)
-	return err
+
+	return backupSession, err
 }
 
-func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.BackupSession) error {
+func (c *StashController) setBackupSessionSucceeded(invoker apis.Invoker, backupSession *api_v1beta1.BackupSession) error {
 
 	// total backup session duration is the difference between the time when BackupSession was created and current time
 	sessionDuration := time.Since(backupSession.CreationTimestamp.Time)
@@ -477,6 +507,7 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionSucceeded
 		in.SessionDuration = sessionDuration.String()
+		in.Targets = backupSession.Status.Targets
 		return in
 	})
 	if err != nil {
@@ -497,49 +528,56 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 	}
 
 	// send backup session specific metrics
-	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: util.PushgatewayLocalURL,
+		PushgatewayURL: apis.PushgatewayLocalURL,
 		JobName:        PromJobBackupSessionController,
 	}
-	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
+
+	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, invoker, updatedBackupSession.Status)
 	if err != nil {
 		return err
 	}
 
 	// cleanup old BackupSessions
-	return c.cleanupBackupHistory(backupConfig)
+	return c.cleanupBackupHistory(backupSession.Spec.Invoker, backupSession.Namespace, invoker.BackupHistoryLimit)
 }
 
 func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.BackupSession) (api_v1beta1.BackupSessionPhase, error) {
 	// BackupSession phase is empty or "Pending" then return it. controller will process accordingly
-	if backupSession.Status.TotalHosts == nil ||
-		backupSession.Status.Phase == "" ||
+	if backupSession.Status.Phase == "" ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionPending {
 		return api_v1beta1.BackupSessionPending, nil
 	}
 
-	// all hosts hasn't completed it's backup. BackupSession phase must be "Running".
-	if *backupSession.Status.TotalHosts != int32(len(backupSession.Status.Stats)) {
+	// all target hasn't completed it's backup. BackupSession phase must be "Running"
+	// and check if any of the host has failed to take backup. if any of them has failed,
+	// then consider entire backup session as a failure.
+	completedTargets := 0
+	var errList []error
+	for _, target := range backupSession.Status.Targets {
+		if target.Phase == api_v1beta1.TargetBackupSucceeded ||
+			target.Phase == api_v1beta1.TargetBackupFailed {
+			completedTargets = completedTargets + 1
+		}
+		if target.Phase == api_v1beta1.TargetBackupFailed {
+			errList = append(errList, fmt.Errorf("backup failed for target: %s/%s", target.Ref.Kind, target.Ref.Name))
+		}
+	}
+
+	if completedTargets != len(backupSession.Status.Targets) {
 		return api_v1beta1.BackupSessionRunning, nil
 	}
 
-	// check if any of the host has failed to take backup. if any of them has failed, then consider entire backup session as a failure.
-	for _, host := range backupSession.Status.Stats {
-		if host.Phase == api_v1beta1.HostBackupFailed {
-			return api_v1beta1.BackupSessionFailed, fmt.Errorf("backup failed for host: %s. Reason: %s", host.Hostname, host.Error)
-		}
+	if errList != nil {
+		return api_v1beta1.BackupSessionFailed, errors.NewAggregate(errList)
 	}
 
 	// backup has been completed successfully
 	return api_v1beta1.BackupSessionSucceeded, nil
 }
 
-func (c *StashController) handleBackupJobCreationFailure(backupSession *api_v1beta1.BackupSession, err error) error {
+func (c *StashController) handleBackupJobCreationFailure(invoker apis.Invoker, backupSession *api_v1beta1.BackupSession, err error) error {
 	log.Warningln("failed to ensure backup job. Reason: ", err)
 
 	// write event to BackupSession
@@ -553,34 +591,37 @@ func (c *StashController) handleBackupJobCreationFailure(backupSession *api_v1be
 	)
 
 	// set BackupSession phase failed
-	return c.setBackupSessionFailed(backupSession, err)
+	return c.setBackupSessionFailed(invoker, backupSession, err)
 }
 
-func getBackupJobName(backupSession *api_v1beta1.BackupSession) string {
-	return meta.ValidNameWithPrefix(BackupJobPrefix, strings.ReplaceAll(backupSession.Name, ".", "-"))
+func getBackupJobName(backupSession *api_v1beta1.BackupSession, index string) string {
+	return meta.ValidNameWithPefixNSuffix(BackupJobPrefix, strings.ReplaceAll(backupSession.Name, ".", "-"), index)
 }
 
-func getBackupJobServiceAccountName(backupConfiguration *api_v1beta1.BackupConfiguration) string {
-	return strings.ReplaceAll(backupConfiguration.Name, ".", "-")
+func getBackupJobServiceAccountName(name string) string {
+	return strings.ReplaceAll(name, ".", "-")
 }
 
-func getVolumeSnapshotterJobName(backupSession *api_v1beta1.BackupSession) string {
-	return meta.ValidNameWithPrefix(VolumeSnapshotPrefix, strings.ReplaceAll(backupSession.Name, ".", "-"))
+func getVolumeSnapshotterJobName(targetRef api_v1beta1.TargetRef, name string) string {
+	parts := strings.Split(name, "-")
+	suffix := parts[len(parts)-1]
+	return meta.ValidNameWithPrefix(VolumeSnapshotPrefix, fmt.Sprintf("%s-%s-%s", util.ResourceKindShortForm(targetRef.Kind), targetRef.Name, suffix))
 }
 
 // cleanupBackupHistory deletes old BackupSessions and theirs associate resources according to BackupHistoryLimit
-func (c *StashController) cleanupBackupHistory(backupConfig *api_v1beta1.BackupConfiguration) error {
+func (c *StashController) cleanupBackupHistory(backupInvokerRef api_v1beta1.BackupInvokerRef, namespace string, backupHistoryLimit *int32) error {
 	// default history limit is 1
 	historyLimit := int32(1)
-	if backupConfig.Spec.BackupHistoryLimit != nil {
-		historyLimit = *backupConfig.Spec.BackupHistoryLimit
+	if backupHistoryLimit != nil {
+		historyLimit = *backupHistoryLimit
 	}
 
 	// BackupSession use BackupConfiguration name as label. We can use this label as selector to list only the BackupSession
 	// of this particular BackupConfiguration.
 	label := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			util.LabelBackupConfiguration: backupConfig.Name,
+			apis.LabelInvokerType: backupInvokerRef.Kind,
+			apis.LabelInvokerName: backupInvokerRef.Name,
 		},
 	}
 	selector, err := metav1.LabelSelectorAsSelector(&label)
@@ -589,7 +630,7 @@ func (c *StashController) cleanupBackupHistory(backupConfig *api_v1beta1.BackupC
 	}
 
 	// list all the BackupSessions of this particular BackupConfiguration
-	bsList, err := c.backupSessionLister.BackupSessions(backupConfig.Namespace).List(selector)
+	bsList, err := c.backupSessionLister.BackupSessions(namespace).List(selector)
 	if err != nil {
 		return err
 	}
@@ -601,7 +642,7 @@ func (c *StashController) cleanupBackupHistory(backupConfig *api_v1beta1.BackupC
 
 	// delete the BackupSession that does not fit within the history limit
 	for i := int(historyLimit); i < len(bsList); i++ {
-		err = c.stashClient.StashV1beta1().BackupSessions(backupConfig.Namespace).Delete(bsList[i].Name, meta.DeleteInBackground())
+		err = c.stashClient.StashV1beta1().BackupSessions(namespace).Delete(bsList[i].Name, meta.DeleteInBackground())
 		if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
 			return err
 		}

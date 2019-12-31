@@ -97,21 +97,54 @@ func TryUpdateBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, 
 	return
 }
 
-func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, backupSession *api_v1beta1.BackupSession, hostStats api_v1beta1.HostBackupStats) (*api_v1beta1.BackupSession, error) {
-
+func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, targetRef api_v1beta1.TargetRef, backupSession *api_v1beta1.BackupSession, hostStats api_v1beta1.HostBackupStats) (*api_v1beta1.BackupSession, error) {
 	out, err := UpdateBackupSessionStatus(c, backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		// if an entry already exist for this host then update it
-		for i, v := range backupSession.Status.Stats {
-			if v.Hostname == hostStats.Hostname {
-				in.Stats[i] = hostStats
-				return in
-			}
+		targetIdx, hostIdx, targets := UpsertHostForTarget(backupSession.Status.Targets, targetRef, hostStats)
+		in.Targets = targets
+		if int32(len(targets[targetIdx].Stats)) != *targets[targetIdx].TotalHosts {
+			in.Targets[targetIdx].Phase = api_v1beta1.TargetBackupRunning
+			return in
 		}
-		// no entry for this host. so add a new entry.
-		in.Stats = append(in.Stats, hostStats)
+		if targets[targetIdx].Stats[hostIdx].Phase == api_v1beta1.HostBackupFailed {
+			in.Targets[targetIdx].Phase = api_v1beta1.TargetBackupFailed
+			return in
+		}
+		in.Targets[targetIdx].Phase = api_v1beta1.TargetBackupSucceeded
 		return in
 	})
 	return out, err
+}
+
+func UpsertHostForTarget(targets []api_v1beta1.Target, targetRef api_v1beta1.TargetRef, stat api_v1beta1.HostBackupStats) (int, int, []api_v1beta1.Target) {
+	var targetIdx, hostIdx int
+	for i, target := range targets {
+		if target.Ref.Name == targetRef.Name && target.Ref.Kind == targetRef.Kind {
+			targets[i].Stats = UpsertHost(target.Stats, stat)
+			for j, stat := range target.Stats {
+				if stat.Hostname == stat.Hostname {
+					hostIdx = j
+				}
+			}
+			targetIdx = i
+		}
+	}
+	return targetIdx, hostIdx, targets
+}
+
+func UpsertHost(stats []api_v1beta1.HostBackupStats, stat ...api_v1beta1.HostBackupStats) []api_v1beta1.HostBackupStats {
+	upsert := func(s api_v1beta1.HostBackupStats) {
+		for i, st := range stats {
+			if st.Hostname == s.Hostname {
+				stats[i] = s
+				return
+			}
+		}
+		stats = append(stats, s)
+	}
+	for _, s := range stat {
+		upsert(s)
+	}
+	return stats
 }
 
 func UpdateBackupSessionStatus(

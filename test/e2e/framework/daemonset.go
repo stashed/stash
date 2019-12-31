@@ -19,7 +19,7 @@ package framework
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/pkg/util"
+	"stash.appscode.dev/stash/apis"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -122,7 +122,7 @@ func (f *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta) 
 				for i := range pods {
 					hasSidecar := false
 					for _, c := range pods[i].Spec.Containers {
-						if c.Name == util.StashContainer {
+						if c.Name == apis.StashContainer {
 							hasSidecar = true
 						}
 					}
@@ -150,7 +150,7 @@ func (f *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.Object
 				for i := range pods {
 					hasInitContainer := false
 					for _, c := range pods[i].Spec.InitContainers {
-						if c.Name == util.StashInitContainer {
+						if c.Name == apis.StashInitContainer {
 							hasInitContainer = true
 						}
 					}
