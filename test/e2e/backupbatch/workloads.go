@@ -26,7 +26,6 @@ import (
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 var _ = Describe("Workloads", func() {
@@ -89,21 +88,16 @@ var _ = Describe("Workloads", func() {
 				// Setup workload Backup
 				backupBatch, err := f.SetupWorkloadBackupForBackupBatch(targetRefs, repo, func(in *v1beta1.BackupBatch) {
 					for _, targetRef := range targetRefs {
-						in.Spec.BackupConfigurationTemplates = append(in.Spec.BackupConfigurationTemplates, v1beta1.BackupConfigurationTemplate{
-							PartialObjectMeta: ofst.PartialObjectMeta{
-								CreationTimestamp: repo.CreationTimestamp,
-							},
-							Spec: v1beta1.BackupConfigurationTemplateSpec{
-								Target: &v1beta1.BackupTarget{
-									Ref: targetRef,
-									Paths: []string{
-										framework.TestSourceDataMountPath,
-									},
-									VolumeMounts: []core.VolumeMount{
-										{
-											Name:      framework.SourceVolume,
-											MountPath: framework.TestSourceDataMountPath,
-										},
+						in.Spec.Members = append(in.Spec.Members, v1beta1.BackupConfigurationTemplateSpec{
+							Target: &v1beta1.BackupTarget{
+								Ref: targetRef,
+								Paths: []string{
+									framework.TestSourceDataMountPath,
+								},
+								VolumeMounts: []core.VolumeMount{
+									{
+										Name:      framework.SourceVolume,
+										MountPath: framework.TestSourceDataMountPath,
 									},
 								},
 							},

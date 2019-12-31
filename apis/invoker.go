@@ -94,14 +94,14 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			return invoker, err
 		}
 
-		for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
+		for _, member := range backupBatch.Spec.Members {
 			invoker.TargetsInfo = append(invoker.TargetsInfo, TargetInfo{
-				Task:                  backupConfigTemp.Spec.Task,
-				Target:                backupConfigTemp.Spec.Target,
-				RuntimeSettings:       backupConfigTemp.Spec.RuntimeSettings,
-				TempDir:               backupConfigTemp.Spec.TempDir,
-				InterimVolumeTemplate: backupConfigTemp.Spec.InterimVolumeTemplate,
-				Hooks:                 backupConfigTemp.Spec.Hooks,
+				Task:                  member.Task,
+				Target:                member.Target,
+				RuntimeSettings:       member.RuntimeSettings,
+				TempDir:               member.TempDir,
+				InterimVolumeTemplate: member.InterimVolumeTemplate,
+				Hooks:                 member.Hooks,
 			})
 		}
 		invoker.AddFinalizer = func() error {

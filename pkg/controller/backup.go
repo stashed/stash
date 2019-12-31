@@ -155,8 +155,8 @@ func (c *StashController) applyBackupBatchLogic(w *wapi.Workload, caller string)
 	// this means BackupBatch has been newly created/updated.
 	// in this case, we have to add/update sidecar container accordingly.
 	if newbb != nil && !util.BackupBatchEqual(oldbb, newbb) {
-		for _, backupConfigTemp := range newbb.Spec.BackupConfigurationTemplates {
-			if backupConfigTemp.Spec.Target != nil && backupConfigTemp.Spec.Target.Ref.Kind == w.Kind && backupConfigTemp.Spec.Target.Ref.Name == w.Name {
+		for _, member := range newbb.Spec.Members {
+			if member.Target != nil && member.Target.Ref.Kind == w.Kind && member.Target.Ref.Name == w.Name {
 				invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupBatch, newbb.Name, newbb.Namespace)
 				if err != nil {
 					return true, err

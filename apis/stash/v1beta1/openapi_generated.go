@@ -379,7 +379,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationList":         schema_stash_apis_stash_v1beta1_BackupConfigurationList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationSpec":         schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationStatus":       schema_stash_apis_stash_v1beta1_BackupConfigurationStatus(ref),
-		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate":     schema_stash_apis_stash_v1beta1_BackupConfigurationTemplate(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec": schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks":                     schema_stash_apis_stash_v1beta1_BackupHooks(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef":                schema_stash_apis_stash_v1beta1_BackupInvokerRef(ref),
@@ -17488,14 +17487,14 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"backupConfigurationTemplates": {
+					"members": {
 						SchemaProps: spec.SchemaProps{
-							Description: "backupConfigurationTemplates is a list of backup configurations that are part of this batch",
+							Description: "members is a list of backup configurations that are part of this batch",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate"),
+										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec"),
 									},
 								},
 							},
@@ -17558,7 +17557,7 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"},
+			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"},
 	}
 }
 
@@ -17930,44 +17929,6 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationStatus(ref common.Refere
 				},
 			},
 		},
-	}
-}
-
-func schema_stash_apis_stash_v1beta1_BackupConfigurationTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("kmodules.xyz/offshoot-api/api/v1.PartialObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"kmodules.xyz/offshoot-api/api/v1.PartialObjectMeta", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec"},
 	}
 }
 

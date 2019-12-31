@@ -143,12 +143,12 @@ func (f *Invocation) SetupWorkloadBackupForBackupBatch(targetsRef []v1beta1.Targ
 	f.EventuallyCronJobCreated(backupBatch.ObjectMeta).Should(BeTrue())
 
 	By("Verifying that sidecar has been injected")
-	for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
+	for _, member := range backupBatch.Spec.Members {
 		objMeta := metav1.ObjectMeta{
 			Namespace: backupBatch.Namespace,
-			Name:      backupConfigTemp.Spec.Target.Ref.Name,
+			Name:      member.Target.Ref.Name,
 		}
-		switch backupConfigTemp.Spec.Target.Ref.Kind {
+		switch member.Target.Ref.Kind {
 		case apis.KindDeployment:
 			f.EventuallyDeployment(objMeta).Should(HaveSidecar(apis.StashContainer))
 			By("Waiting for Deployment to be ready with sidecar")

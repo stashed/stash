@@ -50,14 +50,6 @@ type BackupConfiguration struct {
 	Status            BackupConfigurationStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-type BackupConfigurationTemplate struct {
-	metav1.TypeMeta        `json:",inline,omitempty"`
-	ofst.PartialObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Spec                   BackupConfigurationTemplateSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-}
-
 type BackupConfigurationTemplateSpec struct {
 	// Task specify the Task crd that specifies the steps to take backup
 	// +optional

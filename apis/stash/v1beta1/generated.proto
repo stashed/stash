@@ -54,9 +54,9 @@ message BackupBatchList {
 }
 
 message BackupBatchSpec {
-  // backupConfigurationTemplates is a list of backup configurations that are part of this batch
+  // members is a list of backup configurations that are part of this batch
   // +optional
-  repeated BackupConfigurationTemplate backupConfigurationTemplates = 1;
+  repeated BackupConfigurationTemplateSpec members = 1;
 
   // Schedule specifies the schedule for invoking backup sessions
   // +optional
@@ -212,12 +212,6 @@ message BackupConfigurationStatus {
   // BackupConfiguration's generation, which is updated on mutation by the API Server.
   // +optional
   optional int64 observedGeneration = 1;
-}
-
-message BackupConfigurationTemplate {
-  optional kmodules.xyz.offshoot_api.api.v1.PartialObjectMeta metadata = 1;
-
-  optional BackupConfigurationTemplateSpec spec = 2;
 }
 
 message BackupConfigurationTemplateSpec {

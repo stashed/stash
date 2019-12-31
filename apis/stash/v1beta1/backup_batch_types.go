@@ -48,9 +48,9 @@ type BackupBatch struct {
 }
 
 type BackupBatchSpec struct {
-	// backupConfigurationTemplates is a list of backup configurations that are part of this batch
+	// members is a list of backup configurations that are part of this batch
 	// +optional
-	BackupConfigurationTemplates []BackupConfigurationTemplate `json:"backupConfigurationTemplates,omitempty" protobuf:"bytes,1,rep,name=backupConfigurationTemplates"`
+	Members []BackupConfigurationTemplateSpec `json:"members,omitempty" protobuf:"bytes,1,rep,name=members"`
 	// Schedule specifies the schedule for invoking backup sessions
 	// +optional
 	Schedule string `json:"schedule,omitempty" protobuf:"bytes,2,opt,name=schedule"`

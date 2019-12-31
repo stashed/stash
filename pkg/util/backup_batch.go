@@ -60,8 +60,8 @@ func FindBackupBatch(lister v1beta1_listers.BackupBatchLister, w *wapi.Workload)
 	result := make([]*v1beta1.BackupBatch, 0)
 	// keep only those BackupBatches that has this workload as target
 	for _, backupBatch := range backupBatches {
-		for _, bct := range backupBatch.Spec.BackupConfigurationTemplates {
-			if backupBatch.DeletionTimestamp == nil && IsBackupTarget(bct.Spec.Target, w) {
+		for _, member := range backupBatch.Spec.Members {
+			if backupBatch.DeletionTimestamp == nil && IsBackupTarget(member.Target, w) {
 				result = append(result, backupBatch)
 			}
 		}

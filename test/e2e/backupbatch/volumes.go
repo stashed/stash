@@ -28,7 +28,6 @@ import (
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 var _ = Describe("Volumes", func() {
@@ -105,21 +104,15 @@ var _ = Describe("Volumes", func() {
 				// Setup Volume Backup
 				backupBatch, err := setupPVCBackup(repo, func(in *v1beta1.BackupBatch) {
 					for _, targetRef := range targetRefs {
-						in.Spec.BackupConfigurationTemplates = append(in.Spec.BackupConfigurationTemplates, v1beta1.BackupConfigurationTemplate{
-							PartialObjectMeta: ofst.PartialObjectMeta{
-								CreationTimestamp: repo.CreationTimestamp,
+						in.Spec.Members = append(in.Spec.Members, v1beta1.BackupConfigurationTemplateSpec{
+							Task: v1beta1.TaskRef{
+								Name: "pvc-backup",
 							},
-							Spec: v1beta1.BackupConfigurationTemplateSpec{
-								Task: v1beta1.TaskRef{
-									Name: "pvc-backup",
-								},
-								Target: &v1beta1.BackupTarget{
-									Ref: targetRef,
-								},
+							Target: &v1beta1.BackupTarget{
+								Ref: targetRef,
 							},
 						})
 					}
-
 				})
 				Expect(err).NotTo(HaveOccurred())
 
