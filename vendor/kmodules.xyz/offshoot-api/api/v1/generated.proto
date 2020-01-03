@@ -152,30 +152,19 @@ message PartialObjectMeta {
   // +optional
   optional string namespace = 3;
 
-  // CreationTimestamp is a timestamp representing the server time when this object was
-  // created. It is not guaranteed to be set in happens-before order across separate operations.
-  // Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-  //
-  // Populated by the system.
-  // Read-only.
-  // Null for lists.
-  // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
-  // +optional
-  optional k8s.io.apimachinery.pkg.apis.meta.v1.Time creationTimestamp = 4;
-
   // Map of string keys and values that can be used to organize and categorize
   // (scope and select) objects. May match selectors of replication controllers
   // and services.
   // More info: http://kubernetes.io/docs/user-guide/labels
   // +optional
-  map<string, string> labels = 5;
+  map<string, string> labels = 4;
 
   // Annotations is an unstructured key value map stored with a resource that may be
   // set by external tools to store and retrieve arbitrary metadata. They are not
   // queryable and should be preserved when modifying objects.
   // More info: http://kubernetes.io/docs/user-guide/annotations
   // +optional
-  map<string, string> annotations = 6;
+  map<string, string> annotations = 5;
 
   // List of objects depended by this object. If ALL objects in the list have
   // been deleted, this object will be garbage collected. If this object is managed by a controller,
@@ -184,7 +173,7 @@ message PartialObjectMeta {
   // +optional
   // +patchMergeKey=uid
   // +patchStrategy=merge
-  repeated k8s.io.apimachinery.pkg.apis.meta.v1.OwnerReference ownerReferences = 7;
+  repeated k8s.io.apimachinery.pkg.apis.meta.v1.OwnerReference ownerReferences = 6;
 }
 
 // PersistentVolumeClaim is a user's request for and claim to a persistent volume

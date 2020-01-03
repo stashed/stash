@@ -689,8 +689,8 @@ k8s.io/utils v0.0.0-20190801114015-581e00157fb1 h1:+ySTxfHnfzZb9ys375PXNlLhkJPLK
 k8s.io/utils v0.0.0-20190801114015-581e00157fb1/go.mod h1:sZAwmy6armz5eXlNoLmJcl4F1QuKu7sr+mFQ0byX7Ew=
 kmodules.xyz/client-go v0.0.0-20191127054604-26981530831d/go.mod h1:OFxuKCiVR+MYlR2a08FkfaF+IbXkLe0xBetu2LTUuGI=
 kmodules.xyz/client-go v0.0.0-20191211192817-f1dcd02124ba/go.mod h1:OFxuKCiVR+MYlR2a08FkfaF+IbXkLe0xBetu2LTUuGI=
-kmodules.xyz/client-go v0.0.0-20191219184245-880ab4b0e5db h1:6ucciOzNh6nKC5uN3DetZ/rLtp/mgc3SfFSFL+sZEX0=
-kmodules.xyz/client-go v0.0.0-20191219184245-880ab4b0e5db/go.mod h1:OFxuKCiVR+MYlR2a08FkfaF+IbXkLe0xBetu2LTUuGI=
+kmodules.xyz/client-go v0.0.0-20200101081724-6b136a38d486 h1:6Oa0APtijqhcZ1NCjrX0Uegm/GyyAcHopIR0EIORZsc=
+kmodules.xyz/client-go v0.0.0-20200101081724-6b136a38d486/go.mod h1:OFxuKCiVR+MYlR2a08FkfaF+IbXkLe0xBetu2LTUuGI=
 kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6 h1:hFv3DzanQJ/bjgahqosmthGLkVgMB2KuQIsltOA02t0=
 kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20191129174258-81f984340891 h1:2W/fqLbAurvupIZL3TEFrlb7DnOIhlOXpNgzgcFFSmA=
@@ -699,8 +699,8 @@ kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419 h1:o6KD8XMxdyRR
 kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419/go.mod h1:EksiAQK3p3bVU5cNBjLT0z5V7er1tvWLBWILTuf6G/0=
 kmodules.xyz/objectstore-api v0.0.0-20191127144749-5881939b57f0 h1:ilgkGU/bteKRvH99piXxU8b2c1E9lwxb0sDpLLhy4iY=
 kmodules.xyz/objectstore-api v0.0.0-20191127144749-5881939b57f0/go.mod h1:AE1rz+T/3dlUwH5pLgCNghWeeFfeVBnBXKJVpsLHlmc=
-kmodules.xyz/offshoot-api v0.0.0-20191204032627-ee9a85c51ab3 h1:DW3lX0hZzx14WTNCU+RTWU2eKZ4xbKpUvYVy6S5OtBc=
-kmodules.xyz/offshoot-api v0.0.0-20191204032627-ee9a85c51ab3/go.mod h1:k1M+OOFHbMeS6N6OB2j9smKfMCyQOEQjZ3SLZ/KSe+w=
+kmodules.xyz/offshoot-api v0.0.0-20200103145223-2c4f520520d2 h1:c/wxNy8KgaS8v/htruqtL0YgrKciUKroK1zXPVZHuqg=
+kmodules.xyz/offshoot-api v0.0.0-20200103145223-2c4f520520d2/go.mod h1:k1M+OOFHbMeS6N6OB2j9smKfMCyQOEQjZ3SLZ/KSe+w=
 kmodules.xyz/openshift v0.0.0-20191127054841-113eeb13704f/go.mod h1:de9+Zk2+wtGhRmGFBZ9T4+0lJZr4rHXW0dHffCaeO+g=
 kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7 h1:9PImU28r8bt+QoW7FkYbJ+prsZSNtwctLeXJj3wJK5U=
 kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7/go.mod h1:de9+Zk2+wtGhRmGFBZ9T4+0lJZr4rHXW0dHffCaeO+g=

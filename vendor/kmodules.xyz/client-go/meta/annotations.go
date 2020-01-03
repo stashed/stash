@@ -174,3 +174,16 @@ func ParseFor(key string, fn ParserFunc) GetFunc {
 		return fn(m, key)
 	}
 }
+
+func GetStringVaultForKeys(m map[string]string, key string, alts ...string) (string, error) {
+	if m == nil {
+		return "", kutil.ErrNotFound
+	}
+	keys := append([]string{key}, alts...)
+	for _, k := range keys {
+		if v, ok := m[k]; ok {
+			return v, nil
+		}
+	}
+	return "", kutil.ErrNotFound
+}

@@ -37,12 +37,12 @@ require (
 	k8s.io/kube-aggregator v0.0.0-20191114103820-f023614fb9ea
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a
 	k8s.io/kubernetes v1.16.3
-	kmodules.xyz/client-go v0.0.0-20191219184245-880ab4b0e5db
+	kmodules.xyz/client-go v0.0.0-20200101081724-6b136a38d486
 	kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6
 	kmodules.xyz/crd-schema-fuzz v0.0.0-20191129174258-81f984340891
 	kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419
 	kmodules.xyz/objectstore-api v0.0.0-20191127144749-5881939b57f0
-	kmodules.xyz/offshoot-api v0.0.0-20191204032627-ee9a85c51ab3
+	kmodules.xyz/offshoot-api v0.0.0-20200103145223-2c4f520520d2
 	kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7
 	kmodules.xyz/prober v0.0.0-20191216013129-7c91e2b0edb2
 	kmodules.xyz/webhook-runtime v0.0.0-20191127075323-d4bfdee6974d

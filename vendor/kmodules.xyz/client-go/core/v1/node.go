@@ -17,15 +17,23 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
+	meta_util "kmodules.xyz/client-go/meta"
+
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/pager"
 	kutil "kmodules.xyz/client-go"
 )
 
@@ -111,4 +119,57 @@ func IsMaster(node core.Node) bool {
 	_, ok17 := node.Labels["node-role.kubernetes.io/master"]
 	role16, ok16 := node.Labels["kubernetes.io/role"]
 	return ok17 || (ok16 && role16 == "master")
+}
+
+func Topology(kc kubernetes.Interface) (regions map[string][]string, instances map[string]int, err error) {
+	// TODO: Use https://github.com/kubernetes/client-go/blob/kubernetes-1.17.0/metadata/interface.go once upgraded to 1.17
+
+	mapRegion := make(map[string]sets.String)
+	instances = make(map[string]int)
+
+	lister := pager.New(pager.SimplePageFunc(func(opts metav1.ListOptions) (runtime.Object, error) {
+		return kc.CoreV1().Nodes().List(opts)
+	}))
+	err = lister.EachListItem(context.Background(), metav1.ListOptions{Limit: 100}, func(obj runtime.Object) error {
+		m, err := meta.Accessor(obj)
+		if err != nil {
+			return err
+		}
+
+		annotations := m.GetAnnotations()
+
+		os, _ := meta_util.GetStringVaultForKeys(annotations, "kubernetes.io/os", "beta.kubernetes.io/os")
+		if os != "linux" {
+			return nil
+		}
+		arch, _ := meta_util.GetStringVaultForKeys(annotations, "kubernetes.io/arch", "beta.kubernetes.io/arch")
+		if arch != "amd64" {
+			return nil
+		}
+
+		region, _ := meta_util.GetStringVaultForKeys(annotations, "topology.kubernetes.io/region", "failure-domain.beta.kubernetes.io/region")
+		zone, _ := meta_util.GetStringVaultForKeys(annotations, "topology.kubernetes.io/zone", "failure-domain.beta.kubernetes.io/zone")
+		if _, ok := mapRegion[region]; !ok {
+			mapRegion[region] = sets.NewString()
+		}
+		mapRegion[region].Insert(zone)
+
+		instance, _ := meta_util.GetStringVaultForKeys(annotations, "node.kubernetes.io/instance-type", "beta.kubernetes.io/instance-type")
+		if n, ok := instances[instance]; ok {
+			instances[instance] = n + 1
+		} else {
+			instances[instance] = 1
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	regions = make(map[string][]string)
+	for k, v := range mapRegion {
+		regions[k] = v.List()
+	}
+	return regions, instances, nil
 }
