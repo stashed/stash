@@ -13,11 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package miscellaneous_use_cases
+package misc
 
 import (
 	"fmt"
-	"time"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -91,9 +90,6 @@ var _ = Describe("Clone", func() {
 							PartialObjectMeta: ofst.PartialObjectMeta{
 								Name:      restoredPVCName,
 								Namespace: f.Namespace(),
-								CreationTimestamp: metav1.Time{
-									Time: time.Now(),
-								},
 							},
 							Spec: core.PersistentVolumeClaimSpec{
 								AccessModes: []core.PersistentVolumeAccessMode{
@@ -172,9 +168,6 @@ var _ = Describe("Clone", func() {
 							PartialObjectMeta: ofst.PartialObjectMeta{
 								Name:      fmt.Sprintf("%s-${POD_ORDINAL}", restoredPVCNamePrefix),
 								Namespace: f.Namespace(),
-								CreationTimestamp: metav1.Time{
-									Time: time.Now(),
-								},
 							},
 							Spec: core.PersistentVolumeClaimSpec{
 								AccessModes: []core.PersistentVolumeAccessMode{
