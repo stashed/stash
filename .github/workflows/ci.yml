@@ -111,4 +111,5 @@ jobs:
         echo "GOOGLE_SERVICE_ACCOUNT_JSON_KEY=$(echo $GOOGLE_SERVICE_ACCOUNT_JSON_KEY)" >> hack/config/.env
         make install
         echo
+        sleep 10
         make e2e-tests
