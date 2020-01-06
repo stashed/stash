@@ -5,20 +5,34 @@ import (
 	"net/http"
 	"time"
 
+	discovery_util "kmodules.xyz/client-go/discovery"
+
 	"github.com/pkg/errors"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 )
 
-func RegisterCRDs(client crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.CustomResourceDefinition) error {
+func RegisterCRDs(disClient discovery.DiscoveryInterface, apiextClient crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.CustomResourceDefinition) error {
+	major, minor, _, _, _, err := discovery_util.GetVersionInfo(disClient)
+	if err != nil {
+		return err
+	}
+
 	for _, crd := range crds {
-		existing, err := client.CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
+		if major == 1 && minor <= 11 {
+			// CRD schema must only have "properties", "required" or "description" at the root if the status subresource is enabled
+			// xref: https://github.com/stashed/stash/issues/1007#issuecomment-570888875
+			crd.Spec.Validation.OpenAPIV3Schema.Type = ""
+		}
+
+		existing, err := apiextClient.CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
-			_, err = client.CustomResourceDefinitions().Create(crd)
+			_, err = apiextClient.CustomResourceDefinitions().Create(crd)
 			if err != nil {
 				return err
 			}
@@ -43,13 +57,13 @@ func RegisterCRDs(client crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.C
 			} else if crd.Spec.Subresources == nil && existing.Spec.Subresources != nil {
 				existing.Spec.Subresources = nil
 			}
-			_, err = client.CustomResourceDefinitions().Update(existing)
+			_, err = apiextClient.CustomResourceDefinitions().Update(existing)
 			if err != nil {
 				return err
 			}
 		}
 	}
-	return WaitForCRDReady(client.RESTClient(), crds)
+	return WaitForCRDReady(apiextClient.RESTClient(), crds)
 }
 
 func WaitForCRDReady(restClient rest.Interface, crds []*crd_api.CustomResourceDefinition) error {

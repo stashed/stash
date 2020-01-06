@@ -37,7 +37,7 @@ require (
 	k8s.io/kube-aggregator v0.0.0-20191114103820-f023614fb9ea
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a
 	k8s.io/kubernetes v1.16.3
-	kmodules.xyz/client-go v0.0.0-20200101081724-6b136a38d486
+	kmodules.xyz/client-go v0.0.0-20200105092743-4b797c0c0802
 	kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6
 	kmodules.xyz/crd-schema-fuzz v0.0.0-20191129174258-81f984340891
 	kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419

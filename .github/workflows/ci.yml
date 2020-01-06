@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        k8s: [v1.12.10, v1.14.6, v1.16.3, v1.17.0]
+        k8s: [v1.11.10, v1.12.10, v1.14.6, v1.16.3, v1.17.0]
     steps:
 
     - name: Set up Go 1.13
@@ -111,4 +111,5 @@ jobs:
         echo "GOOGLE_SERVICE_ACCOUNT_JSON_KEY=$(echo $GOOGLE_SERVICE_ACCOUNT_JSON_KEY)" >> hack/config/.env
         make install
         echo
+        sleep 10
         make e2e-tests
