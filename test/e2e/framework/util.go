@@ -86,6 +86,8 @@ const (
 	SourceReplicationController   = "source-rc"
 	RestoredReplicationController = "restored-rc"
 
+	SourcePVC = "source-pvc"
+
 	SourceVolume   = "source-volume"
 	RestoredVolume = "restored-volume"
 
@@ -320,13 +322,13 @@ func (f *Framework) CreateDataOnMountedDir(meta metav1.ObjectMeta, paths []strin
 	return nil
 }
 
-func (f *Invocation) HostPathVolumeWithMultipleDirectory() []core.Volume {
+func (fi *Invocation) HostPathVolumeWithMultipleDirectory() []core.Volume {
 	return []core.Volume{
 		{
 			Name: TestSourceDataVolumeName,
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
-					Path: filepath.Join(TestSoucreDemoDataPath, f.app),
+					Path: filepath.Join(TestSoucreDemoDataPath, fi.app),
 				},
 			},
 		},
@@ -346,24 +348,24 @@ func FileGroupsForHostPathVolumeWithMultipleDirectory() []api.FileGroup {
 	}
 }
 
-func (f *Invocation) RecoveredVolume() []core.Volume {
+func (fi *Invocation) RecoveredVolume() []core.Volume {
 	return []core.Volume{
 		{
 			Name: TestSourceDataVolumeName,
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
-					Path: filepath.Join(TestRecoveredVolumePath, f.App()),
+					Path: filepath.Join(TestRecoveredVolumePath, fi.App()),
 				},
 			},
 		},
 	}
 }
-func (f *Invocation) CleanupRecoveredVolume(meta metav1.ObjectMeta) error {
-	pod, err := f.GetPod(meta)
+func (fi *Invocation) CleanupRecoveredVolume(meta metav1.ObjectMeta) error {
+	pod, err := fi.GetPod(meta)
 	if err != nil {
 		return err
 	}
-	_, err = f.ExecOnPod(pod, "rm", "-rf", TestSourceDataMountPath)
+	_, err = fi.ExecOnPod(pod, "rm", "-rf", TestSourceDataMountPath)
 	if err != nil {
 		return err
 	}
@@ -710,25 +712,25 @@ func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resou
 	return nil
 }
 
-func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resourceKind string) error {
+func (fi *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resourceKind string) error {
 
 	switch resourceKind {
 	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPod:
-		pod, err := f.GetPod(meta)
+		pod, err := fi.GetPod(meta)
 		if err != nil {
 			return err
 		}
-		_, err = f.ExecOnPod(pod, "/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", TestSourceDataMountPath))
+		_, err = fi.ExecOnPod(pod, "/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", TestSourceDataMountPath))
 		if err != nil {
 			return err
 		}
 	case apis.KindStatefulSet, apis.KindDaemonSet:
-		pods, err := f.GetAllPods(meta)
+		pods, err := fi.GetAllPods(meta)
 		if err != nil {
 			return err
 		}
 		for _, pod := range pods {
-			_, err = f.ExecOnPod(&pod, "/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", TestSourceDataMountPath))
+			_, err = fi.ExecOnPod(&pod, "/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", TestSourceDataMountPath))
 			if err != nil {
 				return err
 			}
@@ -737,42 +739,42 @@ func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resou
 	return nil
 }
 
-func (f *Invocation) ReadDataFromPod(meta metav1.ObjectMeta) (data string, err error) {
-	pod, err := f.GetPod(meta)
+func (fi *Invocation) ReadDataFromPod(meta metav1.ObjectMeta) (data string, err error) {
+	pod, err := fi.GetPod(meta)
 	if err != nil {
 		return "", err
 	}
-	data, err = f.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
+	data, err = fi.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
 	return data, err
 }
 
-func (f *Invocation) AppendToCleanupList(resources ...interface{}) {
+func (fi *Invocation) AppendToCleanupList(resources ...interface{}) {
 	for i := range resources {
-		f.testResources = append(f.testResources, resources[i])
+		fi.testResources = append(fi.testResources, resources[i])
 	}
 }
 
-func (f *Invocation) CleanupTestResources() error {
+func (fi *Invocation) CleanupTestResources() error {
 	// delete all test resources
 	By("Cleaning Test Resources")
-	for i := range f.testResources {
-		gvr, objMeta, err := getGVRAndObjectMeta(f.testResources[i])
+	for i := range fi.testResources {
+		gvr, objMeta, err := getGVRAndObjectMeta(fi.testResources[i])
 		if err != nil {
 			return err
 		}
-		err = f.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(objMeta.Name, deleteInBackground())
+		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(objMeta.Name, deleteInBackground())
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
 	}
 
 	// wait until resource has been deleted
-	for i := range f.testResources {
-		gvr, objMeta, err := getGVRAndObjectMeta(f.testResources[i])
+	for i := range fi.testResources {
+		gvr, objMeta, err := getGVRAndObjectMeta(fi.testResources[i])
 		if err != nil {
 			return err
 		}
-		err = f.waitUntilResourceDeleted(gvr, objMeta)
+		err = fi.waitUntilResourceDeleted(gvr, objMeta)
 		if err != nil {
 			return err
 		}
@@ -781,9 +783,9 @@ func (f *Invocation) CleanupTestResources() error {
 	return nil
 }
 
-func (f *Invocation) waitUntilResourceDeleted(gvr schema.GroupVersionResource, objMeta metav1.ObjectMeta) error {
+func (fi *Invocation) waitUntilResourceDeleted(gvr schema.GroupVersionResource, objMeta metav1.ObjectMeta) error {
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := f.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Get(objMeta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Get(objMeta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -870,7 +872,7 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 	}
 }
 
-func (f *Invocation) AddAnnotations(annotations map[string]string, obj interface{}) error {
+func (fi *Invocation) AddAnnotations(annotations map[string]string, obj interface{}) error {
 	schm := scheme.Scheme
 	gvr, _, _ := getGVRAndObjectMeta(obj)
 	cur := &unstructured.Unstructured{}
@@ -880,7 +882,7 @@ func (f *Invocation) AddAnnotations(annotations map[string]string, obj interface
 	}
 	mod := cur.DeepCopy()
 	mod.SetAnnotations(annotations)
-	out, _, err := dynamic.PatchObject(f.dmClient, gvr, cur, mod)
+	out, _, err := dynamic.PatchObject(fi.dmClient, gvr, cur, mod)
 	if err != nil {
 
 		return err
@@ -914,32 +916,37 @@ func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]st
 	)
 }
 
-func (f *Invocation) PrintDebugHelpers() {
+func (fi *Invocation) PrintDebugHelpers() {
 	const kubectl = "/usr/bin/kubectl"
 	sh := shell.NewSession()
 
 	fmt.Println("\n======================================[ Describe BackupSession ]===================================================")
-	if err := sh.Command(kubectl, "describe", "backupsession", "-n", f.Namespace()).Run(); err != nil {
+	if err := sh.Command(kubectl, "describe", "backupsession", "-n", fi.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("\n======================================[ Describe BackupConfiguration ]==========================================")
-	if err := sh.Command(kubectl, "describe", "backupconfiguration", "-n", f.Namespace()).Run(); err != nil {
+	if err := sh.Command(kubectl, "describe", "backupconfiguration", "-n", fi.Namespace()).Run(); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("\n======================================[ Describe BackupBatch ]==========================================")
+	if err := sh.Command(kubectl, "describe", "backupbatch", "-n", fi.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("\n======================================[ Describe RestoreSession ]==========================================")
-	if err := sh.Command(kubectl, "describe", "restoresession", "-n", f.Namespace()).Run(); err != nil {
+	if err := sh.Command(kubectl, "describe", "restoresession", "-n", fi.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("\n======================================[ Describe Job ]===================================================")
-	if err := sh.Command(kubectl, "describe", "job", "-n", f.Namespace()).Run(); err != nil {
+	if err := sh.Command(kubectl, "describe", "job", "-n", fi.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("\n===============[ Debug info for Stash sidecar/init-container/backup job/restore job ]===================")
-	pods, err := f.KubeClient.CoreV1().Pods(f.Namespace()).List(metav1.ListOptions{})
+	pods, err := fi.KubeClient.CoreV1().Pods(fi.Namespace()).List(metav1.ListOptions{})
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -947,16 +954,15 @@ func (f *Invocation) PrintDebugHelpers() {
 			debugTarget, containerArgs := isDebugTarget(append(pod.Spec.InitContainers, pod.Spec.Containers...))
 			if debugTarget {
 				fmt.Printf("\n--------------- Describe Pod: %s -------------------\n", pod.Name)
-				if err := sh.Command(kubectl, "describe", "po", "-n", f.Namespace(), pod.Name).Run(); err != nil {
+				if err := sh.Command(kubectl, "describe", "po", "-n", fi.Namespace(), pod.Name).Run(); err != nil {
 					fmt.Println(err)
 				}
 
 				fmt.Printf("\n---------------- Log from Pod: %s ------------------\n", pod.Name)
-				logArgs := []interface{}{"logs", "-n", f.namespace, pod.Name}
+				logArgs := []interface{}{"logs", "-n", fi.namespace, pod.Name}
 				for i := range containerArgs {
 					logArgs = append(logArgs, containerArgs[i])
 				}
-
 				err = sh.Command(kubectl, logArgs...).
 					Command("cut", "-f", "4-", "-d ").
 					Command("awk", `{$2=$2;print}`).

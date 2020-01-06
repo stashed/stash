@@ -70,7 +70,7 @@ var _ = Describe("Clone", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
 					Name: backupConfig.Name,
 					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})
@@ -147,7 +147,7 @@ var _ = Describe("Clone", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
 					Name: backupConfig.Name,
 					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})
@@ -160,7 +160,7 @@ var _ = Describe("Clone", func() {
 
 				// Restore PVC according to VolumeClaimTemplate
 				By("Restoring the backed up data into PVC")
-				restoredPVCNamePrefix := fmt.Sprintf("%s-%s-%s", framework.RestoredVolume, framework.RestoredStatefulSet, f.App())
+				restoredPVCNamePrefix := fmt.Sprintf("%s-%s", framework.RestoredVolume, framework.RestoredStatefulSet)
 				restoreSession, err := f.SetupRestoreProcess(metav1.ObjectMeta{}, repo, apis.KindPersistentVolumeClaim, restoredPVCNamePrefix, func(restore *v1beta1.RestoreSession) {
 					restore.Spec.Target.Replicas = types.Int32P(3)
 					restore.Spec.Target.VolumeClaimTemplates = []ofst.PersistentVolumeClaim{

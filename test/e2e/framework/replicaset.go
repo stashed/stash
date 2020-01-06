@@ -33,9 +33,10 @@ import (
 	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
-func (fi *Invocation) ReplicaSet(pvcName, volName string) apps.ReplicaSet {
+func (fi *Invocation) ReplicaSet(name, pvcName, volName string) apps.ReplicaSet {
+	name = rand.WithUniqSuffix(fmt.Sprintf("%s-%s", name, fi.app))
 	labels := map[string]string{
-		"app":  fi.app,
+		"app":  name,
 		"kind": "replicaset",
 	}
 	return apps.ReplicaSet{
@@ -74,11 +75,11 @@ func (f *Framework) EventuallyReplicaSet(meta metav1.ObjectMeta) GomegaAsyncAsse
 	})
 }
 
-func (f *Invocation) WaitUntilRSReadyWithSidecar(meta metav1.ObjectMeta) error {
+func (fi *Invocation) WaitUntilRSReadyWithSidecar(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := f.GetAllPods(obj.ObjectMeta)
+				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
 					return false, err
 				}
@@ -102,11 +103,11 @@ func (f *Invocation) WaitUntilRSReadyWithSidecar(meta metav1.ObjectMeta) error {
 	})
 }
 
-func (f *Invocation) WaitUntilRSReadyWithInitContainer(meta metav1.ObjectMeta) error {
+func (fi *Invocation) WaitUntilRSReadyWithInitContainer(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := f.GetAllPods(obj.ObjectMeta)
+				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
 					return false, err
 				}
@@ -130,16 +131,15 @@ func (f *Invocation) WaitUntilRSReadyWithInitContainer(meta metav1.ObjectMeta) e
 	})
 }
 
-func (f *Invocation) DeployReplicaSet(name string, replica int32, volName string) (*apps.ReplicaSet, error) {
+func (fi *Invocation) DeployReplicaSet(name string, replica int32, volName string) (*apps.ReplicaSet, error) {
 	// append test case specific suffix so that name does not conflict during parallel test
-	name = fmt.Sprintf("%s-%s", name, f.app)
-	pvcName := fmt.Sprintf("%s-%s", volName, f.app)
+	pvcName := fmt.Sprintf("%s-%s", volName, fi.app)
 
 	// If the PVC does not exist, create PVC for ReplicaSet
-	pvc, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.namespace).Get(pvcName, metav1.GetOptions{})
+	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(pvcName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
-			pvc, err = f.CreateNewPVC(pvcName)
+			pvc, err = fi.CreateNewPVC(pvcName)
 			if err != nil {
 				return nil, err
 			}
@@ -149,23 +149,22 @@ func (f *Invocation) DeployReplicaSet(name string, replica int32, volName string
 	}
 
 	// Generate ReplicaSet definition
-	rs := f.ReplicaSet(pvc.Name, volName)
+	rs := fi.ReplicaSet(name, pvc.Name, volName)
 	rs.Spec.Replicas = &replica
-	rs.Name = name
 
 	By("Deploying ReplicaSet: " + rs.Name)
-	createdRS, err := f.CreateReplicaSet(rs)
+	createdRS, err := fi.CreateReplicaSet(rs)
 	if err != nil {
 		return createdRS, err
 	}
-	f.AppendToCleanupList(createdRS)
+	fi.AppendToCleanupList(createdRS)
 
 	By("Waiting for ReplicaSet to be ready")
-	err = apps_util.WaitUntilReplicaSetReady(f.KubeClient, createdRS.ObjectMeta)
+	err = apps_util.WaitUntilReplicaSetReady(fi.KubeClient, createdRS.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
-	f.EventuallyPodAccessible(createdRS.ObjectMeta).Should(BeTrue())
+	fi.EventuallyAllPodsAccessible(createdRS.ObjectMeta).Should(BeTrue())
 
 	return createdRS, err
 }

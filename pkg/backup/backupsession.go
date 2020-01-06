@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
@@ -145,6 +146,21 @@ func (c *BackupSessionController) initBackupSessionWatcher() error {
 				queue.Enqueue(c.bsQueue.GetQueue(), backupsession)
 			}
 		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			oldBS, ok := oldObj.(*api_v1beta1.BackupSession)
+			if !ok {
+				glog.Errorf("Invalid BackupSession Object")
+				return
+			}
+			newBS, ok := newObj.(*api_v1beta1.BackupSession)
+			if !ok {
+				glog.Errorf("Invalid BackupSession Object")
+				return
+			}
+			if !reflect.DeepEqual(&oldBS.Status, &newBS.Status) {
+				queue.Enqueue(c.bsQueue.GetQueue(), newObj)
+			}
+		},
 	}, selector))
 	c.bsLister = c.StashInformerFactory.Stash().V1beta1().BackupSessions().Lister()
 	return nil
@@ -199,7 +215,12 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 
 	// if BackupSession already has been processed for this host then skip further processing
 	if c.isBackupTakenForThisHost(backupSession, targetInfo.Target) {
-		log.Infof("Skip processing BackupSession %s/%s. Reason: BackupSession has been processed already for host %q\n", backupSession.Namespace, backupSession.Name, c.Host)
+		log.Infof("Skip processing BackupSession %s/%s. Reason: BackupSession has been processed already for host %q", backupSession.Namespace, backupSession.Name, c.Host)
+		return nil, nil
+	}
+
+	if !isBackupInitiated(backupSession) {
+		log.Infof("Skip processing BackupSession %s/%s. Reason: Backup process is not initiated by it's operator", backupSession.Namespace, backupSession.Name)
 		return nil, nil
 	}
 
@@ -247,6 +268,7 @@ func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.T
 
 	if c.InvokerType == api_v1beta1.ResourceKindBackupBatch {
 		c.SetupOpt.Path = fmt.Sprintf("%s/%s/%s", c.SetupOpt.Path, strings.ToLower(c.BackupTargetKind), c.BackupTargetName)
+
 	}
 
 	// apply nice, ionice settings from env
@@ -265,8 +287,8 @@ func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.T
 		return nil, err
 	}
 
-	// BackupOptions configuration
-	backupOpt := util.BackupOptionsForBackupConfig(targetInfo.Target, invoker.RetentionPolicy, extraOpt)
+	// BackupOptions backup target
+	backupOpt := util.BackupOptionsForBackupTarget(targetInfo.Target, invoker.RetentionPolicy, extraOpt)
 	// Run Backup
 	// If there is an error during backup, don't return.
 	// We will execute postBackup hook even if the backup failed.
@@ -506,4 +528,8 @@ func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1
 		}
 	}
 	return false
+}
+
+func isBackupInitiated(bs *api_v1beta1.BackupSession) bool {
+	return bs.Status.Phase == api_v1beta1.BackupSessionRunning
 }

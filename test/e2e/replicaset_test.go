@@ -84,7 +84,7 @@ var _ = XDescribe("ReplicaSet", func() {
 		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		rs = f.ReplicaSet(pvc.Name, framework.SourceVolume)
+		rs = f.ReplicaSet(framework.SourceReplicaSet, pvc.Name, framework.SourceVolume)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindReplicaSet,
 			Name: rs.Name,

@@ -54,29 +54,31 @@ const (
 	MySQLRestoreFunction   = "mysql-restore-8.0.14"
 )
 
-func (f *Invocation) MySQLCredentials() *core.Secret {
+func (fi *Invocation) MySQLCredentials() *core.Secret {
+	name := fmt.Sprintf("mysql-%s", fi.app)
 	return &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      f.app,
-			Namespace: f.namespace,
+			Name:      name,
+			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
 			KeyUser:     []byte(SuperUser),
-			KeyPassword: []byte(f.app),
+			KeyPassword: []byte(fi.app),
 		},
 		Type: core.SecretTypeOpaque,
 	}
 }
 
-func (f *Invocation) MySQLService() *core.Service {
+func (fi *Invocation) MySQLService() *core.Service {
+	name := fmt.Sprintf("mysql-%s", fi.app)
 	return &core.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      f.app,
-			Namespace: f.namespace,
+			Name:      name,
+			Namespace: fi.namespace,
 		},
 		Spec: core.ServiceSpec{
 			Selector: map[string]string{
-				"app": f.app,
+				"app": name,
 			},
 			Ports: []core.ServicePort{
 				{
@@ -88,11 +90,12 @@ func (f *Invocation) MySQLService() *core.Service {
 	}
 }
 
-func (f *Invocation) MySQLPVC() *core.PersistentVolumeClaim {
+func (fi *Invocation) MySQLPVC() *core.PersistentVolumeClaim {
+	name := fmt.Sprintf("mysql-%s", fi.app)
 	return &core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      f.app,
-			Namespace: f.namespace,
+			Name:      name,
+			Namespace: fi.namespace,
 		},
 		Spec: core.PersistentVolumeClaimSpec{
 			AccessModes: []core.PersistentVolumeAccessMode{
@@ -107,14 +110,15 @@ func (f *Invocation) MySQLPVC() *core.PersistentVolumeClaim {
 	}
 }
 
-func (f *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolumeClaim) *apps.Deployment {
+func (fi *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolumeClaim) *apps.Deployment {
+	name := fmt.Sprintf("mysql-%s", fi.app)
 	label := map[string]string{
-		"app": f.app,
+		"app": name,
 	}
 	return &apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      f.app,
-			Namespace: f.namespace,
+			Name:      name,
+			Namespace: fi.namespace,
 		},
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -182,11 +186,12 @@ func (f *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolu
 	}
 }
 
-func (f *Invocation) MySQLAppBinding(cred *core.Secret, svc *core.Service) *appCatalog.AppBinding {
+func (fi *Invocation) MySQLAppBinding(cred *core.Secret, svc *core.Service) *appCatalog.AppBinding {
+	name := fmt.Sprintf("mysql-%s", fi.app)
 	return &appCatalog.AppBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      f.app,
-			Namespace: f.namespace,
+			Name:      name,
+			Namespace: fi.namespace,
 		},
 		Spec: appCatalog.AppBindingSpec{
 			Type:    "mysql",
@@ -205,41 +210,41 @@ func (f *Invocation) MySQLAppBinding(cred *core.Secret, svc *core.Service) *appC
 	}
 }
 
-func (f *Invocation) DeployMySQLDatabase() (*apps.Deployment, *appCatalog.AppBinding, error) {
+func (fi *Invocation) DeployMySQLDatabase() (*apps.Deployment, *appCatalog.AppBinding, error) {
 	By("Creating Secret for MySQL")
-	cred := f.MySQLCredentials()
-	_, err := f.CreateSecret(*cred)
+	cred := fi.MySQLCredentials()
+	_, err := fi.CreateSecret(*cred)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating PVC for MySQL")
-	pvc := f.MySQLPVC()
-	_, err = f.CreatePersistentVolumeClaim(pvc)
+	pvc := fi.MySQLPVC()
+	_, err = fi.CreatePersistentVolumeClaim(pvc)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating Service for MySQL")
-	svc := f.MySQLService()
-	_, err = f.CreateService(*svc)
+	svc := fi.MySQLService()
+	_, err = fi.CreateService(*svc)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating MySQL")
-	dpl := f.MySQLDeployment(cred, pvc)
-	dpl, err = f.CreateDeployment(*dpl)
+	dpl := fi.MySQLDeployment(cred, pvc)
+	dpl, err = fi.CreateDeployment(*dpl)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Waiting for MySQL Deployment to be ready")
-	err = apps_util.WaitUntilDeploymentReady(f.KubeClient, dpl.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, dpl.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating AppBinding for the MySQL")
-	appBinding := f.MySQLAppBinding(cred, svc)
-	appBinding, err = f.createAppBinding(appBinding)
+	appBinding := fi.MySQLAppBinding(cred, svc)
+	appBinding, err = fi.createAppBinding(appBinding)
 	Expect(err).NotTo(HaveOccurred())
 
-	f.AppendToCleanupList(appBinding, dpl, svc, pvc, cred)
+	fi.AppendToCleanupList(appBinding, dpl, svc, pvc, cred)
 	return dpl, appBinding, nil
 }
 
-func (f *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
+func (fi *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
 
 	return wait.PollImmediate(5*time.Second, 5*time.Minute, func() (bool, error) {
 		if err := db.Ping(); err != nil {
@@ -249,11 +254,11 @@ func (f *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
 	})
 }
 
-func (f *Invocation) createAppBinding(appBinding *appCatalog.AppBinding) (*appCatalog.AppBinding, error) {
-	return f.catalogClient.AppcatalogV1alpha1().AppBindings(appBinding.Namespace).Create(appBinding)
+func (fi *Invocation) createAppBinding(appBinding *appCatalog.AppBinding) (*appCatalog.AppBinding, error) {
+	return fi.catalogClient.AppcatalogV1alpha1().AppBindings(appBinding.Namespace).Create(appBinding)
 }
 
-func (f *Invocation) CreateTable(db *sql.DB, tableName string) error {
+func (fi *Invocation) CreateTable(db *sql.DB, tableName string) error {
 	stmnt, err := db.Prepare(fmt.Sprintf("CREATE TABLE %s ( property varchar(25),  value int );", tableName))
 	if err != nil {
 		return err
@@ -264,7 +269,7 @@ func (f *Invocation) CreateTable(db *sql.DB, tableName string) error {
 	return err
 }
 
-func (f *Invocation) ListTables(db *sql.DB) (sets.String, error) {
+func (fi *Invocation) ListTables(db *sql.DB) (sets.String, error) {
 	res, err := db.Query("SHOW TABLES IN mysql")
 	if err != nil {
 		return nil, err
@@ -282,7 +287,7 @@ func (f *Invocation) ListTables(db *sql.DB) (sets.String, error) {
 	return tables, nil
 }
 
-func (f *Invocation) InsertRow(db *sql.DB, tableName string, property string, value int) error {
+func (fi *Invocation) InsertRow(db *sql.DB, tableName string, property string, value int) error {
 	stmnt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s( property, value) VALUES(?,?);", tableName))
 	if err != nil {
 		return err
@@ -293,7 +298,7 @@ func (f *Invocation) InsertRow(db *sql.DB, tableName string, property string, va
 	return err
 }
 
-func (f *Invocation) ReadProperty(db *sql.DB, tableName, property string) (int, error) {
+func (fi *Invocation) ReadProperty(db *sql.DB, tableName, property string) (int, error) {
 	res, err := db.Query(fmt.Sprintf("SELECT * FROM %s WHERE property=?;", tableName), property)
 	if err != nil {
 		return 0, err
@@ -315,7 +320,7 @@ func (f *Invocation) ReadProperty(db *sql.DB, tableName, property string) (int, 
 	return 0, fmt.Errorf("no entry for property: %q in the database", property)
 }
 
-func (f *Invocation) UpdateProperty(db *sql.DB, tableName, property string, newValue int) error {
+func (fi *Invocation) UpdateProperty(db *sql.DB, tableName, property string, newValue int) error {
 	stmnt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET value=? WHERE property=?; ", tableName))
 	if err != nil {
 		return err
@@ -326,9 +331,9 @@ func (f *Invocation) UpdateProperty(db *sql.DB, tableName, property string, newV
 	return err
 }
 
-func (f *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
+func (fi *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
-	backupConfig := f.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
+	backupConfig := fi.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
 		bc.Spec.Target = &v1beta1.BackupTarget{
 			Ref: GetTargetRef(appBinding.Name, apis.KindAppBinding),
 		}
@@ -342,19 +347,19 @@ func (f *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, repo
 	}
 
 	By("Creating BackupConfiguration: " + backupConfig.Name)
-	createdBC, err := f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
-	f.AppendToCleanupList(createdBC)
+	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	fi.AppendToCleanupList(createdBC)
 
 	By("Verifying that backup triggering CronJob has been created")
-	f.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
+	fi.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
 
 	return createdBC, err
 }
 
-func (f *Invocation) SetupDatabaseRestore(appBinding *appCatalog.AppBinding, repo *v1alpha1.Repository, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
+func (fi *Invocation) SetupDatabaseRestore(appBinding *appCatalog.AppBinding, repo *v1alpha1.Repository, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
 	// Generate desired RestoreSession definition
 	By("Creating RestoreSession")
-	restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
+	restoreSession := fi.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
 		restore.Spec.Target = &v1beta1.RestoreTarget{
 			Ref: GetTargetRef(appBinding.Name, apis.KindAppBinding),
 		}
@@ -372,11 +377,11 @@ func (f *Invocation) SetupDatabaseRestore(appBinding *appCatalog.AppBinding, rep
 		fn(restoreSession)
 	}
 
-	err := f.CreateRestoreSession(restoreSession)
-	f.AppendToCleanupList(restoreSession)
+	err := fi.CreateRestoreSession(restoreSession)
+	fi.AppendToCleanupList(restoreSession)
 
 	By("Waiting for restore process to complete")
-	f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
 
 	return restoreSession, err
 }
@@ -446,23 +451,23 @@ func (f *Framework) EnsureMySQLAddonDeleted() error {
 	return nil
 }
 
-func (f *Invocation) MySQLAddonInstalled() bool {
-	_, err := f.StashClient.StashV1beta1().Functions().Get(MySQLBackupFunction, metav1.GetOptions{})
+func (fi *Invocation) MySQLAddonInstalled() bool {
+	_, err := fi.StashClient.StashV1beta1().Functions().Get(MySQLBackupFunction, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
 
-	_, err = f.StashClient.StashV1beta1().Functions().Get(MySQLRestoreFunction, metav1.GetOptions{})
+	_, err = fi.StashClient.StashV1beta1().Functions().Get(MySQLRestoreFunction, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
 
-	_, err = f.StashClient.StashV1beta1().Tasks().Get(MySQLBackupTask, metav1.GetOptions{})
+	_, err = fi.StashClient.StashV1beta1().Tasks().Get(MySQLBackupTask, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
 
-	_, err = f.StashClient.StashV1beta1().Tasks().Get(MySQLRestoreTask, metav1.GetOptions{})
+	_, err = fi.StashClient.StashV1beta1().Tasks().Get(MySQLRestoreTask, metav1.GetOptions{})
 
 	return err == nil
 }

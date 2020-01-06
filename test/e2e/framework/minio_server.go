@@ -348,16 +348,16 @@ func (f *Framework) MinioServiceAddres() string {
 	return fmt.Sprintf("%s.%s.svc", f.GetMinioServiceName(), f.namespace)
 }
 
-func (f Invocation) CreateBackendSecretForMinio() (*core.Secret, error) {
+func (fi Invocation) CreateBackendSecretForMinio() (*core.Secret, error) {
 	// Create Storage Secret
-	cred := f.SecretForMinioBackend(true)
+	cred := fi.SecretForMinioBackend(true)
 
 	if missing, _ := BeZero().Match(cred); missing {
 		Skip("Missing Minio credential")
 	}
 	By(fmt.Sprintf("Creating Storage Secret for Minio: %s/%s", cred.Namespace, cred.Name))
-	createdCred, err := f.CreateSecret(cred)
-	f.AppendToCleanupList(&cred)
+	createdCred, err := fi.CreateSecret(cred)
+	fi.AppendToCleanupList(&cred)
 
 	return createdCred, err
 }

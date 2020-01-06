@@ -33,7 +33,7 @@ type ExtraOptions struct {
 	EnableCache bool
 }
 
-func BackupOptionsForBackupConfig(backupTarget *api.BackupTarget, retentionPolicy api_v1alpha1.RetentionPolicy, extraOpt ExtraOptions) restic.BackupOptions {
+func BackupOptionsForBackupTarget(backupTarget *api.BackupTarget, retentionPolicy api_v1alpha1.RetentionPolicy, extraOpt ExtraOptions) restic.BackupOptions {
 	backupOpt := restic.BackupOptions{
 		Host:            extraOpt.Host,
 		RetentionPolicy: retentionPolicy,

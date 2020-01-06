@@ -44,20 +44,20 @@ const (
 	RestService      = "rest-service"
 )
 
-func (f *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
+func (fi *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
 	//creating secret for Rest server
-	cred := f.SecretForRestServer(ips)
-	rcred, err := f.CreateSecret(cred)
+	cred := fi.SecretForRestServer(ips)
+	rcred, err := fi.CreateSecret(cred)
 	if err != nil {
 		return "", err
 	}
-	f.AppendToCleanupList(rcred)
+	fi.AppendToCleanupList(rcred)
 
 	//creating deployment for Rest server
-	deploy := f.DeploymentForRestServer()
+	deploy := fi.DeploymentForRestServer()
 
 	if !tls { // if tls not enabled then don't mount secret for cacerts
-		deploy.Spec.Template.Spec.Containers = f.RemoveRestSecretVolumeMount(deploy.Spec.Template.Spec.Containers)
+		deploy.Spec.Template.Spec.Containers = fi.RemoveRestSecretVolumeMount(deploy.Spec.Template.Spec.Containers)
 		deploy.Spec.Template.Spec.Containers[0].Command = []string{
 			"sh",
 			"-c",
@@ -66,58 +66,58 @@ func (f *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
 			echo -n "changeit" | htpasswd -ics $PASSWORD_FILE myuser
 			wait $pid`,
 		}
-		deploy.Spec.Template.Spec.Volumes = f.RemoveRestSecretVolume(deploy.Spec.Template.Spec.Volumes)
+		deploy.Spec.Template.Spec.Volumes = fi.RemoveRestSecretVolume(deploy.Spec.Template.Spec.Volumes)
 	}
-	rdeploy, err := f.CreateDeploymentForRestServer(deploy)
+	rdeploy, err := fi.CreateDeploymentForRestServer(deploy)
 	if err != nil {
 		return "", err
 	}
-	f.AppendToCleanupList(rdeploy)
+	fi.AppendToCleanupList(rdeploy)
 
 	//creating pvc for Rest server
-	pvc := f.PVCForRestServer()
-	rpvc, err := f.CreatePersistentVolumeClaimForRestServer(pvc)
+	pvc := fi.PVCForRestServer()
+	rpvc, err := fi.CreatePersistentVolumeClaimForRestServer(pvc)
 	if err != nil {
 		return "", err
 	}
-	f.AppendToCleanupList(rpvc)
+	fi.AppendToCleanupList(rpvc)
 
 	//creating service for Rest server
-	svc := f.ServiceForRestServer()
-	rsvc, err := f.CreateServiceForRestServer(svc)
+	svc := fi.ServiceForRestServer()
+	rsvc, err := fi.CreateServiceForRestServer(svc)
 	if err != nil {
 		return "", err
 	}
-	f.AppendToCleanupList(rsvc)
+	fi.AppendToCleanupList(rsvc)
 
-	err = apps_util.WaitUntilDeploymentReady(f.KubeClient, rdeploy.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, rdeploy.ObjectMeta)
 	if err != nil {
 		return "", err
 	}
-	return f.RestServiceAddres(), nil
+	return fi.RestServiceAddres(), nil
 }
 
-func (f *Invocation) SecretForRestServer(ips []net.IP) core.Secret {
-	crt, key, err := f.CertStore.NewServerCertPairBytes(f.RestServerSANs(ips))
+func (fi *Invocation) SecretForRestServer(ips []net.IP) core.Secret {
+	crt, key, err := fi.CertStore.NewServerCertPairBytes(fi.RestServerSANs(ips))
 	Expect(err).NotTo(HaveOccurred())
 
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", RestServerSecret, f.App()),
-			Namespace: f.namespace,
+			Name:      fmt.Sprintf("%s-%s", RestServerSecret, fi.App()),
+			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			REST_PUBLIC_CRT_NAME:  []byte(string(crt) + "\n" + string(f.CertStore.CACertBytes())),
+			REST_PUBLIC_CRT_NAME:  []byte(string(crt) + "\n" + string(fi.CertStore.CACertBytes())),
 			REST_PRIVATE_KEY_NAME: key,
 		},
 	}
 }
 
-func (f *Invocation) PVCForRestServer() core.PersistentVolumeClaim {
+func (fi *Invocation) PVCForRestServer() core.PersistentVolumeClaim {
 	return core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", RestPVCStorage, f.App()),
-			Namespace: f.namespace,
+			Name:      fmt.Sprintf("%s-%s", RestPVCStorage, fi.App()),
+			Namespace: fi.namespace,
 		},
 		Spec: core.PersistentVolumeClaimSpec{
 			AccessModes: []core.PersistentVolumeAccessMode{
@@ -137,15 +137,15 @@ func (f *Framework) CreatePersistentVolumeClaimForRestServer(obj core.Persistent
 	return f.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(&obj)
 }
 
-func (f *Invocation) DeploymentForRestServer() apps.Deployment {
+func (fi *Invocation) DeploymentForRestServer() apps.Deployment {
 	labels := map[string]string{
-		"app": RestServer + f.App(),
+		"app": RestServer + fi.App(),
 	}
 
 	return apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", RestServer, f.App()),
-			Namespace: f.namespace,
+			Name:      fmt.Sprintf("%s-%s", RestServer, fi.App()),
+			Namespace: fi.namespace,
 		},
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -167,7 +167,7 @@ func (f *Invocation) DeploymentForRestServer() apps.Deployment {
 							Name: "rest-storage",
 							VolumeSource: core.VolumeSource{
 								PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-									ClaimName: fmt.Sprintf("%s-%s", RestPVCStorage, f.App()),
+									ClaimName: fmt.Sprintf("%s-%s", RestPVCStorage, fi.App()),
 								},
 							},
 						},
@@ -175,7 +175,7 @@ func (f *Invocation) DeploymentForRestServer() apps.Deployment {
 							Name: "rest-certs",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
-									SecretName: fmt.Sprintf("%s-%s", RestServerSecret, f.App()),
+									SecretName: fmt.Sprintf("%s-%s", RestServerSecret, fi.App()),
 								},
 							},
 						},
@@ -216,7 +216,7 @@ func (f *Invocation) DeploymentForRestServer() apps.Deployment {
 	}
 }
 
-func (f *Invocation) RemoveRestSecretVolumeMount(containers []core.Container) []core.Container {
+func (fi *Invocation) RemoveRestSecretVolumeMount(containers []core.Container) []core.Container {
 	var resp []core.Container
 	for _, c := range containers {
 		if c.Name == "rest-server" {
@@ -227,19 +227,19 @@ func (f *Invocation) RemoveRestSecretVolumeMount(containers []core.Container) []
 	return resp
 }
 
-func (f *Invocation) RemoveRestSecretVolume(volumes []core.Volume) []core.Volume {
+func (fi *Invocation) RemoveRestSecretVolume(volumes []core.Volume) []core.Volume {
 	return core_util.EnsureVolumeDeleted(volumes, "rest-certs")
 }
 
-func (f *Invocation) CreateDeploymentForRestServer(obj apps.Deployment) (*apps.Deployment, error) {
-	return f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
+func (fi *Invocation) CreateDeploymentForRestServer(obj apps.Deployment) (*apps.Deployment, error) {
+	return fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
 }
 
-func (f *Invocation) ServiceForRestServer() core.Service {
+func (fi *Invocation) ServiceForRestServer() core.Service {
 	return core.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", RestService, f.App()),
-			Namespace: f.namespace,
+			Name:      fmt.Sprintf("%s-%s", RestService, fi.App()),
+			Namespace: fi.namespace,
 		},
 		Spec: core.ServiceSpec{
 			Ports: []core.ServicePort{
@@ -251,39 +251,39 @@ func (f *Invocation) ServiceForRestServer() core.Service {
 				},
 			},
 			Selector: map[string]string{
-				"app": RestServer + f.App(),
+				"app": RestServer + fi.App(),
 			},
 		},
 	}
 }
 
-func (f *Invocation) CreateServiceForRestServer(obj core.Service) (*core.Service, error) {
-	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
+func (fi *Invocation) CreateServiceForRestServer(obj core.Service) (*core.Service, error) {
+	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
 }
 
-func (f *Invocation) RestServerSANs(ips []net.IP) cert.AltNames {
+func (fi *Invocation) RestServerSANs(ips []net.IP) cert.AltNames {
 	altNames := cert.AltNames{
-		DNSNames: []string{f.RestServiceAddres()},
+		DNSNames: []string{fi.RestServiceAddres()},
 		IPs:      ips,
 	}
 	return altNames
 }
 
-func (f *Invocation) RestServiceAddres() string {
-	return fmt.Sprintf("%s-%s.%s.svc", RestService, f.App(), f.namespace)
+func (fi *Invocation) RestServiceAddres() string {
+	return fmt.Sprintf("%s-%s.%s.svc", RestService, fi.App(), fi.namespace)
 
 }
 
-func (f Invocation) CreateBackendSecretForRest() (*core.Secret, error) {
+func (fi Invocation) CreateBackendSecretForRest() (*core.Secret, error) {
 	// Create Storage Secret
-	cred := f.SecretForRestBackend(false)
+	cred := fi.SecretForRestBackend(false)
 
 	if missing, _ := BeZero().Match(cred); missing {
 		Skip("Missing Rest credential")
 	}
 	By(fmt.Sprintf("Creating Storage Secret for Rest: %s/%s", cred.Namespace, cred.Name))
-	createdCred, err := f.CreateSecret(cred)
-	f.AppendToCleanupList(&cred)
+	createdCred, err := fi.CreateSecret(cred)
+	fi.AppendToCleanupList(&cred)
 
 	return createdCred, err
 }

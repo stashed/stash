@@ -138,14 +138,15 @@ func (f *Framework) GetMinioPod() (*core.Pod, error) {
 	return nil, fmt.Errorf("operator pod not found")
 }
 
-func (f *Invocation) Pod(pvcName string) core.Pod {
+func (fi *Invocation) Pod(pvcName string) core.Pod {
+	podName := rand.WithUniqSuffix(fmt.Sprintf("test-write-source-%s", fi.app))
 	labels := map[string]string{
-		"app": f.app,
+		"app": podName,
 	}
 	return core.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("test-write-source"),
-			Namespace: f.namespace,
+			Name:      podName,
+			Namespace: fi.namespace,
 			Labels:    labels,
 		},
 		Spec: core.PodSpec{
@@ -183,19 +184,19 @@ func (f *Invocation) Pod(pvcName string) core.Pod {
 	}
 }
 
-func (f *Invocation) CreatePod(pod core.Pod) (*core.Pod, error) {
-	return f.KubeClient.CoreV1().Pods(pod.Namespace).Create(&pod)
+func (fi *Invocation) CreatePod(pod core.Pod) (*core.Pod, error) {
+	return fi.KubeClient.CoreV1().Pods(pod.Namespace).Create(&pod)
 }
 
-func (f *Invocation) DeletePod(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().Pods(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+func (fi *Invocation) DeletePod(meta metav1.ObjectMeta) error {
+	err := fi.KubeClient.CoreV1().Pods(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
 }
 
-func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+func (f *Framework) EventuallyAllPodsAccessible(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() bool {
 		labelSelector := fields.SelectorFromSet(meta.Labels)
 		podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
@@ -220,22 +221,33 @@ func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncA
 	)
 }
 
-func (f *Invocation) DeployPod(pvcName string) (*core.Pod, error) {
+func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(func() bool {
+		pod, err := f.KubeClient.CoreV1().Pods(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = f.ExecOnPod(pod, "ls", "-R")
+		return err == nil
+
+	}, time.Minute*2, time.Second*2)
+}
+
+func (fi *Invocation) DeployPod(pvcName string) (*core.Pod, error) {
 	// Generate Pod definition
-	pod := f.Pod(pvcName)
+	pod := fi.Pod(pvcName)
 
 	By(fmt.Sprintf("Deploying Pod: %s/%s", pod.Namespace, pod.Name))
-	createdPod, err := f.CreatePod(pod)
+	createdPod, err := fi.CreatePod(pod)
 	if err != nil {
 		return createdPod, err
 	}
-	f.AppendToCleanupList(createdPod)
+	fi.AppendToCleanupList(createdPod)
 
 	By("Waiting for Pod to be ready")
-	err = v1.WaitUntilPodRunning(f.KubeClient, createdPod.ObjectMeta)
+	err = v1.WaitUntilPodRunning(fi.KubeClient, createdPod.ObjectMeta)
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
-	f.EventuallyPodAccessible(createdPod.ObjectMeta).Should(BeTrue())
+	fi.EventuallyPodAccessible(createdPod.ObjectMeta).Should(BeTrue())
 
 	return createdPod, err
 }

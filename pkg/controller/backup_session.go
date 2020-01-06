@@ -163,18 +163,6 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 		return c.setBackupSessionSkipped(backupSession, fmt.Sprintf("backup invoker %s %s/%s is paused", invoker.ObjectRef.Kind, invoker.ObjectRef.Namespace, invoker.ObjectRef.Name))
 	}
 
-	// skip if backup model is sidecar.
-	// for sidecar model controller inside sidecar will take care of it.
-	for _, targetInfo := range invoker.TargetsInfo {
-		if targetInfo.Target != nil && invoker.Driver != api_v1beta1.VolumeSnapshotter && util.BackupModel(targetInfo.Target.Ref.Kind) == apis.ModelSidecar {
-			log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
-			backupSession, err = c.setBackupSessionRunning(targetInfo.Target, invoker.Driver, backupSession)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	// if preBackup hook exist, then execute preBackupHook
 	if invoker.Hooks != nil && invoker.Hooks.PreBackup != nil {
 		err = util.ExecuteHook(c.clientConfig, invoker.Hooks.PreBackup, apis.PreBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
@@ -183,32 +171,32 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 		}
 	}
 
-	// if VolumeSnapshotter driver is used then ensure VolumeSnapshotter job and return
-	if invoker.Driver == api_v1beta1.VolumeSnapshotter {
-		for _, targetInfo := range invoker.TargetsInfo {
-			if targetInfo.Target != nil {
+	for i, targetInfo := range invoker.TargetsInfo {
+		if targetInfo.Target != nil {
+			// skip if backup model is sidecar.
+			// for sidecar model controller inside sidecar will take care of it.
+			if invoker.Driver != api_v1beta1.VolumeSnapshotter && util.BackupModel(targetInfo.Target.Ref.Kind) == apis.ModelSidecar {
+				log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
+			}
+
+			// if VolumeSnapshotter driver is used then ensure VolumeSnapshotter job and return
+			if invoker.Driver == api_v1beta1.VolumeSnapshotter {
 				err = c.ensureVolumeSnapshotterJob(invoker, targetInfo, backupSession)
 				if err != nil {
 					return c.handleBackupJobCreationFailure(invoker, backupSession, err)
 				}
-				backupSession, err = c.setBackupSessionRunning(targetInfo.Target, invoker.Driver, backupSession)
+			}
+
+			// Restic driver has been used. Now, create a backup job
+			if util.BackupModel(targetInfo.Target.Ref.Kind) != apis.ModelSidecar {
+				err = c.ensureBackupJob(invoker, targetInfo, backupSession, i)
 				if err != nil {
-					return err
+					// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
+					return c.handleBackupJobCreationFailure(invoker, backupSession, err)
 				}
 			}
-		}
-		return nil
-	}
 
-	// Restic driver has been used. Now, create a backup job
-	for i, targetInfo := range invoker.TargetsInfo {
-		if targetInfo.Target != nil && util.BackupModel(targetInfo.Target.Ref.Kind) != apis.ModelSidecar {
-			err = c.ensureBackupJob(invoker, targetInfo, backupSession, i)
-			if err != nil {
-				// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
-				return c.handleBackupJobCreationFailure(invoker, backupSession, err)
-			}
-			// Backup job has been created successfully. Set BackupSession phase "Running"
+			// Set BackupSession phase "Running"
 			backupSession, err = c.setBackupSessionRunning(targetInfo.Target, invoker.Driver, backupSession)
 			if err != nil {
 				return err

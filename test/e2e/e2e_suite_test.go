@@ -29,7 +29,6 @@ import (
 	_ "stash.appscode.dev/stash/test/e2e/advance-configuration"
 	_ "stash.appscode.dev/stash/test/e2e/auto-backup"
 	_ "stash.appscode.dev/stash/test/e2e/backend"
-	_ "stash.appscode.dev/stash/test/e2e/backupbatch"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	_ "stash.appscode.dev/stash/test/e2e/hooks"
 	_ "stash.appscode.dev/stash/test/e2e/misc"
