@@ -18,6 +18,8 @@ package framework
 
 import (
 	"fmt"
+	"log"
+	"strings"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -130,4 +132,22 @@ func (fi *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim,
 	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
 
 	return restoreSession, err
+}
+
+func (fi *Invocation) CleanupUndeletedPVCs() {
+	pvcList, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for _, pvc := range pvcList.Items {
+		// cleanup only the pvc of this test
+		if strings.Contains(pvc.Name, fi.app) {
+			err = fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Delete(pvc.Name, deleteInBackground())
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
 }

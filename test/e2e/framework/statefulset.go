@@ -202,6 +202,7 @@ func (fi *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMe
 
 func (fi *Invocation) DeployStatefulSet(name string, replica int32, volName string, transformFuncs ...func(ss *apps.StatefulSet)) (*apps.StatefulSet, error) {
 	// Generate StatefulSet definition
+	name = fmt.Sprintf("%s-%s", name, fi.app)
 	ss := fi.StatefulSetForV1beta1API(name, volName, replica)
 
 	// transformFuncs provides a array of functions that made test specific change on the StatefulSet

@@ -42,6 +42,9 @@ var _ = Describe("StatefulSet", func() {
 	AfterEach(func() {
 		err := f.CleanupTestResources()
 		Expect(err).NotTo(HaveOccurred())
+		// StatefulSet's PVCs are not get cleanup by the CleanupTestResources() function.
+		// Hence, we need to cleanup them manually.
+		f.CleanupUndeletedPVCs()
 	})
 
 	Context("StatefulSet", func() {

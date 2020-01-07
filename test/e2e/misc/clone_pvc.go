@@ -127,6 +127,11 @@ var _ = Describe("Clone", func() {
 	})
 
 	Context("StatefulSet's Volumes", func() {
+		AfterEach(func() {
+			// StatefulSet's PVCs are not get cleanup by the CleanupTestResources() function.
+			// Hence, we need to cleanup them manually.
+			f.CleanupUndeletedPVCs()
+		})
 		Context("Restore using VolumeClaimTemplate", func() {
 			It("should create PVC according to the VolumeClaimTemplate and restore there", func() {
 				// Deploy a StatefulSet
@@ -160,7 +165,7 @@ var _ = Describe("Clone", func() {
 
 				// Restore PVC according to VolumeClaimTemplate
 				By("Restoring the backed up data into PVC")
-				restoredPVCNamePrefix := fmt.Sprintf("%s-%s", framework.RestoredVolume, framework.RestoredStatefulSet)
+				restoredPVCNamePrefix := fmt.Sprintf("%s-%s-%s", framework.RestoredVolume, framework.RestoredStatefulSet, f.App())
 				restoreSession, err := f.SetupRestoreProcess(metav1.ObjectMeta{}, repo, apis.KindPersistentVolumeClaim, restoredPVCNamePrefix, func(restore *v1beta1.RestoreSession) {
 					restore.Spec.Target.Replicas = types.Int32P(3)
 					restore.Spec.Target.VolumeClaimTemplates = []ofst.PersistentVolumeClaim{
