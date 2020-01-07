@@ -42,11 +42,9 @@ func (fi *Invocation) ReplicationController(name, pvcName, volName string) core.
 	podTemplate := fi.PodTemplate(labels, pvcName, volName)
 	return core.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("stash"),
+			Name:      name,
 			Namespace: fi.namespace,
-			Labels: map[string]string{
-				"app": fi.app,
-			},
+			Labels:    labels,
 		},
 		Spec: core.ReplicationControllerSpec{
 			Replicas: types.Int32P(1),
