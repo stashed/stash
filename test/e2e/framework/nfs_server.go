@@ -38,42 +38,42 @@ var (
 	nfsErr    error
 )
 
-func (f *Invocation) CreateNFSServer() (string, error) {
+func (fi *Invocation) CreateNFSServer() (string, error) {
 	// We will deploy NFS server using a Deployment. We will configure our NFS server to store data
 	//creating deployment for nfs server
-	deploy := f.DeploymentForNFSServer()
+	deploy := fi.DeploymentForNFSServer()
 
-	nfsDeploy, nfsErr = f.CreateDeploymentForNFSServer(deploy)
+	nfsDeploy, nfsErr = fi.CreateDeploymentForNFSServer(deploy)
 	if nfsErr != nil {
 		return "", nfsErr
 	}
-	//f.AppendToCleanupList(nfsDeploy)
+	//fi.AppendToCleanupList(nfsDeploy)
 
 	//creating service for NFS server
-	svc := f.ServiceForNFSServer()
-	nfsSVC, nfsErr = f.CreateServiceForNFSServer(svc)
+	svc := fi.ServiceForNFSServer()
+	nfsSVC, nfsErr = fi.CreateServiceForNFSServer(svc)
 	if nfsErr != nil {
 		return "", nfsErr
 	}
-	//f.AppendToCleanupList(nfsSVC)
+	//fi.AppendToCleanupList(nfsSVC)
 
-	nfsErr = apps_util.WaitUntilDeploymentReady(f.KubeClient, nfsDeploy.ObjectMeta)
+	nfsErr = apps_util.WaitUntilDeploymentReady(fi.KubeClient, nfsDeploy.ObjectMeta)
 	if nfsErr != nil {
 		return "", nfsErr
 	}
 	return nfsSVC.Spec.ClusterIP, nil
 }
 
-func (f *Invocation) DeploymentForNFSServer() apps.Deployment {
+func (fi *Invocation) DeploymentForNFSServer() apps.Deployment {
 	labels := map[string]string{
-		"app": NFSServer + f.App(),
+		"app": NFSServer + fi.App(),
 	}
 	priviledged := true
 
 	return apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", NFSServer, f.App()),
-			Namespace: f.namespace,
+			Name:      fmt.Sprintf("%s-%s", NFSServer, fi.App()),
+			Namespace: fi.namespace,
 		},
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -109,15 +109,15 @@ func (f *Invocation) DeploymentForNFSServer() apps.Deployment {
 	}
 }
 
-func (f *Invocation) CreateDeploymentForNFSServer(obj apps.Deployment) (*apps.Deployment, error) {
-	return f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
+func (fi *Invocation) CreateDeploymentForNFSServer(obj apps.Deployment) (*apps.Deployment, error) {
+	return fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
 }
 
-func (f *Invocation) ServiceForNFSServer() core.Service {
+func (fi *Invocation) ServiceForNFSServer() core.Service {
 	return core.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", NFSService, f.App()),
-			Namespace: f.namespace,
+			Name:      fmt.Sprintf("%s-%s", NFSService, fi.App()),
+			Namespace: fi.namespace,
 		},
 		Spec: core.ServiceSpec{
 			Ports: []core.ServicePort{
@@ -133,42 +133,42 @@ func (f *Invocation) ServiceForNFSServer() core.Service {
 				},
 			},
 			Selector: map[string]string{
-				"app": NFSServer + f.App(),
+				"app": NFSServer + fi.App(),
 			},
 		},
 	}
 }
 
-func (f *Invocation) CreateServiceForNFSServer(obj core.Service) (*core.Service, error) {
-	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
+func (fi *Invocation) CreateServiceForNFSServer(obj core.Service) (*core.Service, error) {
+	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
 }
 
-func (f *Invocation) DeleteNFSServer() error {
-	if err := f.DeleteDeploymentForNFSServer(nfsDeploy.ObjectMeta); err != nil {
+func (fi *Invocation) DeleteNFSServer() error {
+	if err := fi.DeleteDeploymentForNFSServer(nfsDeploy.ObjectMeta); err != nil {
 		return err
 	}
-	if err := f.DeleteServiceForNFSServer(nfsSVC.ObjectMeta); err != nil {
+	if err := fi.DeleteServiceForNFSServer(nfsSVC.ObjectMeta); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (f *Invocation) DeleteDeploymentForNFSServer(objMeta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().Deployments(objMeta.Namespace).Delete(objMeta.Name, &metav1.DeleteOptions{})
+func (fi *Invocation) DeleteDeploymentForNFSServer(objMeta metav1.ObjectMeta) error {
+	err := fi.KubeClient.AppsV1().Deployments(objMeta.Namespace).Delete(objMeta.Name, &metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
 }
 
-func (f *Invocation) DeleteServiceForNFSServer(objMeta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().Services(objMeta.Namespace).Delete(objMeta.Name, &metav1.DeleteOptions{})
+func (fi *Invocation) DeleteServiceForNFSServer(objMeta metav1.ObjectMeta) error {
+	err := fi.KubeClient.CoreV1().Services(objMeta.Namespace).Delete(objMeta.Name, &metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
 }
 
-func (f *Invocation) GetNFSService() string {
+func (fi *Invocation) GetNFSService() string {
 	return nfsSVC.Spec.ClusterIP
 }

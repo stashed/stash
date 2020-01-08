@@ -44,14 +44,15 @@ const (
 	TcpPort             = 9090
 )
 
-func (fi *Invocation) Deployment(pvcName, volName string) apps.Deployment {
+func (fi *Invocation) Deployment(name, pvcName, volName string) apps.Deployment {
+	name = rand.WithUniqSuffix(fmt.Sprintf("%s-%s", name, fi.app))
 	labels := map[string]string{
-		"app":  fi.app,
+		"app":  name,
 		"kind": "deployment",
 	}
 	return apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("stash"),
+			Name:      name,
 			Namespace: fi.namespace,
 			Labels:    labels,
 		},
@@ -88,11 +89,11 @@ func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAsse
 	)
 }
 
-func (f *Invocation) WaitUntilDeploymentReadyWithSidecar(meta metav1.ObjectMeta) error {
+func (fi *Invocation) WaitUntilDeploymentReadyWithSidecar(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := f.GetAllPods(obj.ObjectMeta)
+				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
 					return false, err
 				}
@@ -116,11 +117,11 @@ func (f *Invocation) WaitUntilDeploymentReadyWithSidecar(meta metav1.ObjectMeta)
 	})
 }
 
-func (f *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.ObjectMeta) error {
+func (fi *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := f.GetAllPods(obj.ObjectMeta)
+				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
 					return false, err
 				}
@@ -144,16 +145,15 @@ func (f *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.Objec
 	})
 }
 
-func (f *Invocation) DeployDeployment(name string, replica int32, volName string, transformFuncs ...func(dp *apps.Deployment)) (*apps.Deployment, error) {
+func (fi *Invocation) DeployDeployment(name string, replica int32, volName string, transformFuncs ...func(dp *apps.Deployment)) (*apps.Deployment, error) {
 	// append test case specific suffix so that name does not conflict during parallel test
-	name = fmt.Sprintf("%s-%s", name, f.app)
-	pvcName := fmt.Sprintf("%s-%s", volName, f.app)
+	pvcName := fmt.Sprintf("%s-%s", volName, fi.app)
 
 	// If the PVC does not exist, create PVC for Deployment
-	pvc, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.namespace).Get(pvcName, metav1.GetOptions{})
+	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(pvcName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
-			pvc, err = f.CreateNewPVC(pvcName)
+			pvc, err = fi.CreateNewPVC(pvcName)
 			if err != nil {
 				return nil, err
 			}
@@ -163,8 +163,7 @@ func (f *Invocation) DeployDeployment(name string, replica int32, volName string
 	}
 
 	// Generate Deployment definition
-	deployment := f.Deployment(pvc.Name, volName)
-	deployment.Name = name
+	deployment := fi.Deployment(name, pvc.Name, volName)
 	deployment.Spec.Replicas = &replica
 
 	// transformFuncs provides a array of functions that made test specific change on the Deployment
@@ -174,18 +173,18 @@ func (f *Invocation) DeployDeployment(name string, replica int32, volName string
 	}
 
 	By("Deploying Deployment: " + deployment.Name)
-	createdDeployment, err := f.CreateDeployment(deployment)
+	createdDeployment, err := fi.CreateDeployment(deployment)
 	if err != nil {
 		return createdDeployment, err
 	}
-	f.AppendToCleanupList(createdDeployment)
+	fi.AppendToCleanupList(createdDeployment)
 
 	By("Waiting for Deployment to be ready")
-	err = apps_util.WaitUntilDeploymentReady(f.KubeClient, createdDeployment.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, createdDeployment.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
-	f.EventuallyPodAccessible(createdDeployment.ObjectMeta).Should(BeTrue())
+	fi.EventuallyAllPodsAccessible(createdDeployment.ObjectMeta).Should(BeTrue())
 
 	return createdDeployment, err
 }

@@ -21,6 +21,7 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 
+	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
@@ -34,8 +35,9 @@ import (
 )
 
 func (fi *Invocation) DaemonSet(name, volumeName string) apps.DaemonSet {
+	name = rand.WithUniqSuffix(fmt.Sprintf("%s-%s", name, fi.app))
 	labels := map[string]string{
-		"app":  fi.app,
+		"app":  name,
 		"kind": "daemonset",
 	}
 	daemon := apps.DaemonSet{
@@ -110,11 +112,11 @@ func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAsser
 	})
 }
 
-func (f *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta) error {
+func (fi *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
-				pods, err := f.GetAllPods(obj.ObjectMeta)
+				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
 					return false, err
 				}
@@ -138,11 +140,11 @@ func (f *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta) 
 	})
 }
 
-func (f *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.ObjectMeta) error {
+func (fi *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
-				pods, err := f.GetAllPods(obj.ObjectMeta)
+				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
 					return false, err
 				}
@@ -166,25 +168,22 @@ func (f *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.Object
 	})
 }
 
-func (f *Invocation) DeployDaemonSet(name string, volumeName string) (*apps.DaemonSet, error) {
-	// append test case specific suffix so that name does not conflict during parallel test
-	name = fmt.Sprintf("%s-%s", name, f.app)
-
+func (fi *Invocation) DeployDaemonSet(name string, volumeName string) (*apps.DaemonSet, error) {
 	// Generate DaemonSet definition
-	dmn := f.DaemonSet(name, volumeName)
+	dmn := fi.DaemonSet(name, volumeName)
 
 	By(fmt.Sprintf("Deploying DaemonSet: %s/%s", dmn.Namespace, dmn.Name))
-	createdDmn, err := f.CreateDaemonSet(dmn)
+	createdDmn, err := fi.CreateDaemonSet(dmn)
 	if err != nil {
 		return createdDmn, err
 	}
-	f.AppendToCleanupList(createdDmn)
+	fi.AppendToCleanupList(createdDmn)
 
 	By("Waiting for DaemonSet to be ready")
-	err = apps_util.WaitUntilDaemonSetReady(f.KubeClient, createdDmn.ObjectMeta)
+	err = apps_util.WaitUntilDaemonSetReady(fi.KubeClient, createdDmn.ObjectMeta)
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
-	f.EventuallyPodAccessible(createdDmn.ObjectMeta).Should(BeTrue())
+	fi.EventuallyAllPodsAccessible(createdDmn.ObjectMeta).Should(BeTrue())
 
 	return createdDmn, err
 }

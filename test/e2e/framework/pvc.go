@@ -18,6 +18,8 @@ package framework
 
 import (
 	"fmt"
+	"log"
+	"strings"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -31,17 +33,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) PersistentVolumeClaim(name string) *core.PersistentVolumeClaim {
+func (fi *Invocation) PersistentVolumeClaim(name string) *core.PersistentVolumeClaim {
 	return &core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: f.namespace,
+			Namespace: fi.namespace,
 		},
 		Spec: core.PersistentVolumeClaimSpec{
 			AccessModes: []core.PersistentVolumeAccessMode{
 				core.ReadWriteOnce,
 			},
-			StorageClassName: &f.StorageClass,
+			StorageClassName: &fi.StorageClass,
 			Resources: core.ResourceRequirements{
 				Requests: core.ResourceList{
 					core.ResourceStorage: resource.MustParse("10Mi"),
@@ -55,31 +57,31 @@ func (f *Framework) CreatePersistentVolumeClaim(pvc *core.PersistentVolumeClaim)
 	return f.KubeClient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Create(pvc)
 }
 
-func (f *Invocation) DeletePersistentVolumeClaim(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(meta.Name, deleteInForeground())
+func (fi *Invocation) DeletePersistentVolumeClaim(meta metav1.ObjectMeta) error {
+	err := fi.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(meta.Name, deleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
 }
 
-func (f *Invocation) CreateNewPVC(name string) (*core.PersistentVolumeClaim, error) {
+func (fi *Invocation) CreateNewPVC(name string) (*core.PersistentVolumeClaim, error) {
 	// Generate PVC definition
-	pvc := f.PersistentVolumeClaim(name)
+	pvc := fi.PersistentVolumeClaim(name)
 
 	By(fmt.Sprintf("Creating PVC: %s/%s", pvc.Namespace, pvc.Name))
-	createdPVC, err := f.CreatePersistentVolumeClaim(pvc)
+	createdPVC, err := fi.CreatePersistentVolumeClaim(pvc)
 	if err != nil {
 		return nil, err
 	}
-	f.AppendToCleanupList(createdPVC)
+	fi.AppendToCleanupList(createdPVC)
 
 	return createdPVC, nil
 }
 
-func (f *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
+func (fi *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
-	backupConfig := f.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
+	backupConfig := fi.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
 		bc.Spec.Target = &v1beta1.BackupTarget{
 			Ref: GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim),
 		}
@@ -93,19 +95,19 @@ func (f *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1alp
 	}
 
 	By("Creating BackupConfiguration: " + backupConfig.Name)
-	createdBC, err := f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
-	f.AppendToCleanupList(createdBC)
+	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	fi.AppendToCleanupList(createdBC)
 
 	By("Verifying that backup triggering CronJob has been created")
-	f.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
+	fi.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
 
 	return createdBC, err
 }
 
-func (f *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
+func (fi *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
 	// Generate desired RestoreSession definition
 	By("Creating RestoreSession")
-	restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
+	restoreSession := fi.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
 		restore.Spec.Target = &v1beta1.RestoreTarget{
 			Ref: GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim),
 		}
@@ -123,11 +125,29 @@ func (f *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim, 
 		fn(restoreSession)
 	}
 
-	err := f.CreateRestoreSession(restoreSession)
-	f.AppendToCleanupList(restoreSession)
+	err := fi.CreateRestoreSession(restoreSession)
+	fi.AppendToCleanupList(restoreSession)
 
 	By("Waiting for restore process to complete")
-	f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
 
 	return restoreSession, err
+}
+
+func (fi *Invocation) CleanupUndeletedPVCs() {
+	pvcList, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for _, pvc := range pvcList.Items {
+		// cleanup only the pvc of this test
+		if strings.Contains(pvc.Name, fi.app) {
+			err = fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Delete(pvc.Name, deleteInBackground())
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
 }

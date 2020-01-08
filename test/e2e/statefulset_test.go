@@ -84,12 +84,12 @@ var _ = XDescribe("StatefulSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		svc = f.HeadlessService()
 		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		ss = f.StatefulSet(pvc.Name, framework.SourceVolume)
+		ss = f.StatefulSet(framework.SourceStatefulSet, pvc.Name, framework.SourceVolume)
+		svc = f.HeadlessService(ss.Name)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindStatefulSet,
 			Name: ss.Name,

@@ -88,12 +88,12 @@ func (f *Framework) Invoke() *Invocation {
 	}
 }
 
-func (f *Invocation) AppLabel() string {
-	return "app=" + f.app
+func (fi *Invocation) AppLabel() string {
+	return "app=" + fi.app
 }
 
-func (f *Invocation) App() string {
-	return f.app
+func (fi *Invocation) App() string {
+	return fi.app
 }
 
 type Invocation struct {

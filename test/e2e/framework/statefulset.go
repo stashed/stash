@@ -35,9 +35,10 @@ import (
 	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
-func (fi *Invocation) StatefulSet(pvcName, volName string) apps.StatefulSet {
+func (fi *Invocation) StatefulSet(name, pvcName, volName string) apps.StatefulSet {
+	name = rand.WithUniqSuffix(fmt.Sprintf("%s-%s", name, fi.app))
 	labels := map[string]string{
-		"app":  fi.app,
+		"app":  name,
 		"kind": "statefulset",
 	}
 	return apps.StatefulSet{
@@ -62,7 +63,7 @@ func (fi *Invocation) StatefulSet(pvcName, volName string) apps.StatefulSet {
 
 func (fi *Invocation) StatefulSetForV1beta1API(name, volName string, replica int32) apps.StatefulSet {
 	labels := map[string]string{
-		"app":  fi.app,
+		"app":  name,
 		"kind": "statefulset",
 	}
 	return apps.StatefulSet{
@@ -143,11 +144,11 @@ func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAss
 	})
 }
 
-func (f *Invocation) WaitUntilStatefulSetReadyWithSidecar(meta metav1.ObjectMeta) error {
+func (fi *Invocation) WaitUntilStatefulSetReadyWithSidecar(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := f.GetAllPods(obj.ObjectMeta)
+				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
 					return false, err
 				}
@@ -171,11 +172,11 @@ func (f *Invocation) WaitUntilStatefulSetReadyWithSidecar(meta metav1.ObjectMeta
 	})
 }
 
-func (f *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMeta) error {
+func (fi *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := f.GetAllPods(obj.ObjectMeta)
+				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
 					return false, err
 				}
@@ -199,12 +200,10 @@ func (f *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMet
 	})
 }
 
-func (f *Invocation) DeployStatefulSet(name string, replica int32, volName string, transformFuncs ...func(ss *apps.StatefulSet)) (*apps.StatefulSet, error) {
-	// append test case specific suffix so that name does not conflict during parallel test
-	name = fmt.Sprintf("%s-%s", name, f.app)
-
+func (fi *Invocation) DeployStatefulSet(name string, replica int32, volName string, transformFuncs ...func(ss *apps.StatefulSet)) (*apps.StatefulSet, error) {
 	// Generate StatefulSet definition
-	ss := f.StatefulSetForV1beta1API(name, volName, replica)
+	name = fmt.Sprintf("%s-%s", name, fi.app)
+	ss := fi.StatefulSetForV1beta1API(name, volName, replica)
 
 	// transformFuncs provides a array of functions that made test specific change on the StatefulSet
 	// apply these test specific changes
@@ -213,38 +212,39 @@ func (f *Invocation) DeployStatefulSet(name string, replica int32, volName strin
 	}
 
 	By("Deploying StatefulSet: " + ss.Name)
-	createdss, err := f.CreateStatefulSet(ss)
+	createdss, err := fi.CreateStatefulSet(ss)
 	if err != nil {
 		return createdss, err
 	}
-	f.AppendToCleanupList(createdss)
+	fi.AppendToCleanupList(createdss)
 
 	By("Waiting for StatefulSet to be ready")
-	err = apps_util.WaitUntilStatefulSetReady(f.KubeClient, createdss.ObjectMeta)
+	err = apps_util.WaitUntilStatefulSetReady(fi.KubeClient, createdss.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
-	f.EventuallyPodAccessible(createdss.ObjectMeta).Should(BeTrue())
+	fi.EventuallyAllPodsAccessible(createdss.ObjectMeta).Should(BeTrue())
 
 	return createdss, err
 }
 
-func (f *Invocation) DeployStatefulSetWithProbeClient() (*apps.StatefulSet, error) {
-	svc, err := f.CreateService(f.HeadlessService())
+func (fi *Invocation) DeployStatefulSetWithProbeClient() (*apps.StatefulSet, error) {
+	name := fmt.Sprintf("%s-%s", ProberDemoPodPrefix, fi.app)
+	svc, err := fi.CreateService(fi.HeadlessService(name))
 	if err != nil {
 		return nil, err
 	}
-	f.AppendToCleanupList(svc)
+	fi.AppendToCleanupList(svc)
 
 	labels := map[string]string{
-		"app":  f.app,
+		"app":  name,
 		"kind": "statefulset",
 	}
 	// Generate StatefulSet definition
 	statefulset := &apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", ProberDemoPodPrefix, f.app),
-			Namespace: f.namespace,
+			Name:      name,
+			Namespace: fi.namespace,
 		},
 		Spec: apps.StatefulSetSpec{
 			Replicas: types.Int32P(1),
@@ -303,7 +303,7 @@ func (f *Invocation) DeployStatefulSetWithProbeClient() (*apps.StatefulSet, erro
 						AccessModes: []core.PersistentVolumeAccessMode{
 							core.ReadWriteOnce,
 						},
-						StorageClassName: types.StringP(f.StorageClass),
+						StorageClassName: types.StringP(fi.StorageClass),
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: resource.MustParse("1Gi"),
@@ -316,18 +316,18 @@ func (f *Invocation) DeployStatefulSetWithProbeClient() (*apps.StatefulSet, erro
 	}
 
 	By("Deploying StatefulSet with Probe Client: " + statefulset.Name)
-	createdStatefulSet, err := f.CreateStatefulSet(*statefulset)
+	createdStatefulSet, err := fi.CreateStatefulSet(*statefulset)
 	if err != nil {
 		return createdStatefulSet, err
 	}
-	f.AppendToCleanupList(createdStatefulSet)
+	fi.AppendToCleanupList(createdStatefulSet)
 
 	By("Waiting for StatefulSet to be ready")
-	err = apps_util.WaitUntilStatefulSetReady(f.KubeClient, createdStatefulSet.ObjectMeta)
+	err = apps_util.WaitUntilStatefulSetReady(fi.KubeClient, createdStatefulSet.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
-	f.EventuallyPodAccessible(createdStatefulSet.ObjectMeta).Should(BeTrue())
+	fi.EventuallyAllPodsAccessible(createdStatefulSet.ObjectMeta).Should(BeTrue())
 
 	return createdStatefulSet, err
 }

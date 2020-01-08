@@ -42,6 +42,9 @@ var _ = Describe("StatefulSet", func() {
 	AfterEach(func() {
 		err := f.CleanupTestResources()
 		Expect(err).NotTo(HaveOccurred())
+		// StatefulSet's PVCs are not get cleanup by the CleanupTestResources() function.
+		// Hence, we need to cleanup them manually.
+		f.CleanupUndeletedPVCs()
 	})
 
 	Context("StatefulSet", func() {
@@ -65,7 +68,7 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
 					Name: backupConfig.Name,
 					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})
@@ -119,7 +122,7 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
 					Name: backupConfig.Name,
 					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})
@@ -172,7 +175,7 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
 					Name: backupConfig.Name,
 					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})

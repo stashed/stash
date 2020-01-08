@@ -65,7 +65,7 @@ var _ = Describe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
 					Name: backupConfig.Name,
 					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})
@@ -119,7 +119,7 @@ var _ = Describe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
 					Name: backupConfig.Name,
 					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})
@@ -175,7 +175,7 @@ var _ = Describe("ReplicaSet", func() {
 				f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet, v1beta1.ResourceKindBackupConfiguration)
 
 				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
 					Name: backupConfig.Name,
 					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})

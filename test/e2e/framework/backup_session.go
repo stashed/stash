@@ -81,25 +81,25 @@ func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSes
 	return nil, fmt.Errorf("no BackupSession found")
 }
 
-func (f *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta, targetRef v1beta1.TargetRef) (*v1beta1.BackupSession, error) {
+func (fi *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta, invokerRef v1beta1.BackupInvokerRef) (*v1beta1.BackupSession, error) {
 	backupSession := &v1beta1.BackupSession{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(objMeta.Name),
 			Namespace: objMeta.Namespace,
 			Labels: map[string]string{
 				apis.LabelApp:         apis.AppLabelStash,
-				apis.LabelInvokerType: targetRef.Kind,
-				apis.LabelInvokerName: targetRef.Name,
+				apis.LabelInvokerType: invokerRef.Kind,
+				apis.LabelInvokerName: invokerRef.Name,
 			},
 		},
 		Spec: v1beta1.BackupSessionSpec{
 			Invoker: v1beta1.BackupInvokerRef{
 				APIGroup: v1beta1.SchemeGroupVersion.Group,
-				Kind:     targetRef.Kind,
-				Name:     targetRef.Name,
+				Kind:     invokerRef.Kind,
+				Name:     invokerRef.Name,
 			},
 		},
 	}
 
-	return f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Create(backupSession)
+	return fi.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Create(backupSession)
 }

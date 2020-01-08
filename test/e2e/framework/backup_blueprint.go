@@ -29,19 +29,19 @@ import (
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
-func (f *Invocation) BackupBlueprint(secretName string) *v1beta1.BackupBlueprint {
+func (fi *Invocation) BackupBlueprint(secretName string) *v1beta1.BackupBlueprint {
 
 	return &v1beta1.BackupBlueprint{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: rand.WithUniqSuffix(f.app),
+			Name: rand.WithUniqSuffix(fi.app),
 		},
 		Spec: v1beta1.BackupBlueprintSpec{
 			RepositorySpec: v1alpha1.RepositorySpec{
 				Backend: store.Backend{
 					S3: &store.S3Spec{
-						Endpoint: f.MinioServiceAddres(),
+						Endpoint: fi.MinioServiceAddres(),
 						Bucket:   "minio-bucket",
-						Prefix:   fmt.Sprintf("stash-e2e/%s/%s", f.Namespace(), f.App()),
+						Prefix:   fmt.Sprintf("stash-e2e/%s/%s", fi.Namespace(), fi.App()),
 					},
 					StorageSecretName: secretName,
 				},
@@ -61,11 +61,11 @@ func (f *Framework) CreateBackupBlueprint(backupBlueprint *v1beta1.BackupBluepri
 	return f.StashClient.StashV1beta1().BackupBlueprints().Create(backupBlueprint)
 }
 
-func (f *Invocation) DeleteBackupBlueprint(name string) error {
+func (fi *Invocation) DeleteBackupBlueprint(name string) error {
 	if name == "" {
 		return nil
 	}
-	err := f.StashClient.StashV1beta1().BackupBlueprints().Delete(name, &metav1.DeleteOptions{})
+	err := fi.StashClient.StashV1beta1().BackupBlueprints().Delete(name, &metav1.DeleteOptions{})
 	if kerr.IsNotFound(err) {
 		return nil
 	}
@@ -76,47 +76,47 @@ func (f *Framework) GetBackupBlueprint(name string) (*v1beta1.BackupBlueprint, e
 	return f.StashClient.StashV1beta1().BackupBlueprints().Get(name, metav1.GetOptions{})
 }
 
-func (f Invocation) CreateBackupBlueprintForWorkload(name string) (*v1beta1.BackupBlueprint, error) {
+func (fi Invocation) CreateBackupBlueprintForWorkload(name string) (*v1beta1.BackupBlueprint, error) {
 	// append test case specific suffix so that name does not conflict during parallel test
-	name = fmt.Sprintf("%s-%s", name, f.app)
+	name = fmt.Sprintf("%s-%s", name, fi.app)
 
 	// Create Secret for BackupBlueprint
-	secret, err := f.CreateBackendSecretForMinio()
+	secret, err := fi.CreateBackendSecretForMinio()
 	if err != nil {
 		return &v1beta1.BackupBlueprint{}, err
 	}
 
 	// Generate BackupBlueprint definition
-	bb := f.BackupBlueprint(secret.Name)
+	bb := fi.BackupBlueprint(secret.Name)
 	bb.Name = name
 
 	By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-	createdBB, err := f.CreateBackupBlueprint(bb)
-	f.AppendToCleanupList(createdBB)
+	createdBB, err := fi.CreateBackupBlueprint(bb)
+	fi.AppendToCleanupList(createdBB)
 	return createdBB, err
 }
 
-func (f Invocation) CreateBackupBlueprintForPVC(name string) (*v1beta1.BackupBlueprint, error) {
+func (fi Invocation) CreateBackupBlueprintForPVC(name string) (*v1beta1.BackupBlueprint, error) {
 	// append test case specific suffix so that name does not conflict during parallel test
-	name = fmt.Sprintf("%s-%s", name, f.app)
+	name = fmt.Sprintf("%s-%s", name, fi.app)
 
 	// Create Secret for BackupBlueprint
-	secret, err := f.CreateBackendSecretForMinio()
+	secret, err := fi.CreateBackendSecretForMinio()
 	if err != nil {
 		return nil, err
 	}
 
 	// Generate BackupBlueprint definition
-	bb := f.BackupBlueprint(secret.Name)
+	bb := fi.BackupBlueprint(secret.Name)
 	bb.Spec.Task.Name = TaskPVCBackup
 	bb.Name = name
 
 	By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-	createdBB, err := f.CreateBackupBlueprint(bb)
+	createdBB, err := fi.CreateBackupBlueprint(bb)
 	if err != nil {
 		return nil, err
 	}
-	f.AppendToCleanupList(createdBB)
+	fi.AppendToCleanupList(createdBB)
 
 	return createdBB, nil
 }

@@ -25,12 +25,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) BackupBatch(repoName string) *v1beta1.BackupBatch {
+func (fi *Invocation) BackupBatch(repoName string) *v1beta1.BackupBatch {
 
 	return &v1beta1.BackupBatch{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(f.app),
-			Namespace: f.namespace,
+			Name:      rand.WithUniqSuffix(fi.app),
+			Namespace: fi.namespace,
 		},
 		Spec: v1beta1.BackupBatchSpec{
 			// some workloads such as StatefulSet or DaemonSet may take long to complete backup. so, giving a fixed short interval is not always feasible.

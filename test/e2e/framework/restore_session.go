@@ -28,11 +28,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) GetRestoreSession(repoName string, transformFuncs ...func(restore *v1beta1.RestoreSession)) *v1beta1.RestoreSession {
+func (fi *Invocation) GetRestoreSession(repoName string, transformFuncs ...func(restore *v1beta1.RestoreSession)) *v1beta1.RestoreSession {
 	restoreSession := &v1beta1.RestoreSession{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(f.app),
-			Namespace: f.namespace,
+			Name:      rand.WithUniqSuffix(fi.app),
+			Namespace: fi.namespace,
 		},
 		Spec: v1beta1.RestoreSessionSpec{
 			Repository: core.LocalObjectReference{
@@ -48,13 +48,13 @@ func (f *Invocation) GetRestoreSession(repoName string, transformFuncs ...func(r
 	return restoreSession
 }
 
-func (f *Invocation) CreateRestoreSession(restoreSession *v1beta1.RestoreSession) error {
-	_, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(restoreSession)
+func (fi *Invocation) CreateRestoreSession(restoreSession *v1beta1.RestoreSession) error {
+	_, err := fi.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(restoreSession)
 	return err
 }
 
-func (f Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
-	err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+func (fi Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
+	err := fi.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

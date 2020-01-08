@@ -82,7 +82,7 @@ var _ = XDescribe("ReplicationController", func() {
 		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		rc = f.ReplicationController(pvc.Name, framework.SourceVolume)
+		rc = f.ReplicationController(framework.SourceReplicationController, pvc.Name, framework.SourceVolume)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindReplicationController,
 			Name: rc.Name,

@@ -29,11 +29,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) *v1beta1.BackupConfiguration {
+func (fi *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) *v1beta1.BackupConfiguration {
 	backupConfig := &v1beta1.BackupConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(f.app),
-			Namespace: f.namespace,
+			Name:      rand.WithUniqSuffix(fi.app),
+			Namespace: fi.namespace,
 		},
 		Spec: v1beta1.BackupConfigurationSpec{
 			Repository: core.LocalObjectReference{
@@ -60,13 +60,13 @@ func (f *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...f
 	return backupConfig
 }
 
-func (f *Invocation) CreateBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
-	_, err := f.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Create(&backupCfg)
+func (fi *Invocation) CreateBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
+	_, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Create(&backupCfg)
 	return err
 }
 
-func (f *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
-	err := f.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(backupCfg.Name, &metav1.DeleteOptions{})
+func (fi *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
+	err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(backupCfg.Name, &metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
