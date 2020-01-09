@@ -29,6 +29,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -60,7 +61,7 @@ var _ = Describe("PreBackup Hook", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -78,7 +79,7 @@ var _ = Describe("PreBackup Hook", func() {
 								PreBackup: &probev1.Handler{
 									HTTPGet: &core.HTTPGetAction{
 										Scheme: "HTTP",
-										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
 										Path:   "/success",
 										Port:   intstr.FromInt(framework.HttpPort),
 									},
@@ -104,7 +105,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -149,7 +150,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should not take backup when probe failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -210,7 +211,7 @@ var _ = Describe("PreBackup Hook", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -228,7 +229,7 @@ var _ = Describe("PreBackup Hook", func() {
 								PreBackup: &probev1.Handler{
 									HTTPPost: &probev1.HTTPPostAction{
 										Scheme: "HTTP",
-										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
 										Path:   "/post-demo",
 										Port:   intstr.FromInt(framework.HttpPort),
 									},
@@ -254,7 +255,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -298,7 +299,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Json Data in Request Body", func() {
 					It("server should echo the 'expectedCode' and 'expectedResponse' passed in the json body", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -343,7 +344,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Form Data in Request Body", func() {
 					It("server should echo the 'expectedCode' and 'expectedResponse' passed as form data", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -398,7 +399,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should not take backup when probe failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -469,7 +470,7 @@ var _ = Describe("PreBackup Hook", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -486,7 +487,7 @@ var _ = Describe("PreBackup Hook", func() {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
 								PreBackup: &probev1.Handler{
 									TCPSocket: &core.TCPSocketAction{
-										Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
 										Port: intstr.FromInt(framework.TcpPort),
 									},
 								},
@@ -511,7 +512,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -554,7 +555,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should not take backup when probe failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -611,7 +612,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Success Test", func() {
 				It("should execute probe successfully", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -653,7 +654,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should not take backup when probe failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -1000,6 +1001,133 @@ var _ = Describe("PreBackup Hook", func() {
 					})
 				})
 			})
+		})
+	})
+
+	Context("Batch Backup", func() {
+		Context("HTTPGetAction", func() {
+			It("should execute all global and local hooks successfully", func() {
+				// Here, we are going to deploy two different StatefulSet with probe client.
+				// Then, we are going to backup those StatefulSets using BatchBackup.
+				// Each individual StatefulSet will have a hook for them.
+				// The BackupBatch object will have a global hook.
+				var members []v1beta1.BackupConfigurationTemplateSpec
+
+				// Deploy the first StatefulSet.
+				ss1, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix + "-1")
+				Expect(err).NotTo(HaveOccurred())
+				// Generate Sample Data
+				_, err = f.GenerateSampleData(ss1.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+				// We will execute HTTPGetAction in the first StatefulSet
+				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
+					Hooks: &v1beta1.BackupHooks{
+						PreBackup: &probev1.Handler{
+							HTTPGet: &core.HTTPGetAction{
+								Scheme: "HTTP",
+								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss1.Name, ss1.Name, f.Namespace()),
+								Path:   "/success",
+								Port:   intstr.FromInt(framework.HttpPort),
+							},
+						},
+					},
+					Target: &v1beta1.BackupTarget{
+						Ref: v1beta1.TargetRef{
+							APIVersion: appsv1.SchemeGroupVersion.String(),
+							Kind:       apis.KindStatefulSet,
+							Name:       ss1.Name,
+						},
+						Paths: []string{
+							framework.TestSourceDataMountPath,
+						},
+						VolumeMounts: []core.VolumeMount{
+							{
+								Name:      framework.SourceVolume,
+								MountPath: framework.TestSourceDataMountPath,
+							},
+						},
+					},
+				})
+
+				// Deploy second StatefulSet
+				ss2, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix + "-2")
+				Expect(err).NotTo(HaveOccurred())
+				// Generate Sample Data
+				_, err = f.GenerateSampleData(ss2.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+				// We will execute HTTPPostAction in the second StatefulSet
+				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
+					Hooks: &v1beta1.BackupHooks{
+						PreBackup: &probev1.Handler{
+							HTTPPost: &probev1.HTTPPostAction{
+								Scheme: "HTTP",
+								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss2.Name, ss2.Name, f.Namespace()),
+								Path:   "/post-demo",
+								Port:   intstr.FromInt(framework.HttpPort),
+							},
+						},
+					},
+					Target: &v1beta1.BackupTarget{
+						Ref: v1beta1.TargetRef{
+							APIVersion: appsv1.SchemeGroupVersion.String(),
+							Kind:       apis.KindStatefulSet,
+							Name:       ss2.Name,
+						},
+						Paths: []string{
+							framework.TestSourceDataMountPath,
+						},
+						VolumeMounts: []core.VolumeMount{
+							{
+								Name:      framework.SourceVolume,
+								MountPath: framework.TestSourceDataMountPath,
+							},
+						},
+					},
+				})
+
+				// Setup a Minio Repository
+				repo, err := f.SetupMinioRepository()
+				Expect(err).NotTo(HaveOccurred())
+				f.AppendToCleanupList(repo)
+
+				// Setup Batch Backup
+				backupBatch, err := f.SetupBatchBackup(repo, func(in *v1beta1.BackupBatch) {
+					in.Spec.Members = members
+					in.Spec.Hooks = &v1beta1.BackupHooks{
+						// Just simply execute a http probe in the first StatefulSet.
+						// Although it does not represent the actual use case, but it probes that the global are working.
+						PreBackup: &probev1.Handler{
+							HTTPGet: &core.HTTPGetAction{
+								Scheme: "HTTP",
+								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss1.Name, ss1.Name, f.Namespace()),
+								Path:   "/success",
+								Port:   intstr.FromInt(framework.HttpPort),
+							},
+						},
+					}
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// Take an Instant Backup the Sample Data
+				backupSession, err := f.TakeInstantBackup(backupBatch.ObjectMeta, v1beta1.BackupInvokerRef{
+					Name: backupBatch.Name,
+					Kind: v1beta1.ResourceKindBackupBatch,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that BackupSession has succeeded")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+			})
+		})
+
+		Context("ExecAction", func() {
+
+		})
+
+		Context("Different Situations", func() {
+
 		})
 	})
 })

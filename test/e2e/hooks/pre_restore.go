@@ -59,7 +59,7 @@ var _ = Describe("PreRestore Hook", func() {
 				It("should remove the corrupted data in preRestore hook", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -131,7 +131,7 @@ var _ = Describe("PreRestore Hook", func() {
 				It("should not restore when preRestore hook failed", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state

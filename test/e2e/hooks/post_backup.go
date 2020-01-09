@@ -58,7 +58,7 @@ var _ = Describe("PostBackup Hook", func() {
 					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -76,7 +76,7 @@ var _ = Describe("PostBackup Hook", func() {
 								PostBackup: &probev1.Handler{
 									HTTPGet: &core.HTTPGetAction{
 										Scheme: "HTTP",
-										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
 										Path:   "/success",
 										Port:   intstr.FromInt(framework.HttpPort),
 									},
@@ -102,7 +102,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -147,7 +147,7 @@ var _ = Describe("PostBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should take a backup even when the postBackup hook failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -202,7 +202,7 @@ var _ = Describe("PostBackup Hook", func() {
 					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -220,7 +220,7 @@ var _ = Describe("PostBackup Hook", func() {
 								PostBackup: &probev1.Handler{
 									HTTPPost: &probev1.HTTPPostAction{
 										Scheme: "HTTP",
-										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
 										Path:   "/post-demo",
 										Port:   intstr.FromInt(framework.HttpPort),
 									},
@@ -246,7 +246,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -290,7 +290,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Context("Json Data in Request Body", func() {
 					It("server should echo the 'expectedCode' and 'expectedResponse' passed in the json body", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -335,7 +335,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Context("Form Data in Request Body", func() {
 					It("server should echo the 'expectedCode' and 'expectedResponse' passed as form data", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -390,7 +390,7 @@ var _ = Describe("PostBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should take a backup even when the postBackup hook failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -455,7 +455,7 @@ var _ = Describe("PostBackup Hook", func() {
 					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -472,7 +472,7 @@ var _ = Describe("PostBackup Hook", func() {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
 								PostBackup: &probev1.Handler{
 									TCPSocket: &core.TCPSocketAction{
-										Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
 										Port: intstr.FromInt(framework.TcpPort),
 									},
 								},
@@ -497,7 +497,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient()
+						statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -540,7 +540,7 @@ var _ = Describe("PostBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should take a backup even when the postBackup hook failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -591,7 +591,7 @@ var _ = Describe("PostBackup Hook", func() {
 			Context("Success Test", func() {
 				It("should cleanup the sample data in postBackup hook", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -641,7 +641,7 @@ var _ = Describe("PostBackup Hook", func() {
 
 				It("should execute postBackup hook even when the backup process failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -696,7 +696,7 @@ var _ = Describe("PostBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should take a backup even when the postBackup hook failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state

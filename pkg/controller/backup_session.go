@@ -132,7 +132,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 	// if backup process completed ( Failed or Succeeded), execute postBackup hook
 	if (phase == api_v1beta1.BackupSessionFailed || phase == api_v1beta1.BackupSessionSucceeded) &&
 		invoker.Hooks != nil && invoker.Hooks.PostBackup != nil {
-		err = util.ExecuteHook(c.clientConfig, invoker.Hooks.PostBackup, apis.PostBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
+		err = util.ExecuteHook(c.clientConfig, invoker.Hooks, apis.PostBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
 		if err != nil {
 			return c.setBackupSessionFailed(invoker, backupSession, err)
 		}
@@ -165,7 +165,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 
 	// if preBackup hook exist, then execute preBackupHook
 	if invoker.Hooks != nil && invoker.Hooks.PreBackup != nil {
-		err = util.ExecuteHook(c.clientConfig, invoker.Hooks.PreBackup, apis.PreBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
+		err = util.ExecuteHook(c.clientConfig, invoker.Hooks, apis.PreBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
 		if err != nil {
 			return c.setBackupSessionFailed(invoker, backupSession, err)
 		}
