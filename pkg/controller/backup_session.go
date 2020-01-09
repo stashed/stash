@@ -176,7 +176,8 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 			// skip if backup model is sidecar.
 			// for sidecar model controller inside sidecar will take care of it.
 			if invoker.Driver != api_v1beta1.VolumeSnapshotter && util.BackupModel(targetInfo.Target.Ref.Kind) == apis.ModelSidecar {
-				log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
+				log.Infof("Skipping processing BackupSession %s/%s for target %s %s/%s. Reason: Backup model is sidecar."+
+					"Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name, targetInfo.Target.Ref.Kind, backupSession.Namespace, targetInfo.Target.Ref.Name)
 			}
 
 			// if VolumeSnapshotter driver is used then ensure VolumeSnapshotter job and return
@@ -197,13 +198,14 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 			}
 
 			// Set BackupSession phase "Running"
-			backupSession, err = c.setBackupSessionRunning(targetInfo.Target, invoker.Driver, backupSession)
+			backupSession, err = c.setTargetPhaseRunning(targetInfo.Target, invoker.Driver, backupSession)
 			if err != nil {
 				return err
 			}
 		}
 	}
-	return nil
+	_, err = c.setBackupSessionRunning(backupSession)
+	return err
 }
 
 func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.TargetInfo, backupSession *api_v1beta1.BackupSession, index int) error {
@@ -263,7 +265,7 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 	}
 
 	if backupSession.Spec.Invoker.Kind == api_v1beta1.ResourceKindBackupBatch {
-		repoInputs[apis.RepositoryPrefix] = fmt.Sprintf("%s/%s/%s", repoInputs[apis.RepositoryPrefix], targetInfo.Target.Ref.Kind, targetInfo.Target.Ref.Name)
+		repoInputs[apis.RepositoryPrefix] = fmt.Sprintf("%s/%s/%s", repoInputs[apis.RepositoryPrefix], strings.ToLower(targetInfo.Target.Ref.Kind), targetInfo.Target.Ref.Name)
 	}
 
 	bcInputs, err := c.inputsForBackupConfig(invoker, targetInfo)
@@ -448,17 +450,16 @@ func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.Bac
 	return err
 }
 
-func (c *StashController) setBackupSessionRunning(target *api_v1beta1.BackupTarget, driver api_v1beta1.Snapshotter, backupSession *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, error) {
+func (c *StashController) setTargetPhaseRunning(target *api_v1beta1.BackupTarget, driver api_v1beta1.Snapshotter, backupSession *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, error) {
 	// find out the total number of hosts in target that will be backed up in this backup session
 	totalHosts, err := c.getTotalHosts(target, backupSession.Namespace, driver)
 	if err != nil {
 		return nil, err
 	}
-	// set BackupSession phase to "Running"
+	// set target phase to "Running"
 	backupSession, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		in.Phase = api_v1beta1.BackupSessionRunning
 		if target != nil {
-			in.Targets = append(backupSession.Status.Targets, api_v1beta1.Target{
+			in.Targets = upsertTargetStatsEntry(backupSession.Status.Targets, api_v1beta1.Target{
 				TotalHosts: totalHosts,
 				Ref: api_v1beta1.TargetRef{
 					Name: target.Ref.Name,
@@ -467,6 +468,15 @@ func (c *StashController) setBackupSessionRunning(target *api_v1beta1.BackupTarg
 				Phase: api_v1beta1.TargetBackupRunning,
 			})
 		}
+		return in
+	})
+	return backupSession, err
+}
+
+func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, error) {
+	// set BackupSession phase to "Running"
+	backupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+		in.Phase = api_v1beta1.BackupSessionRunning
 		return in
 	})
 	if err != nil {
@@ -482,7 +492,6 @@ func (c *StashController) setBackupSessionRunning(target *api_v1beta1.BackupTarg
 		eventer.EventReasonBackupSessionRunning,
 		fmt.Sprintf("Backup job has been created succesfully/sidecar is watching the BackupSession."),
 	)
-
 	return backupSession, err
 }
 
@@ -636,4 +645,17 @@ func (c *StashController) cleanupBackupHistory(backupInvokerRef api_v1beta1.Back
 		}
 	}
 	return nil
+}
+
+func upsertTargetStatsEntry(targetStats []api_v1beta1.Target, newEntry api_v1beta1.Target) []api_v1beta1.Target {
+	// already exist, then just update
+	for i := range targetStats {
+		if targetStats[i].Ref.Kind == newEntry.Ref.Kind && targetStats[i].Ref.Name == newEntry.Ref.Name {
+			targetStats[i] = newEntry
+			return targetStats
+		}
+	}
+	// target entry does not exist. add new entry
+	targetStats = append(targetStats, newEntry)
+	return targetStats
 }
