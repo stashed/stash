@@ -40,7 +40,9 @@ import (
 var _ = Describe("PreBackup Hook", func() {
 
 	var f *framework.Invocation
-
+	const (
+		sampleTable = "StashDemo"
+	)
 	BeforeEach(func() {
 		f = framework.NewInvocation()
 	})
@@ -840,10 +842,6 @@ var _ = Describe("PreBackup Hook", func() {
 			})
 
 			Context("MySQL", func() {
-				const (
-					sampleTable = "StashDemo"
-				)
-
 				BeforeEach(func() {
 					// Skip test if respective Functions and Tasks are not installed.
 					if !f.MySQLAddonInstalled() {
@@ -1006,7 +1004,7 @@ var _ = Describe("PreBackup Hook", func() {
 
 	Context("Batch Backup", func() {
 		Context("HTTPGetAction", func() {
-			It("should execute all global and local hooks successfully", func() {
+			It("should execute global and local hooks successfully", func() {
 				// Here, we are going to deploy two different StatefulSet with probe client.
 				// Then, we are going to backup those StatefulSets using BatchBackup.
 				// Each individual StatefulSet will have a hook for them.
@@ -1123,7 +1121,132 @@ var _ = Describe("PreBackup Hook", func() {
 		})
 
 		Context("ExecAction", func() {
+			It("should execute global and local hooks successfully", func() {
+				// Here, we are going to deploy two different types of workload.
+				// First workload is a StatefulSet with probe client. We will execute a simple http hook there. The other workload is a database.
+				// We will make the database readonly in local hook. We will execute a simple exec action in global hook.
+				var members []v1beta1.BackupConfigurationTemplateSpec
 
+				// Deploy the first StatefulSet.
+				ss1, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+				Expect(err).NotTo(HaveOccurred())
+				// Generate Sample Data
+				_, err = f.GenerateSampleData(ss1.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+				// We will execute HTTPGetAction in the first StatefulSet
+				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
+					Hooks: &v1beta1.BackupHooks{
+						PreBackup: &probev1.Handler{
+							HTTPGet: &core.HTTPGetAction{
+								Scheme: "HTTP",
+								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss1.Name, ss1.Name, f.Namespace()),
+								Path:   "/success",
+								Port:   intstr.FromInt(framework.HttpPort),
+							},
+						},
+					},
+					Target: &v1beta1.BackupTarget{
+						Ref: v1beta1.TargetRef{
+							APIVersion: appsv1.SchemeGroupVersion.String(),
+							Kind:       apis.KindStatefulSet,
+							Name:       ss1.Name,
+						},
+						Paths: []string{
+							framework.TestSourceDataMountPath,
+						},
+						VolumeMounts: []core.VolumeMount{
+							{
+								Name:      framework.SourceVolume,
+								MountPath: framework.TestSourceDataMountPath,
+							},
+						},
+					},
+				})
+
+				// Deploy MySQL database and respective service,secret,PVC and AppBinding.
+				By("Deploying MySQL Server")
+				dpl, appBinding, err := f.DeployMySQLDatabase()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Port forwarding MySQL pod")
+				pod, err := f.GetPod(dpl.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
+				defer tunnel.Close()
+				err = tunnel.ForwardPort()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Connecting with MySQL Server")
+				connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
+				db, err := sql.Open("mysql", connstr)
+				Expect(err).NotTo(HaveOccurred())
+				defer db.Close()
+				db.SetConnMaxLifetime(time.Second * 10)
+				err = f.EventuallyConnectWithMySQLServer(db)
+				Expect(err).NotTo(HaveOccurred())
+
+				// add the database as member of batch backup
+				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
+					// make the database readonly in preBackup hook.
+					Hooks: &v1beta1.BackupHooks{
+						PreBackup: &probev1.Handler{
+							Exec: &core.ExecAction{
+								Command: []string{"/bin/sh", "-c",
+									`mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "SET GLOBAL super_read_only = ON;"`},
+							},
+							ContainerName: framework.MySQLContainerName,
+						},
+					},
+					Task: v1beta1.TaskRef{
+						Name: framework.MySQLBackupTask,
+					},
+					Target: &v1beta1.BackupTarget{
+						Ref: v1beta1.TargetRef{
+							APIVersion: core.SchemeGroupVersion.String(),
+							Kind:       apis.KindAppBinding,
+							Name:       appBinding.Name,
+						},
+					},
+				})
+
+				// Setup a Minio Repository
+				repo, err := f.SetupMinioRepository()
+				Expect(err).NotTo(HaveOccurred())
+				f.AppendToCleanupList(repo)
+
+				// Setup Batch Backup
+				backupBatch, err := f.SetupBatchBackup(repo, func(in *v1beta1.BackupBatch) {
+					in.Spec.Members = members
+					// Execute a simple exec hook in the global hook. This hook will be executed inside Stash operator.
+					// Currently, we don't have any known command that really make sense to execute inside operator.
+					// So, we are using the simplest command to test the global hook. :P
+					in.Spec.Hooks = &v1beta1.BackupHooks{
+						PreBackup: &probev1.Handler{
+							Exec: &core.ExecAction{
+								Command: []string{"/bin/sh", "-c", "exit 0"},
+							},
+							ContainerName: "operator",
+						},
+					}
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// Take an Instant Backup the Sample Data
+				backupSession, err := f.TakeInstantBackup(backupBatch.ObjectMeta, v1beta1.BackupInvokerRef{
+					Name: backupBatch.Name,
+					Kind: v1beta1.ResourceKindBackupBatch,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that BackupSession has succeeded")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+				By("Verifying that the database is read-only")
+				err = f.CreateTable(db, "readOnlyTest")
+				Expect(err).Should(HaveOccurred())
+			})
 		})
 
 		Context("Different Situations", func() {
