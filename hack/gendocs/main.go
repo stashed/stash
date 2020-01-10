@@ -32,28 +32,24 @@ import (
 	"github.com/spf13/cobra/doc"
 )
 
-const (
-	version = "0.9.0-rc.0"
-)
-
 var (
 	tplFrontMatter = template.Must(template.New("index").Parse(`---
 title: Stash Operator
 description: Stash Operator Reference
 menu:
-  product_stash_{{ .Version }}:
+  docs_{{ "{{ .version }}" }}:
     identifier: operator
     name: Stash Operator
     parent: reference
     weight: 20
-menu_name: product_stash_{{ .Version }}
+menu_name: docs_{{ "{{ .version }}" }}
 ---
 `))
 
 	_ = template.Must(tplFrontMatter.New("cmd").Parse(`---
 title: {{ .Name }}
 menu:
-  product_stash_{{ .Version }}:
+  docs_{{ "{{ .version }}" }}:
     identifier: {{ .ID }}
     name: {{ .Name }}
     parent: operator
@@ -62,11 +58,11 @@ menu:
 {{ end }}
 product_name: stash
 section_menu_id: reference
-menu_name: product_stash_{{ .Version }}
+menu_name: docs_{{ "{{ .version }}" }}
 {{- if .RootCmd }}
-url: /products/stash/{{ .Version }}/reference/operator/
+url: /docs/{{ "{{ .version }}" }}/reference/operator/
 aliases:
-  - /products/stash/{{ .Version }}/reference/operator/operator/
+  - /docs/{{ "{{ .version }}" }}/reference/operator/operator/
 {{ end }}
 ---
 `))
@@ -97,12 +93,10 @@ func main() {
 		data := struct {
 			ID      string
 			Name    string
-			Version string
 			RootCmd bool
 		}{
 			strings.Replace(base, "_", "-", -1),
 			name,
-			version,
 			!strings.ContainsRune(base, '_'),
 		}
 		var buf bytes.Buffer
@@ -125,7 +119,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = tplFrontMatter.ExecuteTemplate(f, "index", struct{ Version string }{version})
+	err = tplFrontMatter.ExecuteTemplate(f, "index", struct{}{})
 	if err != nil {
 		log.Fatalln(err)
 	}
