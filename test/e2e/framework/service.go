@@ -27,15 +27,15 @@ const (
 	TEST_HEADLESS_SERVICE = "headless"
 )
 
-func (fi *Invocation) HeadlessService(label string) core.Service {
+func (fi *Invocation) HeadlessService(name string) core.Service {
 	return core.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      TEST_HEADLESS_SERVICE,
+			Name:      name,
 			Namespace: fi.namespace,
 		},
 		Spec: core.ServiceSpec{
 			Selector: map[string]string{
-				"app": label,
+				"app": name,
 			},
 			ClusterIP: core.ClusterIPNone,
 			Ports: []core.ServicePort{

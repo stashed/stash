@@ -117,95 +117,56 @@ func NewCmdRunHook() *cobra.Command {
 }
 
 func (opt *hookOptions) executeHook() error {
-	var backupConfig *v1beta1.BackupConfiguration
-	var restoreSession *v1beta1.RestoreSession
-	var err error
+	var hook interface{}
+	var executorPodName string
 
-	// For backup hooks, BackupSession name will be provided. We will read the hooks from the underlying BackupConfiguration.
 	if opt.backupSessionName != "" {
-		backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(opt.backupSessionName, metav1.GetOptions{})
+		// For backup hooks, BackupSession name will be provided. We will read the hooks from the underlying backup invoker.
+		invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerType, opt.invokerName, opt.namespace)
 		if err != nil {
 			return err
 		}
-		if backupSession.Spec.Invoker.Kind != v1beta1.ResourceKindBackupConfiguration {
-			return fmt.Errorf("backup hook for invoker kind: %s is not supported yet", backupSession.Spec.Invoker.Kind)
+		// We need to extract the hook only for the current target
+		for _, targetInfo := range invoker.TargetsInfo {
+			if targetInfo.Target != nil && targetInfo.Target.Ref.Kind == opt.targetKind && targetInfo.Target.Ref.Name == opt.targetName {
+				hook = targetInfo.Hooks
+				executorPodName, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
+				if err != nil {
+					return err
+				}
+				break
+			}
 		}
-		backupConfig, err = opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
+	} else if opt.restoreSessionName != "" {
+		// For restore hooks, RestoreSession name will be provided. We will read the hooks from the RestoreSession.
+		restoreSession, err := opt.stashClient.StashV1beta1().RestoreSessions(opt.namespace).Get(opt.restoreSessionName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-	}
-
-	// For restore hooks, RestoreSession name will be provided. We will read the hooks from the RestoreSession.
-	if opt.restoreSessionName != "" {
-		restoreSession, err = opt.stashClient.StashV1beta1().RestoreSessions(opt.namespace).Get(opt.restoreSessionName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-	}
-
-	// Extract the hooks from the BackupConfiguration or RestoreSession
-	hook, err := opt.getHook(backupConfig, restoreSession)
-	if err != nil {
-		return err
-	}
-
-	// Now, determine the pod where the hook will execute
-	podName, err := opt.getPodName(backupConfig, restoreSession)
-	if err != nil {
-		return err
-	}
-	// Execute the hooks
-	return util.ExecuteHook(opt.config, hook, opt.hookType, podName, opt.namespace)
-}
-
-func (opt *hookOptions) getHook(backupConfig *v1beta1.BackupConfiguration, restoreSession *v1beta1.RestoreSession) (interface{}, error) {
-	switch opt.hookType {
-	case apis.PreBackupHook:
-		if backupConfig != nil && backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PreBackup != nil {
-			return backupConfig.Spec.Hooks, nil
+		hook = restoreSession.Spec.Hooks
+		if restoreSession.Spec.Target != nil {
+			executorPodName, err = opt.getHookExecutorPodName(restoreSession.Spec.Target.Ref)
+			if err != nil {
+				return err
+			}
 		} else {
-			return nil, fmt.Errorf("no %s hook found in BackupConfiguration %s/%s", opt.hookType, opt.namespace, opt.backupSessionName)
+			executorPodName = os.Getenv(apis.KeyPodName)
 		}
-	case apis.PostBackupHook:
-		if backupConfig != nil && backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PostBackup != nil {
-			return backupConfig.Spec.Hooks, nil
-		} else {
-			return nil, fmt.Errorf("no %s hook found in BackupConfiguration %s/%s", opt.hookType, opt.namespace, opt.backupSessionName)
-		}
-	case apis.PreRestoreHook:
-		if restoreSession != nil && restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
-			return restoreSession.Spec.Hooks, nil
-		} else {
-			return nil, fmt.Errorf("no %s hook found in RestoreSession %s/%s", opt.hookType, opt.namespace, opt.restoreSessionName)
-		}
-	case apis.PostRestoreHook:
-		if restoreSession != nil && restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
-			return restoreSession.Spec.Hooks, nil
-		} else {
-			return nil, fmt.Errorf("no %s hook found in RestoreSession %s/%s", opt.hookType, opt.namespace, opt.restoreSessionName)
-		}
-	default:
-		return nil, fmt.Errorf("unknown hook type: %s", opt.hookType)
-	}
-}
-
-func (opt *hookOptions) getPodName(backupConfig *v1beta1.BackupConfiguration, restoreSession *v1beta1.RestoreSession) (string, error) {
-	var targetRef v1beta1.TargetRef
-	// only one of backupConfig or restoreSession will be not nil
-	if backupConfig != nil && backupConfig.Spec.Target != nil {
-		targetRef = backupConfig.Spec.Target.Ref
-	} else if restoreSession != nil && restoreSession.Spec.Target != nil {
-		targetRef = restoreSession.Spec.Target.Ref
 	} else {
-		return "", fmt.Errorf("invalid target. target can't be nil for executing hook in Function-Task model")
+		return fmt.Errorf("can not execute hooks. Reason: Respective BackupSession or RestoreSession has not been specified")
 	}
 
+	// Execute the hooks
+	return util.ExecuteHook(opt.config, hook, opt.hookType, executorPodName, opt.namespace)
+}
+
+func (opt *hookOptions) getHookExecutorPodName(targetRef v1beta1.TargetRef) (string, error) {
 	switch targetRef.Kind {
 	case apis.KindAppBinding:
 		// For AppBinding, we will execute the hooks in the respective app pod
 		return opt.getAppPodName(targetRef.Name)
 	default:
+		// For other types of target, hook will be executed where this process is running.
 		return os.Getenv(apis.KeyPodName), nil
 	}
 }

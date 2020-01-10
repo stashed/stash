@@ -268,7 +268,6 @@ func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.T
 
 	if c.InvokerType == api_v1beta1.ResourceKindBackupBatch {
 		c.SetupOpt.Path = fmt.Sprintf("%s/%s/%s", c.SetupOpt.Path, strings.ToLower(c.BackupTargetKind), c.BackupTargetName)
-
 	}
 
 	// apply nice, ionice settings from env

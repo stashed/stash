@@ -53,7 +53,7 @@ func (fi *Invocation) StatefulSet(name, pvcName, volName string) apps.StatefulSe
 			},
 			Replicas:    types.Int32P(1),
 			Template:    fi.PodTemplate(labels, pvcName, volName),
-			ServiceName: TEST_HEADLESS_SERVICE,
+			ServiceName: name,
 			UpdateStrategy: apps.StatefulSetUpdateStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,
 			},
@@ -77,7 +77,7 @@ func (fi *Invocation) StatefulSetForV1beta1API(name, volName string, replica int
 				MatchLabels: labels,
 			},
 			Replicas:    &replica,
-			ServiceName: TEST_HEADLESS_SERVICE,
+			ServiceName: name,
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
@@ -228,8 +228,8 @@ func (fi *Invocation) DeployStatefulSet(name string, replica int32, volName stri
 	return createdss, err
 }
 
-func (fi *Invocation) DeployStatefulSetWithProbeClient() (*apps.StatefulSet, error) {
-	name := fmt.Sprintf("%s-%s", ProberDemoPodPrefix, fi.app)
+func (fi *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.StatefulSet, error) {
+	name = fmt.Sprintf("%s-%s", name, fi.app)
 	svc, err := fi.CreateService(fi.HeadlessService(name))
 	if err != nil {
 		return nil, err
@@ -251,7 +251,7 @@ func (fi *Invocation) DeployStatefulSetWithProbeClient() (*apps.StatefulSet, err
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			ServiceName: TEST_HEADLESS_SERVICE,
+			ServiceName: name,
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,

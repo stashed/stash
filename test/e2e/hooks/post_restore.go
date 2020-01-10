@@ -59,7 +59,7 @@ var _ = Describe("PostRestore Hook", func() {
 				It("should execute the postRestore hook successfully", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -130,7 +130,7 @@ var _ = Describe("PostRestore Hook", func() {
 				It("should execute the postRestore hook even when the restore process failed", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -219,7 +219,7 @@ var _ = Describe("PostRestore Hook", func() {
 				It("should restore backed up data even when the hook failed", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient()
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
