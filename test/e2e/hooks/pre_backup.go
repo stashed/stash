@@ -1133,15 +1133,12 @@ var _ = Describe("PreBackup Hook", func() {
 				// Generate Sample Data
 				_, err = f.GenerateSampleData(ss1.ObjectMeta, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
-				// We will execute HTTPGetAction in the first StatefulSet
+				// We will execute an ExecAction in the StatefulSet
 				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
 					Hooks: &v1beta1.BackupHooks{
 						PreBackup: &probev1.Handler{
-							HTTPGet: &core.HTTPGetAction{
-								Scheme: "HTTP",
-								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss1.Name, ss1.Name, f.Namespace()),
-								Path:   "/success",
-								Port:   intstr.FromInt(framework.HttpPort),
+							Exec: &core.ExecAction{
+								Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_SUCCESS`},
 							},
 						},
 					},
@@ -1371,7 +1368,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
-				By("Verifying that the database is read-only") // this ensure that the local preBackup hook hasn't been executed.
+				By("Verifying that the database is writable") // this ensure that the local preBackup hook hasn't been executed.
 				err = f.CreateTable(db, "readOnlyTest")
 				Expect(err).ShouldNot(HaveOccurred())
 

@@ -1005,3 +1005,23 @@ func isDebugTarget(containers []core.Container) (bool, []string) {
 	}
 	return false, nil
 }
+
+func (fi *Invocation) HookFailed(involvedObjectKind string, involvedObjectMeta metav1.ObjectMeta, probeType string) (bool, error) {
+	fieldSelector := fields.SelectorFromSet(fields.Set{
+		"involvedObject.kind":      involvedObjectKind,
+		"involvedObject.name":      involvedObjectMeta.Name,
+		"involvedObject.namespace": involvedObjectMeta.Namespace,
+		"type":                     core.EventTypeWarning,
+	})
+	events, err := fi.KubeClient.CoreV1().Events(fi.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+	Expect(err).NotTo(HaveOccurred())
+
+	hasHookFailureEvent := false
+	for _, e := range events.Items {
+		if strings.Contains(e.Message, fmt.Sprintf("failed to execute %q probe.", probeType)) {
+			hasHookFailureEvent = true
+			break
+		}
+	}
+	return hasHookFailureEvent, nil
+}
