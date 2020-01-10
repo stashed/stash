@@ -309,13 +309,13 @@ func (c *StashController) handleCronJobCreationFailure(obj interface{}, err erro
 	case *api_v1beta1.BackupConfiguration:
 		eventComponent = eventer.EventSourceBackupConfigurationController
 		invokerRef, rerr = reference.GetReference(stash_scheme.Scheme, b)
-		if err != nil {
+		if rerr != nil {
 			return errors.NewAggregate([]error{err, rerr})
 		}
 	case *api_v1beta1.BackupBatch:
 		eventComponent = eventer.EventSourceBackupBatchController
 		invokerRef, rerr = reference.GetReference(stash_scheme.Scheme, b)
-		if err != nil {
+		if rerr != nil {
 			return errors.NewAggregate([]error{err, rerr})
 		}
 	}
