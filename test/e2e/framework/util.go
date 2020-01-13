@@ -1025,3 +1025,24 @@ func (fi *Invocation) HookFailed(involvedObjectKind string, involvedObjectMeta m
 	}
 	return hasHookFailureEvent, nil
 }
+
+func (f *Framework) EventuallyEventWritten(involvedObjectMeta metav1.ObjectMeta, involvedObjectKind, eventType, eventReason string) GomegaAsyncAssertion {
+	return Eventually(func() bool {
+		fieldSelector := fields.SelectorFromSet(fields.Set{
+			"involvedObject.kind":      involvedObjectKind,
+			"involvedObject.name":      involvedObjectMeta.Name,
+			"involvedObject.namespace": involvedObjectMeta.Namespace,
+			"type":                     eventType,
+		})
+		events, err := f.KubeClient.CoreV1().Events(involvedObjectMeta.Namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		if err != nil {
+			return false
+		}
+		for _, event := range events.Items {
+			if event.Reason == eventReason {
+				return true
+			}
+		}
+		return false
+	}, time.Minute*2, time.Second*5)
+}

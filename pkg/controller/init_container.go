@@ -30,6 +30,7 @@ import (
 	stringz "github.com/appscode/go/strings"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -155,6 +156,9 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) {
 }
 
 func (c *StashController) handleInitContainerInjectionFailure(ref *core.ObjectReference, err error) error {
+	if ref == nil {
+		return errors.NewAggregate([]error{err, fmt.Errorf("failed to init-container injection failure event. Reason: provided ObjectReference is nil")})
+	}
 	log.Warningf("Failed to inject stash init-container into %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to respective resource
@@ -170,6 +174,9 @@ func (c *StashController) handleInitContainerInjectionFailure(ref *core.ObjectRe
 }
 
 func (c *StashController) handleInitContainerInjectionSuccess(ref *core.ObjectReference) error {
+	if ref == nil {
+		return fmt.Errorf("failed to init-container injection success event. Reason: provided ObjectReference is nil")
+	}
 	log.Infof("Successfully injected stash init-container into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
 
 	// write event to respective resource
@@ -185,6 +192,9 @@ func (c *StashController) handleInitContainerInjectionSuccess(ref *core.ObjectRe
 }
 
 func (c *StashController) handleInitContainerDeletionSuccess(ref *core.ObjectReference) error {
+	if ref == nil {
+		return fmt.Errorf("failed to init-container deletion success event. Reason: provided ObjectReference is nil")
+	}
 	log.Infof("Successfully removed stash init-container from %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
 
 	// write event to respective resource
