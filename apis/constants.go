@@ -96,6 +96,8 @@ const (
 )
 
 const (
+	PrefixStashBackup    = "stash-backup"
+	PrefixStashRestore   = "stash-restore"
 	StashContainer       = "stash"
 	StashInitContainer   = "stash-init"
 	LocalVolumeName      = "stash-local"
