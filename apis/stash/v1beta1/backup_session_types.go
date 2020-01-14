@@ -57,7 +57,6 @@ const (
 	BackupSessionRunning   BackupSessionPhase = "Running"
 	BackupSessionSucceeded BackupSessionPhase = "Succeeded"
 	BackupSessionFailed    BackupSessionPhase = "Failed"
-	BackupSessionSkipped   BackupSessionPhase = "Skipped"
 	BackupSessionUnknown   BackupSessionPhase = "Unknown"
 )
 

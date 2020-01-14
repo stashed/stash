@@ -19,6 +19,7 @@ package framework
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -47,7 +48,6 @@ func (f *Framework) EventuallyBackupProcessCompleted(meta metav1.ObjectMeta) Gom
 			}
 			if bs.Status.Phase == v1beta1.BackupSessionSucceeded ||
 				bs.Status.Phase == v1beta1.BackupSessionFailed ||
-				bs.Status.Phase == v1beta1.BackupSessionSkipped ||
 				bs.Status.Phase == v1beta1.BackupSessionUnknown {
 				return true
 			}
@@ -102,4 +102,48 @@ func (fi *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta, invokerRef
 	}
 
 	return fi.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Create(backupSession)
+}
+
+func (fi *Invocation) EventuallyBackupCount(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
+	return Eventually(func() int64 {
+		count, err := fi.GetSuccessfulBackupSessionCount(invokerMeta, invokerKind)
+		if err != nil {
+			return 0
+		}
+		return count
+	}, 3*time.Minute, 5*time.Second)
+}
+
+func (fi *Invocation) GetSuccessfulBackupSessionCount(invokerMeta metav1.ObjectMeta, invokerKind string) (int64, error) {
+	backupSessions, err := fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return 0, err
+	}
+
+	count := int64(0)
+	for _, bs := range backupSessions.Items {
+		if bs.Spec.Invoker.Kind == invokerKind &&
+			bs.Spec.Invoker.Name == invokerMeta.Name &&
+			bs.Status.Phase == v1beta1.BackupSessionSucceeded {
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (fi *Invocation) EventuallyRunningBackupCompleted(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
+	return Eventually(func() bool {
+		backupSessions, err := fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(metav1.ListOptions{})
+		if err != nil {
+			return false
+		}
+		for _, bs := range backupSessions.Items {
+			if bs.Spec.Invoker.Kind == invokerKind &&
+				bs.Spec.Invoker.Name == invokerMeta.Name &&
+				bs.Status.Phase == v1beta1.BackupSessionRunning {
+				return false
+			}
+		}
+		return true
+	}, 3*time.Minute, 5*time.Second)
 }

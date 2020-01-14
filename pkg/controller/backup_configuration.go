@@ -30,6 +30,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/go/types"
 	"github.com/golang/glog"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
@@ -111,12 +112,6 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(invoker apis.Inv
 		if err != nil {
 			return err
 		}
-		// skip if BackupBatch paused
-		if invoker.Paused {
-			log.Infof("Skipping processing for invoker %s %s/%s. Reason: The invoker is paused.", invoker.ObjectRef.Kind, invoker.ObjectMeta.Namespace, invoker.ObjectMeta.Name)
-			return nil
-		}
-
 		for _, targetInfo := range invoker.TargetsInfo {
 			if targetInfo.Target != nil && invoker.Driver != api_v1beta1.VolumeSnapshotter &&
 				util.BackupModel(targetInfo.Target.Ref.Kind) == apis.ModelSidecar {
@@ -255,6 +250,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 
 		in.Spec.Schedule = invoker.Schedule
+		in.Spec.Suspend = types.BoolP(invoker.Paused) // this ensure that the CronJob is suspended when the backup invoker is paused.
 		in.Spec.JobTemplate.Labels = invoker.Labels
 		// ensure that job gets deleted on completion
 		in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
