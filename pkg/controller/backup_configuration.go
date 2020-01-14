@@ -38,6 +38,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta2 "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
@@ -231,8 +232,8 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 		// ServiceAccount has been specified, so use it.
 		serviceAccountName = invoker.RuntimeSettings.Pod.ServiceAccountName
 	} else {
-		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object.
-		serviceAccountName = meta.Name
+		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object prefixed with stash-backup.
+		serviceAccountName = meta2.ValidNameWithPrefix(apis.PrefixStashBackup, meta.Name)
 
 		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)

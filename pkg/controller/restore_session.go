@@ -56,7 +56,7 @@ import (
 )
 
 const (
-	RestoreJobPrefix                = "restore"
+	RestoreJobPrefix                = "stash-restore"
 	PromJobRestoreSessionController = "stash-restoresession-controller"
 )
 
@@ -478,7 +478,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 
 	//ensure respective RBAC stuffs
 	//Create new ServiceAccount
-	serviceAccountName := restoreSession.Name
+	serviceAccountName := meta.ValidNameWithPrefix(apis.PrefixStashRestore, restoreSession.Name)
 	saMeta := metav1.ObjectMeta{
 		Name:      serviceAccountName,
 		Namespace: restoreSession.Namespace,

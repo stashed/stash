@@ -56,8 +56,8 @@ import (
 )
 
 const (
-	BackupJobPrefix                = "backup"
-	VolumeSnapshotPrefix           = "vs"
+	BackupJobPrefix                = "stash-backup"
+	VolumeSnapshotPrefix           = "stash-vs"
 	PromJobBackupSessionController = "stash-backupsession-controller"
 )
 
@@ -340,7 +340,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targe
 
 	//ensure respective RBAC stuffs
 	//Create new ServiceAccount
-	serviceAccountName := invoker.ObjectMeta.Name
+	serviceAccountName := meta.ValidNameWithPrefix(apis.PrefixStashBackup, invoker.ObjectMeta.Name)
 	saMeta := metav1.ObjectMeta{
 		Name:      serviceAccountName,
 		Namespace: invoker.ObjectMeta.Namespace,
@@ -596,7 +596,7 @@ func getBackupJobName(backupSession *api_v1beta1.BackupSession, index string) st
 }
 
 func getBackupJobServiceAccountName(name string) string {
-	return strings.ReplaceAll(name, ".", "-")
+	return meta.ValidNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(name, ".", "-"))
 }
 
 func getVolumeSnapshotterJobName(targetRef api_v1beta1.TargetRef, name string) string {
