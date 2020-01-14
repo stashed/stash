@@ -152,15 +152,6 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 	} else if phase == api_v1beta1.BackupSessionRunning {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
 		return nil
-	} else if phase == api_v1beta1.BackupSessionSkipped {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
-		return nil
-	}
-
-	// skip if backup invoker is paused
-	if invoker.Paused {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: %s is paused.", backupSession.Namespace, backupSession.Name, invoker.ObjectRef.Kind)
-		return c.setBackupSessionSkipped(backupSession, fmt.Sprintf("backup invoker %s %s/%s is paused", invoker.ObjectRef.Kind, invoker.ObjectRef.Namespace, invoker.ObjectRef.Name))
 	}
 
 	// if preBackup hook exist, then execute preBackupHook
@@ -425,29 +416,6 @@ func (c *StashController) setBackupSessionFailed(invoker apis.Invoker, backupSes
 	// cleanup old BackupSessions
 	err = c.cleanupBackupHistory(backupSession.Spec.Invoker, backupSession.Namespace, invoker.BackupHistoryLimit)
 	return errors.NewAggregate([]error{backupErr, err})
-}
-
-func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.BackupSession, reason string) error {
-	// set BackupSession phase to "Skipped"
-	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		in.Phase = api_v1beta1.BackupSessionSkipped
-		in.Targets = backupSession.Status.Targets
-		return in
-	})
-	if err != nil {
-		return err
-	}
-
-	// write skip event
-	_, err = eventer.CreateEvent(
-		c.kubeClient,
-		eventer.EventSourceBackupSessionController,
-		backupSession,
-		core.EventTypeWarning,
-		eventer.EventReasonBackupSessionSkipped,
-		reason,
-	)
-	return err
 }
 
 func (c *StashController) setTargetPhaseRunning(target *api_v1beta1.BackupTarget, driver api_v1beta1.Snapshotter, backupSession *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, error) {

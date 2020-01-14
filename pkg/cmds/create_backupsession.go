@@ -106,15 +106,6 @@ func (opt *options) createBackupSession() error {
 		OwnerReferences: []metav1.OwnerReference{},
 	}
 
-	// skip if backup invoker paused
-	if invoker.Paused {
-		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Backup invoker %s/%s is paused.", opt.namespace, invoker.ObjectMeta.Name)
-		log.Infoln(msg)
-
-		// write event to backup invoker denoting that backup session has been skipped
-		return writeBackupSessionSkippedEvent(opt.k8sClient, invoker.ObjectRef, msg)
-	}
-
 	wc := util.WorkloadClients{
 		KubeClient:       opt.k8sClient,
 		StashClient:      opt.stashClient,

@@ -207,11 +207,6 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 }
 
 func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.BackupSession, invoker apis.Invoker, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
-	// skip if backup invoker is paused
-	if invoker.Paused {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup invoker is paused.", backupSession.Namespace, backupSession.Name)
-		return nil, nil
-	}
 
 	// if BackupSession already has been processed for this host then skip further processing
 	if c.isBackupTakenForThisHost(backupSession, targetInfo.Target) {
@@ -509,8 +504,7 @@ func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1
 
 	// if overall backupSession phase is "Succeeded" or "Failed" or "Skipped" then it has been processed already
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
-		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
-		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped {
+		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed {
 		return true
 	}
 

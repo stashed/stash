@@ -87,6 +87,34 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 	)
 }
 
+func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() bool {
+			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			if err != nil {
+				return false
+			}
+			return *cronJob.Spec.Suspend
+		},
+		time.Minute*2,
+		time.Second*5,
+	)
+}
+
+func (f *Framework) EventuallyCronJobResumed(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() bool {
+			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			if err != nil {
+				return false
+			}
+			return !*cronJob.Spec.Suspend
+		},
+		time.Minute*2,
+		time.Second*5,
+	)
+}
+
 func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
