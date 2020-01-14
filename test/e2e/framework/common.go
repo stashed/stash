@@ -70,31 +70,9 @@ func (fi *Invocation) GenerateBigSampleFile(meta metav1.ObjectMeta, kind string)
 }
 
 func (fi *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
-	// Generate desired BackupConfiguration definition
-	backupConfig := fi.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
-		bc.Spec.Target = &v1beta1.BackupTarget{
-			Ref: GetTargetRef(objMeta.Name, kind),
-			Paths: []string{
-				TestSourceDataMountPath,
-			},
-			VolumeMounts: []core.VolumeMount{
-				{
-					Name:      SourceVolume,
-					MountPath: TestSourceDataMountPath,
-				},
-			},
-		}
-	})
-	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
-	// apply these test specific changes
-	for _, fn := range transformFuncs {
-		fn(backupConfig)
-	}
 
-	By("Creating BackupConfiguration: " + backupConfig.Name)
-	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	backupConfig, err := fi.CreateBackupConfigForWorkload(objMeta, repo, kind, transformFuncs...)
 	Expect(err).NotTo(HaveOccurred())
-	fi.AppendToCleanupList(createdBC)
 
 	By("Verifying that backup triggering CronJob has been created")
 	fi.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
@@ -122,7 +100,39 @@ func (fi *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v
 		By("Waiting for ReplicationController to be ready with sidecar")
 		err = fi.WaitUntilRCReadyWithSidecar(objMeta)
 	}
-	return createdBC, err
+	return backupConfig, err
+}
+
+func (fi *Invocation) CreateBackupConfigForWorkload(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
+	// Generate desired BackupConfiguration definition
+	backupConfig := fi.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
+		bc.Spec.Target = &v1beta1.BackupTarget{
+			Ref: GetTargetRef(objMeta.Name, kind),
+			Paths: []string{
+				TestSourceDataMountPath,
+			},
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      SourceVolume,
+					MountPath: TestSourceDataMountPath,
+				},
+			},
+		}
+	})
+	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(backupConfig)
+	}
+
+	By("Creating BackupConfiguration: " + backupConfig.Name)
+	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	if err != nil {
+		return nil, err
+	}
+	fi.AppendToCleanupList(createdBC)
+
+	return createdBC, nil
 }
 
 func (fi *Invocation) SetupBatchBackup(repo *api.Repository, transformFuncs ...func(in *v1beta1.BackupBatch)) (*v1beta1.BackupBatch, error) {

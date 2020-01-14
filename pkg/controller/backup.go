@@ -34,6 +34,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 	kutil "kmodules.xyz/client-go"
@@ -445,6 +446,10 @@ func getBackupConfigurationName(target *core.ObjectReference, prefix string) str
 }
 
 func (c *StashController) handleAutoBackupResourcesCreationFailure(ref *core.ObjectReference, err error) error {
+	if ref == nil {
+		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write autobackup resource creation failure event. Reason: provided ObjectReference is nil")})
+	}
+
 	log.Warningf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to respective resource
@@ -460,6 +465,10 @@ func (c *StashController) handleAutoBackupResourcesCreationFailure(ref *core.Obj
 }
 
 func (c *StashController) handleAutoBackupResourcesCreationSuccess(ref *core.ObjectReference) error {
+	if ref == nil {
+		return fmt.Errorf("failed to write autobackup resource creation success event. Reason: provided ObjectReference is nil")
+	}
+
 	log.Infof("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
 
 	// write event to respective resource
@@ -475,6 +484,9 @@ func (c *StashController) handleAutoBackupResourcesCreationSuccess(ref *core.Obj
 }
 
 func (c *StashController) handleAutoBackupResourcesDeletionFailure(ref *core.ObjectReference, err error) error {
+	if ref == nil {
+		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write autobackup resource deletion failure event. Reason: provided ObjectReference is nil")})
+	}
 	log.Warningf("Failed to delete auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to respective resource
@@ -490,6 +502,10 @@ func (c *StashController) handleAutoBackupResourcesDeletionFailure(ref *core.Obj
 }
 
 func (c *StashController) handleAutoBackupResourcesDeletionSuccess(ref *core.ObjectReference) error {
+	if ref == nil {
+		return fmt.Errorf("failed to write autobackup resource creation success event. Reason: provided ObjectReference is nil")
+	}
+
 	log.Infof("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
 
 	// write event to respective resource

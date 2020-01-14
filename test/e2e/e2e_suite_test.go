@@ -26,7 +26,6 @@ import (
 	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/controller"
-	_ "stash.appscode.dev/stash/test/e2e/advance-configuration"
 	_ "stash.appscode.dev/stash/test/e2e/auto-backup"
 	_ "stash.appscode.dev/stash/test/e2e/backend"
 	"stash.appscode.dev/stash/test/e2e/framework"

@@ -22,7 +22,6 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -33,10 +32,10 @@ import (
 	"github.com/golang/glog"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/reference"
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
@@ -286,6 +285,9 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 func (c *StashController) EnsureBackupTriggeringCronJobDeleted(invoker apis.Invoker) error {
 	cur, err := c.kubeClient.BatchV1beta1().CronJobs(invoker.ObjectMeta.Namespace).Get(getBackupCronJobName(invoker.ObjectMeta.Name), metav1.GetOptions{})
 	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 	_, _, err = batch_util.PatchCronJob(c.kubeClient, cur, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
@@ -299,38 +301,38 @@ func getBackupCronJobName(name string) string {
 	return strings.ReplaceAll(name, ".", "-")
 }
 
-func (c *StashController) handleCronJobCreationFailure(obj interface{}, err error) error {
-	var (
-		eventComponent string
-		invokerRef     *core.ObjectReference
-		rerr           error
-	)
-	switch b := obj.(type) {
-	case *api_v1beta1.BackupConfiguration:
-		eventComponent = eventer.EventSourceBackupConfigurationController
-		invokerRef, rerr = reference.GetReference(stash_scheme.Scheme, b)
-		if rerr != nil {
-			return errors.NewAggregate([]error{err, rerr})
-		}
-	case *api_v1beta1.BackupBatch:
-		eventComponent = eventer.EventSourceBackupBatchController
-		invokerRef, rerr = reference.GetReference(stash_scheme.Scheme, b)
-		if rerr != nil {
-			return errors.NewAggregate([]error{err, rerr})
-		}
+func (c *StashController) handleCronJobCreationFailure(ref *core.ObjectReference, err error) error {
+	if ref == nil {
+		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write cronjob creation failure event. Reason: provided ObjectReference is nil")})
 	}
+
+	var eventSource string
+	switch ref.Kind {
+	case api_v1beta1.ResourceKindBackupConfiguration:
+		eventSource = eventer.EventSourceBackupConfigurationController
+	case api_v1beta1.ResourceKindBackupBatch:
+		eventSource = eventer.EventSourceBackupBatchController
+	default:
+		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write cronjob creation failure event. Reason: Stash does not create cron job for %s", ref.Kind)})
+	}
+	// write log
+	log.Warningf("failed to create CronJob for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
 	// write event to Backup invoker
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
-		eventComponent,
-		invokerRef,
+		eventSource,
+		ref,
 		core.EventTypeWarning,
 		eventer.EventReasonCronJobCreationFailed,
-		fmt.Sprintf("failed to ensure CronJob for Backup invoker  %s/%s. Reason: %v", invokerRef.Namespace, invokerRef.Name, err))
+		fmt.Sprintf("failed to ensure CronJob for %s  %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err))
 	return errors.NewAggregate([]error{err, err2})
 }
 
 func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.ObjectReference, err error) error {
+	if ref == nil {
+		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write workload controller triggering failure event. Reason: provided ObjectReference is nil")})
+	}
 	var eventSource string
 	switch ref.Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:

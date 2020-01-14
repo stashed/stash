@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package advance_configuration
+package misc
 
 import (
 	"stash.appscode.dev/stash/apis"
