@@ -228,7 +228,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 		serviceAccountName = invoker.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object prefixed with stash-backup.
-		serviceAccountName = meta2.ValidNameWithPrefix(apis.PrefixStashBackup, meta.Name)
+		serviceAccountName = meta.Name
 
 		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
@@ -295,7 +295,7 @@ func (c *StashController) EnsureBackupTriggeringCronJobDeleted(invoker apis.Invo
 }
 
 func getBackupCronJobName(name string) string {
-	return strings.ReplaceAll(name, ".", "-")
+	return meta2.ValidNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(name, ".", "-"))
 }
 
 func (c *StashController) handleCronJobCreationFailure(ref *core.ObjectReference, err error) error {

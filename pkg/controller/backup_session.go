@@ -55,12 +55,6 @@ import (
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
 )
 
-const (
-	BackupJobPrefix                = "stash-backup"
-	VolumeSnapshotPrefix           = "stash-vs"
-	PromJobBackupSessionController = "stash-backupsession-controller"
-)
-
 func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
 	return webhook.NewGenericWebhook(
 		schema.GroupVersionResource{
@@ -213,13 +207,9 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one.
-		serviceAccountName = getBackupJobServiceAccountName(invoker.ObjectMeta.Name)
-		saMeta := metav1.ObjectMeta{
-			Name:      serviceAccountName,
-			Namespace: invoker.ObjectMeta.Namespace,
-			Labels:    invoker.Labels,
-		}
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		serviceAccountName = jobMeta.Name
+
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, jobMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 			return in
 		})
@@ -331,13 +321,9 @@ func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targe
 
 	//ensure respective RBAC stuffs
 	//Create new ServiceAccount
-	serviceAccountName := meta.ValidNameWithPrefix(apis.PrefixStashBackup, invoker.ObjectMeta.Name)
-	saMeta := metav1.ObjectMeta{
-		Name:      serviceAccountName,
-		Namespace: invoker.ObjectMeta.Namespace,
-		Labels:    invoker.Labels,
-	}
-	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	serviceAccountName := jobMeta.Name
+
+	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, jobMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 		return in
 	})
@@ -406,7 +392,7 @@ func (c *StashController) setBackupSessionFailed(invoker apis.Invoker, backupSes
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        PromJobBackupSessionController,
+		JobName:        apis.PromJobStashBackup,
 	}
 
 	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, invoker, updatedBackupSession.Status)
@@ -496,7 +482,7 @@ func (c *StashController) setBackupSessionSucceeded(invoker apis.Invoker, backup
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        PromJobBackupSessionController,
+		JobName:        apis.PromJobStashBackup,
 	}
 
 	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, invoker, updatedBackupSession.Status)
@@ -560,17 +546,13 @@ func (c *StashController) handleBackupJobCreationFailure(invoker apis.Invoker, b
 }
 
 func getBackupJobName(backupSession *api_v1beta1.BackupSession, index string) string {
-	return meta.ValidNameWithPefixNSuffix(BackupJobPrefix, strings.ReplaceAll(backupSession.Name, ".", "-"), index)
-}
-
-func getBackupJobServiceAccountName(name string) string {
-	return meta.ValidNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(name, ".", "-"))
+	return meta.ValidNameWithPefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSession.Name, ".", "-"), index)
 }
 
 func getVolumeSnapshotterJobName(targetRef api_v1beta1.TargetRef, name string) string {
 	parts := strings.Split(name, "-")
 	suffix := parts[len(parts)-1]
-	return meta.ValidNameWithPrefix(VolumeSnapshotPrefix, fmt.Sprintf("%s-%s-%s", util.ResourceKindShortForm(targetRef.Kind), targetRef.Name, suffix))
+	return meta.ValidNameWithPrefix(apis.PrefixStashVolumeSnapshot, fmt.Sprintf("%s-%s-%s", util.ResourceKindShortForm(targetRef.Kind), targetRef.Name, suffix))
 }
 
 // cleanupBackupHistory deletes old BackupSessions and theirs associate resources according to BackupHistoryLimit

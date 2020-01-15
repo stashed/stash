@@ -203,7 +203,7 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		if in.Spec.JobTemplate.Labels == nil {
 			in.Spec.JobTemplate.Labels = map[string]string{}
 		}
-		in.Spec.JobTemplate.Labels["app"] = apis.AppLabelStash
+		in.Spec.JobTemplate.Labels[apis.LabelApp] = apis.AppLabelStash
 		in.Spec.JobTemplate.Labels[apis.AnnotationRestic] = restic.Name
 		in.Spec.JobTemplate.Labels[apis.AnnotationOperation] = apis.OperationScaleDown
 

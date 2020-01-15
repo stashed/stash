@@ -31,7 +31,6 @@ import (
 	"stash.appscode.dev/stash/pkg/cli"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
-	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/log"
@@ -427,7 +426,7 @@ func (c *Controller) ensureCheckRBAC(namespace string, owner *metav1.OwnerRefere
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = "stash"
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 		return in
 	})
 	if err != nil {
@@ -441,16 +440,16 @@ func (c *Controller) ensureCheckRBAC(namespace string, owner *metav1.OwnerRefere
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = "stash"
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "ClusterRole",
-			Name:     stash_rbac.StashSidecar,
+			Kind:     apis.KindClusterRole,
+			Name:     apis.StashSidecarClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      rbac.ServiceAccountKind,
 				Name:      meta.Name,
 				Namespace: meta.Namespace,
 			},

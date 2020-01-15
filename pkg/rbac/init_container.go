@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 
@@ -52,7 +53,7 @@ func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, owner *meta
 
 func ensureRestoreInitContainerClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Name:   StashRestoreInitContainer,
+		Name:   apis.StashRestoreInitContainerClusterRole,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -109,8 +110,8 @@ func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, owne
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "ClusterRole",
-			Name:     StashRestoreInitContainer,
+			Kind:     apis.KindClusterRole,
+			Name:     apis.StashRestoreInitContainerClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{
@@ -125,7 +126,7 @@ func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, owne
 }
 
 func getRestoreInitContainerRoleBindingName(kind string) string {
-	return fmt.Sprintf("%s-%s", StashRestoreInitContainer, strings.ToLower(kind))
+	return fmt.Sprintf("%s-%s", apis.StashRestoreInitContainerClusterRole, strings.ToLower(kind))
 }
 
 func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
