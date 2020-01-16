@@ -66,7 +66,7 @@ var _ = Describe("Auto-Backup", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a Deployment
-				deployment, err := f.DeployDeployment(framework.SourceDaemonSet, int32(1), framework.SourceVolume)
+				deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data

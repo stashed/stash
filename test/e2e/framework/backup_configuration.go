@@ -133,5 +133,5 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 }
 
 func getBackupCronJobName(objMeta metav1.ObjectMeta) string {
-	return meta_util.ValidNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(objMeta.Name, ".", "-"))
+	return meta_util.ValidCronJobNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(objMeta.Name, ".", "-"))
 }

@@ -295,7 +295,7 @@ func (c *StashController) EnsureBackupTriggeringCronJobDeleted(invoker apis.Invo
 }
 
 func getBackupCronJobName(name string) string {
-	return meta2.ValidNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(name, ".", "-"))
+	return meta2.ValidCronJobNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(name, ".", "-"))
 }
 
 func (c *StashController) handleCronJobCreationFailure(ref *core.ObjectReference, err error) error {

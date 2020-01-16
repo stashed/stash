@@ -242,7 +242,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		serviceAccountName = restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one with same name as RestoreSession object.
-		serviceAccountName = getRestoreJobServiceAccountName(jobMeta.Name)
+		serviceAccountName = getRestoreJobServiceAccountName(restoreSession.Name)
 		saMeta := metav1.ObjectMeta{
 			Name:      serviceAccountName,
 			Namespace: restoreSession.Namespace,
@@ -482,7 +482,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		// ServiceAccount has been specified, so use it.
 		serviceAccountName = restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName
 	} else {
-		serviceAccountName = getVolumeRestorerServiceAccountName(jobMeta.Name)
+		serviceAccountName = getVolumeRestorerServiceAccountName(restoreSession.Name)
 		saMeta := metav1.ObjectMeta{
 			Name:      serviceAccountName,
 			Namespace: restoreSession.Namespace,

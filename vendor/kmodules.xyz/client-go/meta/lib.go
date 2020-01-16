@@ -36,6 +36,8 @@ const (
 	PartOfLabelKey    = "app.kubernetes.io/part-of"
 	ComponentLabelKey = "app.kubernetes.io/component"
 	ManagedByLabelKey = "app.kubernetes.io/managed-by"
+
+	MaxCronJobNameLength = 52 //xref: https://github.com/kubernetes/kubernetes/pull/52733
 )
 
 var labelKeyBlacklist = []string{
@@ -94,23 +96,47 @@ func FilterKeys(domainKey string, out, in map[string]string) map[string]string {
 	return out
 }
 
-func ValidNameWithPrefix(prefix, name string) string {
-	out := fmt.Sprintf("%s-%s", prefix, name)
-	return strings.Trim(out[:min(validation.DNS1123LabelMaxLength, len(out))], "-")
-}
-
-func ValidNameWithSuffix(name, suffix string) string {
-	out := fmt.Sprintf("%s-%s", name, suffix)
-	return strings.Trim(out[max(0, len(out)-validation.DNS1123LabelMaxLength):], "-")
-}
-
-func ValidNameWithPefixNSuffix(prefix, name, suffix string) string {
-	out := strings.Trim(fmt.Sprintf("%s-%s-%s", prefix, name, suffix), "-")
-	n := len(out)
-	if n <= validation.DNS1123LabelMaxLength {
-		return out
+func ValidNameWithPrefix(prefix, name string, customLength ...int) string {
+	maxLength := validation.DNS1123LabelMaxLength
+	if len(customLength) != 0 {
+		maxLength = customLength[0]
 	}
-	return out[:validation.DNS1123LabelMaxLength/2+1] + out[(n-validation.DNS1123LabelMaxLength/2):]
+	out := fmt.Sprintf("%s-%s", prefix, name)
+	return strings.Trim(out[:min(maxLength, len(out))], "-")
+}
+
+func ValidNameWithSuffix(name, suffix string, customLength ...int) string {
+	maxLength := validation.DNS1123LabelMaxLength
+	if len(customLength) != 0 {
+		maxLength = customLength[0]
+	}
+	out := fmt.Sprintf("%s-%s", name, suffix)
+	return strings.Trim(out[max(0, len(out)-maxLength):], "-")
+}
+
+func ValidNameWithPefixNSuffix(prefix, name, suffix string, customLength ...int) string {
+	maxLength := validation.DNS1123LabelMaxLength
+	if len(customLength) != 0 {
+		maxLength = customLength[0]
+	}
+	out := fmt.Sprintf("%s-%s-%s", prefix, name, suffix)
+	n := len(out)
+	if n <= maxLength {
+		return strings.Trim(out, "-")
+	}
+	return strings.Trim(out[:(maxLength+1)/2]+out[(n-maxLength/2):], "-")
+}
+
+func ValidCronJobNameWithPrefix(prefix, name string) string {
+	return ValidNameWithPrefix(prefix, name, MaxCronJobNameLength)
+}
+
+func ValidCronJobNameWithSuffix(name, suffix string) string {
+	return ValidNameWithSuffix(name, suffix, MaxCronJobNameLength)
+}
+
+func ValidCronJobNameWithPefixNSuffix(prefix, name, suffix string) string {
+	return ValidNameWithPefixNSuffix(prefix, name, suffix, MaxCronJobNameLength)
 }
 
 func min(x, y int) int {
