@@ -18,6 +18,7 @@ package rbac
 
 import (
 	"fmt"
+	"strings"
 
 	"stash.appscode.dev/stash/apis"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -106,7 +107,7 @@ func ensureRestoreJobRoleBinding(kubeClient kubernetes.Interface, resource *meta
 
 	meta := metav1.ObjectMeta{
 		Namespace: namespace,
-		Name:      getRestoreJobRoleBindingName(resource.Name),
+		Name:      getRestoreJobRoleBindingName(sa),
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
@@ -130,5 +131,7 @@ func ensureRestoreJobRoleBinding(kubeClient kubernetes.Interface, resource *meta
 }
 
 func getRestoreJobRoleBindingName(name string) string {
-	return fmt.Sprintf("%s-%s", apis.StashRestoreJobClusterRole, name)
+	// Create RoleBinding with name same as the ServiceAccount name.
+	// The ServiceAccount already has Stash specific prefix in it's name.
+	return strings.ReplaceAll(name, ".", "-")
 }

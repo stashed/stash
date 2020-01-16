@@ -17,7 +17,6 @@ limitations under the License.
 package rbac
 
 import (
-	"fmt"
 	"strings"
 
 	"stash.appscode.dev/stash/apis"
@@ -104,7 +103,7 @@ func ensureBackupJobClusterRole(kubeClient kubernetes.Interface, psps []string, 
 func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:      getBackupJobRoleBindingName(owner.Name),
+		Name:      getBackupJobRoleBindingName(sa),
 		Namespace: namespace,
 		Labels:    labels,
 	}
@@ -129,5 +128,7 @@ func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.O
 }
 
 func getBackupJobRoleBindingName(name string) string {
-	return fmt.Sprintf("%s-%s", apis.StashBackupJobClusterRole, strings.ReplaceAll(name, ".", "-"))
+	// Create RoleBinding with name same as the ServiceAccount name.
+	// The ServiceAccount already has Stash specific prefix in it's name.
+	return strings.ReplaceAll(name, ".", "-")
 }

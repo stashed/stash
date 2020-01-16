@@ -17,7 +17,6 @@ limitations under the License.
 package rbac
 
 import (
-	"fmt"
 	"strings"
 
 	"stash.appscode.dev/stash/apis"
@@ -31,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
@@ -98,7 +98,7 @@ func ensureRestoreInitContainerClusterRole(kubeClient kubernetes.Interface, labe
 func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: namespace,
-		Name:      getRestoreInitContainerRoleBindingName(owner.Kind),
+		Name:      getRestoreInitContainerRoleBindingName(owner.Kind, owner.Name),
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
@@ -125,20 +125,20 @@ func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, owne
 	return err
 }
 
-func getRestoreInitContainerRoleBindingName(kind string) string {
-	return fmt.Sprintf("%s-%s", apis.StashRestoreInitContainerClusterRole, strings.ToLower(kind))
+func getRestoreInitContainerRoleBindingName(kind, name string) string {
+	return meta_util.ValidNameWithPefixNSuffix(apis.StashRestoreInitContainerClusterRole, strings.ToLower(kind), name)
 }
 
 func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
-		getRestoreInitContainerRoleBindingName(w.Kind),
+		getRestoreInitContainerRoleBindingName(w.Kind, w.Name),
 		&metav1.DeleteOptions{},
 	)
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	if err == nil {
-		log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getRestoreInitContainerRoleBindingName(w.Kind))
+		log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getRestoreInitContainerRoleBindingName(w.Kind, w.Name))
 	}
 	return nil
 }

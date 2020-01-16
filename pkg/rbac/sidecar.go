@@ -17,7 +17,6 @@ limitations under the License.
 package rbac
 
 import (
-	"fmt"
 	"strings"
 
 	"stash.appscode.dev/stash/apis"
@@ -34,12 +33,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/apis/batch"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
 func getSidecarRoleBindingName(name string, kind string) string {
-	return fmt.Sprintf("%s-%s-%s", apis.StashSidecarClusterRole, strings.ToLower(kind), name)
+	return meta_util.ValidNameWithPefixNSuffix(apis.StashSidecarClusterRole, strings.ToLower(kind), name)
 }
 
 func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {

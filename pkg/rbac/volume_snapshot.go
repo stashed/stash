@@ -17,7 +17,7 @@ limitations under the License.
 package rbac
 
 import (
-	"fmt"
+	"strings"
 
 	"stash.appscode.dev/stash/apis"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
@@ -114,7 +115,7 @@ func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, reso
 
 	meta := metav1.ObjectMeta{
 		Namespace: namespace,
-		Name:      getVolumesnapshotterJobRoleBindingName(resource.Name),
+		Name:      getVolumesnapshotterJobRoleBindingName(sa),
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
@@ -138,7 +139,9 @@ func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, reso
 }
 
 func getVolumesnapshotterJobRoleBindingName(name string) string {
-	return fmt.Sprintf("%s-%s", apis.StashVolumeSnapshotterClusterRole, name)
+	// Create RoleBinding with name same as the ServiceAccount name.
+	// The ServiceAccount already has Stash specific prefix in it's name.
+	return strings.ReplaceAll(name, ".", "-")
 }
 
 func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
@@ -214,7 +217,7 @@ func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface,
 
 	meta := metav1.ObjectMeta{
 		Namespace: namespace,
-		Name:      getVolumeSnapshotRestorerJobRoleBindingName(resource.Name),
+		Name:      getVolumeSnapshotRestorerJobRoleBindingName(sa),
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
@@ -238,7 +241,9 @@ func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface,
 }
 
 func getVolumeSnapshotRestorerJobRoleBindingName(name string) string {
-	return fmt.Sprintf("%s-%s", apis.StashVolumeSnapshotRestorerClusterRole, name)
+	// Create RoleBinding with name same as the ServiceAccount name.
+	// The ServiceAccount already has Stash specific prefix in it's name.
+	return strings.ReplaceAll(name, ".", "-")
 }
 
 func ensureStorageReaderClassClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
@@ -270,7 +275,7 @@ func ensureStorageReaderClassClusterRole(kubeClient kubernetes.Interface, labels
 func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:      getStorageClassReaderClusterRoleBindingName(resource.Name),
+		Name:      getStorageClassReaderClusterRoleBindingName(sa),
 		Namespace: namespace,
 		Labels:    labels,
 	}
@@ -295,5 +300,5 @@ func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface,
 }
 
 func getStorageClassReaderClusterRoleBindingName(name string) string {
-	return fmt.Sprintf("%s-%s", apis.StashStorageClassReaderClusterRole, name)
+	return meta_util.ValidNameWithPrefix(apis.StashStorageClassReaderClusterRole, strings.ReplaceAll(name, ".", "-"))
 }

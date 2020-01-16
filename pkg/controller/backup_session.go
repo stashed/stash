@@ -167,7 +167,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 
 			// if VolumeSnapshotter driver is used then ensure VolumeSnapshotter job and return
 			if invoker.Driver == api_v1beta1.VolumeSnapshotter {
-				err = c.ensureVolumeSnapshotterJob(invoker, targetInfo, backupSession)
+				err = c.ensureVolumeSnapshotterJob(invoker, targetInfo, backupSession, i)
 				if err != nil {
 					return c.handleBackupJobCreationFailure(invoker, backupSession, err)
 				}
@@ -207,9 +207,13 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one.
-		serviceAccountName = jobMeta.Name
-
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, jobMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		serviceAccountName = getBackupJobServiceAccountName(invoker.ObjectMeta.Name, strconv.Itoa(index))
+		saMeta := metav1.ObjectMeta{
+			Name:      serviceAccountName,
+			Namespace: invoker.ObjectMeta.Namespace,
+			Labels:    invoker.Labels,
+		}
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 			return in
 		})
@@ -312,26 +316,34 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 	return err
 }
 
-func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targetInfo apis.TargetInfo, backupSession *api_v1beta1.BackupSession) error {
+func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targetInfo apis.TargetInfo, backupSession *api_v1beta1.BackupSession, index int) error {
 	jobMeta := metav1.ObjectMeta{
 		Name:      getVolumeSnapshotterJobName(targetInfo.Target.Ref, backupSession.Name),
 		Namespace: backupSession.Namespace,
 		Labels:    invoker.Labels,
 	}
 
-	//ensure respective RBAC stuffs
-	//Create new ServiceAccount
-	serviceAccountName := jobMeta.Name
-
-	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, jobMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
-		return in
-	})
-	if err != nil {
-		return err
+	var serviceAccountName string
+	// Ensure respective RBAC stuffs
+	if targetInfo.RuntimeSettings.Pod != nil && targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
+		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
+	} else {
+		// Create new ServiceAccount
+		serviceAccountName = getVolumeSnapshotterServiceAccountName(invoker.ObjectMeta.Name, strconv.Itoa(index))
+		saMeta := metav1.ObjectMeta{
+			Name:      serviceAccountName,
+			Namespace: invoker.ObjectMeta.Namespace,
+			Labels:    invoker.Labels,
+		}
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
+			return in
+		})
+		if err != nil {
+			return err
+		}
 	}
-
-	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, invoker.OwnerRef, invoker.ObjectMeta.Namespace, serviceAccountName, invoker.Labels)
+	err := stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, invoker.OwnerRef, invoker.ObjectMeta.Namespace, serviceAccountName, invoker.Labels)
 	if err != nil {
 		return err
 	}
@@ -549,10 +561,18 @@ func getBackupJobName(backupSession *api_v1beta1.BackupSession, index string) st
 	return meta.ValidNameWithPefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSession.Name, ".", "-"), index)
 }
 
+func getBackupJobServiceAccountName(invokerName, index string) string {
+	return meta.ValidNameWithPefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(invokerName, ".", "-"), index)
+}
+
 func getVolumeSnapshotterJobName(targetRef api_v1beta1.TargetRef, name string) string {
 	parts := strings.Split(name, "-")
 	suffix := parts[len(parts)-1]
 	return meta.ValidNameWithPrefix(apis.PrefixStashVolumeSnapshot, fmt.Sprintf("%s-%s-%s", util.ResourceKindShortForm(targetRef.Kind), targetRef.Name, suffix))
+}
+
+func getVolumeSnapshotterServiceAccountName(invokerName, index string) string {
+	return meta.ValidNameWithPefixNSuffix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(invokerName, ".", "-"), index)
 }
 
 // cleanupBackupHistory deletes old BackupSessions and theirs associate resources according to BackupHistoryLimit

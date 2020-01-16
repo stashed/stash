@@ -17,7 +17,7 @@ limitations under the License.
 package rbac
 
 import (
-	"fmt"
+	"strings"
 
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -105,7 +105,7 @@ func ensureCronJobClusterRole(kubeClient kubernetes.Interface, psps []string, la
 
 func ensureCronJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Name:      fmt.Sprintf("%s-%s", apis.StashCronJobClusterRole, owner.Name),
+		Name:      getCronJobRoleBindingName(sa),
 		Namespace: namespace,
 		Labels:    labels,
 	}
@@ -132,4 +132,10 @@ func ensureCronJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.Own
 		return err
 	}
 	return nil
+}
+
+func getCronJobRoleBindingName(name string) string {
+	// Create RoleBinding with name same as the ServiceAccount name.
+	// The ServiceAccount already has Stash specific prefix in it's name.
+	return strings.ReplaceAll(name, ".", "-")
 }
