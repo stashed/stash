@@ -17,9 +17,9 @@ limitations under the License.
 package rbac
 
 import (
-	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 
@@ -31,10 +31,6 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
-)
-
-const (
-	StashBackupJob = "stash-backup-job"
 )
 
 func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, psps []string, labels map[string]string) error {
@@ -56,7 +52,7 @@ func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerRef
 func ensureBackupJobClusterRole(kubeClient kubernetes.Interface, psps []string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:   StashBackupJob,
+		Name:   apis.StashBackupJobClusterRole,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -107,7 +103,7 @@ func ensureBackupJobClusterRole(kubeClient kubernetes.Interface, psps []string, 
 func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:      getBackupJobRoleBindingName(owner.Name),
+		Name:      getBackupJobRoleBindingName(sa),
 		Namespace: namespace,
 		Labels:    labels,
 	}
@@ -116,12 +112,12 @@ func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.O
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "ClusterRole",
-			Name:     StashBackupJob,
+			Kind:     apis.KindClusterRole,
+			Name:     apis.StashBackupJobClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      rbac.ServiceAccountKind,
 				Name:      sa,
 				Namespace: namespace,
 			},
@@ -132,5 +128,7 @@ func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.O
 }
 
 func getBackupJobRoleBindingName(name string) string {
-	return fmt.Sprintf("%s-%s", StashBackupJob, strings.ReplaceAll(name, ".", "-"))
+	// Create RoleBinding with name same as the ServiceAccount name.
+	// The ServiceAccount already has Stash specific prefix in it's name.
+	return strings.ReplaceAll(name, ".", "-")
 }

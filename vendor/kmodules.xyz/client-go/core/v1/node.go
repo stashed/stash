@@ -138,23 +138,23 @@ func Topology(kc kubernetes.Interface) (regions map[string][]string, instances m
 
 		annotations := m.GetAnnotations()
 
-		os, _ := meta_util.GetStringVaultForKeys(annotations, "kubernetes.io/os", "beta.kubernetes.io/os")
+		os, _ := meta_util.GetStringValueForKeys(annotations, "kubernetes.io/os", "beta.kubernetes.io/os")
 		if os != "linux" {
 			return nil
 		}
-		arch, _ := meta_util.GetStringVaultForKeys(annotations, "kubernetes.io/arch", "beta.kubernetes.io/arch")
+		arch, _ := meta_util.GetStringValueForKeys(annotations, "kubernetes.io/arch", "beta.kubernetes.io/arch")
 		if arch != "amd64" {
 			return nil
 		}
 
-		region, _ := meta_util.GetStringVaultForKeys(annotations, "topology.kubernetes.io/region", "failure-domain.beta.kubernetes.io/region")
-		zone, _ := meta_util.GetStringVaultForKeys(annotations, "topology.kubernetes.io/zone", "failure-domain.beta.kubernetes.io/zone")
+		region, _ := meta_util.GetStringValueForKeys(annotations, "topology.kubernetes.io/region", "failure-domain.beta.kubernetes.io/region")
+		zone, _ := meta_util.GetStringValueForKeys(annotations, "topology.kubernetes.io/zone", "failure-domain.beta.kubernetes.io/zone")
 		if _, ok := mapRegion[region]; !ok {
 			mapRegion[region] = sets.NewString()
 		}
 		mapRegion[region].Insert(zone)
 
-		instance, _ := meta_util.GetStringVaultForKeys(annotations, "node.kubernetes.io/instance-type", "beta.kubernetes.io/instance-type")
+		instance, _ := meta_util.GetStringValueForKeys(annotations, "node.kubernetes.io/instance-type", "beta.kubernetes.io/instance-type")
 		if n, ok := instances[instance]; ok {
 			instances[instance] = n + 1
 		} else {

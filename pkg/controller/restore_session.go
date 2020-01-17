@@ -55,11 +55,6 @@ import (
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
 )
 
-const (
-	RestoreJobPrefix                = "stash-restore"
-	PromJobRestoreSessionController = "stash-restoresession-controller"
-)
-
 func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
 	return webhook.NewGenericWebhook(
 		schema.GroupVersionResource{
@@ -247,9 +242,13 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		serviceAccountName = restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one with same name as RestoreSession object.
-		serviceAccountName = jobMeta.Name
-
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, jobMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		serviceAccountName = getRestoreJobServiceAccountName(restoreSession.Name)
+		saMeta := metav1.ObjectMeta{
+			Name:      serviceAccountName,
+			Namespace: restoreSession.Namespace,
+			Labels:    restoreSession.Labels,
+		}
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 			in.Labels = offshootLabels
 			return in
@@ -477,22 +476,30 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 	owner := metav1.NewControllerRef(restoreSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindRestoreSession))
 
 	//ensure respective RBAC stuffs
-	//Create new ServiceAccount
-	serviceAccountName := meta.ValidNameWithPrefix(apis.PrefixStashRestore, restoreSession.Name)
-	saMeta := metav1.ObjectMeta{
-		Name:      serviceAccountName,
-		Namespace: restoreSession.Namespace,
-	}
-	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
-		in.Labels = offshootLabels
-		return in
-	})
-	if err != nil {
-		return err
+	var serviceAccountName string
+	if restoreSession.Spec.RuntimeSettings.Pod != nil &&
+		restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
+		// ServiceAccount has been specified, so use it.
+		serviceAccountName = restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName
+	} else {
+		serviceAccountName = getVolumeRestorerServiceAccountName(restoreSession.Name)
+		saMeta := metav1.ObjectMeta{
+			Name:      serviceAccountName,
+			Namespace: restoreSession.Namespace,
+			Labels:    restoreSession.Labels,
+		}
+
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+			in.Labels = offshootLabels
+			return in
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	err = stash_rbac.EnsureVolumeSnapshotRestorerJobRBAC(c.kubeClient, owner, restoreSession.Namespace, serviceAccountName, offshootLabels)
+	err := stash_rbac.EnsureVolumeSnapshotRestorerJobRBAC(c.kubeClient, owner, restoreSession.Namespace, serviceAccountName, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -585,7 +592,7 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        PromJobRestoreSessionController,
+		JobName:        apis.PromJobStashRestore,
 	}
 	return metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
 }
@@ -615,7 +622,7 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        PromJobRestoreSessionController,
+		JobName:        apis.PromJobStashRestore,
 	}
 	err = metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
 	return errors.NewAggregate([]error{restoreErr, err})
@@ -693,9 +700,17 @@ func (c *StashController) handleRestoreJobCreationFailure(restoreSession *api_v1
 }
 
 func getRestoreJobName(restoreSession *api_v1beta1.RestoreSession) string {
-	return meta.ValidNameWithPrefix(RestoreJobPrefix, strings.ReplaceAll(restoreSession.Name, ".", "-"))
+	return meta.ValidNameWithPrefix(apis.PrefixStashRestore, strings.ReplaceAll(restoreSession.Name, ".", "-"))
+}
+
+func getRestoreJobServiceAccountName(name string) string {
+	return meta.ValidNameWithPrefix(apis.PrefixStashRestore, strings.ReplaceAll(name, ".", "-"))
 }
 
 func getVolumeRestorerJobName(restoreSession *api_v1beta1.RestoreSession) string {
-	return meta.ValidNameWithPrefix(VolumeSnapshotPrefix, strings.ReplaceAll(restoreSession.Name, ".", "-"))
+	return meta.ValidNameWithPrefix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(restoreSession.Name, ".", "-"))
+}
+
+func getVolumeRestorerServiceAccountName(name string) string {
+	return meta.ValidNameWithPrefix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(name, ".", "-"))
 }

@@ -444,7 +444,7 @@ func (f *Framework) EnsureMySQLAddonDeleted() error {
 	}
 
 	// delete MySQL restore Task
-	err = f.StashClient.StashV1beta1().Functions().Delete(MySQLRestoreTask, deleteInBackground())
+	err = f.StashClient.StashV1beta1().Tasks().Delete(MySQLRestoreTask, deleteInBackground())
 	if err != nil {
 		return err
 	}

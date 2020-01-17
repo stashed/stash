@@ -17,8 +17,10 @@ limitations under the License.
 package framework
 
 import (
+	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 
@@ -27,6 +29,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) *v1beta1.BackupConfiguration {
@@ -76,7 +79,7 @@ func (fi *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfigur
 func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			_, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
 			if err == nil && !kerr.IsNotFound(err) {
 				return true
 			}
@@ -90,7 +93,7 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
@@ -104,7 +107,7 @@ func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsy
 func (f *Framework) EventuallyCronJobResumed(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
@@ -127,4 +130,8 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 		time.Minute*2,
 		time.Second*5,
 	)
+}
+
+func getBackupCronJobName(objMeta metav1.ObjectMeta) string {
+	return meta_util.ValidCronJobNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(objMeta.Name, ".", "-"))
 }

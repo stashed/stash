@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 
 	ini "gopkg.in/ini.v1"
@@ -43,7 +44,7 @@ func (c *Controller) JobName(resource *api.Restic) string {
 
 func (c *Controller) GroupingKeys(resource *api.Restic) map[string]string {
 	labels := make(map[string]string)
-	labels["app"] = sanitizeLabelValue(c.opt.Workload.Name)
+	labels[apis.LabelApp] = sanitizeLabelValue(c.opt.Workload.Name)
 	labels["kind"] = sanitizeLabelValue(c.opt.Workload.Kind)
 	labels["namespace"] = resource.Namespace
 	labels["stash_config"] = resource.Name

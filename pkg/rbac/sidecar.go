@@ -17,7 +17,6 @@ limitations under the License.
 package rbac
 
 import (
-	"fmt"
 	"strings"
 
 	"stash.appscode.dev/stash/apis"
@@ -34,20 +33,17 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/apis/batch"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-const (
-	StashSidecar = "stash-sidecar"
-)
-
 func getSidecarRoleBindingName(name string, kind string) string {
-	return fmt.Sprintf("%s-%s-%s", StashSidecar, strings.ToLower(kind), name)
+	return meta_util.ValidNameWithPefixNSuffix(apis.StashSidecarClusterRole, strings.ToLower(kind), name)
 }
 
 func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
-	meta := metav1.ObjectMeta{Name: StashSidecar}
+	meta := metav1.ObjectMeta{Name: apis.StashSidecarClusterRole}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -136,8 +132,8 @@ func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, owner *metav1.Own
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "ClusterRole",
-			Name:     StashSidecar,
+			Kind:     apis.KindClusterRole,
+			Name:     apis.StashSidecarClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{

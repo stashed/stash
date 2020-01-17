@@ -38,10 +38,7 @@ import (
 )
 
 const (
-	ScaledownJobRole          = "stash-scaledownjob"
-	StashRestoreInitContainer = "stash-restore-init-container"
-	KindRole                  = "Role"
-	KindClusterRole           = "ClusterRole"
+	ScaledownJobRole = "stash-scaledownjob"
 )
 
 // use scaledownjob-role, service-account and role-binding name same as job name
@@ -58,7 +55,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, owner *metav1.Owner
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = apis.AppLabelStash
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -98,7 +95,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, owner *metav1.Owner
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = apis.AppLabelStash
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 		return in
 	})
 	if err != nil {
@@ -112,16 +109,16 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, owner *metav1.Owner
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = apis.AppLabelStash
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "Role",
+			Kind:     apis.KindRole,
 			Name:     ScaledownJobRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      rbac.ServiceAccountKind,
 				Name:      meta.Name,
 				Namespace: meta.Namespace,
 			},
@@ -157,16 +154,16 @@ func EnsureRecoveryRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerRefe
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = apis.AppLabelStash
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "ClusterRole",
-			Name:     StashSidecar,
+			Kind:     apis.KindClusterRole,
+			Name:     apis.StashSidecarClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      rbac.ServiceAccountKind,
 				Name:      meta.Name,
 				Namespace: meta.Namespace,
 			},
@@ -199,17 +196,17 @@ func EnsureRepoReaderRBAC(kubeClient kubernetes.Interface, stashClient stash_cs.
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = apis.AppLabelStash
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "Role",
+			Kind:     apis.KindRole,
 			Name:     getRepoReaderRoleName(rec.Spec.Repository.Name),
 		}
 
 		in.Subjects = []rbac.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      rbac.ServiceAccountKind,
 				Name:      owner.Name,
 				Namespace: rec.Namespace,
 			},
@@ -232,7 +229,7 @@ func ensureRepoReaderRole(kubeClient kubernetes.Interface, repo *api_v1alpha1.Re
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = apis.AppLabelStash
+		in.Labels[apis.LabelApp] = apis.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{
