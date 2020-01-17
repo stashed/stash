@@ -18,19 +18,15 @@ package cmds
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -106,24 +102,6 @@ func (opt *options) createBackupSession() error {
 		OwnerReferences: []metav1.OwnerReference{},
 	}
 
-	wc := util.WorkloadClients{
-		KubeClient:       opt.k8sClient,
-		StashClient:      opt.stashClient,
-		AppCatalogClient: opt.appcatalogClient,
-		OcClient:         opt.ocClient,
-	}
-
-	for _, targetInfo := range invoker.TargetsInfo {
-		if targetInfo.Target != nil && !wc.IsTargetExist(targetInfo.Target.Ref, opt.namespace) {
-			msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
-				strings.ToLower(targetInfo.Target.Ref.Kind), targetInfo.Target.Ref.Name)
-			log.Infoln(msg)
-
-			// write event to backup invoker denoting that backup session has been skipped
-			return writeBackupSessionSkippedEvent(opt.k8sClient, invoker.ObjectRef, msg)
-		}
-	}
-
 	// create BackupSession
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
 		// Set BackupConfiguration  as BackupSession Owner
@@ -141,17 +119,5 @@ func (opt *options) createBackupSession() error {
 
 		return in
 	})
-	return err
-}
-
-func writeBackupSessionSkippedEvent(kubeClient kubernetes.Interface, invokerRef *core.ObjectReference, msg string) error {
-	_, err := eventer.CreateEvent(
-		kubeClient,
-		eventer.EventSourceBackupTriggeringCronJob,
-		invokerRef,
-		core.EventTypeNormal,
-		eventer.EventReasonBackupSkipped,
-		msg,
-	)
 	return err
 }
