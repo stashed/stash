@@ -28,18 +28,18 @@ Please pick a version of Stash that matches your Kubernetes installation.
 
 | Stash Version                                                                       | Docs                                                            | Kubernetes Version |
 |-------------------------------------------------------------------------------------|-----------------------------------------------------------------|--------------------|
-| [v0.9.0-rc.0](https://github.com/stashed/stash/releases/tag/v0.9.0-rc.0) (uses CRD) | [User Guide](https://appscode.com/products/stash/v0.9.0-rc.0)   | 1.11.x+            |
-| [0.8.3](https://github.com/stashed/stash/releases/tag/0.8.3) (uses CRD)             | [User Guide](https://appscode.com/products/stash/0.8.3)         | 1.9.x+             |
-| [0.7.0](https://github.com/stashed/stash/releases/tag/0.7.0) (uses CRD)             | [User Guide](https://appscode.com/products/stash/0.7.0)         | 1.8.x              |
-| [0.6.4](https://github.com/stashed/stash/releases/tag/0.6.4) (uses CRD)             | [User Guide](https://appscode.com/products/stash/0.6.4)         | 1.7.x              |
+| [v0.9.0-rc.4](https://github.com/stashed/stash/releases/tag/v0.9.0-rc.4) (uses CRD) | [User Guide](https://stash.run/docs/v0.9.0-rc.4)                | 1.11.x+            |
+| [0.8.3](https://github.com/stashed/stash/releases/tag/0.8.3) (uses CRD)             | [User Guide](https://stash.run/docs/0.8.3)                      | 1.9.x+             |
+| [0.7.0](https://github.com/stashed/stash/releases/tag/0.7.0) (uses CRD)             | [User Guide](https://stash.run/docs/0.7.0)                      | 1.8.x              |
+| [0.6.4](https://github.com/stashed/stash/releases/tag/0.6.4) (uses CRD)             | [User Guide](https://stash.run/docs/0.6.4)                      | 1.7.x              |
 | [0.4.2](https://github.com/stashed/stash/releases/tag/0.4.2) (uses TPR)             | [User Guide](https://github.com/stashed/docs/tree/0.4.2/docs)   | 1.5.x - 1.6.x      |
 
 ## Installation
 
-To install Stash, please follow the guide [here](https://appscode.com/products/stash/v0.9.0-rc.0/setup/install).
+To install Stash, please follow the guide [here](https://stash.run/docs/latest/setup/install).
 
 ## Using Stash
-Want to learn how to use Stash? Please start [here](https://appscode.com/products/stash/v0.9.0-rc.0).
+Want to learn how to use Stash? Please start [here](https://stash.run/docs/latest/).
 
 ## Stash API Clients
 You can use Stash api clients to programmatically access its objects. Here are the supported clients:
@@ -48,7 +48,7 @@ You can use Stash api clients to programmatically access its objects. Here are t
 - Java: https://github.com/stashed/java
 
 ## Contribution guidelines
-Want to help improve Stash? Please start [here](https://appscode.com/products/stash/v0.9.0-rc.0/welcome/contributing).
+Want to help improve Stash? Please start [here](https://stash.run/docs/latest/welcome/contributing).
 
 ---
 
