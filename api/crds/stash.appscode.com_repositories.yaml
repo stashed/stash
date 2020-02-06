@@ -1,16 +1,16 @@
+
+---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  labels:
-    app: stash
   name: repositories.stash.appscode.com
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.integrity
     name: Integrity
     type: boolean
-  - JSONPath: .status.size
+  - JSONPath: .status.totalSize
     name: Size
     type: string
   - JSONPath: .status.snapshotCount
