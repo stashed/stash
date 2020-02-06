@@ -10,7 +10,7 @@ spec:
   - JSONPath: .status.integrity
     name: Integrity
     type: boolean
-  - JSONPath: .status.size
+  - JSONPath: .status.totalSize
     name: Size
     type: string
   - JSONPath: .status.snapshotCount
