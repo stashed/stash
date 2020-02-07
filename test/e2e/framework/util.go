@@ -93,6 +93,11 @@ const (
 
 	WorkloadBackupBlueprint = "workload-backup-blueprint"
 	PvcBackupBlueprint      = "pvc-backup-blueprint"
+
+	TestFSGroup         = 2000
+	TestResourceRequest = "200Mi"
+	TestResourceLimit   = "300Mi"
+	TestUserID          = 2000
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -1045,4 +1050,39 @@ func (f *Framework) EventuallyEventWritten(involvedObjectMeta metav1.ObjectMeta,
 		}
 		return false
 	}, time.Minute*2, time.Second*5)
+}
+
+func HasFSGroup(sc *core.PodSecurityContext) bool {
+	return sc != nil && sc.FSGroup != nil && *sc.FSGroup == TestFSGroup
+}
+
+func HasResources(containers []core.Container) bool {
+	for _, c := range containers {
+		if strings.HasPrefix(c.Name, "stash") ||
+			strings.HasPrefix(c.Name, "pvc-") ||
+			strings.HasPrefix(c.Name, "update-status") {
+			if c.Resources.Limits.Memory() != nil &&
+				c.Resources.Requests.Memory() != nil &&
+				c.Resources.Limits.Memory().String() == TestResourceLimit &&
+				c.Resources.Requests.Memory().String() == TestResourceRequest {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func HasSecurityContext(containers []core.Container) bool {
+	for _, c := range containers {
+		if strings.HasPrefix(c.Name, "stash") ||
+			strings.HasPrefix(c.Name, "pvc-") ||
+			strings.HasPrefix(c.Name, "update-status") {
+			if c.SecurityContext != nil &&
+				c.SecurityContext.RunAsUser != nil &&
+				*c.SecurityContext.RunAsUser == TestUserID {
+				return true
+			}
+		}
+	}
+	return false
 }

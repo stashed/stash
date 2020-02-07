@@ -301,9 +301,6 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 		},
 	}
 
-	// Upsert default pod level security context
-	jobTemplate.Spec.SecurityContext = UpsertDefaultPodSecurityContext(jobTemplate.Spec.SecurityContext)
-
 	// Pass pod RuntimeSettings from RestoreSession
 	if rs.Spec.RuntimeSettings.Pod != nil {
 		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *rs.Spec.RuntimeSettings.Pod)
@@ -357,10 +354,6 @@ func NewVolumeSnapshotterJob(bs *api_v1beta1.BackupSession, backupTarget *api_v1
 		},
 	}
 
-	// apply default pod level security context
-	// don't overwrite user provided sc
-	jobTemplate.Spec.SecurityContext = UpsertDefaultPodSecurityContext(jobTemplate.Spec.SecurityContext)
-
 	// Pass pod RuntimeSettings from RestoreSession
 	if runtimeSettings.Pod != nil {
 		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *runtimeSettings.Pod)
@@ -403,10 +396,6 @@ func NewVolumeRestorerJob(rs *api_v1beta1.RestoreSession, image docker.Docker) (
 			RestartPolicy: core.RestartPolicyNever,
 		},
 	}
-
-	// apply default pod level security context
-	// don't overwrite user provided sc
-	jobTemplate.Spec.SecurityContext = UpsertDefaultPodSecurityContext(jobTemplate.Spec.SecurityContext)
 
 	// Pass pod RuntimeSettings from RestoreSession
 	if rs.Spec.RuntimeSettings.Pod != nil {

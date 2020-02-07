@@ -255,22 +255,39 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 		// ensure that job gets deleted on completion
 		in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
 
+		container := core.Container{
+			Name:            apis.StashContainer,
+			ImagePullPolicy: core.PullIfNotPresent,
+			Image:           image.ToContainerImage(),
+			Args: []string{
+				"create-backupsession",
+				fmt.Sprintf("--invoker-name=%s", invoker.OwnerRef.Name),
+				fmt.Sprintf("--invoker-type=%s", invoker.OwnerRef.Kind),
+			},
+		}
+		// only apply the container level runtime settings that make sense for the CronJob
+		if invoker.RuntimeSettings.Container != nil {
+			container.Resources = invoker.RuntimeSettings.Container.Resources
+			container.Env = invoker.RuntimeSettings.Container.Env
+			container.EnvFrom = invoker.RuntimeSettings.Container.EnvFrom
+			container.SecurityContext = invoker.RuntimeSettings.Container.SecurityContext
+		}
+
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
-			core.Container{
-				Name:            apis.StashContainer,
-				ImagePullPolicy: core.PullIfNotPresent,
-				Image:           image.ToContainerImage(),
-				Args: []string{
-					"create-backupsession",
-					fmt.Sprintf("--invoker-name=%s", invoker.OwnerRef.Name),
-					fmt.Sprintf("--invoker-type=%s", invoker.OwnerRef.Kind),
-				},
-			})
+			in.Spec.JobTemplate.Spec.Template.Spec.Containers, container)
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
 		in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-		// insert default pod level security context
-		in.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = util.UpsertDefaultPodSecurityContext(in.Spec.JobTemplate.Spec.Template.Spec.SecurityContext)
+
+		// only apply the pod level runtime settings that make sense for the CronJob
+		if invoker.RuntimeSettings.Pod != nil {
+			if len(invoker.RuntimeSettings.Pod.ImagePullSecrets) != 0 {
+				in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = invoker.RuntimeSettings.Pod.ImagePullSecrets
+			}
+			if invoker.RuntimeSettings.Pod.SecurityContext != nil {
+				in.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = invoker.RuntimeSettings.Pod.SecurityContext
+			}
+		}
+
 		return in
 	})
 

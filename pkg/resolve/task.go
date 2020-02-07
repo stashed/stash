@@ -167,9 +167,6 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 		Containers:     containers[len(containers)-1:],
 		RestartPolicy:  core.RestartPolicyNever, // TODO: use OnFailure ?
 	}
-	// apply default pod level security context.
-	// don't overwrite user provided sc.
-	podSpec.SecurityContext = util.UpsertDefaultPodSecurityContext(podSpec.SecurityContext)
 
 	// apply RuntimeSettings to PodSpec
 	if o.RuntimeSettings.Pod != nil {
