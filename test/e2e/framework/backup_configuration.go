@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,6 +27,8 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
+	batchv1 "k8s.io/api/batch/v1"
+	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,7 +82,7 @@ func (fi *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfigur
 func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
+			_, err := f.GetCronJob(meta)
 			if err == nil && !kerr.IsNotFound(err) {
 				return true
 			}
@@ -88,6 +91,10 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 		time.Minute*2,
 		time.Second*5,
 	)
+}
+
+func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batch_v1beta1.CronJob, error) {
+	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
 }
 
 func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -132,6 +139,14 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 	)
 }
 
+func (f *Framework) GetBackupJob(backupSessionName string) (*batchv1.Job, error) {
+	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(getBackupJobName(backupSessionName, strconv.Itoa(0)), metav1.GetOptions{})
+}
+
 func getBackupCronJobName(objMeta metav1.ObjectMeta) string {
 	return meta_util.ValidCronJobNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(objMeta.Name, ".", "-"))
+}
+
+func getBackupJobName(backupSessionName string, index string) string {
+	return meta_util.ValidNameWithPefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSessionName, ".", "-"), index)
 }

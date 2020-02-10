@@ -17,15 +17,19 @@ limitations under the License.
 package framework
 
 import (
+	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
+	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) GetRestoreSession(repoName string, transformFuncs ...func(restore *v1beta1.RestoreSession)) *v1beta1.RestoreSession {
@@ -87,4 +91,12 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 		time.Minute*7,
 		time.Second*7,
 	)
+}
+
+func (f *Framework) GetRestoreJob(restoreSessionName string) (*batchv1.Job, error) {
+	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(getRestoreJobName(restoreSessionName), metav1.GetOptions{})
+}
+
+func getRestoreJobName(restoreSessionName string) string {
+	return meta_util.ValidNameWithPrefix(apis.PrefixStashRestore, strings.ReplaceAll(restoreSessionName, ".", "-"))
 }
