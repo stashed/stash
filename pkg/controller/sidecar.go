@@ -358,7 +358,7 @@ func (c *StashController) handleSidecarDeletionSuccess(w *wapi.Workload) error {
 		w.Object,
 		core.EventTypeWarning,
 		eventer.EventReasonSidecarDeletionSucceeded,
-		fmt.Sprintf("Successfully stash sidecar from %s %s/%s.", w.Kind, w.Namespace, w.Name),
+		fmt.Sprintf("Successfully removed stash sidecar from %s %s/%s.", w.Kind, w.Namespace, w.Name),
 	)
 	return err2
 }
