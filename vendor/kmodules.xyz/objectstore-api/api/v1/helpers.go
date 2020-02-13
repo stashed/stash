@@ -155,3 +155,11 @@ func (backend Backend) Endpoint() (string, bool) {
 	}
 	return "", false
 }
+
+// Region returns region of S3/S3 compatible backend
+func (backend Backend) Region() (string, bool) {
+	if backend.S3 != nil {
+		return backend.S3.Region, true
+	}
+	return "", false
+}

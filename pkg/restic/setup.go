@@ -33,6 +33,7 @@ const (
 
 	AWS_ACCESS_KEY_ID     = "AWS_ACCESS_KEY_ID"
 	AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
+	AWS_DEFAULT_REGION    = "AWS_DEFAULT_REGION"
 
 	GOOGLE_PROJECT_ID               = "GOOGLE_PROJECT_ID"
 	GOOGLE_SERVICE_ACCOUNT_JSON_KEY = "GOOGLE_SERVICE_ACCOUNT_JSON_KEY"
@@ -125,6 +126,10 @@ func (w *ResticWrapper) setupEnv() error {
 		}
 		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, AWS_SECRET_ACCESS_KEY)); err == nil {
 			w.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(v))
+		}
+
+		if w.config.Region != "" {
+			w.sh.SetEnv(AWS_DEFAULT_REGION, w.config.Region)
 		}
 
 	case storage.ProviderGCS:
