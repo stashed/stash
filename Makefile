@@ -50,7 +50,7 @@ endif
 
 RESTIC_VER       := 0.8.3
 # also update in restic wrapper library
-NEW_RESTIC_VER   := 0.9.5
+NEW_RESTIC_VER   := 0.9.6
 
 ###
 ### These variables should not need tweaking.

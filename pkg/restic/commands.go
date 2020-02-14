@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	ResticCMD = "/bin/restic_0.9.5"
+	ResticCMD = "/bin/restic_0.9.6"
 )
 
 type Snapshot struct {
