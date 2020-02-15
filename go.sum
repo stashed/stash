@@ -697,10 +697,10 @@ kmodules.xyz/crd-schema-fuzz v0.0.0-20191129174258-81f984340891 h1:2W/fqLbAurvup
 kmodules.xyz/crd-schema-fuzz v0.0.0-20191129174258-81f984340891/go.mod h1:9NXNZ4xhqof0WngtIuo4vl+WoCQpLJEJcyuEo3mPpiM=
 kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419 h1:o6KD8XMxdyRR3rqScTsWvcufFDT7vQBnYXpHUp6UtRg=
 kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419/go.mod h1:EksiAQK3p3bVU5cNBjLT0z5V7er1tvWLBWILTuf6G/0=
-kmodules.xyz/objectstore-api v0.0.0-20191127144749-5881939b57f0 h1:ilgkGU/bteKRvH99piXxU8b2c1E9lwxb0sDpLLhy4iY=
-kmodules.xyz/objectstore-api v0.0.0-20191127144749-5881939b57f0/go.mod h1:AE1rz+T/3dlUwH5pLgCNghWeeFfeVBnBXKJVpsLHlmc=
-kmodules.xyz/offshoot-api v0.0.0-20200103145223-2c4f520520d2 h1:c/wxNy8KgaS8v/htruqtL0YgrKciUKroK1zXPVZHuqg=
-kmodules.xyz/offshoot-api v0.0.0-20200103145223-2c4f520520d2/go.mod h1:k1M+OOFHbMeS6N6OB2j9smKfMCyQOEQjZ3SLZ/KSe+w=
+kmodules.xyz/objectstore-api v0.0.0-20200213071506-f176860e67f7 h1:b2ahs7RkOilWVsXHgx/t44FhL8xdbB0r2/W1Jf62Il8=
+kmodules.xyz/objectstore-api v0.0.0-20200213071506-f176860e67f7/go.mod h1:AE1rz+T/3dlUwH5pLgCNghWeeFfeVBnBXKJVpsLHlmc=
+kmodules.xyz/offshoot-api v0.0.0-20200207061254-705ac16690ec h1:JdgvQhxyFXnxInPK42R3saSBjkhiiy8k5Uc9UdneVqE=
+kmodules.xyz/offshoot-api v0.0.0-20200207061254-705ac16690ec/go.mod h1:k1M+OOFHbMeS6N6OB2j9smKfMCyQOEQjZ3SLZ/KSe+w=
 kmodules.xyz/openshift v0.0.0-20191127054841-113eeb13704f/go.mod h1:de9+Zk2+wtGhRmGFBZ9T4+0lJZr4rHXW0dHffCaeO+g=
 kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7 h1:9PImU28r8bt+QoW7FkYbJ+prsZSNtwctLeXJj3wJK5U=
 kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7/go.mod h1:de9+Zk2+wtGhRmGFBZ9T4+0lJZr4rHXW0dHffCaeO+g=

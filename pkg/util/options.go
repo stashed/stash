@@ -93,12 +93,14 @@ func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt Extr
 		return restic.SetupOptions{}, err
 	}
 	endpoint, _ := repository.Spec.Backend.Endpoint()
+	region, _ := repository.Spec.Backend.Region()
 
 	return restic.SetupOptions{
 		Provider:       provider,
 		Bucket:         bucket,
 		Path:           prefix,
 		Endpoint:       endpoint,
+		Region:         region,
 		CacertFile:     extraOpt.CacertFile,
 		SecretDir:      extraOpt.SecretDir,
 		ScratchDir:     extraOpt.ScratchDir,

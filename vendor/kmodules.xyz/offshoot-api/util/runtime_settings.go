@@ -97,7 +97,7 @@ func ApplyPodRuntimeSettings(podSpec core.PodSpec, settings ofst.PodRuntimeSetti
 		podSpec.SecurityContext = settings.SecurityContext
 	}
 	if len(settings.ImagePullSecrets) > 0 {
-		podSpec.ImagePullSecrets = settings.ImagePullSecrets
+		podSpec.ImagePullSecrets = core_util.MergeLocalObjectReferences(podSpec.ImagePullSecrets, settings.ImagePullSecrets)
 	}
 	if settings.Affinity != nil {
 		podSpec.Affinity = settings.Affinity

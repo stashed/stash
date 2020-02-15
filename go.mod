@@ -41,8 +41,8 @@ require (
 	kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6
 	kmodules.xyz/crd-schema-fuzz v0.0.0-20191129174258-81f984340891
 	kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419
-	kmodules.xyz/objectstore-api v0.0.0-20191127144749-5881939b57f0
-	kmodules.xyz/offshoot-api v0.0.0-20200103145223-2c4f520520d2
+	kmodules.xyz/objectstore-api v0.0.0-20200213071506-f176860e67f7
+	kmodules.xyz/offshoot-api v0.0.0-20200207061254-705ac16690ec
 	kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7
 	kmodules.xyz/prober v0.0.0-20191216013129-7c91e2b0edb2
 	kmodules.xyz/webhook-runtime v0.0.0-20191127075323-d4bfdee6974d

@@ -1036,10 +1036,10 @@ kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
 kmodules.xyz/custom-resources/client/listers/appcatalog/v1alpha1
-# kmodules.xyz/objectstore-api v0.0.0-20191127144749-5881939b57f0
+# kmodules.xyz/objectstore-api v0.0.0-20200213071506-f176860e67f7
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
-# kmodules.xyz/offshoot-api v0.0.0-20200103145223-2c4f520520d2
+# kmodules.xyz/offshoot-api v0.0.0-20200207061254-705ac16690ec
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util
 # kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7

@@ -119,8 +119,13 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository.Spec.Backend.S3 != nil && repository.Spec.Backend.S3.Endpoint != "" {
 		inputs[apis.RepositoryEndpoint] = repository.Spec.Backend.S3.Endpoint
 	}
-	if repository.Spec.Backend.Rest != nil && repository.Spec.Backend.Rest.URL != "" {
-		inputs[apis.RepositoryEndpoint] = repository.Spec.Backend.Rest.URL
+	endpoint, found := repository.Spec.Backend.Endpoint()
+	if found {
+		inputs[apis.RepositoryEndpoint] = endpoint
+	}
+	region, found := repository.Spec.Backend.Region()
+	if found {
+		inputs[apis.RepositoryRegion] = region
 	}
 	inputs[apis.MaxConnections] = strconv.FormatInt(repository.Spec.Backend.MaxConnections(), 10)
 	return

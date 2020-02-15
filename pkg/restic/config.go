@@ -77,6 +77,7 @@ type SetupOptions struct {
 	Provider       string
 	Bucket         string
 	Endpoint       string
+	Region         string
 	Path           string
 	SecretDir      string
 	CacertFile     string
