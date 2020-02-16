@@ -4,6 +4,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/appscode/stash.svg)](https://hub.docker.com/r/appscode/stash/)
 [![Slack](https://slack.appscode.com/badge.svg)](https://slack.appscode.com)
 [![Twitter](https://img.shields.io/twitter/follow/kubestash.svg?style=social&logo=twitter&label=Follow)](https://twitter.com/intent/follow?screen_name=KubeStash)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fstashed%2Fstash.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fstashed%2Fstash?ref=badge_shield)
 
 # Stash
  Stash by AppsCode is a Kubernetes operator for [restic](https://restic.net). If you are running production workloads in Kubernetes, you might want to take backup of your disks. Traditional tools are too complex to setup and maintain in a dynamic compute environment like Kubernetes. `restic` is a backup program that is fast, efficient and secure with few moving parts. Stash is a CRD controller for Kubernetes built around `restic` to address these issues. Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
@@ -63,3 +64,7 @@ Want to help improve Stash? Please start [here](https://stash.run/docs/latest/we
 We use Slack for public discussions. To chit chat with us or the rest of the community, join us in the [AppsCode Slack team](https://appscode.slack.com/messages/C8NCX6N23/details/) channel `#stash`. To sign up, use our [Slack inviter](https://slack.appscode.com/).
 
 If you have found a bug with Stash or want to request for new features, please [file an issue](https://github.com/stashed/stash/issues/new).
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fstashed%2Fstash.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fstashed%2Fstash?ref=badge_large)
