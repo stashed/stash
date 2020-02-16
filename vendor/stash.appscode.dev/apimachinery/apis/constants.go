@@ -72,11 +72,6 @@ const (
 	EnableCache    = "ENABLE_CACHE"
 	MaxConnections = "MAX_CONNECTIONS"
 
-	// from runtime settings
-	NiceAdjustment  = "NICE_ADJUSTMENT"
-	IONiceClass     = "IONICE_CLASS"
-	IONiceClassData = "IONICE_CLASS_DATA"
-
 	PushgatewayURL    = "PROMETHEUS_PUSHGATEWAY_URL"
 	PrometheusJobName = "PROMETHEUS_JOB_NAME"
 
