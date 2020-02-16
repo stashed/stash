@@ -19,10 +19,10 @@ package controller
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/apimachinery/apis"
+	"stash.appscode.dev/apimachinery/apis/stash"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"

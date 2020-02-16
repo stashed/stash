@@ -17,9 +17,9 @@ limitations under the License.
 package util
 
 import (
-	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	api "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/restic"
+	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 
 	go_str "github.com/appscode/go/strings"
 )

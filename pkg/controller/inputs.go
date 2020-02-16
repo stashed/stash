@@ -21,12 +21,13 @@ import (
 	"strconv"
 	"strings"
 
-	"stash.appscode.dev/stash/apis"
-	apiAlpha "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	api "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis"
+	apiAlpha "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 
 	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/tools/pushgateway"
 )
 
 func (c *StashController) inputsForBackupConfig(invoker apis.Invoker, targetInfo apis.TargetInfo) (map[string]string, error) {
@@ -212,7 +213,7 @@ func (c *StashController) inputsForRetentionPolicy(retentionPolicy apiAlpha.Rete
 
 func (c *StashController) inputForMetrics(jobName string) map[string]string {
 	return map[string]string{
-		apis.PushgatewayURL:    util.PushgatewayURL(),
+		apis.PushgatewayURL:    pushgateway.URL(),
 		apis.PrometheusJobName: jobName,
 	}
 }

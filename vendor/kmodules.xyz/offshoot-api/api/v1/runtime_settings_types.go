@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"os"
+	"strconv"
+
 	core "k8s.io/api/core/v1"
 )
 
@@ -162,4 +165,51 @@ type NiceSettings struct {
 type IONiceSettings struct {
 	Class     *int32 `json:"class,omitempty" protobuf:"varint,1,opt,name=class"`
 	ClassData *int32 `json:"classData,omitempty" protobuf:"varint,2,opt,name=classData"`
+}
+
+func NiceSettingsFromEnv() (*NiceSettings, error) {
+	var settings *NiceSettings
+	if v, ok := os.LookupEnv(NiceAdjustment); ok {
+		vi, err := parseInt32P(v)
+		if err != nil {
+			return nil, err
+		}
+		settings = &NiceSettings{
+			Adjustment: vi,
+		}
+	}
+	return settings, nil
+}
+
+func IONiceSettingsFromEnv() (*IONiceSettings, error) {
+	var settings *IONiceSettings
+	if v, ok := os.LookupEnv(IONiceClass); ok {
+		vi, err := parseInt32P(v)
+		if err != nil {
+			return nil, err
+		}
+		settings = &IONiceSettings{
+			Class: vi,
+		}
+	}
+	if v, ok := os.LookupEnv(IONiceClassData); ok {
+		vi, err := parseInt32P(v)
+		if err != nil {
+			return nil, err
+		}
+		if settings == nil {
+			settings = &IONiceSettings{}
+		}
+		settings.ClassData = vi
+	}
+	return settings, nil
+}
+
+func parseInt32P(v string) (*int32, error) {
+	vi, err := strconv.Atoi(v)
+	if err != nil {
+		return nil, err
+	}
+	out := int32(vi)
+	return &out, nil
 }

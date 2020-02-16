@@ -17,7 +17,7 @@ limitations under the License.
 package controller
 
 import (
-	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 

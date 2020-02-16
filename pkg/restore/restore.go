@@ -22,11 +22,11 @@ import (
 	"os"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/apis"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
@@ -37,6 +37,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
 const (
@@ -88,11 +89,11 @@ func Restore(opt *Options) (*restic.RestoreOutput, error) {
 		return nil, err
 	}
 	// apply nice, ionice settings from env
-	setupOptions.Nice, err = util.NiceSettingsFromEnv()
+	setupOptions.Nice, err = v1.NiceSettingsFromEnv()
 	if err != nil {
 		return nil, err
 	}
-	setupOptions.IONice, err = util.IONiceSettingsFromEnv()
+	setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
 	if err != nil {
 		return nil, err
 	}

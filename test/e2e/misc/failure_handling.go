@@ -17,8 +17,8 @@ limitations under the License.
 package misc
 
 import (
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis"
+	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/test/e2e/framework"
 

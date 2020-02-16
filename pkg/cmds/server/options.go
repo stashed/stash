@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/apis"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/stash/pkg/controller"
-	"stash.appscode.dev/stash/pkg/docker"
 
 	"github.com/spf13/pflag"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"

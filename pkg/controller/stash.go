@@ -19,9 +19,9 @@ package controller
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis"
-	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis"
+	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/types"

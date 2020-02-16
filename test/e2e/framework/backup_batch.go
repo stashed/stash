@@ -17,8 +17,8 @@ limitations under the License.
 package framework
 
 import (
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	"github.com/appscode/go/crypto/rand"
 	core "k8s.io/api/core/v1"

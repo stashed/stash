@@ -19,7 +19,7 @@ package framework
 import (
 	"path/filepath"
 
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"

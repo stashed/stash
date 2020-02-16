@@ -275,8 +275,6 @@ github.com/pborman/uuid
 github.com/peterbourgon/diskv
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
-# github.com/pmezard/go-difflib v1.0.0
-github.com/pmezard/go-difflib/difflib
 # github.com/prometheus/client_golang v1.1.0 => github.com/prometheus/client_golang v0.9.2
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
@@ -309,8 +307,6 @@ github.com/spf13/cobra
 github.com/spf13/cobra/doc
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/stretchr/testify v1.4.0
-github.com/stretchr/testify/assert
 # github.com/yudai/gojsondiff v1.0.0
 github.com/yudai/gojsondiff
 github.com/yudai/gojsondiff/formatter
@@ -531,25 +527,18 @@ k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
 # k8s.io/apiextensions-apiserver v0.0.0-20191114105449-027877536833 => k8s.io/apiextensions-apiserver v0.0.0-20191114105449-027877536833
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
-k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/install
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
-k8s.io/apiextensions-apiserver/pkg/apiserver/schema
-k8s.io/apiextensions-apiserver/pkg/apiserver/schema/pruning
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1
 k8s.io/apiextensions-apiserver/pkg/features
 # k8s.io/apimachinery v0.16.5-beta.1 => github.com/kmodules/apimachinery v0.0.0-20191119091232-0553326db082
-k8s.io/apimachinery/pkg/api/apitesting
-k8s.io/apimachinery/pkg/api/apitesting/fuzzer
-k8s.io/apimachinery/pkg/api/apitesting/roundtrip
 k8s.io/apimachinery/pkg/api/equality
 k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/api/meta
 k8s.io/apimachinery/pkg/api/resource
 k8s.io/apimachinery/pkg/api/validation
 k8s.io/apimachinery/pkg/api/validation/path
-k8s.io/apimachinery/pkg/apis/meta/fuzzer
 k8s.io/apimachinery/pkg/apis/meta/internalversion
 k8s.io/apimachinery/pkg/apis/meta/v1
 k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
@@ -996,7 +985,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20200116162153-e083ae16abca
+# kmodules.xyz/client-go v0.0.0-20200216080917-08714f78f885
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/apiextensions/v1beta1
@@ -1009,21 +998,19 @@ kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/logs
 kmodules.xyz/client-go/meta
-kmodules.xyz/client-go/openapi
 kmodules.xyz/client-go/rbac/v1
 kmodules.xyz/client-go/tools/analytics
 kmodules.xyz/client-go/tools/cli
 kmodules.xyz/client-go/tools/clientcmd
 kmodules.xyz/client-go/tools/exec
 kmodules.xyz/client-go/tools/portforward
+kmodules.xyz/client-go/tools/pushgateway
 kmodules.xyz/client-go/tools/queue
 # kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6
 kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/crd-schema-fuzz v0.0.0-20191129174258-81f984340891
-kmodules.xyz/crd-schema-fuzz
 # kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419
 kmodules.xyz/custom-resources/api/crds
 kmodules.xyz/custom-resources/apis/appcatalog
@@ -1036,10 +1023,10 @@ kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
 kmodules.xyz/custom-resources/client/listers/appcatalog/v1alpha1
-# kmodules.xyz/objectstore-api v0.0.0-20200213071506-f176860e67f7
+# kmodules.xyz/objectstore-api v0.0.0-20200214040336-fe8f39a4210d
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
-# kmodules.xyz/offshoot-api v0.0.0-20200207061254-705ac16690ec
+# kmodules.xyz/offshoot-api v0.0.0-20200216080509-45ee6418d1c1
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util
 # kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7
@@ -1106,3 +1093,32 @@ sigs.k8s.io/structured-merge-diff/typed
 sigs.k8s.io/structured-merge-diff/value
 # sigs.k8s.io/yaml v1.1.0 => sigs.k8s.io/yaml v1.1.0
 sigs.k8s.io/yaml
+# stash.appscode.dev/apimachinery v0.0.0-20200216071155-fcbc3d40e8de
+stash.appscode.dev/apimachinery/api/crds
+stash.appscode.dev/apimachinery/apis
+stash.appscode.dev/apimachinery/apis/repositories
+stash.appscode.dev/apimachinery/apis/repositories/install
+stash.appscode.dev/apimachinery/apis/repositories/v1alpha1
+stash.appscode.dev/apimachinery/apis/stash
+stash.appscode.dev/apimachinery/apis/stash/v1alpha1
+stash.appscode.dev/apimachinery/apis/stash/v1beta1
+stash.appscode.dev/apimachinery/client/clientset/versioned
+stash.appscode.dev/apimachinery/client/clientset/versioned/fake
+stash.appscode.dev/apimachinery/client/clientset/versioned/scheme
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/repositories/v1alpha1
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/repositories/v1alpha1/fake
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/fake
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/fake
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util
+stash.appscode.dev/apimachinery/client/informers/externalversions
+stash.appscode.dev/apimachinery/client/informers/externalversions/internalinterfaces
+stash.appscode.dev/apimachinery/client/informers/externalversions/stash
+stash.appscode.dev/apimachinery/client/informers/externalversions/stash/v1alpha1
+stash.appscode.dev/apimachinery/client/informers/externalversions/stash/v1beta1
+stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1
+stash.appscode.dev/apimachinery/client/listers/stash/v1beta1
+stash.appscode.dev/apimachinery/pkg/docker
+stash.appscode.dev/apimachinery/pkg/restic

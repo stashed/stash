@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"reflect"
 
-	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
-	v1beta1_listers "stash.appscode.dev/stash/client/listers/stash/v1beta1"
+	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	v1beta1_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"

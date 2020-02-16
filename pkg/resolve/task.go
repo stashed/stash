@@ -22,9 +22,9 @@ import (
 	"strconv"
 	"strings"
 
-	"stash.appscode.dev/stash/apis"
-	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/apis"
+	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/envsubst"

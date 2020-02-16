@@ -97,27 +97,59 @@ func DeepHashObject(hasher hash.Hash, objectToWrite interface{}) {
 	printer.Fprintf(hasher, "%#v", objectToWrite)
 }
 
-func AlreadyReconciled(o interface{}) bool {
+func MustAlreadyReconciled(o interface{}) bool {
+	reconciled, err := AlreadyReconciled(o)
+	if err != nil {
+		panic("failed to extract status.observedGeneration field due to err:" + err.Error())
+	}
+	return reconciled
+}
+
+func AlreadyReconciled(o interface{}) (bool, error) {
 	var generation, observedGeneration *types.IntHash
 	var err error
 
 	switch obj := o.(type) {
 	case *unstructured.Unstructured:
-		generation = types.IntHashForGeneration(obj.GetGeneration())
-		var val interface{}
-		val, _, err = unstructured.NestedFieldNoCopy(obj.Object, "status", "observedGeneration")
-		if err == nil {
-			observedGeneration, err = types.ParseIntHash(val)
-		}
+		generation, observedGeneration, err = extractGenerationFromUnstructured(obj)
 	case metav1.Object:
-		st := structs.New(o)
-		generation = types.IntHashForGeneration(obj.GetGeneration())
-		observedGeneration, err = types.ParseIntHash(st.Field("Status").Field("ObservedGeneration").Value())
+		generation, observedGeneration, err = extractGenerationFromObject(obj)
 	default:
 		err = fmt.Errorf("unknown object type %s", reflect.TypeOf(o).String())
 	}
 	if err != nil {
-		panic("failed to extract status.observedGeneration field due to err:" + err.Error())
+		return false, err
 	}
-	return observedGeneration.MatchGeneration(generation)
+	return observedGeneration.MatchGeneration(generation), nil
+}
+
+func extractGenerationFromUnstructured(obj *unstructured.Unstructured) (*types.IntHash, *types.IntHash, error) {
+	generation := types.IntHashForGeneration(obj.GetGeneration())
+
+	val, found, err := unstructured.NestedFieldNoCopy(obj.Object, "status", "observedGeneration")
+	if err != nil {
+		return nil, nil, err
+	} else if !found {
+		return nil, nil, fmt.Errorf("status.observedGeneration is missing")
+	}
+	observedGeneration, err := types.ParseIntHash(val)
+
+	return generation, observedGeneration, err
+}
+
+func extractGenerationFromObject(obj metav1.Object) (*types.IntHash, *types.IntHash, error) {
+	generation := types.IntHashForGeneration(obj.GetGeneration())
+
+	st := structs.New(obj)
+	fieldStatus, found := st.FieldOk("Status")
+	if !found {
+		return nil, nil, fmt.Errorf("status is missing")
+	}
+	fieldObsGen, found := fieldStatus.FieldOk("ObservedGeneration")
+	if !found {
+		return nil, nil, fmt.Errorf("status.observedGeneration is missing")
+	}
+	observedGeneration, err := types.ParseIntHash(fieldObsGen.Value())
+
+	return generation, observedGeneration, err
 }

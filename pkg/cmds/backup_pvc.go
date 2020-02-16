@@ -19,12 +19,12 @@ package cmds
 import (
 	"path/filepath"
 
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/util"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
 func NewCmdBackupPVC() *cobra.Command {
@@ -99,11 +99,11 @@ func NewCmdBackupPVC() *cobra.Command {
 func backupPVC(backupOpt restic.BackupOptions, setupOpt restic.SetupOptions) (*restic.BackupOutput, error) {
 	// apply nice, ionice settings from env
 	var err error
-	setupOpt.Nice, err = util.NiceSettingsFromEnv()
+	setupOpt.Nice, err = v1.NiceSettingsFromEnv()
 	if err != nil {
 		return nil, err
 	}
-	setupOpt.IONice, err = util.IONiceSettingsFromEnv()
+	setupOpt.IONice, err = v1.IONiceSettingsFromEnv()
 	if err != nil {
 		return nil, err
 	}

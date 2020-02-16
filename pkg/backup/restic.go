@@ -17,7 +17,7 @@ limitations under the License.
 package backup
 
 import (
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
 

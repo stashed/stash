@@ -19,8 +19,8 @@ package controller
 import (
 	"time"
 
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"

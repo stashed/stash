@@ -19,12 +19,12 @@ package cmds
 import (
 	"time"
 
-	"stash.appscode.dev/stash/apis"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
+	"stash.appscode.dev/apimachinery/apis"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/backup"
 	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/golang/glog"

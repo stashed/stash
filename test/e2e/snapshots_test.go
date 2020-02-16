@@ -21,8 +21,8 @@ import (
 	"os/exec"
 	"strconv"
 
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 

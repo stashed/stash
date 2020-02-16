@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/backup"
 
 	"github.com/appscode/go/log"

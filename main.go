@@ -20,7 +20,7 @@ import (
 	"os"
 	"runtime"
 
-	_ "stash.appscode.dev/stash/client/clientset/versioned/fake"
+	_ "stash.appscode.dev/apimachinery/client/clientset/versioned/fake"
 	"stash.appscode.dev/stash/pkg/cmds"
 
 	"github.com/appscode/go/log"

@@ -23,11 +23,11 @@ import (
 	"strings"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
-	rep "stash.appscode.dev/stash/apis/repositories/v1alpha1"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/apis"
+	rep "stash.appscode.dev/apimachinery/apis/repositories/v1alpha1"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 

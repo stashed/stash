@@ -17,7 +17,7 @@ limitations under the License.
 package controller
 
 import (
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
 	"github.com/appscode/go/encoding/json/types"
 	core "k8s.io/api/core/v1"

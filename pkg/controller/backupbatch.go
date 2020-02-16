@@ -17,9 +17,9 @@ limitations under the License.
 package controller
 
 import (
-	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/apimachinery/apis"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
 	"github.com/golang/glog"
 	"kmodules.xyz/client-go/tools/queue"

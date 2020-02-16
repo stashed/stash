@@ -79,10 +79,10 @@ func NewReconcilableHandler(queue workqueue.RateLimitingInterface) cache.Resourc
 	return &QueueingEventHandler{
 		queue: queue,
 		enqueueAdd: func(o interface{}) bool {
-			return !meta_util.AlreadyReconciled(o)
+			return !meta_util.MustAlreadyReconciled(o)
 		},
 		enqueueUpdate: func(old, nu interface{}) bool {
-			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil || !meta_util.AlreadyReconciled(nu)
+			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil || !meta_util.MustAlreadyReconciled(nu)
 		},
 		enqueueDelete: true,
 	}

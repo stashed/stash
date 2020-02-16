@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis"
+	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"

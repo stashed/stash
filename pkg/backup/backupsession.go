@@ -24,13 +24,13 @@ import (
 	"strings"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
-	"stash.appscode.dev/stash/client/listers/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
+	"stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
@@ -48,6 +48,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
 type BackupSessionController struct {
@@ -266,11 +267,11 @@ func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.T
 	}
 
 	// apply nice, ionice settings from env
-	c.SetupOpt.Nice, err = util.NiceSettingsFromEnv()
+	c.SetupOpt.Nice, err = v1.NiceSettingsFromEnv()
 	if err != nil {
 		return nil, err
 	}
-	c.SetupOpt.IONice, err = util.IONiceSettingsFromEnv()
+	c.SetupOpt.IONice, err = v1.IONiceSettingsFromEnv()
 	if err != nil {
 		return nil, err
 	}

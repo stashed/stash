@@ -19,14 +19,15 @@ package util
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/apimachinery/apis"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	util_v1beta1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/apimachinery/pkg/docker"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kmodules.xyz/client-go/tools/pushgateway"
 )
 
 // EnsureDefaultFunctions creates "update-status", "pvc-backup" and "pvc-restore" Functions if they are not already present
@@ -96,7 +97,7 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--restoresession=${RESTORE_SESSION:=}",
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",
-				fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
+				fmt.Sprintf("--metrics-pushgateway-url=%s", pushgateway.URL()),
 				"--prom-job-name=${PROMETHEUS_JOB_NAME:=}",
 			},
 		},

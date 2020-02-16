@@ -19,10 +19,10 @@ package snapshot
 import (
 	"context"
 
-	"stash.appscode.dev/stash/apis/repositories"
-	repov1alpha1 "stash.appscode.dev/stash/apis/repositories/v1alpha1"
-	stash "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/apis/repositories"
+	repov1alpha1 "stash.appscode.dev/apimachinery/apis/repositories/v1alpha1"
+	stash "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/util"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

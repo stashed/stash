@@ -26,11 +26,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/repositories"
-	stash "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis"
+	"stash.appscode.dev/apimachinery/apis/repositories"
+	stash "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/cli"
-	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/log"
