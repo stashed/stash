@@ -19,15 +19,16 @@ package util
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/apimachinery/apis"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/pkg/docker"
 
 	"github.com/appscode/go/types"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/analytics"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	"kmodules.xyz/client-go/tools/pushgateway"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
@@ -49,7 +50,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			"--docker-registry=" + image.Registry,
 			"--image-tag=" + image.Tag,
 			"--run-via-cron=true",
-			"--pushgateway-url=" + PushgatewayURL(),
+			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 		}, cli.LoggerOptions.ToFlags()...),
@@ -119,7 +120,7 @@ func NewBackupSidecarContainer(invoker apis.Invoker, targetInfo apis.TargetInfo,
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", backend.MaxConnections()),
 			"--metrics-enabled=true",
-			"--pushgateway-url=" + PushgatewayURL(),
+			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 		}, cli.LoggerOptions.ToFlags()...),

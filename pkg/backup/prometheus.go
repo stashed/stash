@@ -20,8 +20,8 @@ import (
 	"regexp"
 	"strings"
 
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
 	ini "gopkg.in/ini.v1"
 )

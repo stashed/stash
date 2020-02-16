@@ -19,7 +19,7 @@ package framework
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"

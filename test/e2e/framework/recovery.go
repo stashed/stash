@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"time"
 
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/apimachinery/apis"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"

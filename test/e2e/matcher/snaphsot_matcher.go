@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	snap_api "stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	snap_api "stash.appscode.dev/apimachinery/apis/repositories/v1alpha1"
 
 	"github.com/onsi/gomega/types"
 )

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 
 	"github.com/golang/glog"

@@ -17,9 +17,9 @@ limitations under the License.
 package backup
 
 import (
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
+	"stash.appscode.dev/apimachinery/apis"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 
 	"github.com/appscode/go/log"
 )

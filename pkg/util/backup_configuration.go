@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	v1beta1_listers "stash.appscode.dev/stash/client/listers/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	v1beta1_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -21,7 +21,7 @@ import (
 	"io"
 	"net"
 
-	"stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis/repositories/v1alpha1"
 	"stash.appscode.dev/stash/pkg/controller"
 	"stash.appscode.dev/stash/pkg/server"
 

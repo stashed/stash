@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
-	"stash.appscode.dev/stash/apis"
-	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	stash_cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/apis"
+	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	stash_cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1"

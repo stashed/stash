@@ -19,7 +19,7 @@ package cmds
 import (
 	"time"
 
-	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/recovery"
 
 	"github.com/appscode/go/log"

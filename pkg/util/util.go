@@ -20,15 +20,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
-	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/apis"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/go/types"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -38,17 +36,12 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/tools/pushgateway"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	v1 "kmodules.xyz/offshoot-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	prober "kmodules.xyz/prober/probe"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
-)
-
-var (
-	ServiceName string
 )
 
 type RepoLabelData struct {
@@ -125,11 +118,6 @@ func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace 
 		return GetHostName(restoreSession.Spec.Target)
 	}
 	return apis.DefaultHost, nil
-}
-
-func PushgatewayURL() string {
-	// called by operator, returning its own namespace. Since pushgateway runs as a side-car with operator, this works!
-	return fmt.Sprintf("http://%s.%s.svc:56789", ServiceName, meta.Namespace())
 }
 
 func BackupModel(kind string) string {
@@ -251,52 +239,6 @@ func AttachPVC(podSpec core.PodSpec, volumes []core.Volume, volumeMounts []core.
 		}
 	}
 	return podSpec
-}
-
-func NiceSettingsFromEnv() (*v1.NiceSettings, error) {
-	var settings *v1.NiceSettings
-	if v, ok := os.LookupEnv(apis.NiceAdjustment); ok {
-		vi, err := ParseInt32P(v)
-		if err != nil {
-			return nil, err
-		}
-		settings = &v1.NiceSettings{
-			Adjustment: vi,
-		}
-	}
-	return settings, nil
-}
-
-func IONiceSettingsFromEnv() (*v1.IONiceSettings, error) {
-	var settings *v1.IONiceSettings
-	if v, ok := os.LookupEnv(apis.IONiceClass); ok {
-		vi, err := ParseInt32P(v)
-		if err != nil {
-			return nil, err
-		}
-		settings = &v1.IONiceSettings{
-			Class: vi,
-		}
-	}
-	if v, ok := os.LookupEnv(apis.IONiceClassData); ok {
-		vi, err := ParseInt32P(v)
-		if err != nil {
-			return nil, err
-		}
-		if settings == nil {
-			settings = &v1.IONiceSettings{}
-		}
-		settings.ClassData = vi
-	}
-	return settings, nil
-}
-
-func ParseInt32P(v string) (*int32, error) {
-	vi, err := strconv.Atoi(v)
-	if err != nil {
-		return nil, err
-	}
-	return types.Int32P(int32(vi)), nil
 }
 
 type WorkloadClients struct {
@@ -533,7 +475,7 @@ func HookExecutorContainer(name string, shiblings []core.Container, invokerType,
 			"--hostname=${HOSTNAME:=}",
 			"--output-dir=${outputDir:=}",
 			"--metrics-enabled=true",
-			fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
+			fmt.Sprintf("--metrics-pushgateway-url=%s", pushgateway.URL()),
 			"--prom-job-name=${PROMETHEUS_JOB_NAME:=}",
 		},
 		Env: []core.EnvVar{

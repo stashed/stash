@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"sort"
+
 	"github.com/imdario/mergo"
 	jsoniter "github.com/json-iterator/go"
 	core "k8s.io/api/core/v1"
@@ -218,6 +220,7 @@ func MergeLocalObjectReferences(l1, l2 []core.LocalObjectReference) []core.Local
 			result = append(result, ref)
 		}
 	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Name < result[j].Name })
 	return result
 }
 

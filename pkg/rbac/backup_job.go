@@ -19,9 +19,9 @@ package rbac
 import (
 	"strings"
 
-	"stash.appscode.dev/stash/apis"
-	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis"
+	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"

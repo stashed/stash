@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/apis"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/stash/pkg/backup"
-	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/scale"
 	"stash.appscode.dev/stash/pkg/util"
 

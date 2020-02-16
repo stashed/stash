@@ -19,8 +19,8 @@ package framework
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"

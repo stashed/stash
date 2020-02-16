@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
 	"github.com/appscode/go/log"
 	shell "github.com/codeskyblue/go-sh"

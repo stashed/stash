@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"reflect"
 
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	stash_listers "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
+	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	stash_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1"
 
 	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"

@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	"gomodules.xyz/version"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -121,16 +122,114 @@ func IsMaster(node core.Node) bool {
 	return ok17 || (ok16 && role16 == "master")
 }
 
-func Topology(kc kubernetes.Interface) (regions map[string][]string, instances map[string]int, err error) {
+type Topology struct {
+	Regions       map[string][]string
+	TotalNodes    int
+	InstanceTypes map[string]int
+
+	LabelZone         string
+	LabelRegion       string
+	LabelInstanceType string
+
+	// https://github.com/kubernetes/kubernetes/blob/v1.17.2/staging/src/k8s.io/api/core/v1/well_known_labels.go
+
+	//LabelHostname = "kubernetes.io/hostname"
+	//
+	//LabelZoneFailureDomain       = "failure-domain.beta.kubernetes.io/zone"
+	//LabelZoneRegion              = "failure-domain.beta.kubernetes.io/region"
+	//LabelZoneFailureDomainStable = "topology.kubernetes.io/zone"
+	//LabelZoneRegionStable        = "topology.kubernetes.io/region"
+	//
+	//LabelInstanceType       = "beta.kubernetes.io/instance-type"
+	//LabelInstanceTypeStable = "node.kubernetes.io/instance-type"
+}
+
+func (t Topology) ConvertAffinity(affinity *core.Affinity) {
+	if affinity == nil {
+		return
+	}
+
+	if affinity.PodAffinity != nil {
+		t.convertPodAffinityTerm(affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+		t.convertWeightedPodAffinityTerm(affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
+	}
+
+	if affinity.PodAntiAffinity != nil {
+		t.convertPodAffinityTerm(affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+		t.convertWeightedPodAffinityTerm(affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
+	}
+}
+
+func isZoneKey(key string) bool {
+	return key == core.LabelZoneFailureDomain || key == "topology.kubernetes.io/zone"
+}
+
+func isRegionKey(key string) bool {
+	return key == core.LabelZoneRegion || key == "topology.kubernetes.io/region"
+}
+
+func isInstanceTypeKey(key string) bool {
+	return key == core.LabelInstanceType || key == "node.kubernetes.io/instance-type"
+}
+
+func (t Topology) convertPodAffinityTerm(terms []core.PodAffinityTerm) {
+	for i := range terms {
+		if isZoneKey(terms[i].TopologyKey) {
+			terms[i].TopologyKey = t.LabelZone
+		} else if isRegionKey(terms[i].TopologyKey) {
+			terms[i].TopologyKey = t.LabelRegion
+		} else if isInstanceTypeKey(terms[i].TopologyKey) {
+			terms[i].TopologyKey = t.LabelInstanceType
+		}
+	}
+}
+
+func (t Topology) convertWeightedPodAffinityTerm(terms []core.WeightedPodAffinityTerm) {
+	for i := range terms {
+		if isZoneKey(terms[i].PodAffinityTerm.TopologyKey) {
+			terms[i].PodAffinityTerm.TopologyKey = t.LabelZone
+		} else if isRegionKey(terms[i].PodAffinityTerm.TopologyKey) {
+			terms[i].PodAffinityTerm.TopologyKey = t.LabelRegion
+		} else if isInstanceTypeKey(terms[i].PodAffinityTerm.TopologyKey) {
+			terms[i].PodAffinityTerm.TopologyKey = t.LabelInstanceType
+		}
+	}
+}
+
+func DetectTopology(kc kubernetes.Interface) (*Topology, error) {
 	// TODO: Use https://github.com/kubernetes/client-go/blob/kubernetes-1.17.0/metadata/interface.go once upgraded to 1.17
 
+	var topology Topology
+
+	info, err := kc.Discovery().ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+	ver, err := version.NewVersion(info.GitVersion)
+	if err != nil {
+		return nil, err
+	}
+	ver = ver.ToMutator().ResetPrerelease().ResetMetadata().Done()
+	if ver.Major() >= 1 && ver.Minor() >= 17 {
+		topology.LabelZone = "topology.kubernetes.io/zone"
+		topology.LabelRegion = "topology.kubernetes.io/region"
+		topology.LabelInstanceType = "node.kubernetes.io/instance-type"
+	} else {
+		topology.LabelZone = core.LabelZoneFailureDomain
+		topology.LabelRegion = core.LabelZoneRegion
+		topology.LabelInstanceType = core.LabelInstanceType
+	}
+	topology.TotalNodes = 0
+
 	mapRegion := make(map[string]sets.String)
-	instances = make(map[string]int)
+	instances := make(map[string]int)
 
 	lister := pager.New(pager.SimplePageFunc(func(opts metav1.ListOptions) (runtime.Object, error) {
 		return kc.CoreV1().Nodes().List(opts)
 	}))
 	err = lister.EachListItem(context.Background(), metav1.ListOptions{Limit: 100}, func(obj runtime.Object) error {
+		topology.TotalNodes++
+
 		m, err := meta.Accessor(obj)
 		if err != nil {
 			return err
@@ -164,12 +263,15 @@ func Topology(kc kubernetes.Interface) (regions map[string][]string, instances m
 		return nil
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	regions = make(map[string][]string)
+	regions := make(map[string][]string)
 	for k, v := range mapRegion {
 		regions[k] = v.List()
 	}
-	return regions, instances, nil
+	topology.Regions = regions
+	topology.InstanceTypes = instances
+
+	return &topology, nil
 }

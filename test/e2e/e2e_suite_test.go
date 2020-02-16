@@ -23,8 +23,8 @@ import (
 
 	//	test sources
 
-	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
+	_ "stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/controller"
 	_ "stash.appscode.dev/stash/test/e2e/auto-backup"
 	_ "stash.appscode.dev/stash/test/e2e/backend"
