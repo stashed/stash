@@ -29,7 +29,7 @@ Please pick a version of Stash that matches your Kubernetes installation.
 
 | Stash Version                                                                       | Docs                                                            | Kubernetes Version |
 |-------------------------------------------------------------------------------------|-----------------------------------------------------------------|--------------------|
-| [v0.9.0-rc.4](https://github.com/stashed/stash/releases/tag/v0.9.0-rc.4) (uses CRD) | [User Guide](https://stash.run/docs/v0.9.0-rc.4)                | 1.11.x+            |
+| [v0.9.0-rc.6](https://github.com/stashed/stash/releases/tag/v0.9.0-rc.6) (uses CRD) | [User Guide](https://stash.run/docs/v0.9.0-rc.6)                | 1.11.x+            |
 | [0.8.3](https://github.com/stashed/stash/releases/tag/0.8.3) (uses CRD)             | [User Guide](https://stash.run/docs/0.8.3)                      | 1.9.x+             |
 | [0.7.0](https://github.com/stashed/stash/releases/tag/0.7.0) (uses CRD)             | [User Guide](https://stash.run/docs/0.7.0)                      | 1.8.x              |
 | [0.6.4](https://github.com/stashed/stash/releases/tag/0.6.4) (uses CRD)             | [User Guide](https://stash.run/docs/0.6.4)                      | 1.7.x              |
