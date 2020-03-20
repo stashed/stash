@@ -75,7 +75,7 @@ func NewCmdCreateBackupSession() *cobra.Command {
 				opt.ocClient = oc_cs.NewForConfigOrDie(config)
 			}
 
-			if opt.createBackupSession() != nil {
+			if err = opt.createBackupSession(); err != nil {
 				log.Fatal(err)
 			}
 		},
