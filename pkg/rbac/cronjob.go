@@ -52,17 +52,7 @@ func ensureCronJobClusterRole(kubeClient kubernetes.Interface, psps []string, la
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
-				Resources: []string{api_v1beta1.ResourcePluralBackupSession},
-				Verbs:     []string{"*"},
-			},
-			{
-				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
-				Resources: []string{api_v1beta1.ResourcePluralBackupConfiguration},
-				Verbs:     []string{"*"},
-			},
-			{
-				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
-				Resources: []string{api_v1beta1.ResourcePluralBackupBatch},
+				Resources: []string{"*"},
 				Verbs:     []string{"*"},
 			},
 			{
