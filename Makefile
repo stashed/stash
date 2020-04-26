@@ -369,8 +369,8 @@ install:
 		--set operator.tag=$(TAG) \
 		--set imagePullPolicy=Always \
 		$(IMAGE_PULL_SECRETS); \
-	kubectl wait --for=condition=Ready pods -n kube-system -l app=stash --timeout=5m; \
-	kubectl wait --for=condition=Available apiservice -l app=stash --timeout=5m
+	kubectl wait --for=condition=Ready pods -n kube-system -l 'app.kubernetes.io/name=stash,app.kubernetes.io/instance=stash' --timeout=5m; \
+	kubectl wait --for=condition=Available apiservice -l 'app.kubernetes.io/name=stash,app.kubernetes.io/instance=stash' --timeout=5m
 
 .PHONY: uninstall
 uninstall:
