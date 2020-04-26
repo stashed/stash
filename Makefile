@@ -357,7 +357,7 @@ REGISTRY_SECRET ?=
 ifeq ($(strip $(REGISTRY_SECRET)),)
 	IMAGE_PULL_SECRETS =
 else
-	IMAGE_PULL_SECRETS = --set imagePullSecrets[0]=$(REGISTRY_SECRET)
+	IMAGE_PULL_SECRETS = --set imagePullSecrets[0].name=$(REGISTRY_SECRET)
 endif
 
 .PHONY: install
