@@ -554,7 +554,7 @@ func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.R
 		restoreSession,
 		core.EventTypeNormal,
 		eventer.EventReasonRestoreJobCreated,
-		fmt.Sprintf("restore job has been created succesfully for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name),
+		fmt.Sprintf("restore job has been created successfully for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name),
 	)
 
 	return err
@@ -582,7 +582,7 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 		restoreSession,
 		core.EventTypeNormal,
 		eventer.EventReasonRestoreSessionSucceeded,
-		fmt.Sprintf("restore has been completed succesfully for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name),
+		fmt.Sprintf("restore has been completed successfully for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name),
 	)
 	if err != nil {
 		log.Errorf("failed to write event in RestoreSession %s/%s. Reason: %v", restoreSession.Namespace, restoreSession.Name, err)
