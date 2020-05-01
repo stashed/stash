@@ -341,7 +341,7 @@ func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload) error 
 		c.kubeClient,
 		eventer.EventSourceWorkloadController,
 		w.Object,
-		core.EventTypeWarning,
+		core.EventTypeNormal,
 		eventer.EventReasonSidecarInjectionSucceeded,
 		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name),
 	)
@@ -356,7 +356,7 @@ func (c *StashController) handleSidecarDeletionSuccess(w *wapi.Workload) error {
 		c.kubeClient,
 		eventer.EventSourceWorkloadController,
 		w.Object,
-		core.EventTypeWarning,
+		core.EventTypeNormal,
 		eventer.EventReasonSidecarDeletionSucceeded,
 		fmt.Sprintf("Successfully removed stash sidecar from %s %s/%s.", w.Kind, w.Namespace, w.Name),
 	)

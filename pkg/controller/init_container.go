@@ -170,7 +170,7 @@ func (c *StashController) handleInitContainerInjectionSuccess(ref *core.ObjectRe
 		c.kubeClient,
 		eventer.EventSourceWorkloadController,
 		ref,
-		core.EventTypeWarning,
+		core.EventTypeNormal,
 		eventer.EventReasonInitContainerInjectionSucceeded,
 		fmt.Sprintf("Successfully injected stash init-container into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
 	)
@@ -188,7 +188,7 @@ func (c *StashController) handleInitContainerDeletionSuccess(ref *core.ObjectRef
 		c.kubeClient,
 		eventer.EventSourceWorkloadController,
 		ref,
-		core.EventTypeWarning,
+		core.EventTypeNormal,
 		eventer.EventReasonInitContainerDeletionSucceeded,
 		fmt.Sprintf("Successfully stash init-container from %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
 	)
