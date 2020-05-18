@@ -24,7 +24,8 @@ jobs:
       id: buildx
       uses: crazy-max/ghaction-docker-buildx@v1
       with:
-        version: latest
+        buildx-version: latest
+        qemu-version: latest
 
     - name: Available platforms
       run: echo ${{ steps.buildx.outputs.platforms }}
