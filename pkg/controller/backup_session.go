@@ -643,9 +643,9 @@ func backupExecutor(invoker apis.Invoker, tref api_v1beta1.TargetRef) string {
 	if (invoker.Driver == "" || invoker.Driver == api_v1beta1.ResticSnapshotter) &&
 		util.BackupModel(tref.Kind) == apis.ModelSidecar {
 		return BackupExecutorSidecar
-	} else if invoker.Driver == api_v1beta1.VolumeSnapshotter {
-		return BackupExecutorCSIDriver
-	} else {
-		return BackupExecutorJob
 	}
+	if invoker.Driver == api_v1beta1.VolumeSnapshotter {
+		return BackupExecutorCSIDriver
+	}
+	return BackupExecutorJob
 }
