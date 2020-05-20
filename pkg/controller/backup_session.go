@@ -390,7 +390,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targe
 func (c *StashController) setBackupSessionFailed(invoker apis.Invoker, backupSession *api_v1beta1.BackupSession, backupErr error) error {
 
 	// set BackupSession phase to "Failed"
-	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionFailed
 		in.Targets = backupSession.Status.Targets
 		return in
@@ -432,7 +432,7 @@ func (c *StashController) setTargetPhaseRunning(target *api_v1beta1.BackupTarget
 		return nil, err
 	}
 	// set target phase to "Running"
-	backupSession, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+	backupSession, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		if target != nil {
 			in.Targets = upsertTargetStatsEntry(backupSession.Status.Targets, api_v1beta1.Target{
 				TotalHosts: totalHosts,
@@ -450,7 +450,7 @@ func (c *StashController) setTargetPhaseRunning(target *api_v1beta1.BackupTarget
 
 func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, error) {
 	// set BackupSession phase to "Running"
-	backupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+	backupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionRunning
 		return in
 	})
@@ -476,7 +476,7 @@ func (c *StashController) setBackupSessionSucceeded(invoker apis.Invoker, backup
 	sessionDuration := time.Since(backupSession.CreationTimestamp.Time)
 
 	// set BackupSession phase "Succeeded"
-	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionSucceeded
 		in.SessionDuration = sessionDuration.String()
 		in.Targets = backupSession.Status.Targets

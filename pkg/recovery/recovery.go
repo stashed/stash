@@ -78,7 +78,7 @@ func (c *Controller) Run() {
 
 	if err = recovery.IsValid(); err != nil {
 		log.Errorf("Failed to validate recovery %s, reason: %s", recovery.Name, err)
-		_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
 		})
@@ -103,7 +103,7 @@ func (c *Controller) Run() {
 
 	if err = c.RecoverOrErr(recovery); err != nil {
 		log.Errorf("Failed to complete recovery %s, reason: %s", recovery.Name, err)
-		_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
 		})
@@ -127,7 +127,7 @@ func (c *Controller) Run() {
 	}
 
 	log.Infof("Recovery %s succeeded\n", recovery.Name)
-	_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+	_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		in.Phase = api.RecoverySucceeded
 		// TODO: status.Stats
 		return in
@@ -205,12 +205,12 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 			} else {
 				log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 			}
-			_, err = stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoveryFailed)
+			_, err = stash_util.SetRecoveryStats(c.stashClient, recovery.ObjectMeta, path, d, api.RecoveryFailed)
 			if err != nil {
 				return err
 			}
 		} else {
-			_, err = stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoverySucceeded)
+			_, err = stash_util.SetRecoveryStats(c.stashClient, recovery.ObjectMeta, path, d, api.RecoverySucceeded)
 			if err != nil {
 				return err
 			}

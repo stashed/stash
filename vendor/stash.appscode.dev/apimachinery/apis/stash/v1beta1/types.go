@@ -87,3 +87,29 @@ type TargetRef struct {
 	Kind       string `json:"kind,omitempty" protobuf:"bytes,2,opt,name=kind"`
 	Name       string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
 }
+
+// +kubebuilder:validation:Enum=BackupTargetFound;StashSidecarInjected;CronJobCreated
+type BackupInvokerCondition string
+
+const (
+	// BackupTargetFound indicates whether the backup target was found
+	BackupTargetFound BackupInvokerCondition = "BackupTargetFound"
+	// StashSidecarInjected indicates whether stash sidecar was injected into the targeted workload
+	// This condition is applicable only for sidecar model
+	StashSidecarInjected BackupInvokerCondition = "StashSidecarInjected"
+	// CronJobCreated indicates whether the backup triggering CronJob was created
+	CronJobCreated BackupInvokerCondition = "CronJobCreated"
+)
+
+// +kubebuilder:validation:Enum=RestoreTargetFound;StashInitContainerInjected;RestoreJobCreated
+type RestoreSessionCondition string
+
+const (
+	// RestoreTargetFound indicates whether the restore target was found
+	RestoreTargetFound RestoreSessionCondition = "RestoreTargetFound"
+	// StashInitContainerInjected indicates whether stash init-container was injected into the targeted workload
+	// This condition is applicable only for sidecar model
+	StashInitContainerInjected RestoreSessionCondition = "StashInitContainerInjected"
+	// RestoreJobCreated indicates whether the restore job was created
+	RestoreJobCreated RestoreSessionCondition = "RestoreJobCreated"
+)

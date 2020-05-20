@@ -35,6 +35,7 @@ github.com/appscode/go/runtime
 github.com/appscode/go/sets
 github.com/appscode/go/strings
 github.com/appscode/go/types
+github.com/appscode/go/util/errors
 github.com/appscode/go/version
 # github.com/appscode/osm v0.13.0
 github.com/appscode/osm/context
@@ -985,9 +986,10 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20200216080917-08714f78f885
+# kmodules.xyz/client-go v0.0.0-20200515063639-98d65435fd5d
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
+kmodules.xyz/client-go/api/v1
 kmodules.xyz/client-go/apiextensions/v1beta1
 kmodules.xyz/client-go/apiregistration/v1beta1
 kmodules.xyz/client-go/apps/v1
@@ -1093,7 +1095,7 @@ sigs.k8s.io/structured-merge-diff/typed
 sigs.k8s.io/structured-merge-diff/value
 # sigs.k8s.io/yaml v1.1.0 => sigs.k8s.io/yaml v1.1.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.9.0-rc.6
+# stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200520105618-e83b90a7160f
 stash.appscode.dev/apimachinery/api/crds
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories

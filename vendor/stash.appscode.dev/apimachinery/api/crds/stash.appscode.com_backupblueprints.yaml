@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
   labels:
-    app: stash
+    app.kubernetes.io/name: stash
   name: backupblueprints.stash.appscode.com
 spec:
   additionalPrinterColumns:

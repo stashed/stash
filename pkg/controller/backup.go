@@ -122,12 +122,11 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 				targetInfo.Target.Ref.Name == w.Name {
 				err = c.ensureBackupSidecar(w, invoker, targetInfo, caller)
 				if err != nil {
-					return false, c.handleSidecarInjectionFailure(w, err)
+					return false, c.handleSidecarInjectionFailure(w, invoker, targetInfo.Target.Ref, err)
 				}
-				break
+				return true, c.handleSidecarInjectionSuccess(w, invoker, targetInfo.Target.Ref)
 			}
 		}
-		return true, c.handleSidecarInjectionSuccess(w)
 
 	} else if oldbc != nil && newbc == nil {
 		// there was BackupConfiguration before but it does not exist now.
@@ -168,13 +167,12 @@ func (c *StashController) applyBackupBatchLogic(w *wapi.Workload, caller string)
 						targetInfo.Target.Ref.Name == w.Name {
 						err = c.ensureBackupSidecar(w, invoker, targetInfo, caller)
 						if err != nil {
-							return false, c.handleSidecarInjectionFailure(w, err)
+							return false, c.handleSidecarInjectionFailure(w, invoker, targetInfo.Target.Ref, err)
 						}
-						break
+						// write sidecar injection failure/success event
+						return true, c.handleSidecarInjectionSuccess(w, invoker, targetInfo.Target.Ref)
 					}
 				}
-				// write sidecar injection failure/success event
-				return true, c.handleSidecarInjectionSuccess(w)
 			}
 		}
 	} else if oldbb != nil && newbb == nil {

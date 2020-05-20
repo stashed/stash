@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
   labels:
-    app: stash
+    app.kubernetes.io/name: stash
   name: recoveries.stash.appscode.com
 spec:
   additionalPrinterColumns:
@@ -1302,6 +1302,12 @@ spec:
               format: int64
               type: integer
             phase:
+              enum:
+              - Pending
+              - Running
+              - Succeeded
+              - Failed
+              - Unknown
               type: string
             stats:
               items:
@@ -1311,6 +1317,12 @@ spec:
                   path:
                     type: string
                   phase:
+                    enum:
+                    - Pending
+                    - Running
+                    - Succeeded
+                    - Failed
+                    - Unknown
                     type: string
                 type: object
               type: array

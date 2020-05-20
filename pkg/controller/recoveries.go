@@ -178,7 +178,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		}
 		log.Errorln(err)
 
-		_, err2 := stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		_, err2 := stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
 		})
@@ -211,7 +211,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	if rerr == nil {
 		c.recorder.Eventf(ref, core.EventTypeNormal, eventer.EventReasonJobCreated, "Recovery job created: %s", job.Name)
 	}
-	_, err = stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+	_, err = stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		in.Phase = api.RecoveryRunning
 		return in
 	})

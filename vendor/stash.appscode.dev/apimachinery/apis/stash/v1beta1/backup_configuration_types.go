@@ -22,6 +22,7 @@ import (
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	prober "kmodules.xyz/prober/api/v1"
 )
@@ -119,6 +120,7 @@ type EmptyDirSettings struct {
 	DisableCaching bool `json:"disableCaching,omitempty" protobuf:"varint,3,opt,name=disableCaching"`
 }
 
+// +kubebuilder:validation:Enum=Restic;VolumeSnapshotter
 type Snapshotter string
 
 const (
@@ -131,6 +133,9 @@ type BackupConfigurationStatus struct {
 	// BackupConfiguration's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty" protobuf:"varint,1,opt,name=observedGeneration"`
+	// Conditions shows current backup setup condition of the BackupConfiguration.
+	// +optional
+	Conditions []kmapi.Condition `json:"conditions,omitempty" protobuf:"bytes,2,rep,name=conditions"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

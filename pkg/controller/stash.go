@@ -82,11 +82,11 @@ func (c *StashController) applyRestoreLogic(w *wapi.Workload, caller string) (bo
 		if err != nil && rerr != nil {
 			return false, err
 		} else if err != nil && rerr == nil {
-			return false, c.handleInitContainerInjectionFailure(ref, err)
+			return false, c.handleInitContainerInjectionFailure(ref, newRestore, err)
 		} else if err == nil && rerr != nil {
 			return true, nil
 		}
-		return true, c.handleInitContainerInjectionSuccess(ref)
+		return true, c.handleInitContainerInjectionSuccess(ref, newRestore)
 	} else if oldRestore != nil && newRestore == nil {
 		// there was RestoreSession before but currently it does not exist.
 		// this means RestoreSession has been removed.

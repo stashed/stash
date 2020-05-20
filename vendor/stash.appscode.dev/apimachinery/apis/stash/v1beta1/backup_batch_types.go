@@ -21,6 +21,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -87,6 +88,20 @@ type BackupBatchStatus struct {
 	// BackupBatch's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty" protobuf:"varint,1,opt,name=observedGeneration"`
+	// Conditions shows current backup setup condition of the BackupBatch.
+	// +optional
+	Conditions []kmapi.Condition `json:"conditions,omitempty" protobuf:"bytes,2,rep,name=conditions"`
+	// MemberConditions shows current backup setup condition of the members of the BackupBatch.
+	// +optional
+	MemberConditions []MemberConditions `json:"memberConditions" protobuf:"bytes,3,rep,name=memberConditions"`
+}
+
+type MemberConditions struct {
+	// Target is the reference to the respective target whose condition is shown here.
+	Target TargetRef `json:"target" protobuf:"bytes,1,opt,name=target"`
+	// Conditions shows current backup setup condition of this member.
+	// +optional
+	Conditions []kmapi.Condition `json:"conditions,omitempty" protobuf:"bytes,2,rep,name=conditions"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

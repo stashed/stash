@@ -220,9 +220,34 @@ func (fi *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) []str
 }
 
 func (fi *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind, volumeName string, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
+	// Create RestoreSession
+	restoreSession, err := fi.CreateRestoreSessionForWorkload(objMeta, repo.Name, kind, volumeName, transformFuncs...)
+	if err != nil {
+		return nil, err
+	}
+	By("Verifying that init-container has been injected")
+	switch kind {
+	case apis.KindDeployment:
+		fi.EventuallyDeployment(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
+	case apis.KindDaemonSet:
+		fi.EventuallyDaemonSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
+	case apis.KindStatefulSet:
+		fi.EventuallyStatefulSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
+	case apis.KindReplicaSet:
+		fi.EventuallyReplicaSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
+	case apis.KindReplicationController:
+		fi.EventuallyReplicationController(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
+	}
 
+	By("Waiting for restore process to complete")
+	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+
+	return restoreSession, err
+}
+
+func (fi *Invocation) CreateRestoreSessionForWorkload(objMeta metav1.ObjectMeta, repoName, kind, volumeName string, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
 	// Generate desired BackupConfiguration definition
-	restoreSession := fi.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
+	restoreSession := fi.GetRestoreSession(repoName, func(restore *v1beta1.RestoreSession) {
 		restore.Spec.Rules = []v1beta1.Rule{
 			{
 				Paths: []string{TestSourceDataMountPath},
@@ -252,24 +277,7 @@ func (fi *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.R
 	Expect(err).NotTo(HaveOccurred())
 	fi.AppendToCleanupList(restoreSession)
 
-	By("Verifying that init-container has been injected")
-	switch kind {
-	case apis.KindDeployment:
-		fi.EventuallyDeployment(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
-	case apis.KindDaemonSet:
-		fi.EventuallyDaemonSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
-	case apis.KindStatefulSet:
-		fi.EventuallyStatefulSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
-	case apis.KindReplicaSet:
-		fi.EventuallyReplicaSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
-	case apis.KindReplicationController:
-		fi.EventuallyReplicationController(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
-	}
-
-	By("Waiting for restore process to complete")
-	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
-
-	return restoreSession, err
+	return restoreSession, nil
 }
 
 func GetTargetRef(name string, kind string) v1beta1.TargetRef {

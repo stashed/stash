@@ -329,7 +329,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 			}
 		}
 		if err == nil {
-			_, err2 := stash_util.UpdateRepositoryStatus(c.stashClient.StashV1alpha1(), repository, func(in *api.RepositoryStatus) *api.RepositoryStatus {
+			_, err2 := stash_util.UpdateRepositoryStatus(c.stashClient.StashV1alpha1(), repository.ObjectMeta, func(in *api.RepositoryStatus) *api.RepositoryStatus {
 				in.BackupCount++
 				in.LastBackupTime = &startTime
 				if in.FirstBackupTime == nil {

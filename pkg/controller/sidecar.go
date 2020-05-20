@@ -30,6 +30,7 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	errors2 "github.com/appscode/go/util/errors"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -318,8 +319,11 @@ func isPodOwnedByWorkload(w *wapi.Workload, pod core.Pod) bool {
 	return false
 }
 
-func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, err error) error {
+func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, invoker apis.Invoker, tref api_v1beta1.TargetRef, err error) error {
 	log.Warningf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
+
+	// Failed to inject stash sidecar. So, set "StashSidecarInjected" condition to "False".
+	cerr := c.setSidecarInjectedConditionToFalse(invoker, tref, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -330,11 +334,14 @@ func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, err er
 		eventer.EventReasonSidecarInjectionFailed,
 		fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err),
 	)
-	return err2
+	return errors2.NewAggregate([]error{err2, cerr})
 }
 
-func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload) error {
+func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload, invoker apis.Invoker, tref api_v1beta1.TargetRef) error {
 	log.Infof("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name)
+
+	// Set "StashSidecarInjected" condition to "True"
+	cerr := c.setSidecarInjectedConditionToTrue(invoker, tref)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -345,7 +352,7 @@ func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload) error 
 		eventer.EventReasonSidecarInjectionSucceeded,
 		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name),
 	)
-	return err2
+	return errors2.NewAggregate([]error{err2, cerr})
 }
 
 func (c *StashController) handleSidecarDeletionSuccess(w *wapi.Workload) error {

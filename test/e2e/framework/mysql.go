@@ -40,9 +40,11 @@ import (
 )
 
 const (
-	KeyUser     = "username"
-	KeyPassword = "password"
-	SuperUser   = "root"
+	KeyUser       = "username"
+	KeyPassword   = "password"
+	SuperUser     = "root"
+	PrefixSource  = "source"
+	PrefixRestore = "restore"
 
 	KeyMySQLRootPassword   = "MYSQL_ROOT_PASSWORD"
 	MySQLServingPortName   = "mysql"
@@ -54,8 +56,8 @@ const (
 	MySQLRestoreFunction   = "mysql-restore-8.0.14"
 )
 
-func (fi *Invocation) MySQLCredentials() *core.Secret {
-	name := fmt.Sprintf("mysql-%s", fi.app)
+func (fi *Invocation) MySQLCredentials(prefix string) *core.Secret {
+	name := fmt.Sprintf("%s-mysql-%s", prefix, fi.app)
 	return &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -69,8 +71,8 @@ func (fi *Invocation) MySQLCredentials() *core.Secret {
 	}
 }
 
-func (fi *Invocation) MySQLService() *core.Service {
-	name := fmt.Sprintf("mysql-%s", fi.app)
+func (fi *Invocation) MySQLService(prefix string) *core.Service {
+	name := fmt.Sprintf("%s-mysql-%s", prefix, fi.app)
 	return &core.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -90,8 +92,8 @@ func (fi *Invocation) MySQLService() *core.Service {
 	}
 }
 
-func (fi *Invocation) MySQLPVC() *core.PersistentVolumeClaim {
-	name := fmt.Sprintf("mysql-%s", fi.app)
+func (fi *Invocation) MySQLPVC(prefix string) *core.PersistentVolumeClaim {
+	name := fmt.Sprintf("%s-mysql-%s", prefix, fi.app)
 	return &core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -110,8 +112,8 @@ func (fi *Invocation) MySQLPVC() *core.PersistentVolumeClaim {
 	}
 }
 
-func (fi *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolumeClaim) *apps.Deployment {
-	name := fmt.Sprintf("mysql-%s", fi.app)
+func (fi *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolumeClaim, prefix string) *apps.Deployment {
+	name := fmt.Sprintf("%s-mysql-%s", prefix, fi.app)
 	label := map[string]string{
 		"app": name,
 	}
@@ -186,8 +188,8 @@ func (fi *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVol
 	}
 }
 
-func (fi *Invocation) MySQLAppBinding(cred *core.Secret, svc *core.Service) *appCatalog.AppBinding {
-	name := fmt.Sprintf("mysql-%s", fi.app)
+func (fi *Invocation) MySQLAppBinding(cred *core.Secret, svc *core.Service, prefix string) *appCatalog.AppBinding {
+	name := fmt.Sprintf("%s-mysql-%s", prefix, fi.app)
 	return &appCatalog.AppBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -211,37 +213,56 @@ func (fi *Invocation) MySQLAppBinding(cred *core.Secret, svc *core.Service) *app
 }
 
 func (fi *Invocation) DeployMySQLDatabase() (*apps.Deployment, *appCatalog.AppBinding, error) {
-	By("Creating Secret for MySQL")
-	cred := fi.MySQLCredentials()
-	_, err := fi.CreateSecret(*cred)
+	cred, pvc, svc, dpl, err := fi.PrepareMySQLResources(PrefixSource)
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Creating PVC for MySQL")
-	pvc := fi.MySQLPVC()
-	_, err = fi.CreatePersistentVolumeClaim(pvc)
-	Expect(err).NotTo(HaveOccurred())
-
-	By("Creating Service for MySQL")
-	svc := fi.MySQLService()
-	_, err = fi.CreateService(*svc)
-	Expect(err).NotTo(HaveOccurred())
-
-	By("Creating MySQL")
-	dpl := fi.MySQLDeployment(cred, pvc)
-	dpl, err = fi.CreateDeployment(*dpl)
-	Expect(err).NotTo(HaveOccurred())
-
-	By("Waiting for MySQL Deployment to be ready")
-	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, dpl.ObjectMeta)
+	err = fi.CreateMySQL(dpl)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating AppBinding for the MySQL")
-	appBinding := fi.MySQLAppBinding(cred, svc)
-	appBinding, err = fi.createAppBinding(appBinding)
+	appBinding := fi.MySQLAppBinding(cred, svc, PrefixSource)
+	appBinding, err = fi.CreateAppBinding(appBinding)
 	Expect(err).NotTo(HaveOccurred())
 
 	fi.AppendToCleanupList(appBinding, dpl, svc, pvc, cred)
 	return dpl, appBinding, nil
+}
+
+func (fi *Invocation) PrepareMySQLResources(prefix string) (*core.Secret, *core.PersistentVolumeClaim, *core.Service, *apps.Deployment, error) {
+	By("Creating Secret for MySQL")
+	cred := fi.MySQLCredentials(prefix)
+	_, err := fi.CreateSecret(*cred)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	By("Creating PVC for MySQL")
+	pvc := fi.MySQLPVC(prefix)
+	_, err = fi.CreatePersistentVolumeClaim(pvc)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	By("Creating Service for MySQL")
+	svc := fi.MySQLService(prefix)
+	_, err = fi.CreateService(*svc)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	dpl := fi.MySQLDeployment(cred, pvc, prefix)
+	return cred, pvc, svc, dpl, nil
+}
+
+func (fi *Invocation) CreateMySQL(dpl *apps.Deployment) error {
+	By("Creating MySQL")
+	dpl, err := fi.CreateDeployment(*dpl)
+	if err != nil {
+		return err
+	}
+
+	By("Waiting for MySQL Deployment to be ready")
+	return apps_util.WaitUntilDeploymentReady(fi.KubeClient, dpl.ObjectMeta)
 }
 
 func (fi *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
@@ -254,7 +275,7 @@ func (fi *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
 	})
 }
 
-func (fi *Invocation) createAppBinding(appBinding *appCatalog.AppBinding) (*appCatalog.AppBinding, error) {
+func (fi *Invocation) CreateAppBinding(appBinding *appCatalog.AppBinding) (*appCatalog.AppBinding, error) {
 	return fi.catalogClient.AppcatalogV1alpha1().AppBindings(appBinding.Namespace).Create(appBinding)
 }
 
@@ -485,6 +506,7 @@ func mysqlBackupFunction(image docker.Docker) *v1beta1.Function {
 				"--provider=${REPOSITORY_PROVIDER:=}",
 				"--bucket=${REPOSITORY_BUCKET:=}",
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
+				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
 				"--secret-dir=/etc/repository/secret",
 				"--scratch-dir=/tmp",
@@ -492,6 +514,7 @@ func mysqlBackupFunction(image docker.Docker) *v1beta1.Function {
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--hostname=${HOSTNAME:=}",
 				"--mysql-args=${myArgs:=--all-databases}",
+				"--wait-timeout=${waitTimeout:=300}",
 				// target information
 				"--appbinding=${TARGET_NAME:=}",
 				"--namespace=${NAMESPACE:=default}",
@@ -531,6 +554,7 @@ func mysqlRestoreFunction(image docker.Docker) *v1beta1.Function {
 				"--provider=${REPOSITORY_PROVIDER:=}",
 				"--bucket=${REPOSITORY_BUCKET:=}",
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
+				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
 				"--secret-dir=/etc/repository/secret",
 				"--scratch-dir=/tmp",
@@ -539,6 +563,7 @@ func mysqlRestoreFunction(image docker.Docker) *v1beta1.Function {
 				"--hostname=${HOSTNAME:=}",
 				"--source-hostname=${SOURCE_HOSTNAME:=}",
 				"--mysql-args=${myArgs:=}",
+				"--wait-timeout=${waitTimeout:=300}",
 				// target information
 				"--appbinding=${TARGET_NAME:=}",
 				"--namespace=${NAMESPACE:=default}",
