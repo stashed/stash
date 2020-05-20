@@ -297,7 +297,7 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 	// upsert InterimVolume to hold the backup/restored data temporarily
 	ownerBackupSession := metav1.NewControllerRef(backupSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession))
 
-	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, targetInfo.InterimVolumeTemplate.ToCorePVC(), invoker.ObjectMeta.Namespace, invoker.OwnerRef)
+	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, targetInfo.InterimVolumeTemplate.ToCorePVC(), invoker.ObjectMeta.Namespace, ownerBackupSession)
 	if err != nil {
 		return err
 	}
@@ -456,7 +456,7 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 		backupSession,
 		core.EventTypeNormal,
 		eventer.EventReasonBackupSessionRunning,
-		fmt.Sprintf("Backup job has been created succesfully/sidecar is watching the BackupSession."),
+		"Backup job has been created succesfully/sidecar is watching the BackupSession.",
 	)
 	return backupSession, err
 }
@@ -484,7 +484,7 @@ func (c *StashController) setBackupSessionSucceeded(invoker apis.Invoker, backup
 		backupSession,
 		core.EventTypeNormal,
 		eventer.EventReasonBackupSessionSucceeded,
-		fmt.Sprintf("Backup session completed successfully"),
+		"Backup session completed successfully",
 	)
 	if err != nil {
 		log.Errorf("failed to write event in BackupSession %s/%s. Reason: %v", backupSession.Namespace, backupSession.Name, err)
