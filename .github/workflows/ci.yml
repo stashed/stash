@@ -71,7 +71,7 @@ jobs:
       id: kind
       uses: engineerd/setup-kind@v0.1.0
       with:
-        version: v0.8.0
+        version: v0.7.0
         config: hack/kubernetes/kind.yaml
         image: kindest/node:${{ matrix.k8s }}
 
