@@ -36,6 +36,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/pushgateway"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	store "kmodules.xyz/objectstore-api/api/v1"
@@ -362,16 +363,15 @@ func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, 
 		return podSpec, nil
 	}
 
-	// Use BackupConfiguration/RestoreSession name as prefix of the interim volume
+	// Use owner name as prefix of the interim volume
 	pvcMeta := metav1.ObjectMeta{
-		Name:      fmt.Sprintf("%s-%s", interimVolumeTemplate.Name, owner.Name),
+		Name:      meta_util.ValidNameWithPrefix(owner.Name, interimVolumeTemplate.Name),
 		Namespace: namespace,
 	}
 
 	// create the interim pvc
 	createdPVC, _, err := core_util.CreateOrPatchPVC(kubeClient, pvcMeta, func(in *core.PersistentVolumeClaim) *core.PersistentVolumeClaim {
-		// Set BackupConfiguration/RestoreSession as owner of the PVC so that it get deleted when the respective
-		// BackupConfiguration/RestoreSession is deleted.
+		// Set BackupSession/RestoreSession as owner of the PVC so that it get deleted when the respective owner is deleted.
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		in.Spec = interimVolumeTemplate.Spec
 		return in
