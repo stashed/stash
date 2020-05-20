@@ -55,6 +55,12 @@ import (
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
 )
 
+const (
+	BackupExecutorSidecar   = "sidecar"
+	BackupExecutorCSIDriver = "csi-driver"
+	BackupExecutorJob       = "job"
+)
+
 func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
 	return webhook.NewGenericWebhook(
 		schema.GroupVersionResource{
@@ -158,28 +164,31 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 
 	for i, targetInfo := range invoker.TargetsInfo {
 		if targetInfo.Target != nil {
-			// skip if backup model is sidecar.
-			// for sidecar model controller inside sidecar will take care of it.
-			if invoker.Driver != api_v1beta1.VolumeSnapshotter && util.BackupModel(targetInfo.Target.Ref.Kind) == apis.ModelSidecar {
+			switch backupExecutor(invoker, targetInfo.Target.Ref) {
+			case BackupExecutorSidecar:
+				// Backup model is sidecar. For sidecar model, controller inside sidecar will take care of it.
 				log.Infof("Skipping processing BackupSession %s/%s for target %s %s/%s. Reason: Backup model is sidecar."+
-					"Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name, targetInfo.Target.Ref.Kind, backupSession.Namespace, targetInfo.Target.Ref.Name)
-			}
-
-			// if VolumeSnapshotter driver is used then ensure VolumeSnapshotter job and return
-			if invoker.Driver == api_v1beta1.VolumeSnapshotter {
+					"Controller inside sidecar will take care of it.",
+					backupSession.Namespace,
+					backupSession.Name,
+					targetInfo.Target.Ref.Kind,
+					backupSession.Namespace,
+					targetInfo.Target.Ref.Name,
+				)
+			case BackupExecutorCSIDriver:
+				// VolumeSnapshotter driver has been used. So, ensure VolumeSnapshotter job
 				err = c.ensureVolumeSnapshotterJob(invoker, targetInfo, backupSession, i)
 				if err != nil {
 					return c.handleBackupJobCreationFailure(invoker, backupSession, err)
 				}
-			}
-
-			// Restic driver has been used. Now, create a backup job
-			if util.BackupModel(targetInfo.Target.Ref.Kind) != apis.ModelSidecar {
+			case BackupExecutorJob:
 				err = c.ensureBackupJob(invoker, targetInfo, backupSession, i)
 				if err != nil {
 					// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
 					return c.handleBackupJobCreationFailure(invoker, backupSession, err)
 				}
+			default:
+				return fmt.Errorf("unable to identify backup executor entity")
 			}
 
 			// Set BackupSession phase "Running"
@@ -294,9 +303,9 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 		podSpec = util.AttachLocalBackend(podSpec, *repository.Spec.Backend.Local)
 	}
 
-	// upsert InterimVolume to hold the backup/restored data temporarily
 	ownerBackupSession := metav1.NewControllerRef(backupSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession))
 
+	// upsert InterimVolume to hold the backup/restored data temporarily
 	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, targetInfo.InterimVolumeTemplate.ToCorePVC(), invoker.ObjectMeta.Namespace, ownerBackupSession)
 	if err != nil {
 		return err
@@ -304,7 +313,8 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 
 	// create Backup Job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
-		// set BackupSession as owner of this Job
+		// set BackupSession as owner of this Job so that the it get cleaned automatically
+		// when the BackupSession gets deleted according to backupHistoryLimit
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 
 		in.Spec.Template.Spec = podSpec
@@ -359,19 +369,18 @@ func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targe
 		return err
 	}
 
+	ownerBackupSession := metav1.NewControllerRef(backupSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession))
 	// Create VolumeSnapshotter job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
-		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
+		// set BackupSession as owner of this Job so that the it get cleaned automatically
+		// when the BackupSession gets deleted according to backupHistoryLimit
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 
 		in.Labels = invoker.Labels
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 		in.Spec.BackoffLimit = types.Int32P(1)
-		if invoker.BackupHistoryLimit != nil {
-			in.Spec.BackoffLimit = invoker.BackupHistoryLimit
-		}
 		return in
 	})
 
@@ -628,4 +637,15 @@ func upsertTargetStatsEntry(targetStats []api_v1beta1.Target, newEntry api_v1bet
 	// target entry does not exist. add new entry
 	targetStats = append(targetStats, newEntry)
 	return targetStats
+}
+
+func backupExecutor(invoker apis.Invoker, tref api_v1beta1.TargetRef) string {
+	if (invoker.Driver == "" || invoker.Driver == api_v1beta1.ResticSnapshotter) &&
+		util.BackupModel(tref.Kind) == apis.ModelSidecar {
+		return BackupExecutorSidecar
+	}
+	if invoker.Driver == api_v1beta1.VolumeSnapshotter {
+		return BackupExecutorCSIDriver
+	}
+	return BackupExecutorJob
 }
