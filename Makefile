@@ -363,13 +363,12 @@ endif
 .PHONY: install
 install:
 	@cd ../installer; \
-	helm install stash charts/stash \
+	helm install stash charts/stash --wait \
 		--namespace=kube-system \
 		--set operator.registry=$(REGISTRY) \
 		--set operator.tag=$(TAG) \
 		--set imagePullPolicy=Always \
 		$(IMAGE_PULL_SECRETS); \
-	kubectl wait --for=condition=Ready pods -n kube-system -l 'app.kubernetes.io/name=stash,app.kubernetes.io/instance=stash' --timeout=5m; \
 	kubectl wait --for=condition=Available apiservice -l 'app.kubernetes.io/name=stash,app.kubernetes.io/instance=stash' --timeout=5m
 
 .PHONY: uninstall
@@ -379,7 +378,7 @@ uninstall:
 
 .PHONY: purge
 purge: uninstall
-	kubectl delete crds -l app=stash
+	kubectl delete crds -l app.kubernetes.io/name=stash
 
 .PHONY: dev
 dev: gen fmt push
