@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"path/filepath"
@@ -138,7 +139,7 @@ func (f *Framework) PVCForMinioServer() core.PersistentVolumeClaim {
 }
 
 func (f *Framework) CreatePersistentVolumeClaimForMinioServer(obj core.PersistentVolumeClaim) error {
-	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(&obj)
+	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 	return err
 }
 
@@ -256,7 +257,7 @@ func (f *Framework) RemoveSecretVolumeMount(containers []core.Container) []core.
 }
 
 func (f *Framework) CreateDeploymentForMinioServer(obj apps.Deployment) error {
-	_, err := f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
+	_, err := f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 	return err
 }
 
@@ -286,7 +287,7 @@ func (f *Framework) GetMinioServiceName() string {
 }
 
 func (f *Framework) CreateServiceForMinioServer(obj core.Service) (*core.Service, error) {
-	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
+	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (f *Framework) DeleteMinioServer() error {
@@ -305,7 +306,7 @@ func (f *Framework) DeleteMinioServer() error {
 	return nil
 }
 func (f *Framework) DeleteSecretForMinioServer(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -313,7 +314,7 @@ func (f *Framework) DeleteSecretForMinioServer(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) DeletePVCForMinioServer(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -321,7 +322,7 @@ func (f *Framework) DeletePVCForMinioServer(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) DeleteDeploymentForMinioServer(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -329,7 +330,7 @@ func (f *Framework) DeleteDeploymentForMinioServer(meta metav1.ObjectMeta) error
 }
 
 func (f *Framework) DeleteServiceForMinioServer(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

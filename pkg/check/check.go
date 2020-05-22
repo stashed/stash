@@ -17,6 +17,7 @@ limitations under the License.
 package check
 
 import (
+	"context"
 	"fmt"
 
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1"
@@ -94,7 +95,7 @@ func (c *Controller) Run() (err error) {
 		}
 	}()
 
-	secret, err := c.k8sClient.CoreV1().Secrets(c.opt.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(c.opt.Namespace).Get(context.TODO(), restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return
 	}

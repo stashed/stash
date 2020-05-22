@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -56,11 +57,11 @@ func (fi *Invocation) ReplicaSet(name, pvcName, volName string) apps.ReplicaSet 
 }
 
 func (f *Framework) CreateReplicaSet(obj apps.ReplicaSet) (*apps.ReplicaSet, error) {
-	return f.KubeClient.AppsV1().ReplicaSets(obj.Namespace).Create(&obj)
+	return f.KubeClient.AppsV1().ReplicaSets(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -69,7 +70,7 @@ func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {
 
 func (f *Framework) EventuallyReplicaSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.ReplicaSet {
-		obj, err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})
@@ -77,7 +78,7 @@ func (f *Framework) EventuallyReplicaSet(meta metav1.ObjectMeta) GomegaAsyncAsse
 
 func (fi *Invocation) WaitUntilRSReadyWithSidecar(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -105,7 +106,7 @@ func (fi *Invocation) WaitUntilRSReadyWithSidecar(meta metav1.ObjectMeta) error 
 
 func (fi *Invocation) WaitUntilRSReadyWithInitContainer(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -136,7 +137,7 @@ func (fi *Invocation) DeployReplicaSet(name string, replica int32, volName strin
 	pvcName := fmt.Sprintf("%s-%s", volName, fi.app)
 
 	// If the PVC does not exist, create PVC for ReplicaSet
-	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(pvcName, metav1.GetOptions{})
+	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(context.TODO(), pvcName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			pvc, err = fi.CreateNewPVC(pvcName)

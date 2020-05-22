@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -643,7 +644,7 @@ var _ = XDescribe("Deployment", func() {
 
 				By("Checking Job exists")
 				Eventually(func() bool {
-					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 					return err == nil
 				}, time.Minute*3, time.Second*2).Should(BeTrue())
 
@@ -735,7 +736,7 @@ var _ = XDescribe("Deployment", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -797,7 +798,7 @@ var _ = XDescribe("Deployment", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -1565,7 +1566,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				if pod.Spec.NodeName != "minikube" {
-					node, err := f.KubeClient.CoreV1().Nodes().Get(pod.Spec.NodeName, metav1.GetOptions{})
+					node, err := f.KubeClient.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					for _, addr := range node.Status.Addresses {
@@ -1580,7 +1581,7 @@ var _ = XDescribe("Deployment", func() {
 				_, err = f.CreateMinioServer(true, []net.IP{clusterIP})
 				Expect(err).NotTo(HaveOccurred())
 
-				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
+				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get(context.TODO(), "minio-service", metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
 
@@ -1669,7 +1670,7 @@ var _ = XDescribe("Deployment", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 

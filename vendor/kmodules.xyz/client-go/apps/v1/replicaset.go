@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
 	. "github.com/appscode/go/types"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -30,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchReplicaSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.ReplicaSet) *apps.ReplicaSet) (*apps.ReplicaSet, kutil.VerbType, error) {
-	cur, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchReplicaSet(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.ReplicaSet) *apps.ReplicaSet, opts metav1.PatchOptions) (*apps.ReplicaSet, kutil.VerbType, error) {
+	cur, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ReplicaSet %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.AppsV1().ReplicaSets(meta.Namespace).Create(transform(&apps.ReplicaSet{
+		out, err := c.AppsV1().ReplicaSets(meta.Namespace).Create(ctx, transform(&apps.ReplicaSet{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ReplicaSet",
 				APIVersion: apps.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchReplicaSet(c, cur, transform)
+	return PatchReplicaSet(ctx, c, cur, transform, opts)
 }
 
-func PatchReplicaSet(c kubernetes.Interface, cur *apps.ReplicaSet, transform func(*apps.ReplicaSet) *apps.ReplicaSet) (*apps.ReplicaSet, kutil.VerbType, error) {
-	return PatchReplicaSetObject(c, cur, transform(cur.DeepCopy()))
+func PatchReplicaSet(ctx context.Context, c kubernetes.Interface, cur *apps.ReplicaSet, transform func(*apps.ReplicaSet) *apps.ReplicaSet, opts metav1.PatchOptions) (*apps.ReplicaSet, kutil.VerbType, error) {
+	return PatchReplicaSetObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchReplicaSetObject(c kubernetes.Interface, cur, mod *apps.ReplicaSet) (*apps.ReplicaSet, kutil.VerbType, error) {
+func PatchReplicaSetObject(ctx context.Context, c kubernetes.Interface, cur, mod *apps.ReplicaSet, opts metav1.PatchOptions) (*apps.ReplicaSet, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -71,19 +76,19 @@ func PatchReplicaSetObject(c kubernetes.Interface, cur, mod *apps.ReplicaSet) (*
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching ReplicaSet %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.AppsV1().ReplicaSets(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.AppsV1().ReplicaSets(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateReplicaSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.ReplicaSet) *apps.ReplicaSet) (result *apps.ReplicaSet, err error) {
+func TryUpdateReplicaSet(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.ReplicaSet) *apps.ReplicaSet, opts metav1.UpdateOptions) (result *apps.ReplicaSet, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.AppsV1().ReplicaSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.AppsV1().ReplicaSets(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.AppsV1().ReplicaSets(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update ReplicaSet %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -96,9 +101,9 @@ func TryUpdateReplicaSet(c kubernetes.Interface, meta metav1.ObjectMeta, transfo
 	return
 }
 
-func WaitUntilReplicaSetReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
+func WaitUntilReplicaSetReady(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			return Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 		return false, nil

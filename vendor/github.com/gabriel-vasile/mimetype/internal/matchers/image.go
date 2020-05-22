@@ -68,9 +68,8 @@ func Psd(in []byte) bool {
 
 // Ico matches an ICO file.
 func Ico(in []byte) bool {
-	return len(in) > 3 &&
-		in[0] == 0x00 && in[1] == 0x00 &&
-		in[2] == 0x01 && in[3] == 0x00
+	return bytes.HasPrefix(in, []byte{0x00, 0x00, 0x01, 0x00}) ||
+		bytes.HasPrefix(in, []byte{0x00, 0x00, 0x02, 0x00})
 }
 
 // Icns matches an ICNS (Apple Icon Image format) file.
@@ -119,52 +118,4 @@ func Dwg(in []byte) bool {
 	}
 
 	return false
-}
-
-// Heic matches a High Efficiency Image Coding (HEIC) file.
-func Heic(in []byte) bool {
-
-	if len(in) <= 12 {
-		return false
-	}
-
-	return bytes.Equal(in[4:12], []byte("ftypheic")) ||
-		bytes.Equal(in[4:12], []byte("ftypheix"))
-}
-
-// HeicSequence matches a High Efficiency Image Coding (HEIC) file sequence.
-func HeicSequence(in []byte) bool {
-
-	if len(in) <= 12 {
-		return false
-	}
-
-	return bytes.Equal(in[4:12], []byte("ftyphevc")) ||
-		bytes.Equal(in[4:12], []byte("ftyphevx"))
-}
-
-// Heif matches a High Efficiency Image File Format (HEIF) file.
-func Heif(in []byte) bool {
-
-	if len(in) <= 12 {
-		return false
-	}
-
-	return bytes.Equal(in[4:12], []byte("ftypmif1")) ||
-		bytes.Equal(in[4:12], []byte("ftypheim")) ||
-		bytes.Equal(in[4:12], []byte("ftypheis")) ||
-		bytes.Equal(in[4:12], []byte("ftypavic"))
-}
-
-// HeifSequence matches a High Efficiency Image File Format (HEIF) file sequence.
-func HeifSequence(in []byte) bool {
-
-	if len(in) <= 12 {
-		return false
-	}
-
-	return bytes.Equal(in[4:12], []byte("ftypmsf1")) ||
-		bytes.Equal(in[4:12], []byte("ftyphevm")) ||
-		bytes.Equal(in[4:12], []byte("ftyphevs")) ||
-		bytes.Equal(in[4:12], []byte("ftypavcs"))
 }

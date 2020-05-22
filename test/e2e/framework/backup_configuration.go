@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"time"
@@ -94,13 +95,13 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 }
 
 func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batch_v1beta1.CronJob, error) {
-	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
+	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 }
 
 func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
+			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
@@ -114,7 +115,7 @@ func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsy
 func (f *Framework) EventuallyCronJobResumed(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
+			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
@@ -140,7 +141,7 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 }
 
 func (f *Framework) GetBackupJob(backupSessionName string) (*batchv1.Job, error) {
-	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(getBackupJobName(backupSessionName, strconv.Itoa(0)), metav1.GetOptions{})
+	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(context.TODO(), getBackupJobName(backupSessionName, strconv.Itoa(0)), metav1.GetOptions{})
 }
 
 func getBackupCronJobName(objMeta metav1.ObjectMeta) string {

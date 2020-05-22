@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
+
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1beta1"
@@ -29,29 +31,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchCronJob(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.CronJob) *batch.CronJob) (*batch.CronJob, kutil.VerbType, error) {
-	cur, err := c.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchCronJob(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.CronJob) *batch.CronJob, opts metav1.PatchOptions) (*batch.CronJob, kutil.VerbType, error) {
+	cur, err := c.BatchV1beta1().CronJobs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating CronJob %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.BatchV1beta1().CronJobs(meta.Namespace).Create(transform(&batch.CronJob{
+		out, err := c.BatchV1beta1().CronJobs(meta.Namespace).Create(ctx, transform(&batch.CronJob{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "CronJob",
 				APIVersion: batch.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchCronJob(c, cur, transform)
+	return PatchCronJob(ctx, c, cur, transform, opts)
 }
 
-func PatchCronJob(c kubernetes.Interface, cur *batch.CronJob, transform func(*batch.CronJob) *batch.CronJob) (*batch.CronJob, kutil.VerbType, error) {
-	return PatchCronJobObject(c, cur, transform(cur.DeepCopy()))
+func PatchCronJob(ctx context.Context, c kubernetes.Interface, cur *batch.CronJob, transform func(*batch.CronJob) *batch.CronJob, opts metav1.PatchOptions) (*batch.CronJob, kutil.VerbType, error) {
+	return PatchCronJobObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchCronJobObject(c kubernetes.Interface, cur, mod *batch.CronJob) (*batch.CronJob, kutil.VerbType, error) {
+func PatchCronJobObject(ctx context.Context, c kubernetes.Interface, cur, mod *batch.CronJob, opts metav1.PatchOptions) (*batch.CronJob, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -70,19 +75,19 @@ func PatchCronJobObject(c kubernetes.Interface, cur, mod *batch.CronJob) (*batch
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching CronJob %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.BatchV1beta1().CronJobs(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.BatchV1beta1().CronJobs(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateCronJob(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.CronJob) *batch.CronJob) (result *batch.CronJob, err error) {
+func TryUpdateCronJob(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.CronJob) *batch.CronJob, opts metav1.UpdateOptions) (result *batch.CronJob, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.BatchV1beta1().CronJobs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.BatchV1beta1().CronJobs(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.BatchV1beta1().CronJobs(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update CronJob %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

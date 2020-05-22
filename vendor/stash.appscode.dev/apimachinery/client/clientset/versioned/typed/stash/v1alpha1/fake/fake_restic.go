@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +42,7 @@ var resticsResource = schema.GroupVersionResource{Group: "stash.appscode.com", V
 var resticsKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1alpha1", Kind: "Restic"}
 
 // Get takes name of the restic, and returns the corresponding restic object, and an error if there is any.
-func (c *FakeRestics) Get(name string, options v1.GetOptions) (result *v1alpha1.Restic, err error) {
+func (c *FakeRestics) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Restic, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(resticsResource, c.ns, name), &v1alpha1.Restic{})
 
@@ -51,7 +53,7 @@ func (c *FakeRestics) Get(name string, options v1.GetOptions) (result *v1alpha1.
 }
 
 // List takes label and field selectors, and returns the list of Restics that match those selectors.
-func (c *FakeRestics) List(opts v1.ListOptions) (result *v1alpha1.ResticList, err error) {
+func (c *FakeRestics) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ResticList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(resticsResource, resticsKind, c.ns, opts), &v1alpha1.ResticList{})
 
@@ -73,14 +75,14 @@ func (c *FakeRestics) List(opts v1.ListOptions) (result *v1alpha1.ResticList, er
 }
 
 // Watch returns a watch.Interface that watches the requested restics.
-func (c *FakeRestics) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeRestics) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(resticsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a restic and creates it.  Returns the server's representation of the restic, and an error, if there is any.
-func (c *FakeRestics) Create(restic *v1alpha1.Restic) (result *v1alpha1.Restic, err error) {
+func (c *FakeRestics) Create(ctx context.Context, restic *v1alpha1.Restic, opts v1.CreateOptions) (result *v1alpha1.Restic, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(resticsResource, c.ns, restic), &v1alpha1.Restic{})
 
@@ -91,7 +93,7 @@ func (c *FakeRestics) Create(restic *v1alpha1.Restic) (result *v1alpha1.Restic, 
 }
 
 // Update takes the representation of a restic and updates it. Returns the server's representation of the restic, and an error, if there is any.
-func (c *FakeRestics) Update(restic *v1alpha1.Restic) (result *v1alpha1.Restic, err error) {
+func (c *FakeRestics) Update(ctx context.Context, restic *v1alpha1.Restic, opts v1.UpdateOptions) (result *v1alpha1.Restic, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(resticsResource, c.ns, restic), &v1alpha1.Restic{})
 
@@ -102,7 +104,7 @@ func (c *FakeRestics) Update(restic *v1alpha1.Restic) (result *v1alpha1.Restic, 
 }
 
 // Delete takes name of the restic and deletes it. Returns an error if one occurs.
-func (c *FakeRestics) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeRestics) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(resticsResource, c.ns, name), &v1alpha1.Restic{})
 
@@ -110,15 +112,15 @@ func (c *FakeRestics) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeRestics) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(resticsResource, c.ns, listOptions)
+func (c *FakeRestics) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(resticsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.ResticList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched restic.
-func (c *FakeRestics) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Restic, err error) {
+func (c *FakeRestics) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Restic, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(resticsResource, c.ns, name, pt, data, subresources...), &v1alpha1.Restic{})
 

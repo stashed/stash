@@ -17,6 +17,7 @@ limitations under the License.
 package backup
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -154,7 +155,7 @@ func (c *Controller) Backup() error {
 	job := util.NewCheckJob(restic, c.opt.SnapshotHostname, c.opt.SmartPrefix, image)
 
 	// check if check job exists
-	if _, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Get(job.Name, metav1.GetOptions{}); err != nil && !errors.IsNotFound(err) {
+	if _, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Get(context.TODO(), job.Name, metav1.GetOptions{}); err != nil && !errors.IsNotFound(err) {
 		ref, rerr := reference.GetReference(scheme.Scheme, repository)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -173,7 +174,7 @@ func (c *Controller) Backup() error {
 	if errors.IsNotFound(err) {
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 
-		if job, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Create(job); err != nil {
+		if job, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Create(context.TODO(), job, metav1.CreateOptions{}); err != nil {
 			err = fmt.Errorf("failed to get check job, reason: %s", err)
 			ref, rerr := reference.GetReference(scheme.Scheme, repository)
 			if rerr == nil {
@@ -249,7 +250,7 @@ func (c *Controller) setup() (*api.Restic, *api.Repository, error) {
 	if err := restic.IsValid(); err != nil {
 		return restic, nil, err
 	}
-	secret, err := c.k8sClient.CoreV1().Secrets(restic.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(restic.Namespace).Get(context.TODO(), restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return restic, nil, err
 	}

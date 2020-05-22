@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -31,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Restic) *api.Restic) (*api.Restic, kutil.VerbType, error) {
-	cur, err := c.Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchRestic(ctx context.Context, c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(in *api.Restic) *api.Restic, opts metav1.PatchOptions) (*api.Restic, kutil.VerbType, error) {
+	cur, err := c.Restics(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Restic %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Restics(meta.Namespace).Create(transform(&api.Restic{
+		out, err := c.Restics(meta.Namespace).Create(ctx, transform(&api.Restic{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "Restic",
+				Kind:       api.ResourceKindRestic,
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchRestic(c, cur, transform)
+	return PatchRestic(ctx, c, cur, transform, opts)
 }
 
-func PatchRestic(c cs.StashV1alpha1Interface, cur *api.Restic, transform func(*api.Restic) *api.Restic) (*api.Restic, kutil.VerbType, error) {
-	return PatchResticObject(c, cur, transform(cur.DeepCopy()))
+func PatchRestic(ctx context.Context, c cs.StashV1alpha1Interface, cur *api.Restic, transform func(*api.Restic) *api.Restic, opts metav1.PatchOptions) (*api.Restic, kutil.VerbType, error) {
+	return PatchResticObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchResticObject(c cs.StashV1alpha1Interface, cur, mod *api.Restic) (*api.Restic, kutil.VerbType, error) {
+func PatchResticObject(ctx context.Context, c cs.StashV1alpha1Interface, cur, mod *api.Restic, opts metav1.PatchOptions) (*api.Restic, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +76,19 @@ func PatchResticObject(c cs.StashV1alpha1Interface, cur, mod *api.Restic) (*api.
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Restic %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Restics(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.Restics(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Restic) *api.Restic) (result *api.Restic, err error) {
+func TryUpdateRestic(ctx context.Context, c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Restic) *api.Restic, opts metav1.UpdateOptions) (result *api.Restic, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Restics(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Restics(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.Restics(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Restic %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

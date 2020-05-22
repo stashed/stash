@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -94,7 +95,7 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 }
 
 func (f *Framework) GetRestoreJob(restoreSessionName string) (*batchv1.Job, error) {
-	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(getRestoreJobName(restoreSessionName), metav1.GetOptions{})
+	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(context.TODO(), getRestoreJobName(restoreSessionName), metav1.GetOptions{})
 }
 
 func getRestoreJobName(restoreSessionName string) string {

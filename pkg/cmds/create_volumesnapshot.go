@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -31,8 +32,8 @@ import (
 	"stash.appscode.dev/stash/pkg/volumesnapshot"
 
 	"github.com/appscode/go/log"
-	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1beta1"
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
+	vs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
+	vs_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -224,35 +225,35 @@ func (opt *VSoption) getTargetPVCNames(targetRef api_v1beta1.TargetRef, replicas
 
 	switch targetRef.Kind {
 	case apis.KindDeployment:
-		deployment, err := opt.kubeClient.AppsV1().Deployments(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
+		deployment, err := opt.kubeClient.AppsV1().Deployments(opt.namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		pvcList = getPVCs(deployment.Spec.Template.Spec.Volumes)
 
 	case apis.KindDaemonSet:
-		daemon, err := opt.kubeClient.AppsV1().DaemonSets(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
+		daemon, err := opt.kubeClient.AppsV1().DaemonSets(opt.namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		pvcList = getPVCs(daemon.Spec.Template.Spec.Volumes)
 
 	case apis.KindReplicationController:
-		rc, err := opt.kubeClient.CoreV1().ReplicationControllers(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
+		rc, err := opt.kubeClient.CoreV1().ReplicationControllers(opt.namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		pvcList = getPVCs(rc.Spec.Template.Spec.Volumes)
 
 	case apis.KindReplicaSet:
-		rs, err := opt.kubeClient.AppsV1().ReplicaSets(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
+		rs, err := opt.kubeClient.AppsV1().ReplicaSets(opt.namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		pvcList = getPVCs(rs.Spec.Template.Spec.Volumes)
 
 	case apis.KindStatefulSet:
-		ss, err := opt.kubeClient.AppsV1().StatefulSets(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
+		ss, err := opt.kubeClient.AppsV1().StatefulSets(opt.namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

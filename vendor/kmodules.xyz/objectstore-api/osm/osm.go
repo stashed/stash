@@ -17,6 +17,7 @@ limitations under the License.
 package osm
 
 import (
+	"context"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -167,7 +168,7 @@ func NewOSMContext(client kubernetes.Interface, spec api.Backend, namespace stri
 	config := make(map[string][]byte)
 
 	if spec.StorageSecretName != "" {
-		secret, err := client.CoreV1().Secrets(namespace).Get(spec.StorageSecretName, metav1.GetOptions{})
+		secret, err := client.CoreV1().Secrets(namespace).Get(context.TODO(), spec.StorageSecretName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

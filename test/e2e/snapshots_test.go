@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"net"
 	"os/exec"
 	"strconv"
@@ -339,7 +340,7 @@ var _ = XDescribe("Snapshots", func() {
 				_, err = f.CreateMinioServer(true, []net.IP{minikubeIP})
 				Expect(err).NotTo(HaveOccurred())
 
-				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
+				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get(context.TODO(), "minio-service", metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
 

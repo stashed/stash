@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -282,7 +283,7 @@ func EnsureRepoReaderRolebindingDeleted(kubeClient kubernetes.Interface, stashCl
 	}
 
 	// delete role binding
-	err = kubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Delete(GetRepoReaderRoleBindingName(meta.Name, meta.Namespace), meta_util.DeleteInBackground())
+	err = kubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Delete(context.TODO(), GetRepoReaderRoleBindingName(meta.Name, meta.Namespace), *meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

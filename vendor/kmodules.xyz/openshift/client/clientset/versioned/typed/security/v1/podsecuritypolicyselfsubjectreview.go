@@ -3,8 +3,12 @@
 package v1
 
 import (
-	v1 "kmodules.xyz/openshift/apis/security/v1"
+	"context"
 
+	v1 "kmodules.xyz/openshift/apis/security/v1"
+	scheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -16,7 +20,7 @@ type PodSecurityPolicySelfSubjectReviewsGetter interface {
 
 // PodSecurityPolicySelfSubjectReviewInterface has methods to work with PodSecurityPolicySelfSubjectReview resources.
 type PodSecurityPolicySelfSubjectReviewInterface interface {
-	Create(*v1.PodSecurityPolicySelfSubjectReview) (*v1.PodSecurityPolicySelfSubjectReview, error)
+	Create(ctx context.Context, podSecurityPolicySelfSubjectReview *v1.PodSecurityPolicySelfSubjectReview, opts metav1.CreateOptions) (*v1.PodSecurityPolicySelfSubjectReview, error)
 	PodSecurityPolicySelfSubjectReviewExpansion
 }
 
@@ -35,13 +39,14 @@ func newPodSecurityPolicySelfSubjectReviews(c *SecurityV1Client, namespace strin
 }
 
 // Create takes the representation of a podSecurityPolicySelfSubjectReview and creates it.  Returns the server's representation of the podSecurityPolicySelfSubjectReview, and an error, if there is any.
-func (c *podSecurityPolicySelfSubjectReviews) Create(podSecurityPolicySelfSubjectReview *v1.PodSecurityPolicySelfSubjectReview) (result *v1.PodSecurityPolicySelfSubjectReview, err error) {
+func (c *podSecurityPolicySelfSubjectReviews) Create(ctx context.Context, podSecurityPolicySelfSubjectReview *v1.PodSecurityPolicySelfSubjectReview, opts metav1.CreateOptions) (result *v1.PodSecurityPolicySelfSubjectReview, err error) {
 	result = &v1.PodSecurityPolicySelfSubjectReview{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("podsecuritypolicyselfsubjectreviews").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(podSecurityPolicySelfSubjectReview).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

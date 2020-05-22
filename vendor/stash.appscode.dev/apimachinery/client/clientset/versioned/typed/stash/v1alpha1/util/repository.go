@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -31,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchRepository(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Repository) *api.Repository) (*api.Repository, kutil.VerbType, error) {
-	cur, err := c.Repositories(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchRepository(ctx context.Context, c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(in *api.Repository) *api.Repository, opts metav1.PatchOptions) (*api.Repository, kutil.VerbType, error) {
+	cur, err := c.Repositories(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Repository %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Repositories(meta.Namespace).Create(transform(&api.Repository{
+		out, err := c.Repositories(meta.Namespace).Create(ctx, transform(&api.Repository{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "Repository",
+				Kind:       api.ResourceKindRepository,
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchRepository(c, cur, transform)
+	return PatchRepository(ctx, c, cur, transform, opts)
 }
 
-func PatchRepository(c cs.StashV1alpha1Interface, cur *api.Repository, transform func(*api.Repository) *api.Repository) (*api.Repository, kutil.VerbType, error) {
-	return PatchRepositoryObject(c, cur, transform(cur.DeepCopy()))
+func PatchRepository(ctx context.Context, c cs.StashV1alpha1Interface, cur *api.Repository, transform func(*api.Repository) *api.Repository, opts metav1.PatchOptions) (*api.Repository, kutil.VerbType, error) {
+	return PatchRepositoryObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchRepositoryObject(c cs.StashV1alpha1Interface, cur, mod *api.Repository) (*api.Repository, kutil.VerbType, error) {
+func PatchRepositoryObject(ctx context.Context, c cs.StashV1alpha1Interface, cur, mod *api.Repository, opts metav1.PatchOptions) (*api.Repository, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +76,19 @@ func PatchRepositoryObject(c cs.StashV1alpha1Interface, cur, mod *api.Repository
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Repository %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Repositories(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.Repositories(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateRepository(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Repository) *api.Repository) (result *api.Repository, err error) {
+func TryUpdateRepository(ctx context.Context, c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Repository) *api.Repository, opts metav1.UpdateOptions) (result *api.Repository, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Repositories(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Repositories(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Repositories(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.Repositories(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Repository %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -98,9 +102,11 @@ func TryUpdateRepository(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, tr
 }
 
 func UpdateRepositoryStatus(
+	ctx context.Context,
 	c cs.StashV1alpha1Interface,
 	meta metav1.ObjectMeta,
 	transform func(*api.RepositoryStatus) *api.RepositoryStatus,
+	opts metav1.UpdateOptions,
 ) (result *api.Repository, err error) {
 	apply := func(x *api.Repository) *api.Repository {
 		out := &api.Repository{
@@ -113,16 +119,16 @@ func UpdateRepositoryStatus(
 	}
 
 	attempt := 0
-	cur, err := c.Repositories(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	cur, err := c.Repositories(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.Repositories(meta.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.Repositories(meta.Namespace).UpdateStatus(ctx, apply(cur), opts)
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.Repositories(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			latest, e3 := c.Repositories(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest

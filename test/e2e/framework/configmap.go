@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -42,7 +43,7 @@ func (f *Framework) CheckLeaderElection(meta metav1.ObjectMeta, kind string, mod
 	}).Should(BeTrue())
 
 	By("Deleting leader pod: " + podName)
-	err := f.KubeClient.CoreV1().Pods(meta.Namespace).Delete(podName, &metav1.DeleteOptions{})
+	err := f.KubeClient.CoreV1().Pods(meta.Namespace).Delete(context.TODO(), podName, metav1.DeleteOptions{})
 	Expect(err).ShouldNot(HaveOccurred())
 
 	By("Waiting for reconfigure configmap annotation")
@@ -76,7 +77,7 @@ func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta, kind string, modif
 	annotationKey := "control-plane.alpha.kubernetes.io/leader"
 	idKey := "holderIdentity"
 
-	configMap, err := f.KubeClient.CoreV1().ConfigMaps(meta.Namespace).Get(configMapLockName, metav1.GetOptions{})
+	configMap, err := f.KubeClient.CoreV1().ConfigMaps(meta.Namespace).Get(context.TODO(), configMapLockName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}

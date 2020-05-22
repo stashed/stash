@@ -3,21 +3,76 @@ package matchers
 import (
 	"bytes"
 	"encoding/binary"
+	"strings"
 )
+
+// zipTokenizer holds the source zip file and scanned index.
+type zipTokenizer struct {
+	in []byte
+	i  int // current index
+}
+
+// next returns the next file name from the zip headers.
+// https://web.archive.org/web/20191129114319/https://users.cs.jmu.edu/buchhofp/forensics/formats/pkzip.html
+func (t *zipTokenizer) next() (fileName string) {
+	if t.i > len(t.in) {
+		return
+	}
+	in := t.in[t.i:]
+	// pkSig is the signature of the zip local file header.
+	pkSig := []byte("PK\003\004")
+	pkIndex := bytes.Index(in, pkSig)
+	// 30 is the offset of the file name in the header.
+	fNameOffset := pkIndex + 30
+	// end if signature not found or file name offset outside of file.
+	if pkIndex == -1 || fNameOffset > len(in) {
+		return
+	}
+
+	fNameLen := int(binary.LittleEndian.Uint16(in[pkIndex+26 : pkIndex+28]))
+	if fNameLen <= 0 || fNameOffset+fNameLen > len(in) {
+		return
+	}
+	t.i += fNameOffset + fNameLen
+	return string(in[fNameOffset : fNameOffset+fNameLen])
+}
+
+// msoXML reads at most first 10 local headers and returns whether the input
+// looks like a Microsoft Office file.
+func msoXML(in []byte, prefix string) bool {
+	t := zipTokenizer{in: in}
+	hasMsoXmlFiles, hasPrefix := false, false
+	for i, tok := 0, t.next(); i < 10 && tok != ""; i, tok = i+1, t.next() {
+		if tok == "[Content_Types].xml" ||
+			tok == "_rels/.rels" ||
+			tok == "docProps" {
+			hasMsoXmlFiles = true
+		}
+		if strings.HasPrefix(tok, prefix) {
+			hasPrefix = true
+		}
+
+		if hasMsoXmlFiles && hasPrefix {
+			return true
+		}
+	}
+
+	return false
+}
 
 // Xlsx matches a Microsoft Excel 2007 file.
 func Xlsx(in []byte) bool {
-	return bytes.Contains(in, []byte("xl/"))
+	return msoXML(in, "xl/")
 }
 
-// Docx matches a Microsoft Office 2007 file.
+// Docx matches a Microsoft Word 2007 file.
 func Docx(in []byte) bool {
-	return bytes.Contains(in, []byte("word/"))
+	return msoXML(in, "word/")
 }
 
 // Pptx matches a Microsoft PowerPoint 2007 file.
 func Pptx(in []byte) bool {
-	return bytes.Contains(in, []byte("ppt/"))
+	return msoXML(in, "ppt/")
 }
 
 // Ole matches an Open Linking and Embedding file.
@@ -27,7 +82,7 @@ func Ole(in []byte) bool {
 	return bytes.HasPrefix(in, []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1})
 }
 
-// Doc matches a Microsoft Office 97-2003 file.
+// Doc matches a Microsoft Word 97-2003 file.
 //
 // BUG(gabriel-vasile): Doc should look for subheaders like Ppt and Xls does.
 //
@@ -38,7 +93,7 @@ func Doc(in []byte) bool {
 	return true
 }
 
-// Ppt  matches a Microsoft PowerPoint 97-2003 file.
+// Ppt matches a Microsoft PowerPoint 97-2003 file.
 func Ppt(in []byte) bool {
 	if len(in) < 520 {
 		return false
@@ -63,20 +118,20 @@ func Ppt(in []byte) bool {
 		bytes.Contains(in, []byte("P\x00o\x00w\x00e\x00r\x00P\x00o\x00i\x00n\x00t\x00 D\x00o\x00c\x00u\x00m\x00e\x00n\x00t"))
 }
 
-// Xls  matches a Microsoft Excel 97-2003 file.
+// Xls matches a Microsoft Excel 97-2003 file.
 func Xls(in []byte) bool {
 	if len(in) <= 512 {
 		return false
 	}
 
 	xlsSubHeaders := [][]byte{
-		[]byte{0x09, 0x08, 0x10, 0x00, 0x00, 0x06, 0x05, 0x00},
-		[]byte{0xFD, 0xFF, 0xFF, 0xFF, 0x10},
-		[]byte{0xFD, 0xFF, 0xFF, 0xFF, 0x1F},
-		[]byte{0xFD, 0xFF, 0xFF, 0xFF, 0x22},
-		[]byte{0xFD, 0xFF, 0xFF, 0xFF, 0x23},
-		[]byte{0xFD, 0xFF, 0xFF, 0xFF, 0x28},
-		[]byte{0xFD, 0xFF, 0xFF, 0xFF, 0x29},
+		{0x09, 0x08, 0x10, 0x00, 0x00, 0x06, 0x05, 0x00},
+		{0xFD, 0xFF, 0xFF, 0xFF, 0x10},
+		{0xFD, 0xFF, 0xFF, 0xFF, 0x1F},
+		{0xFD, 0xFF, 0xFF, 0xFF, 0x22},
+		{0xFD, 0xFF, 0xFF, 0xFF, 0x23},
+		{0xFD, 0xFF, 0xFF, 0xFF, 0x28},
+		{0xFD, 0xFF, 0xFF, 0xFF, 0x29},
 	}
 	for _, h := range xlsSubHeaders {
 		if bytes.HasPrefix(in[512:], h) {
@@ -90,8 +145,10 @@ func Xls(in []byte) bool {
 
 // Pub matches a Microsoft Publisher file.
 func Pub(in []byte) bool {
-	return matchOleClsid(in, []byte{0x01, 0x12, 0x02, 0x0, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46})
+	return matchOleClsid(in, []byte{
+		0x01, 0x12, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46,
+	})
 }
 
 // Helper to match by a specific CLSID of a compound file

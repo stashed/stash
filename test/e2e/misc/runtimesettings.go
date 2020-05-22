@@ -17,6 +17,7 @@ limitations under the License.
 package misc
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -165,7 +166,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(framework.HasFSGroup(cronJob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext)).Should(BeTrue())
 
 				By("Verifying that runtimeSettings hasn't been applied on the workload")
-				dpl, err := f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
+				dpl, err := f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasFSGroup(dpl.Spec.Template.Spec.SecurityContext)).ShouldNot(BeTrue())
 
@@ -199,7 +200,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that the runtimeSettings hasn't been applied on the restored Deployment")
-				dpl, err = f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(restoredDeployment.Name, metav1.GetOptions{})
+				dpl, err = f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), restoredDeployment.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasFSGroup(dpl.Spec.Template.Spec.SecurityContext)).ShouldNot(BeTrue())
 
@@ -354,7 +355,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(framework.HasSecurityContext(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers)).Should(BeTrue())
 
 				By("Verifying that the runtimeSettings has been applied on the workload")
-				dpl, err := f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
+				dpl, err := f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasResources(dpl.Spec.Template.Spec.Containers)).Should(BeTrue())
 				Expect(framework.HasSecurityContext(dpl.Spec.Template.Spec.Containers)).Should(BeTrue())
@@ -397,7 +398,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that the runtimeSettings has been applied on the restored Deployment")
-				dpl, err = f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(restoredDeployment.Name, metav1.GetOptions{})
+				dpl, err = f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), restoredDeployment.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasResources(dpl.Spec.Template.Spec.InitContainers)).Should(BeTrue())
 				Expect(framework.HasSecurityContext(dpl.Spec.Template.Spec.InitContainers)).Should(BeTrue())

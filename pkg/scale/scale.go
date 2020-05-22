@@ -17,6 +17,7 @@ limitations under the License.
 package scale
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -63,7 +64,7 @@ func New(k8sClient kubernetes.Interface, opt Options) *Controller {
 func (c *Controller) ScaleDownWorkload() error {
 
 	// scale down deployment to 0 replica
-	dpList, err := c.k8sClient.AppsV1().Deployments(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	dpList, err := c.k8sClient.AppsV1().Deployments(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil {
 		for _, dp := range dpList.Items {
 			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
@@ -81,7 +82,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	// scale down replication controller to 0 replica
-	rcList, err := c.k8sClient.CoreV1().ReplicationControllers(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	rcList, err := c.k8sClient.CoreV1().ReplicationControllers(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil {
 		for _, rc := range rcList.Items {
 			_, _, err := core_util.PatchRC(c.k8sClient, &rc, func(obj *core.ReplicationController) *core.ReplicationController {
@@ -99,7 +100,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	// scale down replicaset to 0 replica
-	rsList, err := c.k8sClient.AppsV1().ReplicaSets(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	rsList, err := c.k8sClient.AppsV1().ReplicaSets(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil {
 		for _, rs := range rsList.Items {
 			if !apps_util.IsOwnedByDeployment(rs.OwnerReferences) {
@@ -125,7 +126,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	//scale up deployment to 1 replica
-	dpList, err = c.k8sClient.AppsV1().Deployments(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	dpList, err = c.k8sClient.AppsV1().Deployments(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(dpList.Items) > 0 {
 		for _, dp := range dpList.Items {
 			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
@@ -139,7 +140,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	//scale up replication controller to 1 replica
-	rcList, err = c.k8sClient.CoreV1().ReplicationControllers(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	rcList, err = c.k8sClient.CoreV1().ReplicationControllers(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(rcList.Items) > 0 {
 		for _, rc := range rcList.Items {
 			_, _, err := core_util.PatchRC(c.k8sClient, &rc, func(obj *core.ReplicationController) *core.ReplicationController {
@@ -153,7 +154,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	//scale up replicaset to 1 replica
-	rsList, err = c.k8sClient.AppsV1().ReplicaSets(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	rsList, err = c.k8sClient.AppsV1().ReplicaSets(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(rsList.Items) > 0 {
 		for _, rs := range rsList.Items {
 			if !apps_util.IsOwnedByDeployment(rs.OwnerReferences) {
@@ -169,11 +170,11 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	// delete all pods of daemonset and statefulset so that they restart with init container
-	podList, err := c.k8sClient.CoreV1().Pods(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	podList, err := c.k8sClient.CoreV1().Pods(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(podList.Items) > 0 {
 		for _, pod := range podList.Items {
 			if isDaemonOrStatefulSetPod(pod.OwnerReferences) {
-				err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(pod.Name, meta_util.DeleteInBackground())
+				err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(context.TODO(), pod.Name, *meta_util.DeleteInBackground())
 				if err != nil {
 					log.Infof("Error in deleting pod %v. Reason: %v", pod.Name, err.Error())
 				}
@@ -187,7 +188,7 @@ func (c *Controller) ScaleDownWorkload() error {
 func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error {
 	switch opt.Workload.Kind {
 	case apis.KindDeployment:
-		obj, err := k8sClient.AppsV1().Deployments(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.AppsV1().Deployments(opt.Namespace).Get(context.TODO(), opt.Workload.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -206,7 +207,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 	case apis.KindReplicationController:
-		obj, err := k8sClient.CoreV1().ReplicationControllers(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.CoreV1().ReplicationControllers(opt.Namespace).Get(context.TODO(), opt.Workload.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -225,7 +226,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 	case apis.KindReplicaSet:
-		obj, err := k8sClient.AppsV1().ReplicaSets(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.AppsV1().ReplicaSets(opt.Namespace).Get(context.TODO(), opt.Workload.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -257,7 +258,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 
 func (c *Controller) waitUntilScaledDown() error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.GCTimeout, func() (bool, error) {
-		podList, err := c.k8sClient.CoreV1().Pods(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+		podList, err := c.k8sClient.CoreV1().Pods(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 		if err != nil {
 			return false, nil
 		}

@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
@@ -29,29 +31,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchConfigMap(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ConfigMap) *core.ConfigMap) (*core.ConfigMap, kutil.VerbType, error) {
-	cur, err := c.CoreV1().ConfigMaps(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchConfigMap(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ConfigMap) *core.ConfigMap, opts metav1.PatchOptions) (*core.ConfigMap, kutil.VerbType, error) {
+	cur, err := c.CoreV1().ConfigMaps(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ConfigMap %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.CoreV1().ConfigMaps(meta.Namespace).Create(transform(&core.ConfigMap{
+		out, err := c.CoreV1().ConfigMaps(meta.Namespace).Create(ctx, transform(&core.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ConfigMap",
 				APIVersion: core.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchConfigMap(c, cur, transform)
+	return PatchConfigMap(ctx, c, cur, transform, opts)
 }
 
-func PatchConfigMap(c kubernetes.Interface, cur *core.ConfigMap, transform func(*core.ConfigMap) *core.ConfigMap) (*core.ConfigMap, kutil.VerbType, error) {
-	return PatchConfigMapObject(c, cur, transform(cur.DeepCopy()))
+func PatchConfigMap(ctx context.Context, c kubernetes.Interface, cur *core.ConfigMap, transform func(*core.ConfigMap) *core.ConfigMap, opts metav1.PatchOptions) (*core.ConfigMap, kutil.VerbType, error) {
+	return PatchConfigMapObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchConfigMapObject(c kubernetes.Interface, cur, mod *core.ConfigMap) (*core.ConfigMap, kutil.VerbType, error) {
+func PatchConfigMapObject(ctx context.Context, c kubernetes.Interface, cur, mod *core.ConfigMap, opts metav1.PatchOptions) (*core.ConfigMap, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -70,19 +75,19 @@ func PatchConfigMapObject(c kubernetes.Interface, cur, mod *core.ConfigMap) (*co
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching ConfigMap %s/%s with %s", cur.Namespace, cur.Name, string(patch))
-	out, err := c.CoreV1().ConfigMaps(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.CoreV1().ConfigMaps(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateConfigMap(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ConfigMap) *core.ConfigMap) (result *core.ConfigMap, err error) {
+func TryUpdateConfigMap(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ConfigMap) *core.ConfigMap, opts metav1.UpdateOptions) (result *core.ConfigMap, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.CoreV1().ConfigMaps(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.CoreV1().ConfigMaps(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.CoreV1().ConfigMaps(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.CoreV1().ConfigMaps(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update ConfigMap %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

@@ -3,8 +3,12 @@
 package v1
 
 import (
-	v1 "kmodules.xyz/openshift/apis/security/v1"
+	"context"
 
+	v1 "kmodules.xyz/openshift/apis/security/v1"
+	scheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -16,7 +20,7 @@ type PodSecurityPolicyReviewsGetter interface {
 
 // PodSecurityPolicyReviewInterface has methods to work with PodSecurityPolicyReview resources.
 type PodSecurityPolicyReviewInterface interface {
-	Create(*v1.PodSecurityPolicyReview) (*v1.PodSecurityPolicyReview, error)
+	Create(ctx context.Context, podSecurityPolicyReview *v1.PodSecurityPolicyReview, opts metav1.CreateOptions) (*v1.PodSecurityPolicyReview, error)
 	PodSecurityPolicyReviewExpansion
 }
 
@@ -35,13 +39,14 @@ func newPodSecurityPolicyReviews(c *SecurityV1Client, namespace string) *podSecu
 }
 
 // Create takes the representation of a podSecurityPolicyReview and creates it.  Returns the server's representation of the podSecurityPolicyReview, and an error, if there is any.
-func (c *podSecurityPolicyReviews) Create(podSecurityPolicyReview *v1.PodSecurityPolicyReview) (result *v1.PodSecurityPolicyReview, err error) {
+func (c *podSecurityPolicyReviews) Create(ctx context.Context, podSecurityPolicyReview *v1.PodSecurityPolicyReview, opts metav1.CreateOptions) (result *v1.PodSecurityPolicyReview, err error) {
 	result = &v1.PodSecurityPolicyReview{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("podsecuritypolicyreviews").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(podSecurityPolicyReview).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

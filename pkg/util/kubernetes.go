@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
@@ -28,7 +29,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	snapshot_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
+	snapshot_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -264,19 +265,19 @@ func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload a
 
 	switch workload.Kind {
 	case apis.KindDeployment:
-		_, err := k8sClient.AppsV1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1().Deployments(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		return err
 	case apis.KindReplicaSet:
-		_, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		return err
 	case apis.KindReplicationController:
-		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		return err
 	case apis.KindStatefulSet:
-		_, err := k8sClient.AppsV1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		return err
 	case apis.KindDaemonSet:
-		_, err := k8sClient.AppsV1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1().DaemonSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		return err
 	default:
 		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
@@ -296,15 +297,15 @@ func GetRestoreConfigmapLockName(r v1beta1_api.TargetRef) string {
 }
 
 func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
-	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
+	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(context.TODO(), GetConfigmapLockName(workload), metav1.DeleteOptions{})
 }
 
 func DeleteBackupConfigMapLock(k8sClient kubernetes.Interface, namespace string, r v1beta1_api.TargetRef) error {
-	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetBackupConfigmapLockName(r), &metav1.DeleteOptions{})
+	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(context.TODO(), GetBackupConfigmapLockName(r), metav1.DeleteOptions{})
 }
 
 func DeleteRestoreConfigMapLock(k8sClient kubernetes.Interface, namespace string, r v1beta1_api.TargetRef) error {
-	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetRestoreConfigmapLockName(r), &metav1.DeleteOptions{})
+	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(context.TODO(), GetRestoreConfigmapLockName(r), metav1.DeleteOptions{})
 }
 
 func DeleteAllConfigMapLocks(k8sClient kubernetes.Interface, namespace, name, kind string) error {
@@ -329,21 +330,21 @@ func DeleteAllConfigMapLocks(k8sClient kubernetes.Interface, namespace, name, ki
 func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, workloadKind string, workloadName string) (int32, error) {
 	switch workloadKind {
 	case apis.KindDeployment:
-		obj, err := kubeClient.AppsV1().Deployments(namespace).Get(workloadName, metav1.GetOptions{})
+		obj, err := kubeClient.AppsV1().Deployments(namespace).Get(context.TODO(), workloadName, metav1.GetOptions{})
 		if err != nil {
 			return 0, err
 		} else {
 			return *obj.Spec.Replicas, nil
 		}
 	case apis.KindReplicationController:
-		obj, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(workloadName, metav1.GetOptions{})
+		obj, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), workloadName, metav1.GetOptions{})
 		if err != nil {
 			return 0, err
 		} else {
 			return *obj.Spec.Replicas, nil
 		}
 	case apis.KindReplicaSet:
-		obj, err := kubeClient.AppsV1().ReplicaSets(namespace).Get(workloadName, metav1.GetOptions{})
+		obj, err := kubeClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), workloadName, metav1.GetOptions{})
 		if err != nil {
 			return 0, err
 		} else {
@@ -360,19 +361,19 @@ func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, 
 
 	switch workload.Kind {
 	case apis.KindDeployment:
-		obj, err := k8sClient.AppsV1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.AppsV1().Deployments(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}
 		workloadAnnotation = obj.Annotations
 	case apis.KindReplicationController:
-		obj, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}
 		workloadAnnotation = obj.Annotations
 	case apis.KindReplicaSet:
-		obj, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -391,7 +392,7 @@ func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, 
 
 func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 		return false, nil
@@ -400,7 +401,7 @@ func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 
 func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := kubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := kubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status.DesiredNumberScheduled == obj.Status.NumberReady, nil
 		}
 		return false, nil
@@ -409,7 +410,7 @@ func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.Object
 
 func WaitUntilReplicaSetReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 		return false, nil
@@ -418,7 +419,7 @@ func WaitUntilReplicaSetReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 
 func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 
@@ -428,7 +429,7 @@ func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := kubeClient.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := kubeClient.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 		return false, nil
@@ -455,7 +456,7 @@ func WaitUntilVolumeSnapshotReady(c snapshot_cs.Interface, meta metav1.ObjectMet
 
 func WaitUntilPVCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, 2*time.Hour, func() (bool, error) {
-		if obj, err := c.CoreV1().PersistentVolumeClaims(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := c.CoreV1().PersistentVolumeClaims(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status.Phase == core.ClaimBound, nil
 		}
 		return false, nil

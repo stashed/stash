@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -149,9 +150,9 @@ func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, owner *metav1.Own
 
 func ensureSidecarRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
+		context.TODO(),
 		getSidecarRoleBindingName(w.Name, w.Kind),
-		&metav1.DeleteOptions{},
-	)
+		metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

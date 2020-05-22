@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -31,7 +32,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
+	vs_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	storage_api_v1 "k8s.io/api/storage/v1"
@@ -161,7 +162,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		}
 
 		// now, create the PVC
-		pvc, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Create(&pvcList[i])
+		pvc, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Create(context.TODO(), &pvcList[i], metav1.CreateOptions{})
 		if err != nil {
 			if kerr.IsAlreadyExists(err) {
 				restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
@@ -183,7 +184,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	for i := range createdPVCs {
 		// find out the storage class that has been used in this PVC. We need to know it's binding mode to decide whether we should wait
 		// for it to be bound with the respective PV.
-		storageClass, err := opt.kubeClient.StorageV1().StorageClasses().Get(types.String(createdPVCs[i].Spec.StorageClassName), metav1.GetOptions{})
+		storageClass, err := opt.kubeClient.StorageV1().StorageClasses().Get(context.TODO(), types.String(createdPVCs[i].Spec.StorageClassName), metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) { // storage class not found. so, restore won't be completed.
 				restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{

@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"os"
 
 	"stash.appscode.dev/stash/pkg/cli"
@@ -224,12 +225,12 @@ func (fi *Invocation) SecretForRegistry(dockerCfgJson []byte) core.Secret {
 // TODO: Add more methods for Swift, Backblaze B2, Rest server backend.
 
 func (f *Framework) CreateSecret(obj core.Secret) (*core.Secret, error) {
-	return f.KubeClient.CoreV1().Secrets(obj.Namespace).Create(&obj)
+	return f.KubeClient.CoreV1().Secrets(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 
 }
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

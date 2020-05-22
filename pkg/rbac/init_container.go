@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -131,9 +132,9 @@ func getRestoreInitContainerRoleBindingName(kind, name string) string {
 
 func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
+		context.TODO(),
 		getRestoreInitContainerRoleBindingName(w.Kind, w.Name),
-		&metav1.DeleteOptions{},
-	)
+		metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

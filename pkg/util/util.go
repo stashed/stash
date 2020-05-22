@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -259,23 +260,23 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 	var err error
 	switch target.Kind {
 	case apis.KindDeployment:
-		if _, err = wc.KubeClient.AppsV1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+		if _, err = wc.KubeClient.AppsV1().Deployments(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
 			return true, nil
 		}
 	case apis.KindDaemonSet:
-		if _, err = wc.KubeClient.AppsV1().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+		if _, err = wc.KubeClient.AppsV1().DaemonSets(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
 			return true, nil
 		}
 	case apis.KindStatefulSet:
-		if _, err = wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+		if _, err = wc.KubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
 			return true, nil
 		}
 	case apis.KindReplicationController:
-		if _, err = wc.KubeClient.CoreV1().ReplicationControllers(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+		if _, err = wc.KubeClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
 			return true, nil
 		}
 	case apis.KindReplicaSet:
-		if _, err = wc.KubeClient.AppsV1().ReplicaSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+		if _, err = wc.KubeClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
 			return true, nil
 		}
 	case apis.KindDeploymentConfig:
@@ -285,7 +286,7 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 			}
 		}
 	case apis.KindPersistentVolumeClaim:
-		if _, err = wc.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+		if _, err = wc.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
 			return true, nil
 		}
 	case apis.KindAppBinding:
@@ -302,7 +303,7 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 // CreateBatchPVC creates a batch of PVCs whose definitions has been provided in pvcList argument
 func CreateBatchPVC(kubeClient kubernetes.Interface, namespace string, pvcList []core.PersistentVolumeClaim) error {
 	for _, pvc := range pvcList {
-		_, err := kubeClient.CoreV1().PersistentVolumeClaims(namespace).Create(&pvc)
+		_, err := kubeClient.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(), &pvc, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}

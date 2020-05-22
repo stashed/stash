@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,11 +50,11 @@ func (fi *Invocation) HeadlessService(name string) core.Service {
 }
 
 func (f *Framework) CreateService(obj core.Service) (*core.Service, error) {
-	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
+	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

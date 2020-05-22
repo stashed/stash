@@ -17,8 +17,8 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
-	"time"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1"
@@ -32,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Recovery) *api.Recovery) (*api.Recovery, kutil.VerbType, error) {
-	cur, err := c.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchRecovery(ctx context.Context, c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(in *api.Recovery) *api.Recovery, opts metav1.PatchOptions) (*api.Recovery, kutil.VerbType, error) {
+	cur, err := c.Recoveries(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Recovery %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Recoveries(meta.Namespace).Create(transform(&api.Recovery{
+		out, err := c.Recoveries(meta.Namespace).Create(ctx, transform(&api.Recovery{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "Recovery",
+				Kind:       api.ResourceKindRecovery,
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchRecovery(c, cur, transform)
+	return PatchRecovery(ctx, c, cur, transform, opts)
 }
 
-func PatchRecovery(c cs.StashV1alpha1Interface, cur *api.Recovery, transform func(*api.Recovery) *api.Recovery) (*api.Recovery, kutil.VerbType, error) {
-	return PatchRecoveryObject(c, cur, transform(cur.DeepCopy()))
+func PatchRecovery(ctx context.Context, c cs.StashV1alpha1Interface, cur *api.Recovery, transform func(*api.Recovery) *api.Recovery, opts metav1.PatchOptions) (*api.Recovery, kutil.VerbType, error) {
+	return PatchRecoveryObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchRecoveryObject(c cs.StashV1alpha1Interface, cur, mod *api.Recovery) (*api.Recovery, kutil.VerbType, error) {
+func PatchRecoveryObject(ctx context.Context, c cs.StashV1alpha1Interface, cur, mod *api.Recovery, opts metav1.PatchOptions) (*api.Recovery, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -73,19 +76,19 @@ func PatchRecoveryObject(c cs.StashV1alpha1Interface, cur, mod *api.Recovery) (*
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Recovery %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Recoveries(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.Recoveries(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Recovery) *api.Recovery) (result *api.Recovery, err error) {
+func TryUpdateRecovery(ctx context.Context, c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Recovery) *api.Recovery, opts metav1.UpdateOptions) (result *api.Recovery, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Recoveries(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Recoveries(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.Recoveries(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Recovery %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -98,32 +101,12 @@ func TryUpdateRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, tran
 	return
 }
 
-func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery metav1.ObjectMeta, path string, d time.Duration, phase api.RecoveryPhase) (*api.Recovery, error) {
-	out, err := UpdateRecoveryStatus(c, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
-		found := false
-		for _, stats := range in.Stats {
-			if stats.Path == path {
-				found = true
-				stats.Duration = d.String()
-				stats.Phase = phase
-			}
-		}
-		if !found {
-			in.Stats = append(in.Stats, api.RestoreStats{
-				Path:     path,
-				Duration: d.String(),
-				Phase:    phase,
-			})
-		}
-		return in
-	})
-	return out, err
-}
-
 func UpdateRecoveryStatus(
+	ctx context.Context,
 	c cs.StashV1alpha1Interface,
 	meta metav1.ObjectMeta,
 	transform func(*api.RecoveryStatus) *api.RecoveryStatus,
+	opts metav1.UpdateOptions,
 ) (result *api.Recovery, err error) {
 	apply := func(x *api.Recovery) *api.Recovery {
 		out := &api.Recovery{
@@ -136,16 +119,16 @@ func UpdateRecoveryStatus(
 	}
 
 	attempt := 0
-	cur, err := c.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	cur, err := c.Recoveries(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.Recoveries(meta.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.Recoveries(meta.Namespace).UpdateStatus(ctx, apply(cur), opts)
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			latest, e3 := c.Recoveries(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest

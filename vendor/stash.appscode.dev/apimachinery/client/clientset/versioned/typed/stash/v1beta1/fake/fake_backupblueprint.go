@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +41,7 @@ var backupblueprintsResource = schema.GroupVersionResource{Group: "stash.appscod
 var backupblueprintsKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1beta1", Kind: "BackupBlueprint"}
 
 // Get takes name of the backupBlueprint, and returns the corresponding backupBlueprint object, and an error if there is any.
-func (c *FakeBackupBlueprints) Get(name string, options v1.GetOptions) (result *v1beta1.BackupBlueprint, err error) {
+func (c *FakeBackupBlueprints) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.BackupBlueprint, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(backupblueprintsResource, name), &v1beta1.BackupBlueprint{})
 	if obj == nil {
@@ -49,7 +51,7 @@ func (c *FakeBackupBlueprints) Get(name string, options v1.GetOptions) (result *
 }
 
 // List takes label and field selectors, and returns the list of BackupBlueprints that match those selectors.
-func (c *FakeBackupBlueprints) List(opts v1.ListOptions) (result *v1beta1.BackupBlueprintList, err error) {
+func (c *FakeBackupBlueprints) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.BackupBlueprintList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(backupblueprintsResource, backupblueprintsKind, opts), &v1beta1.BackupBlueprintList{})
 	if obj == nil {
@@ -70,13 +72,13 @@ func (c *FakeBackupBlueprints) List(opts v1.ListOptions) (result *v1beta1.Backup
 }
 
 // Watch returns a watch.Interface that watches the requested backupBlueprints.
-func (c *FakeBackupBlueprints) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeBackupBlueprints) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(backupblueprintsResource, opts))
 }
 
 // Create takes the representation of a backupBlueprint and creates it.  Returns the server's representation of the backupBlueprint, and an error, if there is any.
-func (c *FakeBackupBlueprints) Create(backupBlueprint *v1beta1.BackupBlueprint) (result *v1beta1.BackupBlueprint, err error) {
+func (c *FakeBackupBlueprints) Create(ctx context.Context, backupBlueprint *v1beta1.BackupBlueprint, opts v1.CreateOptions) (result *v1beta1.BackupBlueprint, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(backupblueprintsResource, backupBlueprint), &v1beta1.BackupBlueprint{})
 	if obj == nil {
@@ -86,7 +88,7 @@ func (c *FakeBackupBlueprints) Create(backupBlueprint *v1beta1.BackupBlueprint) 
 }
 
 // Update takes the representation of a backupBlueprint and updates it. Returns the server's representation of the backupBlueprint, and an error, if there is any.
-func (c *FakeBackupBlueprints) Update(backupBlueprint *v1beta1.BackupBlueprint) (result *v1beta1.BackupBlueprint, err error) {
+func (c *FakeBackupBlueprints) Update(ctx context.Context, backupBlueprint *v1beta1.BackupBlueprint, opts v1.UpdateOptions) (result *v1beta1.BackupBlueprint, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(backupblueprintsResource, backupBlueprint), &v1beta1.BackupBlueprint{})
 	if obj == nil {
@@ -96,22 +98,22 @@ func (c *FakeBackupBlueprints) Update(backupBlueprint *v1beta1.BackupBlueprint) 
 }
 
 // Delete takes name of the backupBlueprint and deletes it. Returns an error if one occurs.
-func (c *FakeBackupBlueprints) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeBackupBlueprints) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(backupblueprintsResource, name), &v1beta1.BackupBlueprint{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeBackupBlueprints) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(backupblueprintsResource, listOptions)
+func (c *FakeBackupBlueprints) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(backupblueprintsResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.BackupBlueprintList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched backupBlueprint.
-func (c *FakeBackupBlueprints) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupBlueprint, err error) {
+func (c *FakeBackupBlueprints) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.BackupBlueprint, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(backupblueprintsResource, name, pt, data, subresources...), &v1beta1.BackupBlueprint{})
 	if obj == nil {

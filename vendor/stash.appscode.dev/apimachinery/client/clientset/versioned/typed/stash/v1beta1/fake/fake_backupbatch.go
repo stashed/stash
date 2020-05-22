@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +42,7 @@ var backupbatchesResource = schema.GroupVersionResource{Group: "stash.appscode.c
 var backupbatchesKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1beta1", Kind: "BackupBatch"}
 
 // Get takes name of the backupBatch, and returns the corresponding backupBatch object, and an error if there is any.
-func (c *FakeBackupBatches) Get(name string, options v1.GetOptions) (result *v1beta1.BackupBatch, err error) {
+func (c *FakeBackupBatches) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.BackupBatch, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(backupbatchesResource, c.ns, name), &v1beta1.BackupBatch{})
 
@@ -51,7 +53,7 @@ func (c *FakeBackupBatches) Get(name string, options v1.GetOptions) (result *v1b
 }
 
 // List takes label and field selectors, and returns the list of BackupBatches that match those selectors.
-func (c *FakeBackupBatches) List(opts v1.ListOptions) (result *v1beta1.BackupBatchList, err error) {
+func (c *FakeBackupBatches) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.BackupBatchList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(backupbatchesResource, backupbatchesKind, c.ns, opts), &v1beta1.BackupBatchList{})
 
@@ -73,14 +75,14 @@ func (c *FakeBackupBatches) List(opts v1.ListOptions) (result *v1beta1.BackupBat
 }
 
 // Watch returns a watch.Interface that watches the requested backupBatches.
-func (c *FakeBackupBatches) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeBackupBatches) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(backupbatchesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a backupBatch and creates it.  Returns the server's representation of the backupBatch, and an error, if there is any.
-func (c *FakeBackupBatches) Create(backupBatch *v1beta1.BackupBatch) (result *v1beta1.BackupBatch, err error) {
+func (c *FakeBackupBatches) Create(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.CreateOptions) (result *v1beta1.BackupBatch, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(backupbatchesResource, c.ns, backupBatch), &v1beta1.BackupBatch{})
 
@@ -91,7 +93,7 @@ func (c *FakeBackupBatches) Create(backupBatch *v1beta1.BackupBatch) (result *v1
 }
 
 // Update takes the representation of a backupBatch and updates it. Returns the server's representation of the backupBatch, and an error, if there is any.
-func (c *FakeBackupBatches) Update(backupBatch *v1beta1.BackupBatch) (result *v1beta1.BackupBatch, err error) {
+func (c *FakeBackupBatches) Update(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.UpdateOptions) (result *v1beta1.BackupBatch, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(backupbatchesResource, c.ns, backupBatch), &v1beta1.BackupBatch{})
 
@@ -103,7 +105,7 @@ func (c *FakeBackupBatches) Update(backupBatch *v1beta1.BackupBatch) (result *v1
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeBackupBatches) UpdateStatus(backupBatch *v1beta1.BackupBatch) (*v1beta1.BackupBatch, error) {
+func (c *FakeBackupBatches) UpdateStatus(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.UpdateOptions) (*v1beta1.BackupBatch, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(backupbatchesResource, "status", c.ns, backupBatch), &v1beta1.BackupBatch{})
 
@@ -114,7 +116,7 @@ func (c *FakeBackupBatches) UpdateStatus(backupBatch *v1beta1.BackupBatch) (*v1b
 }
 
 // Delete takes name of the backupBatch and deletes it. Returns an error if one occurs.
-func (c *FakeBackupBatches) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeBackupBatches) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(backupbatchesResource, c.ns, name), &v1beta1.BackupBatch{})
 
@@ -122,15 +124,15 @@ func (c *FakeBackupBatches) Delete(name string, options *v1.DeleteOptions) error
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeBackupBatches) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(backupbatchesResource, c.ns, listOptions)
+func (c *FakeBackupBatches) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(backupbatchesResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.BackupBatchList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched backupBatch.
-func (c *FakeBackupBatches) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupBatch, err error) {
+func (c *FakeBackupBatches) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.BackupBatch, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(backupbatchesResource, c.ns, name, pt, data, subresources...), &v1beta1.BackupBatch{})
 

@@ -17,6 +17,7 @@ limitations under the License.
 package dynamic
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -34,10 +35,12 @@ import (
 )
 
 func CreateOrPatch(
+	ctx context.Context,
 	c dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	meta metav1.ObjectMeta,
 	transform func(*unstructured.Unstructured) *unstructured.Unstructured,
+	opts metav1.PatchOptions,
 ) (*unstructured.Unstructured, kutil.VerbType, error) {
 	var ri dynamic.ResourceInterface
 	if meta.Namespace == "" {
@@ -46,33 +49,40 @@ func CreateOrPatch(
 		ri = c.Resource(gvr).Namespace(meta.Namespace)
 	}
 
-	cur, err := ri.Get(meta.Name, metav1.GetOptions{})
+	cur, err := ri.Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating %s %s/%s.", gvr.String(), meta.Namespace, meta.Name)
 		u := &unstructured.Unstructured{}
 		u.SetName(meta.Name)
 		u.SetNamespace(meta.Namespace)
-		out, err := ri.Create(transform(u), metav1.CreateOptions{})
+		out, err := ri.Create(ctx, transform(u), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return Patch(c, gvr, cur, transform)
+	return Patch(ctx, c, gvr, cur, transform, opts)
 }
 
 func Patch(
+	ctx context.Context,
 	c dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	cur *unstructured.Unstructured,
 	transform func(*unstructured.Unstructured) *unstructured.Unstructured,
+	opts metav1.PatchOptions,
 ) (*unstructured.Unstructured, kutil.VerbType, error) {
-	return PatchObject(c, gvr, cur, transform(cur.DeepCopy()))
+	return PatchObject(ctx, c, gvr, cur, transform(cur.DeepCopy()), opts)
 }
 
 func PatchObject(
+	ctx context.Context,
 	c dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	cur, mod *unstructured.Unstructured,
+	opts metav1.PatchOptions,
 ) (*unstructured.Unstructured, kutil.VerbType, error) {
 	var ri dynamic.ResourceInterface
 	if cur.GetNamespace() == "" {
@@ -99,15 +109,17 @@ func PatchObject(
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching %s %s/%s with %s.", gvr.String(), cur.GetNamespace(), cur.GetName(), string(patch))
-	out, err := ri.Patch(cur.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})
+	out, err := ri.Patch(ctx, cur.GetName(), types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
 func TryUpdate(
+	ctx context.Context,
 	c dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	meta metav1.ObjectMeta,
 	transform func(*unstructured.Unstructured) *unstructured.Unstructured,
+	opts metav1.UpdateOptions,
 ) (result *unstructured.Unstructured, err error) {
 	var ri dynamic.ResourceInterface
 	if meta.Namespace == "" {
@@ -119,11 +131,11 @@ func TryUpdate(
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := ri.Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := ri.Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = ri.Update(transform(cur.DeepCopy()), metav1.UpdateOptions{})
+			result, e2 = ri.Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update %s %s/%s due to %v.", attempt, gvr.String(), cur.GetNamespace(), cur.GetName(), e2)
@@ -137,10 +149,12 @@ func TryUpdate(
 }
 
 func UpdateStatus(
+	ctx context.Context,
 	c dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	in *unstructured.Unstructured,
 	transform func(*unstructured.Unstructured) *unstructured.Unstructured,
+	opts metav1.UpdateOptions,
 ) (result *unstructured.Unstructured, err error) {
 	var ri dynamic.ResourceInterface
 	if in.GetNamespace() == "" {
@@ -154,9 +168,9 @@ func UpdateStatus(
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = ri.UpdateStatus(transform(cur), metav1.UpdateOptions{})
+		result, e2 = ri.UpdateStatus(ctx, transform(cur), opts)
 		if kerr.IsConflict(e2) {
-			latest, e3 := ri.Get(in.GetName(), metav1.GetOptions{})
+			latest, e3 := ri.Get(ctx, in.GetName(), metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest

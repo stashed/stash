@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/appscode/go/types"
@@ -110,7 +111,7 @@ func (fi *Invocation) DeploymentForNFSServer() apps.Deployment {
 }
 
 func (fi *Invocation) CreateDeploymentForNFSServer(obj apps.Deployment) (*apps.Deployment, error) {
-	return fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
+	return fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) ServiceForNFSServer() core.Service {
@@ -140,7 +141,7 @@ func (fi *Invocation) ServiceForNFSServer() core.Service {
 }
 
 func (fi *Invocation) CreateServiceForNFSServer(obj core.Service) (*core.Service, error) {
-	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
+	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) DeleteNFSServer() error {
@@ -154,7 +155,7 @@ func (fi *Invocation) DeleteNFSServer() error {
 }
 
 func (fi *Invocation) DeleteDeploymentForNFSServer(objMeta metav1.ObjectMeta) error {
-	err := fi.KubeClient.AppsV1().Deployments(objMeta.Namespace).Delete(objMeta.Name, &metav1.DeleteOptions{})
+	err := fi.KubeClient.AppsV1().Deployments(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -162,7 +163,7 @@ func (fi *Invocation) DeleteDeploymentForNFSServer(objMeta metav1.ObjectMeta) er
 }
 
 func (fi *Invocation) DeleteServiceForNFSServer(objMeta metav1.ObjectMeta) error {
-	err := fi.KubeClient.CoreV1().Services(objMeta.Namespace).Delete(objMeta.Name, &metav1.DeleteOptions{})
+	err := fi.KubeClient.CoreV1().Services(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

@@ -19,6 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	time "time"
 
 	appcatalogv1alpha1 "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
@@ -62,13 +63,13 @@ func NewFilteredAppBindingInformer(client versioned.Interface, namespace string,
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.AppcatalogV1alpha1().AppBindings(namespace).List(options)
+				return client.AppcatalogV1alpha1().AppBindings(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.AppcatalogV1alpha1().AppBindings(namespace).Watch(options)
+				return client.AppcatalogV1alpha1().AppBindings(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&appcatalogv1alpha1.AppBinding{},

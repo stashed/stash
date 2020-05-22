@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -31,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchBackupBlueprint(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupBlueprint) *api.BackupBlueprint) (*api.BackupBlueprint, kutil.VerbType, error) {
-	cur, err := c.BackupBlueprints().Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchBackupBlueprint(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupBlueprint) *api.BackupBlueprint, opts metav1.PatchOptions) (*api.BackupBlueprint, kutil.VerbType, error) {
+	cur, err := c.BackupBlueprints().Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating BackupBlueprint %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.BackupBlueprints().Create(transform(&api.BackupBlueprint{
+		out, err := c.BackupBlueprints().Create(ctx, transform(&api.BackupBlueprint{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "BackupBlueprint",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchBackupBlueprint(c, cur, transform)
+	return PatchBackupBlueprint(ctx, c, cur, transform, opts)
 }
 
-func PatchBackupBlueprint(c cs.StashV1beta1Interface, cur *api.BackupBlueprint, transform func(*api.BackupBlueprint) *api.BackupBlueprint) (*api.BackupBlueprint, kutil.VerbType, error) {
-	return PatchBackupBlueprintObject(c, cur, transform(cur.DeepCopy()))
+func PatchBackupBlueprint(ctx context.Context, c cs.StashV1beta1Interface, cur *api.BackupBlueprint, transform func(*api.BackupBlueprint) *api.BackupBlueprint, opts metav1.PatchOptions) (*api.BackupBlueprint, kutil.VerbType, error) {
+	return PatchBackupBlueprintObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchBackupBlueprintObject(c cs.StashV1beta1Interface, cur, mod *api.BackupBlueprint) (*api.BackupBlueprint, kutil.VerbType, error) {
+func PatchBackupBlueprintObject(ctx context.Context, c cs.StashV1beta1Interface, cur, mod *api.BackupBlueprint, opts metav1.PatchOptions) (*api.BackupBlueprint, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +76,19 @@ func PatchBackupBlueprintObject(c cs.StashV1beta1Interface, cur, mod *api.Backup
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching BackupBlueprint %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.BackupBlueprints().Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.BackupBlueprints().Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateBackupBlueprint(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupBlueprint) *api.BackupBlueprint) (result *api.BackupBlueprint, err error) {
+func TryUpdateBackupBlueprint(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupBlueprint) *api.BackupBlueprint, opts metav1.UpdateOptions) (result *api.BackupBlueprint, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.BackupBlueprints().Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.BackupBlueprints().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.BackupBlueprints().Update(transform(cur.DeepCopy()))
+			result, e2 = c.BackupBlueprints().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update BackupBlueprint %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

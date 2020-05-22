@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -60,7 +61,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 		return err
 	}
 
-	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(context.TODO(), restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -176,7 +177,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 	}
 
 	// check if secret exist
-	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -254,7 +255,7 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 			return false, err
 		}
 		// list all pods of this workload
-		pods, err := c.kubeClient.CoreV1().Pods(w.Namespace).List(metav1.ListOptions{LabelSelector: r.String()})
+		pods, err := c.kubeClient.CoreV1().Pods(w.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: r.String()})
 		if err != nil {
 			if errors.IsUnauthorized(err) || errors.IsForbidden(err) {
 				return false, err
@@ -296,7 +297,7 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 		}
 		stateChanged = true
 		for _, pod := range podsToRestart {
-			err := c.kubeClient.CoreV1().Pods(w.Namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+			err := c.kubeClient.CoreV1().Pods(w.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 			if err != nil {
 				log.Errorln(err)
 			}

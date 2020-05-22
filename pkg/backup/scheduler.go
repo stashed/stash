@@ -190,7 +190,7 @@ func (c *Controller) runOnceForScheduler() error {
 	if restic.Spec.Backend.StorageSecretName == "" {
 		return errors.New("missing repository secret name")
 	}
-	secret, err := c.k8sClient.CoreV1().Secrets(restic.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(restic.Namespace).Get(context.TODO(), restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

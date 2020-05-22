@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -54,11 +55,11 @@ func (fi *Invocation) PersistentVolumeClaim(name string) *core.PersistentVolumeC
 }
 
 func (f *Framework) CreatePersistentVolumeClaim(pvc *core.PersistentVolumeClaim) (*core.PersistentVolumeClaim, error) {
-	return f.KubeClient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Create(pvc)
+	return f.KubeClient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Create(context.TODO(), pvc, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) DeletePersistentVolumeClaim(meta metav1.ObjectMeta) error {
-	err := fi.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := fi.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -135,7 +136,7 @@ func (fi *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim,
 }
 
 func (fi *Invocation) CleanupUndeletedPVCs() {
-	pvcList, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).List(metav1.ListOptions{})
+	pvcList, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Println(err)
 		return
@@ -144,7 +145,7 @@ func (fi *Invocation) CleanupUndeletedPVCs() {
 	for _, pvc := range pvcList.Items {
 		// cleanup only the pvc of this test
 		if strings.Contains(pvc.Name, fi.app) {
-			err = fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Delete(pvc.Name, deleteInBackground())
+			err = fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Delete(context.TODO(), pvc.Name, *deleteInBackground())
 			if err != nil {
 				log.Println(err)
 			}

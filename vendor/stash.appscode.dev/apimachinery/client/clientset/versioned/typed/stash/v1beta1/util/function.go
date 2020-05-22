@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -31,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchFunction(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(fn *api.Function) *api.Function) (*api.Function, kutil.VerbType, error) {
-	cur, err := c.Functions().Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchFunction(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.Function) *api.Function, opts metav1.PatchOptions) (*api.Function, kutil.VerbType, error) {
+	cur, err := c.Functions().Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Function %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Functions().Create(transform(&api.Function{
+		out, err := c.Functions().Create(ctx, transform(&api.Function{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Function",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchFunction(c, cur, transform)
+	return PatchFunction(ctx, c, cur, transform, opts)
 }
 
-func PatchFunction(c cs.StashV1beta1Interface, cur *api.Function, transform func(*api.Function) *api.Function) (*api.Function, kutil.VerbType, error) {
-	return PatchFunctionObject(c, cur, transform(cur.DeepCopy()))
+func PatchFunction(ctx context.Context, c cs.StashV1beta1Interface, cur *api.Function, transform func(*api.Function) *api.Function, opts metav1.PatchOptions) (*api.Function, kutil.VerbType, error) {
+	return PatchFunctionObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchFunctionObject(c cs.StashV1beta1Interface, cur, mod *api.Function) (*api.Function, kutil.VerbType, error) {
+func PatchFunctionObject(ctx context.Context, c cs.StashV1beta1Interface, cur, mod *api.Function, opts metav1.PatchOptions) (*api.Function, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +76,19 @@ func PatchFunctionObject(c cs.StashV1beta1Interface, cur, mod *api.Function) (*a
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Function %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Functions().Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.Functions().Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateFunction(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.Function) *api.Function) (result *api.Function, err error) {
+func TryUpdateFunction(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.Function) *api.Function, opts metav1.UpdateOptions) (result *api.Function, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Functions().Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Functions().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Functions().Update(transform(cur.DeepCopy()))
+			result, e2 = c.Functions().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Function %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

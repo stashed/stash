@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -371,7 +372,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 // EnsureBackupTriggeringCronJobDeleted ensure that the CronJob of the respective backup invoker has it as owner.
 // Kuebernetes garbage collector will take care of removing the CronJob
 func (c *StashController) EnsureBackupTriggeringCronJobDeleted(invoker apis.Invoker) error {
-	cur, err := c.kubeClient.BatchV1beta1().CronJobs(invoker.ObjectMeta.Namespace).Get(getBackupCronJobName(invoker.ObjectMeta.Name), metav1.GetOptions{})
+	cur, err := c.kubeClient.BatchV1beta1().CronJobs(invoker.ObjectMeta.Namespace).Get(context.TODO(), getBackupCronJobName(invoker.ObjectMeta.Name), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil

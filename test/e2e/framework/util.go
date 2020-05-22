@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -108,7 +109,7 @@ func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 			"involvedObject.namespace": meta.Namespace,
 			"type":                     core.EventTypeNormal,
 		})
-		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
 		return events.Items
 	})
@@ -122,7 +123,7 @@ func (f *Framework) EventualWarning(meta metav1.ObjectMeta, involvedObjectKind s
 			"involvedObject.namespace": meta.Namespace,
 			"type":                     core.EventTypeWarning,
 		})
-		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
 		return events.Items
 	})
@@ -136,7 +137,7 @@ func (f *Framework) EventuallyEvent(meta metav1.ObjectMeta, involvedObjectKind s
 			"involvedObject.namespace": meta.Namespace,
 			"type":                     core.EventTypeWarning,
 		})
-		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
 		return events.Items
 	})
@@ -181,13 +182,13 @@ func CleanupMinikubeHostPath() error {
 func (f *Framework) DeleteJobAndDependents(jobName string, recovery *api.Recovery) {
 	By("Checking Job deleted")
 	Eventually(func() bool {
-		_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+		_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 		return kerr.IsNotFound(err) || kerr.IsGone(err)
 	}, time.Minute*3, time.Second*2).Should(BeTrue())
 
 	By("Checking pods deleted")
 	Eventually(func() bool {
-		pods, err := f.KubeClient.CoreV1().Pods(recovery.Namespace).List(metav1.ListOptions{
+		pods, err := f.KubeClient.CoreV1().Pods(recovery.Namespace).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: "job-name=" + jobName, // pods created by job has a job-name label
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -196,19 +197,19 @@ func (f *Framework) DeleteJobAndDependents(jobName string, recovery *api.Recover
 
 	By("Checking service-account deleted")
 	Eventually(func() bool {
-		_, err := f.KubeClient.CoreV1().ServiceAccounts(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+		_, err := f.KubeClient.CoreV1().ServiceAccounts(recovery.Namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 		return kerr.IsNotFound(err) || kerr.IsGone(err)
 	}, time.Minute*3, time.Second*2).Should(BeTrue())
 
 	By("Checking role-binding deleted")
 	Eventually(func() bool {
-		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 		return kerr.IsNotFound(err) || kerr.IsGone(err)
 	}, time.Minute*3, time.Second*2).Should(BeTrue())
 
 	By("Checking repo-reader role-binding deleted")
 	Eventually(func() bool {
-		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Get(stash_rbac.GetRepoReaderRoleBindingName(jobName, recovery.Namespace), metav1.GetOptions{})
+		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Get(context.TODO(), stash_rbac.GetRepoReaderRoleBindingName(jobName, recovery.Namespace), metav1.GetOptions{})
 		return kerr.IsNotFound(err) || kerr.IsGone(err)
 	}, time.Minute*3, time.Second*2).Should(BeTrue())
 }
@@ -443,7 +444,7 @@ func removeDuplicates(elements []string) []string {
 func (f *Framework) EventuallyJobSucceed(name string) GomegaAsyncAssertion {
 	jobCreated := false
 	return Eventually(func() bool {
-		obj, err := f.KubeClient.BatchV1().Jobs(f.namespace).Get(name, metav1.GetOptions{})
+		obj, err := f.KubeClient.BatchV1().Jobs(f.namespace).Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil && !kerr.IsNotFound(err) {
 			Expect(err).NotTo(HaveOccurred())
 		}
@@ -460,7 +461,7 @@ func (f *Framework) EventuallyJobSucceed(name string) GomegaAsyncAssertion {
 func WaitUntilNamespaceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.CoreV1().Namespaces().Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.CoreV1().Namespaces().Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -474,7 +475,7 @@ func WaitUntilNamespaceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) 
 func WaitUntilDeploymentDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -488,7 +489,7 @@ func WaitUntilDeploymentDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta)
 func WaitUntilDaemonSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -502,7 +503,7 @@ func WaitUntilDaemonSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) 
 func WaitUntilStatefulSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -516,7 +517,7 @@ func WaitUntilStatefulSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta
 func WaitUntilReplicaSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -530,7 +531,7 @@ func WaitUntilReplicaSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta)
 func WaitUntilReplicationControllerDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -544,7 +545,7 @@ func WaitUntilReplicationControllerDeleted(kc kubernetes.Interface, meta metav1.
 func WaitUntilSecretDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.CoreV1().Secrets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.CoreV1().Secrets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -558,7 +559,7 @@ func WaitUntilSecretDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) err
 func WaitUntilServiceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.CoreV1().Services(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -678,7 +679,7 @@ func (f *Framework) GetNodeName(meta metav1.ObjectMeta) string {
 		return pod.Spec.NodeName
 	}
 
-	nodes, err := f.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodes, err := f.KubeClient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err == nil {
 		for _, node := range nodes.Items {
 			if !strings.HasSuffix(node.Name, "master") { // for concourse test, master node has "master" suffix in the name.
@@ -767,7 +768,7 @@ func (fi *Invocation) CleanupTestResources() error {
 		if err != nil {
 			return err
 		}
-		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(objMeta.Name, deleteInBackground())
+		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, *deleteInBackground())
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
@@ -790,7 +791,7 @@ func (fi *Invocation) CleanupTestResources() error {
 
 func (fi *Invocation) waitUntilResourceDeleted(gvr schema.GroupVersionResource, objMeta metav1.ObjectMeta) error {
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Get(objMeta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Get(context.TODO(), objMeta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -951,7 +952,7 @@ func (fi *Invocation) PrintDebugHelpers() {
 	}
 
 	fmt.Println("\n===============[ Debug info for Stash sidecar/init-container/backup job/restore job ]===================")
-	pods, err := fi.KubeClient.CoreV1().Pods(fi.Namespace()).List(metav1.ListOptions{})
+	pods, err := fi.KubeClient.CoreV1().Pods(fi.Namespace()).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -1018,7 +1019,7 @@ func (fi *Invocation) HookFailed(involvedObjectKind string, involvedObjectMeta m
 		"involvedObject.namespace": involvedObjectMeta.Namespace,
 		"type":                     core.EventTypeWarning,
 	})
-	events, err := fi.KubeClient.CoreV1().Events(fi.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+	events, err := fi.KubeClient.CoreV1().Events(fi.namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
 	Expect(err).NotTo(HaveOccurred())
 
 	hasHookFailureEvent := false
@@ -1039,7 +1040,7 @@ func (f *Framework) EventuallyEventWritten(involvedObjectMeta metav1.ObjectMeta,
 			"involvedObject.namespace": involvedObjectMeta.Namespace,
 			"type":                     eventType,
 		})
-		events, err := f.KubeClient.CoreV1().Events(involvedObjectMeta.Namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		events, err := f.KubeClient.CoreV1().Events(involvedObjectMeta.Namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		if err != nil {
 			return false
 		}

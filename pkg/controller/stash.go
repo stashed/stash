@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -270,7 +271,7 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1.TargetRef, namespace string, replica *int32) (*int32, error) {
 	switch targetRef.Kind {
 	case apis.KindStatefulSet:
-		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -279,28 +280,28 @@ func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1
 		}
 		return types.Int32P(types.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
 	case apis.KindDeployment:
-		deployment, err := c.kubeClient.AppsV1().Deployments(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		deployment, err := c.kubeClient.AppsV1().Deployments(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(deployment.Spec.Template.Spec.Volumes), err
 
 	case apis.KindDaemonSet:
-		daemon, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		daemon, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(daemon.Spec.Template.Spec.Volumes), err
 
 	case apis.KindReplicaSet:
-		rs, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		rs, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(rs.Spec.Template.Spec.Volumes), err
 
 	case apis.KindReplicationController:
-		rc, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		rc, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -315,14 +316,14 @@ func (c *StashController) getTotalHostForRestic(targetRef api_v1beta1.TargetRef,
 	switch targetRef.Kind {
 	// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
 	case apis.KindStatefulSet:
-		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return ss.Spec.Replicas, nil
 	// all Daemon pod will take backup/restore. so total number of hosts will be number of ready replicas
 	case apis.KindDaemonSet:
-		dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

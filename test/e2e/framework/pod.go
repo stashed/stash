@@ -18,6 +18,7 @@ package framework
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -78,7 +79,7 @@ func (fi *Invocation) PodTemplate(labels map[string]string, pvcName, volName str
 }
 
 func (f *Framework) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
-	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{})
+	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func (f *Framework) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
 func (f *Framework) GetAllPods(meta metav1.ObjectMeta) ([]core.Pod, error) {
 	pods := make([]core.Pod, 0)
 	labelSelector := fields.SelectorFromSet(meta.Labels)
-	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
+	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector.String()})
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +110,7 @@ func (f *Framework) GetAllPods(meta metav1.ObjectMeta) ([]core.Pod, error) {
 }
 
 func (f *Framework) GetOperatorPod() (*core.Pod, error) {
-	podList, err := f.KubeClient.CoreV1().Pods(OperatorNamespace).List(metav1.ListOptions{})
+	podList, err := f.KubeClient.CoreV1().Pods(OperatorNamespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +127,7 @@ func (f *Framework) GetOperatorPod() (*core.Pod, error) {
 }
 
 func (f *Framework) GetMinioPod() (*core.Pod, error) {
-	podList, err := f.KubeClient.CoreV1().Pods(f.namespace).List(metav1.ListOptions{})
+	podList, err := f.KubeClient.CoreV1().Pods(f.namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -185,11 +186,11 @@ func (fi *Invocation) Pod(pvcName string) core.Pod {
 }
 
 func (fi *Invocation) CreatePod(pod core.Pod) (*core.Pod, error) {
-	return fi.KubeClient.CoreV1().Pods(pod.Namespace).Create(&pod)
+	return fi.KubeClient.CoreV1().Pods(pod.Namespace).Create(context.TODO(), &pod, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) DeletePod(meta metav1.ObjectMeta) error {
-	err := fi.KubeClient.CoreV1().Pods(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	err := fi.KubeClient.CoreV1().Pods(meta.Namespace).Delete(context.TODO(), meta.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -199,7 +200,7 @@ func (fi *Invocation) DeletePod(meta metav1.ObjectMeta) error {
 func (f *Framework) EventuallyAllPodsAccessible(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() bool {
 		labelSelector := fields.SelectorFromSet(meta.Labels)
-		podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
+		podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
 
 		if len(podList.Items) == 0 {
@@ -223,7 +224,7 @@ func (f *Framework) EventuallyAllPodsAccessible(meta metav1.ObjectMeta) GomegaAs
 
 func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() bool {
-		pod, err := f.KubeClient.CoreV1().Pods(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		pod, err := f.KubeClient.CoreV1().Pods(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = f.ExecOnPod(pod, "ls", "-R")

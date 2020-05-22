@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -27,29 +29,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchEndpoints(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Endpoints) *core.Endpoints) (*core.Endpoints, kutil.VerbType, error) {
-	cur, err := c.CoreV1().Endpoints(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchEndpoints(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Endpoints) *core.Endpoints, opts metav1.PatchOptions) (*core.Endpoints, kutil.VerbType, error) {
+	cur, err := c.CoreV1().Endpoints(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Endpoints %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.CoreV1().Endpoints(meta.Namespace).Create(transform(&core.Endpoints{
+		out, err := c.CoreV1().Endpoints(meta.Namespace).Create(ctx, transform(&core.Endpoints{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Endpoints",
 				APIVersion: core.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchEndpoints(c, cur, transform)
+	return PatchEndpoints(ctx, c, cur, transform, opts)
 }
 
-func PatchEndpoints(c kubernetes.Interface, cur *core.Endpoints, transform func(*core.Endpoints) *core.Endpoints) (*core.Endpoints, kutil.VerbType, error) {
-	return PatchEndpointsObject(c, cur, transform(cur.DeepCopy()))
+func PatchEndpoints(ctx context.Context, c kubernetes.Interface, cur *core.Endpoints, transform func(*core.Endpoints) *core.Endpoints, opts metav1.PatchOptions) (*core.Endpoints, kutil.VerbType, error) {
+	return PatchEndpointsObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchEndpointsObject(c kubernetes.Interface, cur, mod *core.Endpoints) (*core.Endpoints, kutil.VerbType, error) {
+func PatchEndpointsObject(ctx context.Context, c kubernetes.Interface, cur, mod *core.Endpoints, opts metav1.PatchOptions) (*core.Endpoints, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -68,6 +73,6 @@ func PatchEndpointsObject(c kubernetes.Interface, cur, mod *core.Endpoints) (*co
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Endpoints %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.CoreV1().Endpoints(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.CoreV1().Endpoints(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }

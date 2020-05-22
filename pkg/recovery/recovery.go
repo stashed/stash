@@ -17,6 +17,7 @@ limitations under the License.
 package recovery
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -159,7 +160,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 	if err != nil {
 		return err
 	}
-	secret, err := c.k8sClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

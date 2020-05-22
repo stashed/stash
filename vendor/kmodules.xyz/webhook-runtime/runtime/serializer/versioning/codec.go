@@ -16,7 +16,9 @@ limitations under the License.
 package versioning
 
 import (
+	"encoding/json"
 	"io"
+	"sync"
 
 	_ "kmodules.xyz/openshift/apis/apps/install"
 
@@ -24,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog"
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
 	_ "k8s.io/kubernetes/pkg/apis/batch/install"
 	_ "k8s.io/kubernetes/pkg/apis/core/install"
@@ -39,6 +42,40 @@ type codec struct {
 	defaulter     runtime.ObjectDefaulter
 	encodeVersion runtime.GroupVersioner
 	decodeVersion runtime.GroupVersioner
+
+	identifier runtime.Identifier
+}
+
+// ref: https://github.com/kubernetes/apimachinery/blob/v0.18.3/pkg/runtime/serializer/versioning/versioning.go#L92-L121
+var identifiersMap sync.Map
+
+type codecIdentifier struct {
+	EncodeGV string `json:"encodeGV,omitempty"`
+	Encoder  string `json:"encoder,omitempty"`
+	Name     string `json:"name,omitempty"`
+}
+
+// identifier computes Identifier of Encoder based on codec parameters.
+func identifier(encodeGV runtime.GroupVersioner, encoder runtime.Encoder) runtime.Identifier {
+	result := codecIdentifier{
+		Name: "webhook-versioning",
+	}
+
+	if encodeGV != nil {
+		result.EncodeGV = encodeGV.Identifier()
+	}
+	if encoder != nil {
+		result.Encoder = string(encoder.Identifier())
+	}
+	if id, ok := identifiersMap.Load(result); ok {
+		return id.(runtime.Identifier)
+	}
+	identifier, err := json.Marshal(result)
+	if err != nil {
+		klog.Fatalf("Failed marshaling identifier for codec: %v", err)
+	}
+	identifiersMap.Store(result, runtime.Identifier(identifier))
+	return runtime.Identifier(identifier)
 }
 
 // NewDefaultingCodecForScheme is a convenience method for callers that are using a scheme.
@@ -57,10 +94,22 @@ func NewDefaultingCodecForScheme(
 		defaulter:     defaulter,
 		encodeVersion: encodeVersion,
 		decodeVersion: decodeVersion,
+		identifier:    identifier(encodeVersion, encoder),
 	}
 }
 
+func (c codec) Identifier() runtime.Identifier {
+	return c.identifier
+}
+
 func (c codec) Encode(obj runtime.Object, w io.Writer) error {
+	if co, ok := obj.(runtime.CacheableObject); ok {
+		return co.CacheEncode(c.Identifier(), c.doEncode, w)
+	}
+	return c.doEncode(obj, w)
+}
+
+func (c *codec) doEncode(obj runtime.Object, w io.Writer) error {
 	var out runtime.Object
 
 	kinds, isUnversioned, err := c.scheme.ObjectKinds(obj)

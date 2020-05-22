@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -170,7 +171,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	}
 	job.Spec.Template.Spec.ServiceAccountName = job.Name
 
-	job, err = c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
+	job, err = c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(context.TODO(), job, metav1.CreateOptions{})
 	if err != nil {
 		if kerr.IsAlreadyExists(err) {
 			log.Infoln("Skipping to create recovery job. Reason: job already exist")
