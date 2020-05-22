@@ -17,6 +17,7 @@ limitations under the License.
 package volumesnapshot
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -136,7 +137,7 @@ func TestCleanupSnapshots(t *testing.T) {
 				t.Errorf("Failed to cleanup VolumeSnapshots. Reason: %v", err)
 				return
 			}
-			vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(testNamespace).List(metav1.ListOptions{})
+			vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(testNamespace).List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				t.Errorf("Failed to list remaining VolumeSnapshots. Reason: %v", err)
 				return

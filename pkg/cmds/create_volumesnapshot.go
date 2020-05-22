@@ -88,7 +88,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
 
 			// get backup session
-			backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(opt.backupsession, metav1.GetOptions{})
+			backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(context.TODO(), opt.backupsession, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -170,7 +170,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invoker apis
 		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
 		parts := strings.Split(bsMeta.Name, "-")
 		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, invoker.ObjectMeta.Namespace, pvcName, parts[len(parts)-1])
-		snapshot, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Create(&volumeSnapshot)
+		snapshot, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Create(context.TODO(), &volumeSnapshot, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
 		}

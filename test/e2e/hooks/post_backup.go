@@ -17,6 +17,7 @@ limitations under the License.
 package hooks
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -94,7 +95,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -138,7 +139,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -183,7 +184,7 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -238,7 +239,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -282,7 +283,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -327,7 +328,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -381,7 +382,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -436,7 +437,7 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -489,7 +490,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -531,7 +532,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -574,7 +575,7 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -630,7 +631,7 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has succeeded")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -683,7 +684,7 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -736,7 +737,7 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -796,7 +797,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -853,7 +854,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has failed")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -910,7 +911,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has failed")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -1003,7 +1004,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -1082,7 +1083,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has failed")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -1152,7 +1153,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has failed")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -1278,7 +1279,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 			})
@@ -1407,7 +1408,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -1535,7 +1536,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has failed")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
@@ -1659,7 +1660,7 @@ var _ = Describe("PostBackup Hook", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has failed")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 

@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) ReplicationController(name, pvcName, volName string) core.ReplicationController {
@@ -59,7 +60,7 @@ func (f *Framework) CreateReplicationController(obj core.ReplicationController) 
 }
 
 func (f *Framework) DeleteReplicationController(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInBackground())
+	err := f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

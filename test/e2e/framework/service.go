@@ -18,6 +18,7 @@ package framework
 
 import (
 	"context"
+
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,9 +63,9 @@ func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) CreateOrPatchService(obj core.Service) error {
-	_, _, err := core_util.CreateOrPatchService(f.KubeClient, obj.ObjectMeta, func(in *core.Service) *core.Service {
+	_, _, err := core_util.CreateOrPatchService(context.TODO(), f.KubeClient, obj.ObjectMeta, func(in *core.Service) *core.Service {
 		in.Spec = obj.Spec
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }

@@ -113,7 +113,7 @@ func GetHostName(target interface{}) (string, error) {
 }
 
 func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace string) (string, error) {
-	restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(restoreSessionName, metav1.GetOptions{})
+	restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(context.TODO(), restoreSessionName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -281,7 +281,7 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 		}
 	case apis.KindDeploymentConfig:
 		if wc.OcClient != nil {
-			if _, err = wc.OcClient.AppsV1().DeploymentConfigs(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			if _, err = wc.OcClient.AppsV1().DeploymentConfigs(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
 				return true, nil
 			}
 		}
@@ -290,7 +290,7 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 			return true, nil
 		}
 	case apis.KindAppBinding:
-		if _, err = wc.AppCatalogClient.AppcatalogV1alpha1().AppBindings(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+		if _, err = wc.AppCatalogClient.AppcatalogV1alpha1().AppBindings(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
 			return true, nil
 		}
 	}
@@ -367,7 +367,7 @@ func GetWorkloadReference(w *wapi.Workload) (*core.ObjectReference, error) {
 }
 
 // UpsertInterimVolume create a PVC according to InterimVolumeTemplate and attach it to the respective pod
-func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, interimVolumeTemplate *core.PersistentVolumeClaim, namespace string, owner *metav1.OwnerReference) (core.PodSpec, error) {
+func UpsertInterimVolume(kc kubernetes.Interface, podSpec core.PodSpec, interimVolumeTemplate *core.PersistentVolumeClaim, namespace string, owner *metav1.OwnerReference) (core.PodSpec, error) {
 	// if no InterimVolumeTemplate is provided then nothing to do
 	if interimVolumeTemplate == nil {
 		return podSpec, nil
@@ -380,12 +380,12 @@ func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, 
 	}
 
 	// create the interim pvc
-	createdPVC, _, err := core_util.CreateOrPatchPVC(kubeClient, pvcMeta, func(in *core.PersistentVolumeClaim) *core.PersistentVolumeClaim {
+	createdPVC, _, err := core_util.CreateOrPatchPVC(context.TODO(), kc, pvcMeta, func(in *core.PersistentVolumeClaim) *core.PersistentVolumeClaim {
 		// Set BackupSession/RestoreSession as owner of the PVC so that it get deleted when the respective owner is deleted.
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		in.Spec = interimVolumeTemplate.Spec
 		return in
-	})
+	}, metav1.PatchOptions{})
 	if err != nil {
 		return podSpec, err
 	}

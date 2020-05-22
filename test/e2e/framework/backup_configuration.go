@@ -68,12 +68,12 @@ func (fi *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...
 }
 
 func (fi *Invocation) CreateBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
-	_, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Create(&backupCfg)
+	_, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Create(context.TODO(), &backupCfg, metav1.CreateOptions{})
 	return err
 }
 
 func (fi *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
-	err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(backupCfg.Name, &metav1.DeleteOptions{})
+	err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(context.TODO(), backupCfg.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -129,7 +129,7 @@ func (f *Framework) EventuallyCronJobResumed(meta metav1.ObjectMeta) GomegaAsync
 func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			_, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			if err == nil && !kerr.IsNotFound(err) {
 				return true
 			}

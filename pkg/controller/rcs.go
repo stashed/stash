@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
@@ -24,6 +26,7 @@ import (
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -117,7 +120,7 @@ func (c *StashController) runRCInjector(key string) error {
 
 		if modified {
 			// workload has been modified. patch the workload so that respective pods start with the updated spec
-			_, _, err = core_util.PatchRCObject(c.kubeClient, rc, w.Object.(*core.ReplicationController))
+			_, _, err = core_util.PatchRCObject(context.TODO(), c.kubeClient, rc, w.Object.(*core.ReplicationController), metav1.PatchOptions{})
 			if err != nil {
 				glog.Errorf("failed to update replicationcontroller %s/%s. Reason: %v", rc.Namespace, rc.Name, err)
 				return err

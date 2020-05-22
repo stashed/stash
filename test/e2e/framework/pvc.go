@@ -32,6 +32,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) PersistentVolumeClaim(name string) *core.PersistentVolumeClaim {
@@ -96,7 +97,7 @@ func (fi *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1al
 	}
 
 	By("Creating BackupConfiguration: " + backupConfig.Name)
-	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(context.TODO(), backupConfig, metav1.CreateOptions{})
 	fi.AppendToCleanupList(createdBC)
 
 	By("Verifying that backup triggering CronJob has been created")
@@ -145,7 +146,7 @@ func (fi *Invocation) CleanupUndeletedPVCs() {
 	for _, pvc := range pvcList.Items {
 		// cleanup only the pvc of this test
 		if strings.Contains(pvc.Name, fi.app) {
-			err = fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Delete(context.TODO(), pvc.Name, *deleteInBackground())
+			err = fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Delete(context.TODO(), pvc.Name, meta_util.DeleteInBackground())
 			if err != nil {
 				log.Println(err)
 			}

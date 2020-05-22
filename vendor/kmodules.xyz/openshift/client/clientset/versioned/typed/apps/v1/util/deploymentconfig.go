@@ -18,7 +18,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchDeploymentConfig(ctx context.Context, c cs.Interface, meta metav1.ObjectMeta, transform func(*apps.DeploymentConfig) *apps.DeploymentConfig) (*apps.DeploymentConfig, kutil.VerbType, error) {
+func CreateOrPatchDeploymentConfig(
+	ctx context.Context,
+	c cs.Interface,
+	meta metav1.ObjectMeta,
+	transform func(*apps.DeploymentConfig) *apps.DeploymentConfig,
+	opts metav1.PatchOptions,
+) (*apps.DeploymentConfig, kutil.VerbType, error) {
 	cur, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating DeploymentConfig %s/%s.", meta.Namespace, meta.Name)
@@ -28,19 +34,33 @@ func CreateOrPatchDeploymentConfig(ctx context.Context, c cs.Interface, meta met
 				APIVersion: apps.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}), metav1.CreateOptions{})
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchDeploymentConfig(ctx, c, cur, transform)
+	return PatchDeploymentConfig(ctx, c, cur, transform, opts)
 }
 
-func PatchDeploymentConfig(ctx context.Context, c cs.Interface, cur *apps.DeploymentConfig, transform func(*apps.DeploymentConfig) *apps.DeploymentConfig) (*apps.DeploymentConfig, kutil.VerbType, error) {
-	return PatchDeploymentConfigObject(ctx, c, cur, transform(cur.DeepCopy()))
+func PatchDeploymentConfig(
+	ctx context.Context,
+	c cs.Interface,
+	cur *apps.DeploymentConfig,
+	transform func(*apps.DeploymentConfig) *apps.DeploymentConfig,
+	opts metav1.PatchOptions,
+) (*apps.DeploymentConfig, kutil.VerbType, error) {
+	return PatchDeploymentConfigObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchDeploymentConfigObject(ctx context.Context, c cs.Interface, cur, mod *apps.DeploymentConfig) (*apps.DeploymentConfig, kutil.VerbType, error) {
+func PatchDeploymentConfigObject(
+	ctx context.Context,
+	c cs.Interface,
+	cur, mod *apps.DeploymentConfig,
+	opts metav1.PatchOptions,
+) (*apps.DeploymentConfig, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -59,11 +79,17 @@ func PatchDeploymentConfigObject(ctx context.Context, c cs.Interface, cur, mod *
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching DeploymentConfig %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.AppsV1().DeploymentConfigs(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
+	out, err := c.AppsV1().DeploymentConfigs(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateDeploymentConfig(ctx context.Context, c cs.Interface, meta metav1.ObjectMeta, transform func(*apps.DeploymentConfig) *apps.DeploymentConfig) (result *apps.DeploymentConfig, err error) {
+func TryUpdateDeploymentConfig(
+	ctx context.Context,
+	c cs.Interface,
+	meta metav1.ObjectMeta,
+	transform func(*apps.DeploymentConfig) *apps.DeploymentConfig,
+	opts metav1.UpdateOptions,
+) (result *apps.DeploymentConfig, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
@@ -71,7 +97,7 @@ func TryUpdateDeploymentConfig(ctx context.Context, c cs.Interface, meta metav1.
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.AppsV1().DeploymentConfigs(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), metav1.UpdateOptions{})
+			result, e2 = c.AppsV1().DeploymentConfigs(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update DeploymentConfig %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

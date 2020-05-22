@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
@@ -24,6 +26,7 @@ import (
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -125,7 +128,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 			if modified {
 				// workload has been modified. patch the workload so that respective pods start with the updated spec
-				_, _, err = apps_util.PatchReplicaSetObject(c.kubeClient, rs, w.Object.(*apps.ReplicaSet))
+				_, _, err = apps_util.PatchReplicaSetObject(context.TODO(), c.kubeClient, rs, w.Object.(*apps.ReplicaSet), metav1.PatchOptions{})
 				if err != nil {
 					glog.Errorf("failed to update ReplicaSet %s/%s. Reason: %v", rs.Namespace, rs.Name, err)
 					return err

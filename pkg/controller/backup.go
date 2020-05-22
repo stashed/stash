@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -246,7 +247,7 @@ func (c *StashController) ensureAutoBackupResourcesForWorkload(w *wapi.Workload)
 
 func (c *StashController) ensureAutoBackupResources(blueprintName string, inputs map[string]string, targetObject interface{}) (kutil.VerbType, error) {
 	// read respective BackupBlueprint crd
-	backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(blueprintName, metav1.GetOptions{})
+	backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(context.TODO(), blueprintName, metav1.GetOptions{})
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -370,7 +371,7 @@ func extractAutoBackupOptions(blueprint *api_v1beta1.BackupBlueprint, targetObje
 
 // ensureAutoBackupResourcesDeleted deletes(if previously created) BackupConfiguration wect for the respective resources
 func (c *StashController) ensureAutoBackupResourcesDeleted(targetRef *core.ObjectReference, namespace, prefix string) (kutil.VerbType, error) {
-	_, err := c.stashClient.StashV1beta1().BackupConfigurations(namespace).Get(getBackupConfigurationName(targetRef, targetRef.Kind), metav1.GetOptions{})
+	_, err := c.stashClient.StashV1beta1().BackupConfigurations(namespace).Get(context.TODO(), getBackupConfigurationName(targetRef, targetRef.Kind), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return kutil.VerbUnchanged, nil
@@ -378,7 +379,7 @@ func (c *StashController) ensureAutoBackupResourcesDeleted(targetRef *core.Objec
 		return kutil.VerbUnchanged, err
 	}
 	// BackupConfiguration exist. so, we have to remove it.
-	err = c.stashClient.StashV1beta1().BackupConfigurations(namespace).Delete(getBackupConfigurationName(targetRef, prefix), meta_util.DeleteInBackground())
+	err = c.stashClient.StashV1beta1().BackupConfigurations(namespace).Delete(context.TODO(), getBackupConfigurationName(targetRef, prefix), meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return kutil.VerbUnchanged, err
 	}
@@ -390,10 +391,15 @@ func (c *StashController) ensureRepository(opt autoBackupOptions) (kutil.VerbTyp
 		Name:      opt.resourceName,
 		Namespace: opt.resourceNamespace,
 	}
-	_, verb, err := v1alpha1_util.CreateOrPatchRepository(c.stashClient.StashV1alpha1(), meta, func(in *api_v1alpha1.Repository) *api_v1alpha1.Repository {
-		in.Spec.Backend = opt.backend
-		return in
-	})
+	_, verb, err := v1alpha1_util.CreateOrPatchRepository(
+		context.TODO(),
+		c.stashClient.StashV1alpha1(),
+		meta,
+		func(in *api_v1alpha1.Repository) *api_v1alpha1.Repository {
+			in.Spec.Backend = opt.backend
+			return in
+		}, metav1.PatchOptions{},
+	)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -405,33 +411,39 @@ func (c *StashController) ensureBackupConfiguration(opt autoBackupOptions) (kuti
 		Name:      opt.resourceName,
 		Namespace: opt.resourceNamespace,
 	}
-	_, verb, err := v1beta1_util.CreateOrPatchBackupConfiguration(c.stashClient.StashV1beta1(), meta, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
-		// set workload as owner of this backupConfiguration wect
-		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.resourceOwner)
-		in.Spec.Repository.Name = opt.resourceName
+	_, verb, err := v1beta1_util.CreateOrPatchBackupConfiguration(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		meta,
+		func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
+			// set workload as owner of this backupConfiguration wect
+			core_util.EnsureOwnerReference(&in.ObjectMeta, opt.resourceOwner)
+			in.Spec.Repository.Name = opt.resourceName
 
-		if opt.target != nil {
-			in.Spec.Target = &api_v1beta1.BackupTarget{
-				Ref: api_v1beta1.TargetRef{
-					APIVersion: opt.target.Ref.APIVersion,
-					Kind:       opt.target.Ref.Kind,
-					Name:       opt.target.Ref.Name,
-				},
-				Paths:        opt.target.Paths,
-				VolumeMounts: opt.target.VolumeMounts,
+			if opt.target != nil {
+				in.Spec.Target = &api_v1beta1.BackupTarget{
+					Ref: api_v1beta1.TargetRef{
+						APIVersion: opt.target.Ref.APIVersion,
+						Kind:       opt.target.Ref.Kind,
+						Name:       opt.target.Ref.Name,
+					},
+					Paths:        opt.target.Paths,
+					VolumeMounts: opt.target.VolumeMounts,
+				}
 			}
-		}
 
-		in.Spec.Task = opt.taskRef
-		in.Spec.TempDir = opt.tempDir
-		in.Spec.Schedule = opt.schedule
-		in.Spec.RetentionPolicy = opt.retentionPolicy
-		in.Spec.RuntimeSettings = opt.runtimeSettings
-		in.Spec.BackupHistoryLimit = opt.backupHistoryLimit
-		in.Spec.InterimVolumeTemplate = opt.interimVolumeTemplate
+			in.Spec.Task = opt.taskRef
+			in.Spec.TempDir = opt.tempDir
+			in.Spec.Schedule = opt.schedule
+			in.Spec.RetentionPolicy = opt.retentionPolicy
+			in.Spec.RuntimeSettings = opt.runtimeSettings
+			in.Spec.BackupHistoryLimit = opt.backupHistoryLimit
+			in.Spec.InterimVolumeTemplate = opt.interimVolumeTemplate
 
-		return in
-	})
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 
 	if err != nil {
 		return kutil.VerbUnchanged, err

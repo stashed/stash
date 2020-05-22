@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -115,7 +116,7 @@ func NewCheckJob(restic *api_v1alpha1.Restic, hostName, smartPrefix string, imag
 }
 
 func NewRecoveryJob(stashClient cs.Interface, recovery *api_v1alpha1.Recovery, image docker.Docker) (*batch.Job, error) {
-	repository, err := stashClient.StashV1alpha1().Repositories(recovery.Spec.Repository.Namespace).Get(recovery.Spec.Repository.Name, metav1.GetOptions{})
+	repository, err := stashClient.StashV1alpha1().Repositories(recovery.Spec.Repository.Namespace).Get(context.TODO(), recovery.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

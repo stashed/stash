@@ -17,15 +17,16 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"time"
 
 	"github.com/appscode/go/log"
 	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	core_informers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (c *StashController) initNamespaceWatcher() {
@@ -43,7 +44,7 @@ func (c *StashController) initNamespaceWatcher() {
 				items, err := c.rstLister.Restics(ns.Name).List(labels.Everything())
 				if err == nil {
 					for _, item := range items {
-						err2 := c.stashClient.StashV1alpha1().Restics(item.Namespace).Delete(item.Name, &metav1.DeleteOptions{})
+						err2 := c.stashClient.StashV1alpha1().Restics(item.Namespace).Delete(context.TODO(), item.Name, meta_util.DeleteInForeground())
 						if err2 != nil {
 							log.Errorln(err2)
 						}

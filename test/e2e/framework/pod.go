@@ -245,7 +245,7 @@ func (fi *Invocation) DeployPod(pvcName string) (*core.Pod, error) {
 	fi.AppendToCleanupList(createdPod)
 
 	By("Waiting for Pod to be ready")
-	err = v1.WaitUntilPodRunning(fi.KubeClient, createdPod.ObjectMeta)
+	err = v1.WaitUntilPodRunning(context.TODO(), fi.KubeClient, createdPod.ObjectMeta)
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
 	fi.EventuallyPodAccessible(createdPod.ObjectMeta).Should(BeTrue())

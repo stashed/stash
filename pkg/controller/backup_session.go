@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -222,10 +223,16 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 			Namespace: invoker.ObjectMeta.Namespace,
 			Labels:    invoker.Labels,
 		}
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
-			return in
-		})
+		_, _, err := core_util.CreateOrPatchServiceAccount(
+			context.TODO(),
+			c.kubeClient,
+			saMeta,
+			func(in *core.ServiceAccount) *core.ServiceAccount {
+				core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
+				return in
+			},
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return err
 		}
@@ -242,7 +249,7 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 	}
 
 	// get repository for backupConfig
-	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(invoker.Repository, metav1.GetOptions{})
+	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -312,16 +319,22 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 	}
 
 	// create Backup Job
-	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
-		// set BackupSession as owner of this Job so that the it get cleaned automatically
-		// when the BackupSession gets deleted according to backupHistoryLimit
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
+	_, _, err = batch_util.CreateOrPatchJob(
+		context.TODO(),
+		c.kubeClient,
+		jobMeta,
+		func(in *batchv1.Job) *batchv1.Job {
+			// set BackupSession as owner of this Job so that the it get cleaned automatically
+			// when the BackupSession gets deleted according to backupHistoryLimit
+			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 
-		in.Spec.Template.Spec = podSpec
-		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-		in.Spec.BackoffLimit = types.Int32P(1)
-		return in
-	})
+			in.Spec.Template.Spec = podSpec
+			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Spec.BackoffLimit = types.Int32P(1)
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 
 	return err
 }
@@ -345,10 +358,16 @@ func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targe
 			Namespace: invoker.ObjectMeta.Namespace,
 			Labels:    invoker.Labels,
 		}
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
-			return in
-		})
+		_, _, err := core_util.CreateOrPatchServiceAccount(
+			context.TODO(),
+			c.kubeClient,
+			saMeta,
+			func(in *core.ServiceAccount) *core.ServiceAccount {
+				core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
+				return in
+			},
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return err
 		}
@@ -371,18 +390,24 @@ func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targe
 
 	ownerBackupSession := metav1.NewControllerRef(backupSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession))
 	// Create VolumeSnapshotter job
-	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
-		// set BackupSession as owner of this Job so that the it get cleaned automatically
-		// when the BackupSession gets deleted according to backupHistoryLimit
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
+	_, _, err = batch_util.CreateOrPatchJob(
+		context.TODO(),
+		c.kubeClient,
+		jobMeta,
+		func(in *batchv1.Job) *batchv1.Job {
+			// set BackupSession as owner of this Job so that the it get cleaned automatically
+			// when the BackupSession gets deleted according to backupHistoryLimit
+			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 
-		in.Labels = invoker.Labels
-		in.Spec.Template = *jobTemplate
-		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Labels = invoker.Labels
+			in.Spec.Template = *jobTemplate
+			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-		in.Spec.BackoffLimit = types.Int32P(1)
-		return in
-	})
+			in.Spec.BackoffLimit = types.Int32P(1)
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 
 	return err
 }
@@ -390,11 +415,17 @@ func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targe
 func (c *StashController) setBackupSessionFailed(invoker apis.Invoker, backupSession *api_v1beta1.BackupSession, backupErr error) error {
 
 	// set BackupSession phase to "Failed"
-	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		in.Phase = api_v1beta1.BackupSessionFailed
-		in.Targets = backupSession.Status.Targets
-		return in
-	})
+	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		backupSession.ObjectMeta,
+		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+			in.Phase = api_v1beta1.BackupSessionFailed
+			in.Targets = backupSession.Status.Targets
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	if err != nil {
 		return errors.NewAggregate([]error{backupErr, err})
 	}
@@ -432,28 +463,40 @@ func (c *StashController) setTargetPhaseRunning(target *api_v1beta1.BackupTarget
 		return nil, err
 	}
 	// set target phase to "Running"
-	backupSession, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		if target != nil {
-			in.Targets = upsertTargetStatsEntry(backupSession.Status.Targets, api_v1beta1.Target{
-				TotalHosts: totalHosts,
-				Ref: api_v1beta1.TargetRef{
-					Name: target.Ref.Name,
-					Kind: target.Ref.Kind,
-				},
-				Phase: api_v1beta1.TargetBackupRunning,
-			})
-		}
-		return in
-	})
+	backupSession, err = stash_util.UpdateBackupSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		backupSession.ObjectMeta,
+		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+			if target != nil {
+				in.Targets = upsertTargetStatsEntry(backupSession.Status.Targets, api_v1beta1.Target{
+					TotalHosts: totalHosts,
+					Ref: api_v1beta1.TargetRef{
+						Name: target.Ref.Name,
+						Kind: target.Ref.Kind,
+					},
+					Phase: api_v1beta1.TargetBackupRunning,
+				})
+			}
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	return backupSession, err
 }
 
 func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, error) {
 	// set BackupSession phase to "Running"
-	backupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		in.Phase = api_v1beta1.BackupSessionRunning
-		return in
-	})
+	backupSession, err := stash_util.UpdateBackupSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		backupSession.ObjectMeta,
+		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+			in.Phase = api_v1beta1.BackupSessionRunning
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -476,12 +519,18 @@ func (c *StashController) setBackupSessionSucceeded(invoker apis.Invoker, backup
 	sessionDuration := time.Since(backupSession.CreationTimestamp.Time)
 
 	// set BackupSession phase "Succeeded"
-	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		in.Phase = api_v1beta1.BackupSessionSucceeded
-		in.SessionDuration = sessionDuration.String()
-		in.Targets = backupSession.Status.Targets
-		return in
-	})
+	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		backupSession.ObjectMeta,
+		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+			in.Phase = api_v1beta1.BackupSessionSucceeded
+			in.SessionDuration = sessionDuration.String()
+			in.Targets = backupSession.Status.Targets
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	if err != nil {
 		return err
 	}
@@ -618,7 +667,7 @@ func (c *StashController) cleanupBackupHistory(backupInvokerRef api_v1beta1.Back
 
 	// delete the BackupSession that does not fit within the history limit
 	for i := int(historyLimit); i < len(bsList); i++ {
-		err = c.stashClient.StashV1beta1().BackupSessions(namespace).Delete(bsList[i].Name, meta.DeleteInBackground())
+		err = c.stashClient.StashV1beta1().BackupSessions(namespace).Delete(context.TODO(), bsList[i].Name, meta.DeleteInBackground())
 		if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
 			return err
 		}

@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"path/filepath"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
@@ -65,12 +67,12 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 }
 
 func (f *Framework) CreateRecovery(obj api.Recovery) error {
-	_, err := f.StashClient.StashV1alpha1().Recoveries(obj.Namespace).Create(&obj)
+	_, err := f.StashClient.StashV1alpha1().Recoveries(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 	return err
 }
 
 func (f *Framework) DeleteRecovery(meta metav1.ObjectMeta) error {
-	err := f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -79,7 +81,7 @@ func (f *Framework) DeleteRecovery(meta metav1.ObjectMeta) error {
 
 func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() bool {
-		obj, err := f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
 		return obj.Status.Phase == api.RecoverySucceeded

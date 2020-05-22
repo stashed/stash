@@ -47,7 +47,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"kmodules.xyz/client-go/dynamic"
-	"kmodules.xyz/client-go/meta"
+	meta_util "kmodules.xyz/client-go/meta"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 )
@@ -161,11 +161,6 @@ func (f *Framework) CountFailedSetup(events []core.Event) int {
 		}
 	}
 	return count
-}
-
-func deleteInBackground() *metav1.DeleteOptions {
-	policy := metav1.DeletePropagationBackground
-	return &metav1.DeleteOptions{PropagationPolicy: &policy}
 }
 
 func deleteInForeground() *metav1.DeleteOptions {
@@ -573,7 +568,7 @@ func WaitUntilServiceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) er
 func WaitUntilResticDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1alpha1().Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := sc.StashV1alpha1().Restics(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -586,7 +581,7 @@ func WaitUntilResticDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 
 func WaitUntilBackupConfigurationDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1beta1().BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := sc.StashV1beta1().BackupConfigurations(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -599,7 +594,7 @@ func WaitUntilBackupConfigurationDeleted(sc cs.Interface, meta metav1.ObjectMeta
 
 func WaitUntilRestoreSessionDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := sc.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -613,7 +608,7 @@ func WaitUntilRestoreSessionDeleted(sc cs.Interface, meta metav1.ObjectMeta) err
 func WaitUntilRecoveryDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1alpha1().Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := sc.StashV1alpha1().Recoveries(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -629,7 +624,7 @@ func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repositor
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
 		allDeleted := true
 		for _, repo := range repositories {
-			if _, err := sc.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{}); err != nil {
+			if _, err := sc.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{}); err != nil {
 				if kerr.IsNotFound(err) {
 					continue
 				} else {
@@ -647,7 +642,7 @@ func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repositor
 func WaitUntilRepositoryDeleted(sc cs.Interface, repository *api.Repository) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1alpha1().Repositories(repository.Namespace).Get(repository.Name, metav1.GetOptions{}); err != nil {
+		if _, err := sc.StashV1alpha1().Repositories(repository.Namespace).Get(context.TODO(), repository.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -768,7 +763,7 @@ func (fi *Invocation) CleanupTestResources() error {
 		if err != nil {
 			return err
 		}
-		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, *deleteInBackground())
+		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, meta_util.DeleteInBackground())
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
@@ -888,7 +883,7 @@ func (fi *Invocation) AddAnnotations(annotations map[string]string, obj interfac
 	}
 	mod := cur.DeepCopy()
 	mod.SetAnnotations(annotations)
-	out, _, err := dynamic.PatchObject(fi.dmClient, gvr, cur, mod)
+	out, _, err := dynamic.PatchObject(context.TODO(), fi.dmClient, gvr, cur, mod, metav1.PatchOptions{})
 	if err != nil {
 
 		return err
@@ -911,7 +906,7 @@ func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]st
 			}
 			annotations := cur.GetAnnotations()
 			for k, v := range expectedAnnotations {
-				if !(meta.HasKey(annotations, k) && annotations[k] == v) {
+				if !(meta_util.HasKey(annotations, k) && annotations[k] == v) {
 					return false
 				}
 			}

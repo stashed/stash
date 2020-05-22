@@ -19,6 +19,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"time"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1"
@@ -148,4 +149,25 @@ func UpdateRecoveryStatus(
 		err = fmt.Errorf("failed to update status of Recovery %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
+}
+
+func SetRecoveryStats(ctx context.Context, c cs.StashV1alpha1Interface, recovery metav1.ObjectMeta, path string, d time.Duration, phase api.RecoveryPhase, opts metav1.UpdateOptions) (*api.Recovery, error) {
+	return UpdateRecoveryStatus(ctx, c, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		found := false
+		for _, stats := range in.Stats {
+			if stats.Path == path {
+				found = true
+				stats.Duration = d.String()
+				stats.Phase = phase
+			}
+		}
+		if !found {
+			in.Stats = append(in.Stats, api.RestoreStats{
+				Path:     path,
+				Duration: d.String(),
+				Phase:    phase,
+			})
+		}
+		return in
+	}, opts)
 }

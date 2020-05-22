@@ -166,7 +166,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 		}
 	}
 
-	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(invoker.Repository, metav1.GetOptions{})
+	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
 	if err != nil {
 		log.Errorf("unable to get repository %s/%s: Reason: %v", invoker.ObjectMeta.Namespace, invoker.Repository, err)
 		return err

@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -179,50 +180,56 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		return err
 	}
 
-	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch.CronJob) *batch.CronJob {
-		// set restic as cron-job owner
-		in.OwnerReferences = []metav1.OwnerReference{
-			{
-				APIVersion: api.SchemeGroupVersion.String(),
-				Kind:       api.ResourceKindRestic,
-				Name:       restic.Name,
-				UID:        restic.UID,
-			},
-		}
-
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[apis.AnnotationRestic] = restic.Name
-		in.Labels[apis.AnnotationOperation] = apis.OperationScaleDown
-		// ensure job gets deleted on completion
-		in.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
-
-		// spec
-		in.Spec.Schedule = restic.Spec.Schedule
-		if in.Spec.JobTemplate.Labels == nil {
-			in.Spec.JobTemplate.Labels = map[string]string{}
-		}
-		in.Spec.JobTemplate.Labels[apis.LabelApp] = apis.AppLabelStash
-		in.Spec.JobTemplate.Labels[apis.AnnotationRestic] = restic.Name
-		in.Spec.JobTemplate.Labels[apis.AnnotationOperation] = apis.OperationScaleDown
-
-		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
-			core.Container{
-				Name:  apis.StashContainer,
-				Image: image.ToContainerImage(),
-				Args: []string{
-					"scaledown",
-					"--selector=" + selector.String(),
+	cronJob, _, err := batch_util.CreateOrPatchCronJob(
+		context.TODO(),
+		c.kubeClient,
+		meta,
+		func(in *batch.CronJob) *batch.CronJob {
+			// set restic as cron-job owner
+			in.OwnerReferences = []metav1.OwnerReference{
+				{
+					APIVersion: api.SchemeGroupVersion.String(),
+					Kind:       api.ResourceKindRestic,
+					Name:       restic.Name,
+					UID:        restic.UID,
 				},
-			})
-		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets
+			}
 
-		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-		in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name
-		return in
-	})
+			if in.Labels == nil {
+				in.Labels = map[string]string{}
+			}
+			in.Labels[apis.AnnotationRestic] = restic.Name
+			in.Labels[apis.AnnotationOperation] = apis.OperationScaleDown
+			// ensure job gets deleted on completion
+			in.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
+
+			// spec
+			in.Spec.Schedule = restic.Spec.Schedule
+			if in.Spec.JobTemplate.Labels == nil {
+				in.Spec.JobTemplate.Labels = map[string]string{}
+			}
+			in.Spec.JobTemplate.Labels[apis.LabelApp] = apis.AppLabelStash
+			in.Spec.JobTemplate.Labels[apis.AnnotationRestic] = restic.Name
+			in.Spec.JobTemplate.Labels[apis.AnnotationOperation] = apis.OperationScaleDown
+
+			in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+				in.Spec.JobTemplate.Spec.Template.Spec.Containers,
+				core.Container{
+					Name:  apis.StashContainer,
+					Image: image.ToContainerImage(),
+					Args: []string{
+						"scaledown",
+						"--selector=" + selector.String(),
+					},
+				})
+			in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets
+
+			in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
+			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 	if err != nil {
 		return err
 	}

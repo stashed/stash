@@ -16,6 +16,7 @@ limitations under the License.
 package misc
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -28,6 +29,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
@@ -74,7 +76,7 @@ var _ = Describe("Repository", func() {
 
 				// reject to create Repository
 				By("reject to create Repository")
-				_, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+				_, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 				Expect(err).To(HaveOccurred())
 			})
 
@@ -102,7 +104,7 @@ var _ = Describe("Repository", func() {
 
 				// reject to create Repository
 				By("reject to create Repository")
-				_, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+				_, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 				Expect(err).To(HaveOccurred())
 			})
 		})

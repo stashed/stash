@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -58,14 +59,14 @@ func (fi *Invocation) BackupBlueprint(secretName string) *v1beta1.BackupBlueprin
 }
 
 func (f *Framework) CreateBackupBlueprint(backupBlueprint *v1beta1.BackupBlueprint) (*v1beta1.BackupBlueprint, error) {
-	return f.StashClient.StashV1beta1().BackupBlueprints().Create(backupBlueprint)
+	return f.StashClient.StashV1beta1().BackupBlueprints().Create(context.TODO(), backupBlueprint, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) DeleteBackupBlueprint(name string) error {
 	if name == "" {
 		return nil
 	}
-	err := fi.StashClient.StashV1beta1().BackupBlueprints().Delete(name, &metav1.DeleteOptions{})
+	err := fi.StashClient.StashV1beta1().BackupBlueprints().Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if kerr.IsNotFound(err) {
 		return nil
 	}
@@ -73,7 +74,7 @@ func (fi *Invocation) DeleteBackupBlueprint(name string) error {
 }
 
 func (f *Framework) GetBackupBlueprint(name string) (*v1beta1.BackupBlueprint, error) {
-	return f.StashClient.StashV1beta1().BackupBlueprints().Get(name, metav1.GetOptions{})
+	return f.StashClient.StashV1beta1().BackupBlueprints().Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 func (fi Invocation) CreateBackupBlueprintForWorkload(name string) (*v1beta1.BackupBlueprint, error) {

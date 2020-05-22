@@ -83,10 +83,16 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 
 	// We have successfully completed respective stuffs for the current state of this resource.
 	// Hence, let's set observed generation as same as the current generation.
-	_, err = v1beta1_util.UpdateBackupConfigurationStatus(c.stashClient.StashV1beta1(), backupConfiguration.ObjectMeta, func(in *api_v1beta1.BackupConfigurationStatus) *api_v1beta1.BackupConfigurationStatus {
-		in.ObservedGeneration = backupConfiguration.Generation
-		return in
-	})
+	_, err = v1beta1_util.UpdateBackupConfigurationStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		backupConfiguration.ObjectMeta,
+		func(in *api_v1beta1.BackupConfigurationStatus) *api_v1beta1.BackupConfigurationStatus {
+			in.ObservedGeneration = backupConfiguration.Generation
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	return err
 }
 
@@ -305,10 +311,16 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object prefixed with stash-backup.
 		serviceAccountName = meta.Name
 
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
-			return in
-		})
+		_, _, err := core_util.CreateOrPatchServiceAccount(
+			context.TODO(),
+			c.kubeClient,
+			meta,
+			func(in *core.ServiceAccount) *core.ServiceAccount {
+				core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
+				return in
+			},
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return err
 		}
@@ -320,51 +332,57 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 		return err
 	}
 
-	_, _, err = batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
-		//set backup invoker object as cron-job owner
-		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
+	_, _, err = batch_util.CreateOrPatchCronJob(
+		context.TODO(),
+		c.kubeClient,
+		meta,
+		func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
+			//set backup invoker object as cron-job owner
+			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 
-		in.Spec.Schedule = invoker.Schedule
-		in.Spec.Suspend = types.BoolP(invoker.Paused) // this ensure that the CronJob is suspended when the backup invoker is paused.
-		in.Spec.JobTemplate.Labels = invoker.Labels
-		// ensure that job gets deleted on completion
-		in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
+			in.Spec.Schedule = invoker.Schedule
+			in.Spec.Suspend = types.BoolP(invoker.Paused) // this ensure that the CronJob is suspended when the backup invoker is paused.
+			in.Spec.JobTemplate.Labels = invoker.Labels
+			// ensure that job gets deleted on completion
+			in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
 
-		container := core.Container{
-			Name:            apis.StashContainer,
-			ImagePullPolicy: core.PullIfNotPresent,
-			Image:           image.ToContainerImage(),
-			Args: []string{
-				"create-backupsession",
-				fmt.Sprintf("--invoker-name=%s", invoker.OwnerRef.Name),
-				fmt.Sprintf("--invoker-type=%s", invoker.OwnerRef.Kind),
-			},
-		}
-		// only apply the container level runtime settings that make sense for the CronJob
-		if invoker.RuntimeSettings.Container != nil {
-			container.Resources = invoker.RuntimeSettings.Container.Resources
-			container.Env = invoker.RuntimeSettings.Container.Env
-			container.EnvFrom = invoker.RuntimeSettings.Container.EnvFrom
-			container.SecurityContext = invoker.RuntimeSettings.Container.SecurityContext
-		}
-
-		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			in.Spec.JobTemplate.Spec.Template.Spec.Containers, container)
-		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-		in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
-		// only apply the pod level runtime settings that make sense for the CronJob
-		if invoker.RuntimeSettings.Pod != nil {
-			if len(invoker.RuntimeSettings.Pod.ImagePullSecrets) != 0 {
-				in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = invoker.RuntimeSettings.Pod.ImagePullSecrets
+			container := core.Container{
+				Name:            apis.StashContainer,
+				ImagePullPolicy: core.PullIfNotPresent,
+				Image:           image.ToContainerImage(),
+				Args: []string{
+					"create-backupsession",
+					fmt.Sprintf("--invoker-name=%s", invoker.OwnerRef.Name),
+					fmt.Sprintf("--invoker-type=%s", invoker.OwnerRef.Kind),
+				},
 			}
-			if invoker.RuntimeSettings.Pod.SecurityContext != nil {
-				in.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = invoker.RuntimeSettings.Pod.SecurityContext
+			// only apply the container level runtime settings that make sense for the CronJob
+			if invoker.RuntimeSettings.Container != nil {
+				container.Resources = invoker.RuntimeSettings.Container.Resources
+				container.Env = invoker.RuntimeSettings.Container.Env
+				container.EnvFrom = invoker.RuntimeSettings.Container.EnvFrom
+				container.SecurityContext = invoker.RuntimeSettings.Container.SecurityContext
 			}
-		}
 
-		return in
-	})
+			in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+				in.Spec.JobTemplate.Spec.Template.Spec.Containers, container)
+			in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
+			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+
+			// only apply the pod level runtime settings that make sense for the CronJob
+			if invoker.RuntimeSettings.Pod != nil {
+				if len(invoker.RuntimeSettings.Pod.ImagePullSecrets) != 0 {
+					in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = invoker.RuntimeSettings.Pod.ImagePullSecrets
+				}
+				if invoker.RuntimeSettings.Pod.SecurityContext != nil {
+					in.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = invoker.RuntimeSettings.Pod.SecurityContext
+				}
+			}
+
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 
 	return err
 }
@@ -379,10 +397,16 @@ func (c *StashController) EnsureBackupTriggeringCronJobDeleted(invoker apis.Invo
 		}
 		return err
 	}
-	_, _, err = batch_util.PatchCronJob(c.kubeClient, cur, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
-		return in
-	})
+	_, _, err = batch_util.PatchCronJob(
+		context.TODO(),
+		c.kubeClient,
+		cur,
+		func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 	return err
 }
 

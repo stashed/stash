@@ -53,7 +53,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 		}
 	}
 
-	repository, err := c.stashClient.StashV1alpha1().Repositories(rs.Namespace).Get(rs.Spec.Repository.Name, metav1.GetOptions{})
+	repository, err := c.stashClient.StashV1alpha1().Repositories(rs.Namespace).Get(context.TODO(), rs.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
 		log.Errorf("unable to get repository %s/%s: Reason: %v", rs.Namespace, rs.Spec.Repository.Name, err)
 		return err

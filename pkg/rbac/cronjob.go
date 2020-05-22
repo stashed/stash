@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -43,12 +44,12 @@ func EnsureCronJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerRefer
 	return ensureCronJobRoleBinding(kubeClient, owner, namespace, sa, labels)
 }
 
-func ensureCronJobClusterRole(kubeClient kubernetes.Interface, psps []string, labels map[string]string) error {
+func ensureCronJobClusterRole(kc kubernetes.Interface, psps []string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashCronJobClusterRole,
 		Labels: labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
@@ -89,11 +90,11 @@ func ensureCronJobClusterRole(kubeClient kubernetes.Interface, psps []string, la
 		}
 		return in
 
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
-func ensureCronJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func ensureCronJobRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Name:      getCronJobRoleBindingName(sa),
 		Namespace: namespace,
@@ -101,7 +102,7 @@ func ensureCronJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.Own
 	}
 
 	// ensure role binding
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.RoleRef = rbac.RoleRef{
@@ -117,7 +118,7 @@ func ensureCronJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.Own
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}

@@ -438,7 +438,7 @@ func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.Obje
 
 func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Spec.Replicas == obj.Status.ReadyReplicas, nil
 		}
 		return false, nil
@@ -447,7 +447,7 @@ func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) e
 
 func WaitUntilVolumeSnapshotReady(c snapshot_cs.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, 2*time.Hour, func() (bool, error) {
-		if obj, err := c.SnapshotV1beta1().VolumeSnapshots(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := c.SnapshotV1beta1().VolumeSnapshots(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status != nil && obj.Status.ReadyToUse != nil && *obj.Status.ReadyToUse, nil
 		}
 		return false, nil

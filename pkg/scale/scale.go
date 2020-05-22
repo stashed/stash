@@ -67,14 +67,20 @@ func (c *Controller) ScaleDownWorkload() error {
 	dpList, err := c.k8sClient.AppsV1().Deployments(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil {
 		for _, dp := range dpList.Items {
-			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
-				if obj.Annotations == nil {
-					obj.Annotations = make(map[string]string)
-				}
-				obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*dp.Spec.Replicas))
-				obj.Spec.Replicas = &ZeroReplica
-				return obj
-			})
+			_, _, err := apps_util.PatchDeployment(
+				context.TODO(),
+				c.k8sClient,
+				&dp,
+				func(obj *apps.Deployment) *apps.Deployment {
+					if obj.Annotations == nil {
+						obj.Annotations = make(map[string]string)
+					}
+					obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*dp.Spec.Replicas))
+					obj.Spec.Replicas = &ZeroReplica
+					return obj
+				},
+				metav1.PatchOptions{},
+			)
 			if err != nil {
 				return err
 			}
@@ -85,14 +91,20 @@ func (c *Controller) ScaleDownWorkload() error {
 	rcList, err := c.k8sClient.CoreV1().ReplicationControllers(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil {
 		for _, rc := range rcList.Items {
-			_, _, err := core_util.PatchRC(c.k8sClient, &rc, func(obj *core.ReplicationController) *core.ReplicationController {
-				if obj.Annotations == nil {
-					obj.Annotations = make(map[string]string)
-				}
-				obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*rc.Spec.Replicas))
-				obj.Spec.Replicas = &ZeroReplica
-				return obj
-			})
+			_, _, err := core_util.PatchRC(
+				context.TODO(),
+				c.k8sClient,
+				&rc,
+				func(obj *core.ReplicationController) *core.ReplicationController {
+					if obj.Annotations == nil {
+						obj.Annotations = make(map[string]string)
+					}
+					obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*rc.Spec.Replicas))
+					obj.Spec.Replicas = &ZeroReplica
+					return obj
+				},
+				metav1.PatchOptions{},
+			)
 			if err != nil {
 				return err
 			}
@@ -104,14 +116,20 @@ func (c *Controller) ScaleDownWorkload() error {
 	if err == nil {
 		for _, rs := range rsList.Items {
 			if !apps_util.IsOwnedByDeployment(rs.OwnerReferences) {
-				_, _, err := apps_util.PatchReplicaSet(c.k8sClient, &rs, func(obj *apps.ReplicaSet) *apps.ReplicaSet {
-					if obj.Annotations == nil {
-						obj.Annotations = make(map[string]string)
-					}
-					obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*rs.Spec.Replicas))
-					obj.Spec.Replicas = &ZeroReplica
-					return obj
-				})
+				_, _, err := apps_util.PatchReplicaSet(
+					context.TODO(),
+					c.k8sClient,
+					&rs,
+					func(obj *apps.ReplicaSet) *apps.ReplicaSet {
+						if obj.Annotations == nil {
+							obj.Annotations = make(map[string]string)
+						}
+						obj.Annotations[apis.AnnotationOldReplica] = strconv.Itoa(int(*rs.Spec.Replicas))
+						obj.Spec.Replicas = &ZeroReplica
+						return obj
+					},
+					metav1.PatchOptions{},
+				)
 				if err != nil {
 					return err
 				}
@@ -129,10 +147,10 @@ func (c *Controller) ScaleDownWorkload() error {
 	dpList, err = c.k8sClient.AppsV1().Deployments(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(dpList.Items) > 0 {
 		for _, dp := range dpList.Items {
-			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
+			_, _, err := apps_util.PatchDeployment(context.TODO(), c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
 				obj.Spec.Replicas = &OneReplica
 				return obj
-			})
+			}, metav1.PatchOptions{})
 			if err != nil {
 				return err
 			}
@@ -143,10 +161,10 @@ func (c *Controller) ScaleDownWorkload() error {
 	rcList, err = c.k8sClient.CoreV1().ReplicationControllers(c.opt.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(rcList.Items) > 0 {
 		for _, rc := range rcList.Items {
-			_, _, err := core_util.PatchRC(c.k8sClient, &rc, func(obj *core.ReplicationController) *core.ReplicationController {
+			_, _, err := core_util.PatchRC(context.TODO(), c.k8sClient, &rc, func(obj *core.ReplicationController) *core.ReplicationController {
 				obj.Spec.Replicas = &OneReplica
 				return obj
-			})
+			}, metav1.PatchOptions{})
 			if err != nil {
 				return err
 			}
@@ -158,10 +176,10 @@ func (c *Controller) ScaleDownWorkload() error {
 	if err == nil && len(rsList.Items) > 0 {
 		for _, rs := range rsList.Items {
 			if !apps_util.IsOwnedByDeployment(rs.OwnerReferences) {
-				_, _, err := apps_util.PatchReplicaSet(c.k8sClient, &rs, func(obj *apps.ReplicaSet) *apps.ReplicaSet {
+				_, _, err := apps_util.PatchReplicaSet(context.TODO(), c.k8sClient, &rs, func(obj *apps.ReplicaSet) *apps.ReplicaSet {
 					obj.Spec.Replicas = &OneReplica
 					return obj
-				})
+				}, metav1.PatchOptions{})
 				if err != nil {
 					return err
 				}
@@ -174,7 +192,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	if err == nil && len(podList.Items) > 0 {
 		for _, pod := range podList.Items {
 			if isDaemonOrStatefulSetPod(pod.OwnerReferences) {
-				err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(context.TODO(), pod.Name, *meta_util.DeleteInBackground())
+				err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(context.TODO(), pod.Name, meta_util.DeleteInBackground())
 				if err != nil {
 					log.Infof("Error in deleting pod %v. Reason: %v", pod.Name, err.Error())
 				}
@@ -198,11 +216,11 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		_, _, err = apps_util.PatchDeployment(k8sClient, obj, func(dp *apps.Deployment) *apps.Deployment {
+		_, _, err = apps_util.PatchDeployment(context.TODO(), k8sClient, obj, func(dp *apps.Deployment) *apps.Deployment {
 			dp.Spec.Replicas = types.Int32P(int32(replica))
 			delete(dp.Annotations, apis.AnnotationOldReplica)
 			return dp
-		})
+		}, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
@@ -217,11 +235,11 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		_, _, err = core_util.PatchRC(k8sClient, obj, func(rc *core.ReplicationController) *core.ReplicationController {
+		_, _, err = core_util.PatchRC(context.TODO(), k8sClient, obj, func(rc *core.ReplicationController) *core.ReplicationController {
 			rc.Spec.Replicas = types.Int32P(int32(replica))
 			delete(rc.Annotations, apis.AnnotationOldReplica)
 			return rc
-		})
+		}, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
@@ -236,11 +254,11 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		_, _, err = apps_util.PatchReplicaSet(k8sClient, obj, func(rs *apps.ReplicaSet) *apps.ReplicaSet {
+		_, _, err = apps_util.PatchReplicaSet(context.TODO(), k8sClient, obj, func(rs *apps.ReplicaSet) *apps.ReplicaSet {
 			rs.Spec.Replicas = types.Int32P(int32(replica))
 			delete(rs.Annotations, apis.AnnotationOldReplica)
 			return rs
-		})
+		}, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}

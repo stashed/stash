@@ -17,6 +17,7 @@ limitations under the License.
 package status
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -58,7 +59,7 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	if err != nil {
 		return err
 	}
-	backupSession, err := o.StashClient.StashV1beta1().BackupSessions(o.Namespace).Get(o.BackupSession, metav1.GetOptions{})
+	backupSession, err := o.StashClient.StashV1beta1().BackupSessions(o.Namespace).Get(context.TODO(), o.BackupSession, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -92,7 +93,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
 	}
 	// get backup session, update status and create event
-	backupSession, err := o.StashClient.StashV1beta1().BackupSessions(o.Namespace).Get(o.BackupSession, metav1.GetOptions{})
+	backupSession, err := o.StashClient.StashV1beta1().BackupSessions(o.Namespace).Get(context.TODO(), o.BackupSession, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -102,7 +103,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	// add or update entry for each host in BackupSession status + create event
 	for _, hostStats := range backupOutput.HostBackupStats {
 		log.Infof("Updating status of BackupSession: %s/%s for host: %s", backupSession.Namespace, backupSession.Name, hostStats.Hostname)
-		backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), o.TargetRef, backupSession.ObjectMeta, hostStats)
+		backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(context.TODO(), o.StashClient.StashV1beta1(), o.TargetRef, backupSession.ObjectMeta, hostStats, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
@@ -133,12 +134,13 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 
 	// if overall backup succeeded and repository status presents in backupOutput then update Repository status
 	if overallBackupSucceeded && backupOutput.RepositoryStats.Integrity != nil {
-		repository, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(o.Repository, metav1.GetOptions{})
+		repository, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(context.TODO(), o.Repository, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
 		_, err = stash_util.UpdateRepositoryStatus(
+			context.TODO(),
 			o.StashClient.StashV1alpha1(),
 			repository.ObjectMeta,
 			func(in *api.RepositoryStatus) *api.RepositoryStatus {
@@ -155,6 +157,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 				}
 				return in
 			},
+			metav1.UpdateOptions{},
 		)
 		if err != nil {
 			return err
@@ -173,7 +176,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 		return fmt.Errorf("invalid restore output. Restore output must not be nil")
 	}
 	// get restore session, update status and create event
-	restoreSession, err := o.StashClient.StashV1beta1().RestoreSessions(o.Namespace).Get(o.RestoreSession, metav1.GetOptions{})
+	restoreSession, err := o.StashClient.StashV1beta1().RestoreSessions(o.Namespace).Get(context.TODO(), o.RestoreSession, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -181,7 +184,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	// add or update entry for each host in RestoreSession status
 	for _, hostStats := range restoreOutput.HostRestoreStats {
 		log.Infof("Updating status of RestoreSession: %s/%s for host: %s", restoreSession.Namespace, restoreSession.Name, hostStats.Hostname)
-		restoreSession, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(o.StashClient.StashV1beta1(), restoreSession.ObjectMeta, hostStats)
+		restoreSession, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(context.TODO(), o.StashClient.StashV1beta1(), restoreSession.ObjectMeta, hostStats, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}

@@ -58,7 +58,7 @@ func (fi *Invocation) CreateNFSServer() (string, error) {
 	}
 	//fi.AppendToCleanupList(nfsSVC)
 
-	nfsErr = apps_util.WaitUntilDeploymentReady(fi.KubeClient, nfsDeploy.ObjectMeta)
+	nfsErr = apps_util.WaitUntilDeploymentReady(context.TODO(), fi.KubeClient, nfsDeploy.ObjectMeta)
 	if nfsErr != nil {
 		return "", nfsErr
 	}

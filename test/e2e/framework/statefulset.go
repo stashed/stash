@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) StatefulSet(name, pvcName, volName string) apps.StatefulSet {
@@ -130,7 +131,7 @@ func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) (*apps.StatefulSet, 
 }
 
 func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInBackground())
+	err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -220,7 +221,7 @@ func (fi *Invocation) DeployStatefulSet(name string, replica int32, volName stri
 	fi.AppendToCleanupList(createdss)
 
 	By("Waiting for StatefulSet to be ready")
-	err = apps_util.WaitUntilStatefulSetReady(fi.KubeClient, createdss.ObjectMeta)
+	err = apps_util.WaitUntilStatefulSetReady(context.TODO(), fi.KubeClient, createdss.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
@@ -324,7 +325,7 @@ func (fi *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.State
 	fi.AppendToCleanupList(createdStatefulSet)
 
 	By("Waiting for StatefulSet to be ready")
-	err = apps_util.WaitUntilStatefulSetReady(fi.KubeClient, createdStatefulSet.ObjectMeta)
+	err = apps_util.WaitUntilStatefulSetReady(context.TODO(), fi.KubeClient, createdStatefulSet.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data

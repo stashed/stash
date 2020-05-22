@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 const (
@@ -91,7 +92,7 @@ func (f *Framework) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = apps_util.WaitUntilDeploymentReady(f.KubeClient, mdeploy.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(context.TODO(), f.KubeClient, mdeploy.ObjectMeta)
 	if err != nil {
 		return "", err
 	}
@@ -322,7 +323,7 @@ func (f *Framework) DeletePVCForMinioServer(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) DeleteDeploymentForMinioServer(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInBackground())
+	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

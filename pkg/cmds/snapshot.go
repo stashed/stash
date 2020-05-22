@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -51,7 +52,7 @@ func NewCmdSnapshots() *cobra.Command {
 			if repositoryName == "" {
 				return fmt.Errorf("repository name not found")
 			}
-			repo, err := stashClient.Repositories(meta.Namespace()).Get(repositoryName, metav1.GetOptions{})
+			repo, err := stashClient.Repositories(meta.Namespace()).Get(context.TODO(), repositoryName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}

@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -36,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apps_util "kmodules.xyz/client-go/apps/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
@@ -262,7 +264,7 @@ func (fi *Invocation) CreateMySQL(dpl *apps.Deployment) error {
 	}
 
 	By("Waiting for MySQL Deployment to be ready")
-	return apps_util.WaitUntilDeploymentReady(fi.KubeClient, dpl.ObjectMeta)
+	return apps_util.WaitUntilDeploymentReady(context.TODO(), fi.KubeClient, dpl.ObjectMeta)
 }
 
 func (fi *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
@@ -276,7 +278,7 @@ func (fi *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
 }
 
 func (fi *Invocation) CreateAppBinding(appBinding *appCatalog.AppBinding) (*appCatalog.AppBinding, error) {
-	return fi.catalogClient.AppcatalogV1alpha1().AppBindings(appBinding.Namespace).Create(appBinding)
+	return fi.catalogClient.AppcatalogV1alpha1().AppBindings(appBinding.Namespace).Create(context.TODO(), appBinding, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) CreateTable(db *sql.DB, tableName string) error {
@@ -368,7 +370,7 @@ func (fi *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, rep
 	}
 
 	By("Creating BackupConfiguration: " + backupConfig.Name)
-	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(context.TODO(), backupConfig, metav1.CreateOptions{})
 	fi.AppendToCleanupList(createdBC)
 
 	By("Verifying that backup triggering CronJob has been created")
@@ -416,28 +418,28 @@ func (f *Framework) EnsureMySQLAddon() error {
 
 	// create MySQL backup Function
 	backupFunc := mysqlBackupFunction(image)
-	_, err := f.StashClient.StashV1beta1().Functions().Create(backupFunc)
+	_, err := f.StashClient.StashV1beta1().Functions().Create(context.TODO(), backupFunc, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
 	// create MySQL restore function
 	restoreFunc := mysqlRestoreFunction(image)
-	_, err = f.StashClient.StashV1beta1().Functions().Create(restoreFunc)
+	_, err = f.StashClient.StashV1beta1().Functions().Create(context.TODO(), restoreFunc, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
 	// create MySQL backup Task
 	backupTask := mysqlBackupTask()
-	_, err = f.StashClient.StashV1beta1().Tasks().Create(backupTask)
+	_, err = f.StashClient.StashV1beta1().Tasks().Create(context.TODO(), backupTask, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
 	// create MySQL restore Task
 	restoreTask := mysqlRestoreTask()
-	_, err = f.StashClient.StashV1beta1().Tasks().Create(restoreTask)
+	_, err = f.StashClient.StashV1beta1().Tasks().Create(context.TODO(), restoreTask, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -447,25 +449,25 @@ func (f *Framework) EnsureMySQLAddon() error {
 
 func (f *Framework) EnsureMySQLAddonDeleted() error {
 	// delete MySQL backup Function
-	err := f.StashClient.StashV1beta1().Functions().Delete(MySQLBackupFunction, deleteInBackground())
+	err := f.StashClient.StashV1beta1().Functions().Delete(context.TODO(), MySQLBackupFunction, meta_util.DeleteInBackground())
 	if err != nil {
 		return err
 	}
 
 	// delete MySQL restore Function
-	err = f.StashClient.StashV1beta1().Functions().Delete(MySQLRestoreFunction, deleteInBackground())
+	err = f.StashClient.StashV1beta1().Functions().Delete(context.TODO(), MySQLRestoreFunction, meta_util.DeleteInBackground())
 	if err != nil {
 		return err
 	}
 
 	// delete MySQL backup Task
-	err = f.StashClient.StashV1beta1().Tasks().Delete(MySQLBackupTask, deleteInBackground())
+	err = f.StashClient.StashV1beta1().Tasks().Delete(context.TODO(), MySQLBackupTask, meta_util.DeleteInBackground())
 	if err != nil {
 		return err
 	}
 
 	// delete MySQL restore Task
-	err = f.StashClient.StashV1beta1().Tasks().Delete(MySQLRestoreTask, deleteInBackground())
+	err = f.StashClient.StashV1beta1().Tasks().Delete(context.TODO(), MySQLRestoreTask, meta_util.DeleteInBackground())
 	if err != nil {
 		return err
 	}
@@ -473,22 +475,22 @@ func (f *Framework) EnsureMySQLAddonDeleted() error {
 }
 
 func (fi *Invocation) MySQLAddonInstalled() bool {
-	_, err := fi.StashClient.StashV1beta1().Functions().Get(MySQLBackupFunction, metav1.GetOptions{})
+	_, err := fi.StashClient.StashV1beta1().Functions().Get(context.TODO(), MySQLBackupFunction, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
 
-	_, err = fi.StashClient.StashV1beta1().Functions().Get(MySQLRestoreFunction, metav1.GetOptions{})
+	_, err = fi.StashClient.StashV1beta1().Functions().Get(context.TODO(), MySQLRestoreFunction, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
 
-	_, err = fi.StashClient.StashV1beta1().Tasks().Get(MySQLBackupTask, metav1.GetOptions{})
+	_, err = fi.StashClient.StashV1beta1().Tasks().Get(context.TODO(), MySQLBackupTask, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
 
-	_, err = fi.StashClient.StashV1beta1().Tasks().Get(MySQLRestoreTask, metav1.GetOptions{})
+	_, err = fi.StashClient.StashV1beta1().Tasks().Get(context.TODO(), MySQLRestoreTask, metav1.GetOptions{})
 
 	return err == nil
 }

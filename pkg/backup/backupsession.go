@@ -243,7 +243,7 @@ func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.T
 	}
 
 	// get repository
-	repository, err := c.StashClient.StashV1alpha1().Repositories(c.Namespace).Get(invoker.Repository, metav1.GetOptions{})
+	repository, err := c.StashClient.StashV1alpha1().Repositories(c.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

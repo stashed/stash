@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) ReplicaSet(name, pvcName, volName string) apps.ReplicaSet {
@@ -61,7 +62,7 @@ func (f *Framework) CreateReplicaSet(obj apps.ReplicaSet) (*apps.ReplicaSet, err
 }
 
 func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInBackground())
+	err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -161,7 +162,7 @@ func (fi *Invocation) DeployReplicaSet(name string, replica int32, volName strin
 	fi.AppendToCleanupList(createdRS)
 
 	By("Waiting for ReplicaSet to be ready")
-	err = apps_util.WaitUntilReplicaSetReady(fi.KubeClient, createdRS.ObjectMeta)
+	err = apps_util.WaitUntilReplicaSetReady(context.TODO(), fi.KubeClient, createdRS.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data

@@ -51,15 +51,15 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-aggregator v0.18.3
 	k8s.io/kubernetes v1.18.3
-	kmodules.xyz/client-go v0.0.0-20200521181834-92024b192ae7
+	kmodules.xyz/client-go v0.0.0-20200522120609-c6430d66212f
 	kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72
 	kmodules.xyz/custom-resources v0.0.0-20200521070540-2221c4957ef6
 	kmodules.xyz/objectstore-api v0.0.0-20200521103120-92080446e04d
 	kmodules.xyz/offshoot-api v0.0.0-20200521035628-e135bf07b226
-	kmodules.xyz/openshift v0.0.0-20200521065736-da9980848f70
+	kmodules.xyz/openshift v0.0.0-20200522123204-ce4abf5433c8
 	kmodules.xyz/prober v0.0.0-20200521101241-adf06150535c
-	kmodules.xyz/webhook-runtime v0.0.0-20200521051441-6c051c487814
-	stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200522112633-5f8cf3a607d8
+	kmodules.xyz/webhook-runtime v0.0.0-20200522123600-ca70a7e28ed0
+	stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200522135619-e81205a3590e
 )
 
 replace (
@@ -78,6 +78,8 @@ replace (
 	github.com/Azure/go-autorest/logger => github.com/Azure/go-autorest/logger v0.1.0
 	github.com/Azure/go-autorest/tracing => github.com/Azure/go-autorest/tracing v0.5.0
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.0.0
+	go.etcd.io/etcd => go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738
+	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 	k8s.io/apimachinery => github.com/kmodules/apimachinery v0.19.0-alpha.0.0.20200520235721-10b58e57a423
 	k8s.io/apiserver => github.com/kmodules/apiserver v0.18.4-0.20200521000930-14c5f6df9625
 	k8s.io/client-go => k8s.io/client-go v0.18.3

@@ -301,7 +301,7 @@ github.com/yudai/gojsondiff
 github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 github.com/yudai/golcs
-# go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738
+# go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738 => go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738
 go.etcd.io/etcd/auth/authpb
 go.etcd.io/etcd/clientv3
 go.etcd.io/etcd/clientv3/balancer
@@ -455,7 +455,7 @@ google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
 # google.golang.org/genproto v0.0.0-20191220175831-5c49e3ecc1c1
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.28.0
+# google.golang.org/grpc v1.28.0 => google.golang.org/grpc v1.26.0
 google.golang.org/grpc
 google.golang.org/grpc/attributes
 google.golang.org/grpc/backoff
@@ -477,10 +477,8 @@ google.golang.org/grpc/internal/binarylog
 google.golang.org/grpc/internal/buffer
 google.golang.org/grpc/internal/channelz
 google.golang.org/grpc/internal/envconfig
-google.golang.org/grpc/internal/grpclog
 google.golang.org/grpc/internal/grpcrand
 google.golang.org/grpc/internal/grpcsync
-google.golang.org/grpc/internal/grpcutil
 google.golang.org/grpc/internal/resolver/dns
 google.golang.org/grpc/internal/resolver/passthrough
 google.golang.org/grpc/internal/syscall
@@ -1039,7 +1037,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20200521181834-92024b192ae7
+# kmodules.xyz/client-go v0.0.0-20200522120609-c6430d66212f
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/api/v1
@@ -1084,7 +1082,7 @@ kmodules.xyz/objectstore-api/osm
 # kmodules.xyz/offshoot-api v0.0.0-20200521035628-e135bf07b226
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util
-# kmodules.xyz/openshift v0.0.0-20200521065736-da9980848f70
+# kmodules.xyz/openshift v0.0.0-20200522123204-ce4abf5433c8
 kmodules.xyz/openshift/apis/apps/install
 kmodules.xyz/openshift/apis/apps/v1
 kmodules.xyz/openshift/apis/security/v1
@@ -1108,7 +1106,7 @@ kmodules.xyz/prober/probe
 kmodules.xyz/prober/probe/exec
 kmodules.xyz/prober/probe/http
 kmodules.xyz/prober/probe/tcp
-# kmodules.xyz/webhook-runtime v0.0.0-20200521051441-6c051c487814
+# kmodules.xyz/webhook-runtime v0.0.0-20200522123600-ca70a7e28ed0
 kmodules.xyz/webhook-runtime/admission
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/admission/v1beta1/generic
@@ -1151,7 +1149,7 @@ sigs.k8s.io/structured-merge-diff/v3/typed
 sigs.k8s.io/structured-merge-diff/v3/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200522112633-5f8cf3a607d8
+# stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200522135619-e81205a3590e
 stash.appscode.dev/apimachinery/api/crds
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories

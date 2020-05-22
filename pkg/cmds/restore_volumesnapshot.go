@@ -98,7 +98,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	// start clock to measure the time takes to restore the volumes
 	startTime := time.Now()
 
-	restoreSession, err := opt.stashClient.StashV1beta1().RestoreSessions(opt.namespace).Get(opt.restoresession, metav1.GetOptions{})
+	restoreSession, err := opt.stashClient.StashV1beta1().RestoreSessions(opt.namespace).Get(context.TODO(), opt.restoresession, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	for i := range pvcList {
 		// verify that the respective VolumeSnapshot exist
 		if pvcList[i].Spec.DataSource != nil {
-			_, err = opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Get(pvcList[i].Spec.DataSource.Name, metav1.GetOptions{})
+			_, err = opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Get(context.TODO(), pvcList[i].Spec.DataSource.Name, metav1.GetOptions{})
 			if err != nil {
 				if kerr.IsNotFound(err) { // respective VolumeSnapshot does not exist
 					restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{

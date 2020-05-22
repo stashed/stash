@@ -91,7 +91,7 @@ func (fi *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
 	}
 	fi.AppendToCleanupList(rsvc)
 
-	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, rdeploy.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(context.TODO(), fi.KubeClient, rdeploy.ObjectMeta)
 	if err != nil {
 		return "", err
 	}

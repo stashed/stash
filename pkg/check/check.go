@@ -58,7 +58,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 }
 
 func (c *Controller) Run() (err error) {
-	restic, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
+	restic, err := c.stashClient.Restics(c.opt.Namespace).Get(context.TODO(), c.opt.ResticName, metav1.GetOptions{})
 	if err != nil {
 		return
 	}

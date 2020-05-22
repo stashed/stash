@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -24,6 +25,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
@@ -144,10 +146,16 @@ func (c *StashController) setRestoreJobCreatedConditionToFalse(rs *api_v1beta1.R
 }
 
 func (c *StashController) setRestoreSessionCondition(rs *api_v1beta1.RestoreSession, condition kmapi.Condition) error {
-	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), rs.ObjectMeta, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		in.Conditions = kmapi.SetCondition(in.Conditions, condition)
-		return in
-	})
+	_, err := v1beta1_util.UpdateRestoreSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		rs.ObjectMeta,
+		func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+			in.Conditions = kmapi.SetCondition(in.Conditions, condition)
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	return err
 }
 

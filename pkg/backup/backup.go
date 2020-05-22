@@ -242,7 +242,7 @@ func (c *Controller) setup() (*api.Restic, *api.Repository, error) {
 	}
 
 	// check restic
-	restic, err := c.stashClient.StashV1alpha1().Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
+	restic, err := c.stashClient.StashV1alpha1().Restics(c.opt.Namespace).Get(context.TODO(), c.opt.ResticName, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -330,15 +330,21 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 			}
 		}
 		if err == nil {
-			_, err2 := stash_util.UpdateRepositoryStatus(c.stashClient.StashV1alpha1(), repository.ObjectMeta, func(in *api.RepositoryStatus) *api.RepositoryStatus {
-				in.BackupCount++
-				in.LastBackupTime = &startTime
-				if in.FirstBackupTime == nil {
-					in.FirstBackupTime = &startTime
-				}
-				in.LastBackupDuration = endTime.Sub(startTime.Time).String()
-				return in
-			})
+			_, err2 := stash_util.UpdateRepositoryStatus(
+				context.TODO(),
+				c.stashClient.StashV1alpha1(),
+				repository.ObjectMeta,
+				func(in *api.RepositoryStatus) *api.RepositoryStatus {
+					in.BackupCount++
+					in.LastBackupTime = &startTime
+					if in.FirstBackupTime == nil {
+						in.FirstBackupTime = &startTime
+					}
+					in.LastBackupDuration = endTime.Sub(startTime.Time).String()
+					return in
+				},
+				metav1.UpdateOptions{},
+			)
 			if err2 != nil {
 				log.Errorln(err2)
 			}
@@ -421,41 +427,53 @@ func (c *Controller) ensureCheckRBAC(namespace string, owner *metav1.OwnerRefere
 		Name:      owner.Name,
 		Namespace: namespace,
 	}
-	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+	_, _, err := core_util.CreateOrPatchServiceAccount(
+		context.TODO(),
+		c.k8sClient,
+		meta,
+		func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[apis.LabelApp] = apis.AppLabelStash
-		return in
-	})
+			if in.Labels == nil {
+				in.Labels = map[string]string{}
+			}
+			in.Labels[apis.LabelApp] = apis.AppLabelStash
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 	if err != nil {
 		return err
 	}
 
 	// ensure role binding
-	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(
+		context.TODO(),
+		c.k8sClient,
+		meta,
+		func(in *rbac.RoleBinding) *rbac.RoleBinding {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[apis.LabelApp] = apis.AppLabelStash
+			if in.Labels == nil {
+				in.Labels = map[string]string{}
+			}
+			in.Labels[apis.LabelApp] = apis.AppLabelStash
 
-		in.RoleRef = rbac.RoleRef{
-			APIGroup: rbac.GroupName,
-			Kind:     apis.KindClusterRole,
-			Name:     apis.StashSidecarClusterRole,
-		}
-		in.Subjects = []rbac.Subject{
-			{
-				Kind:      rbac.ServiceAccountKind,
-				Name:      meta.Name,
-				Namespace: meta.Namespace,
-			},
-		}
-		return in
-	})
+			in.RoleRef = rbac.RoleRef{
+				APIGroup: rbac.GroupName,
+				Kind:     apis.KindClusterRole,
+				Name:     apis.StashSidecarClusterRole,
+			}
+			in.Subjects = []rbac.Subject{
+				{
+					Kind:      rbac.ServiceAccountKind,
+					Name:      meta.Name,
+					Namespace: meta.Namespace,
+				},
+			}
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 	return err
 }

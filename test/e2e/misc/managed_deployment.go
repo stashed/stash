@@ -17,6 +17,7 @@ limitations under the License.
 package misc
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -103,7 +104,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -132,7 +133,7 @@ var _ = Describe("Managed Deployment", func() {
 			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.StashInitContainerInjected)).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			By("Verifying that RestoreSession succeeded")
-			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
@@ -163,7 +164,7 @@ var _ = Describe("Managed Deployment", func() {
 				}
 				bc.Spec.Task.Name = framework.TaskPVCBackup
 			})
-			backupConfig, err = f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+			backupConfig, err = f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(context.TODO(), backupConfig, metav1.CreateOptions{})
 			f.AppendToCleanupList(backupConfig)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -196,7 +197,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -217,7 +218,7 @@ var _ = Describe("Managed Deployment", func() {
 				}
 				restore.Spec.Task.Name = framework.TaskPVCRestore
 			})
-			restoreSession, err = f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(restoreSession)
+			restoreSession, err = f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(context.TODO(), restoreSession, metav1.CreateOptions{})
 			f.AppendToCleanupList(restoreSession)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -242,7 +243,7 @@ var _ = Describe("Managed Deployment", func() {
 			f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
 
 			By("Verifying that RestoreSession succeeded")
-			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
@@ -284,7 +285,7 @@ var _ = Describe("Managed Deployment", func() {
 						},
 					}
 				})
-				backupConfig, err = f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+				backupConfig, err = f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(context.TODO(), backupConfig, metav1.CreateOptions{})
 				f.AppendToCleanupList(backupConfig)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -340,7 +341,7 @@ var _ = Describe("Managed Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -365,7 +366,7 @@ var _ = Describe("Managed Deployment", func() {
 						},
 					}
 				})
-				restoreSession, err = f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(restoreSession)
+				restoreSession, err = f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(context.TODO(), restoreSession, metav1.CreateOptions{})
 				f.AppendToCleanupList(restoreSession)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -390,7 +391,7 @@ var _ = Describe("Managed Deployment", func() {
 				f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
 
 				By("Verifying that RestoreSession succeeded")
-				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
@@ -492,7 +493,7 @@ var _ = Describe("Managed Deployment", func() {
 					},
 				},
 			}
-			backupBatch, err = f.StashClient.StashV1beta1().BackupBatches(backupBatch.Namespace).Create(backupBatch)
+			backupBatch, err = f.StashClient.StashV1beta1().BackupBatches(backupBatch.Namespace).Create(context.TODO(), backupBatch, metav1.CreateOptions{})
 			f.AppendToCleanupList(backupBatch)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -574,7 +575,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 		})

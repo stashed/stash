@@ -110,7 +110,7 @@ var _ = XDescribe("Snapshots", func() {
 		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+		err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, ss.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -238,30 +238,30 @@ var _ = XDescribe("Snapshots", func() {
 			shouldBackupComplete()
 
 			By("Listing all snapshots")
-			_, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{})
+			_, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Get a particular snapshot")
-			snapshots, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
+			snapshots, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
 			Expect(err).NotTo(HaveOccurred())
-			singleSnapshot, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(snapshots.Items[len(snapshots.Items)-1].Name, metav1.GetOptions{})
+			singleSnapshot, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(context.TODO(), snapshots.Items[len(snapshots.Items)-1].Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(singleSnapshot.Name).To(BeEquivalentTo(snapshots.Items[len(snapshots.Items)-1].Name))
 
 			By("Filter by workload kind")
-			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(snapshots).Should(HavePrefixInName("deployment"))
 
 			By("Filter by workload name")
-			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-name=" + deployment.Name})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "workload-name=" + deployment.Name})
 			Expect(err).NotTo(HaveOccurred())
 			workload.Kind = apis.KindDeployment
 			workload.Name = deployment.Name
 			Expect(snapshots).Should(HavePrefixInName(workload.GetRepositoryCRDName("", "")))
 
 			By("Filter by pod name")
-			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "pod-name=" + ss.Name + "-0"})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "pod-name=" + ss.Name + "-0"})
 			Expect(err).NotTo(HaveOccurred())
 			workload.Kind = apis.KindStatefulSet
 			workload.Name = ss.Name
@@ -269,7 +269,7 @@ var _ = XDescribe("Snapshots", func() {
 
 			nodename := f.GetNodeName(daemon.ObjectMeta)
 			By("Filter by node name")
-			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "node-name=" + nodename})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "node-name=" + nodename})
 			Expect(err).NotTo(HaveOccurred())
 			workload.Kind = apis.KindDaemonSet
 			workload.Name = daemon.Name
@@ -280,30 +280,30 @@ var _ = XDescribe("Snapshots", func() {
 			reponame := workload.GetRepositoryCRDName("", "")
 
 			By("Filter by repository name")
-			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "repository=" + reponame})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "repository=" + reponame})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(snapshots).Should(HavePrefixInName(reponame))
 
 			By("Filter by negated selector")
-			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "repository!=" + reponame})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "repository!=" + reponame})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(snapshots).ShouldNot(HavePrefixInName(reponame))
 
 			By("Filter by set based selector")
-			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "repository in(" + reponame + ")"})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "repository in(" + reponame + ")"})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(snapshots).Should(HavePrefixInName(reponame))
 
-			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
 			Expect(err).NotTo(HaveOccurred())
 			snapshotToDelete := snapshots.Items[len(snapshots.Items)-1].Name
 			By("Deleting snapshot " + snapshotToDelete)
 			policy := metav1.DeletePropagationForeground
-			err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Delete(snapshotToDelete, &metav1.DeleteOptions{PropagationPolicy: &policy})
+			err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Delete(context.TODO(), snapshotToDelete, metav1.DeleteOptions{PropagationPolicy: &policy})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking deleted snapshot not exist")
-			_, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(snapshotToDelete, metav1.GetOptions{})
+			_, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(context.TODO(), snapshotToDelete, metav1.GetOptions{})
 			Expect(err).To(HaveOccurred())
 		}
 	)

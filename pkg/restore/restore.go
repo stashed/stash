@@ -65,7 +65,7 @@ type Options struct {
 func Restore(opt *Options) (*restic.RestoreOutput, error) {
 
 	// get the RestoreSession crd
-	restoreSession, err := opt.StashClient.StashV1beta1().RestoreSessions(opt.Namespace).Get(opt.RestoreSessionName, metav1.GetOptions{})
+	restoreSession, err := opt.StashClient.StashV1beta1().RestoreSessions(opt.Namespace).Get(context.TODO(), opt.RestoreSessionName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func Restore(opt *Options) (*restic.RestoreOutput, error) {
 		return nil, fmt.Errorf("invalid RestoreSession. Target is nil")
 	}
 
-	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(restoreSession.Spec.Repository.Name, metav1.GetOptions{})
+	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(context.TODO(), restoreSession.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput) erro
 	log.Infof("Restore completed successfully for RestoreSession %s", c.RestoreSessionName)
 
 	// add/update entry into RestoreSession status for this host
-	restoreSession, err := c.StashClient.StashV1beta1().RestoreSessions(c.Namespace).Get(c.RestoreSessionName, metav1.GetOptions{})
+	restoreSession, err := c.StashClient.StashV1beta1().RestoreSessions(c.Namespace).Get(context.TODO(), c.RestoreSessionName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func (c *Options) HandleRestoreFailure(restoreErr error) error {
 	log.Warningf("Failed to complete restore process for RestoreSession %s. Reason: %v", c.RestoreSessionName, restoreErr)
 
 	// add/update entry into RestoreSession status for this host
-	restoreSession, err := c.StashClient.StashV1beta1().RestoreSessions(c.Namespace).Get(c.RestoreSessionName, metav1.GetOptions{})
+	restoreSession, err := c.StashClient.StashV1beta1().RestoreSessions(c.Namespace).Get(context.TODO(), c.RestoreSessionName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
