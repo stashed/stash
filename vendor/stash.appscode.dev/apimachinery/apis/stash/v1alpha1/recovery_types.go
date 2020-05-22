@@ -70,6 +70,7 @@ type RecoveryList struct {
 	Items           []Recovery `json:"items,omitempty" protobuf:"bytes,2,rep,name=items"`
 }
 
+// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed;Unknown
 type RecoveryPhase string
 
 const (

@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
   labels:
-    app: stash
+    app.kubernetes.io/name: stash
   name: backupsessions.stash.appscode.com
 spec:
   additionalPrinterColumns:
@@ -75,6 +75,12 @@ spec:
                 for this BackupSession. Phase will be "Succeeded" only if phase of
                 all hosts are "Succeeded". If any of the host fail to complete backup,
                 Phase will be "Failed".
+              enum:
+              - Pending
+              - Running
+              - Succeeded
+              - Failed
+              - Unknown
               type: string
             sessionDuration:
               description: SessionDuration specify total time taken to complete current
@@ -87,6 +93,10 @@ spec:
                 properties:
                   phase:
                     description: Phase indicates backup phase of this target
+                    enum:
+                    - Succeeded
+                    - Running
+                    - Failed
                     type: string
                   ref:
                     description: Ref refers to the backup target
@@ -117,6 +127,9 @@ spec:
                           type: string
                         phase:
                           description: Phase indicates backup phase of this host
+                          enum:
+                          - Succeeded
+                          - Failed
                           type: string
                         snapshots:
                           description: Snapshots specifies the stats of individual

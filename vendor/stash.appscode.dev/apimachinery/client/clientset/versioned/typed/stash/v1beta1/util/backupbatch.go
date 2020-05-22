@@ -99,7 +99,7 @@ func TryUpdateBackupBatch(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, tr
 
 func UpdateBackupBatchStatus(
 	c cs.StashV1beta1Interface,
-	in *api.BackupBatch,
+	meta metav1.ObjectMeta,
 	transform func(*api.BackupBatchStatus) *api.BackupBatchStatus,
 ) (result *api.BackupBatch, err error) {
 	apply := func(x *api.BackupBatch) *api.BackupBatch {
@@ -107,19 +107,22 @@ func UpdateBackupBatchStatus(
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
-			Status:     *transform(in.Status.DeepCopy()),
+			Status:     *transform(x.Status.DeepCopy()),
 		}
 		return out
 	}
 
 	attempt := 0
-	cur := in.DeepCopy()
+	cur, err := c.BackupBatches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.BackupBatches(in.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.BackupBatches(meta.Namespace).UpdateStatus(apply(cur))
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.BackupBatches(in.Namespace).Get(in.Name, metav1.GetOptions{})
+			latest, e3 := c.BackupBatches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest
@@ -136,7 +139,7 @@ func UpdateBackupBatchStatus(
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update status of BackupBatch %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
+		err = fmt.Errorf("failed to update status of BackupBatch %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }

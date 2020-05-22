@@ -689,10 +689,8 @@ k8s.io/utils v0.0.0-20190801114015-581e00157fb1 h1:+ySTxfHnfzZb9ys375PXNlLhkJPLK
 k8s.io/utils v0.0.0-20190801114015-581e00157fb1/go.mod h1:sZAwmy6armz5eXlNoLmJcl4F1QuKu7sr+mFQ0byX7Ew=
 kmodules.xyz/client-go v0.0.0-20191127054604-26981530831d/go.mod h1:OFxuKCiVR+MYlR2a08FkfaF+IbXkLe0xBetu2LTUuGI=
 kmodules.xyz/client-go v0.0.0-20191211192817-f1dcd02124ba/go.mod h1:OFxuKCiVR+MYlR2a08FkfaF+IbXkLe0xBetu2LTUuGI=
-kmodules.xyz/client-go v0.0.0-20200116162153-e083ae16abca h1:WErv3VRRePgp4oszIHgrFnxIaIHyfP9+930B99B8BBM=
-kmodules.xyz/client-go v0.0.0-20200116162153-e083ae16abca/go.mod h1:OFxuKCiVR+MYlR2a08FkfaF+IbXkLe0xBetu2LTUuGI=
-kmodules.xyz/client-go v0.0.0-20200216080917-08714f78f885 h1:1v803gTRPSfjMYwW3YXoxs36gQ9YVe/1qWixPfLZ6bM=
-kmodules.xyz/client-go v0.0.0-20200216080917-08714f78f885/go.mod h1:OFxuKCiVR+MYlR2a08FkfaF+IbXkLe0xBetu2LTUuGI=
+kmodules.xyz/client-go v0.0.0-20200515063639-98d65435fd5d h1:X4tiCZ1QtemXxFtO+uFq1DM9DgMTqOQ1rBFExZT7yKk=
+kmodules.xyz/client-go v0.0.0-20200515063639-98d65435fd5d/go.mod h1:z/AkrES60XR+jeKGg5zJyPd13NdG/Di0BptbG1gnS60=
 kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6 h1:hFv3DzanQJ/bjgahqosmthGLkVgMB2KuQIsltOA02t0=
 kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20191129174258-81f984340891 h1:2W/fqLbAurvupIZL3TEFrlb7DnOIhlOXpNgzgcFFSmA=
@@ -725,6 +723,6 @@ sigs.k8s.io/structured-merge-diff v0.0.0-20190817042607-6149e4549fca h1:6dsH6AYQ
 sigs.k8s.io/structured-merge-diff v0.0.0-20190817042607-6149e4549fca/go.mod h1:IIgPezJWb76P0hotTxzDbWsMYB8APh18qZnxkomBpxA=
 sigs.k8s.io/yaml v1.1.0 h1:4A07+ZFc2wgJwo8YNlQpr1rVlgUDlxXHhPJciaPY5gs=
 sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
-stash.appscode.dev/apimachinery v0.9.0-rc.6 h1:rYp77PiYd05HwAtqbhVJFvmeGRZzcbOOMr6Pmh3zKKw=
-stash.appscode.dev/apimachinery v0.9.0-rc.6/go.mod h1:jLzf4kBtDJ1VeMuHm6PGPCR6is2cCfMO62FMrOwcig4=
+stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200520105618-e83b90a7160f h1:lpVl0wvZYW36B2MqaunCk8bMeV8Exn2kn30YZS2Quqo=
+stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200520105618-e83b90a7160f/go.mod h1:yq8KRoJKUUaTj/v3TRwBLEeEFNYuH4hF+2kaXXccNNM=
 vbom.ml/util v0.0.0-20160121211510-db5cfe13f5cc/go.mod h1:so/NYdZXCz+E3ZpW0uAoCj6uzU2+8OWDFv/HxUSs7kI=

@@ -30,6 +30,7 @@ import (
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -128,6 +129,10 @@ func BackupModel(kind string) string {
 	default:
 		return apis.ModelCronJob
 	}
+}
+
+func RestoreModel(kind string) string {
+	return BackupModel(kind)
 }
 
 func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string, err error) {
@@ -250,44 +255,48 @@ type WorkloadClients struct {
 	AppCatalogClient appcatalog_cs.Interface
 }
 
-func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace string) bool {
+func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace string) (bool, error) {
+	var err error
 	switch target.Kind {
 	case apis.KindDeployment:
-		if _, err := wc.KubeClient.AppsV1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-			return true
+		if _, err = wc.KubeClient.AppsV1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true, nil
 		}
 	case apis.KindDaemonSet:
-		if _, err := wc.KubeClient.AppsV1().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-			return true
+		if _, err = wc.KubeClient.AppsV1().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true, nil
 		}
 	case apis.KindStatefulSet:
-		if _, err := wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-			return true
+		if _, err = wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true, nil
 		}
 	case apis.KindReplicationController:
-		if _, err := wc.KubeClient.CoreV1().ReplicationControllers(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-			return true
+		if _, err = wc.KubeClient.CoreV1().ReplicationControllers(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true, nil
 		}
 	case apis.KindReplicaSet:
-		if _, err := wc.KubeClient.AppsV1().ReplicaSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-			return true
+		if _, err = wc.KubeClient.AppsV1().ReplicaSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true, nil
 		}
 	case apis.KindDeploymentConfig:
 		if wc.OcClient != nil {
-			if _, err := wc.OcClient.AppsV1().DeploymentConfigs(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
+			if _, err = wc.OcClient.AppsV1().DeploymentConfigs(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true, nil
 			}
 		}
 	case apis.KindPersistentVolumeClaim:
-		if _, err := wc.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-			return true
+		if _, err = wc.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true, nil
 		}
 	case apis.KindAppBinding:
-		if _, err := wc.AppCatalogClient.AppcatalogV1alpha1().AppBindings(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-			return true
+		if _, err = wc.AppCatalogClient.AppcatalogV1alpha1().AppBindings(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true, nil
 		}
 	}
-	return false
+	if err != nil && !kerr.IsNotFound(err) {
+		return false, err
+	}
+	return false, nil
 }
 
 // CreateBatchPVC creates a batch of PVCs whose definitions has been provided in pvcList argument

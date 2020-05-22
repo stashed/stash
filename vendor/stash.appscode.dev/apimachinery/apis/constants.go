@@ -167,3 +167,38 @@ const (
 	StashVolumeSnapshotRestorerClusterRole = "stash-vs-restorer-job"
 	StashStorageClassReaderClusterRole     = "stash-sc-reader"
 )
+
+// Condition related constants
+const (
+	// TargetAvailable indicates that the condition transitioned to this state because the target was available
+	TargetAvailable = "TargetAvailable"
+	// TargetNotAvailable indicates that the condition transitioned to this state because the target was not available
+	TargetNotAvailable = "TargetNotAvailable"
+	// UnableToCheckTargetAvailability indicates that the condition transitioned to this state because operator was unable
+	// to check the target availability
+	UnableToCheckTargetAvailability = "UnableToCheckTargetAvailability"
+
+	// SidecarInjectionSucceeded indicates that the condition transitioned to this state because sidecar was injected
+	// successfully into the targeted workload
+	SidecarInjectionSucceeded = "SidecarInjectionSucceeded"
+	// SidecarInjectionFailed indicates that the condition transitioned to this state because operator was unable
+	// to inject sidecar into the targeted workload
+	SidecarInjectionFailed = "SidecarInjectionFailed"
+
+	// InitContainerInjectionSucceeded indicates that the condition transitioned to this state because stash init-container
+	// was injected successfully into the targeted workload
+	InitContainerInjectionSucceeded = "InitContainerInjectionSucceeded"
+	// InitContainerInjectionFailed indicates that the condition transitioned to this state because operator was unable
+	// to inject stash init-container into the targeted workload
+	InitContainerInjectionFailed = "InitContainerInjectionFailed"
+
+	// CronJobCreationSucceeded indicates that the condition transitioned to this state because backup triggering CronJob was created successfully
+	CronJobCreationSucceeded = "CronJobCreationSucceeded"
+	// CronJobCreationFailed indicates that the condition transitioned to this state because operator was unable to create backup triggering CronJob
+	CronJobCreationFailed = "CronJobCreationFailed"
+
+	// RestoreJobCreationSucceeded indicates that the condition transitioned to this state because restore job was created successfully
+	RestoreJobCreationSucceeded = "RestoreJobCreationSucceeded"
+	// RestoreJobCreationFailed indicates that the condition transitioned to this state because operator was unable to create restore job
+	RestoreJobCreationFailed = "RestoreJobCreationFailed"
+)

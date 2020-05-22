@@ -97,9 +97,9 @@ func TryUpdateBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, 
 	return
 }
 
-func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, targetRef api_v1beta1.TargetRef, backupSession *api_v1beta1.BackupSession, hostStats api_v1beta1.HostBackupStats) (*api_v1beta1.BackupSession, error) {
+func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, targetRef api_v1beta1.TargetRef, backupSession metav1.ObjectMeta, hostStats api_v1beta1.HostBackupStats) (*api_v1beta1.BackupSession, error) {
 	out, err := UpdateBackupSessionStatus(c, backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		targetIdx, hostIdx, targets := UpsertHostForTarget(backupSession.Status.Targets, targetRef, hostStats)
+		targetIdx, hostIdx, targets := UpsertHostForTarget(in.Targets, targetRef, hostStats)
 		in.Targets = targets
 		if int32(len(targets[targetIdx].Stats)) != *targets[targetIdx].TotalHosts {
 			in.Targets[targetIdx].Phase = api_v1beta1.TargetBackupRunning
@@ -149,7 +149,7 @@ func UpsertHost(stats []api_v1beta1.HostBackupStats, stat ...api_v1beta1.HostBac
 
 func UpdateBackupSessionStatus(
 	c cs.StashV1beta1Interface,
-	in *api_v1beta1.BackupSession,
+	meta metav1.ObjectMeta,
 	transform func(*api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus,
 ) (result *api_v1beta1.BackupSession, err error) {
 	apply := func(x *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
@@ -157,19 +157,22 @@ func UpdateBackupSessionStatus(
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
-			Status:     *transform(in.Status.DeepCopy()),
+			Status:     *transform(x.Status.DeepCopy()),
 		}
 		return out
 	}
 
 	attempt := 0
-	cur := in.DeepCopy()
+	cur, err := c.BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.BackupSessions(in.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.BackupSessions(meta.Namespace).UpdateStatus(apply(cur))
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.BackupSessions(in.Namespace).Get(in.Name, metav1.GetOptions{})
+			latest, e3 := c.BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest
@@ -186,7 +189,7 @@ func UpdateBackupSessionStatus(
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update status of BackupSession %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
+		err = fmt.Errorf("failed to update status of BackupSession %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }

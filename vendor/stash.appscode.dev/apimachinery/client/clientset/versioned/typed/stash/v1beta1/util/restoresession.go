@@ -97,10 +97,10 @@ func TryUpdateRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta,
 	return
 }
 
-func UpdateRestoreSessionStatusForHost(c cs.StashV1beta1Interface, restoreSession *api_v1beta1.RestoreSession, hostStats api_v1beta1.HostRestoreStats) (*api_v1beta1.RestoreSession, error) {
+func UpdateRestoreSessionStatusForHost(c cs.StashV1beta1Interface, restoreSession metav1.ObjectMeta, hostStats api_v1beta1.HostRestoreStats) (*api_v1beta1.RestoreSession, error) {
 	out, err := UpdateRestoreSessionStatus(c, restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		// if an entry already exist for this host then update it
-		for i, v := range restoreSession.Status.Stats {
+		for i, v := range in.Stats {
 			if v.Hostname == hostStats.Hostname {
 				in.Stats[i] = hostStats
 				return in
@@ -115,7 +115,7 @@ func UpdateRestoreSessionStatusForHost(c cs.StashV1beta1Interface, restoreSessio
 
 func UpdateRestoreSessionStatus(
 	c cs.StashV1beta1Interface,
-	in *api_v1beta1.RestoreSession,
+	meta metav1.ObjectMeta,
 	transform func(*api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus,
 ) (result *api_v1beta1.RestoreSession, err error) {
 	apply := func(x *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
@@ -123,19 +123,22 @@ func UpdateRestoreSessionStatus(
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
-			Status:     *transform(in.Status.DeepCopy()),
+			Status:     *transform(x.Status.DeepCopy()),
 		}
 		return out
 	}
 
 	attempt := 0
-	cur := in.DeepCopy()
+	cur, err := c.RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.RestoreSessions(in.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.RestoreSessions(meta.Namespace).UpdateStatus(apply(cur))
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.RestoreSessions(in.Namespace).Get(in.Name, metav1.GetOptions{})
+			latest, e3 := c.RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest
@@ -152,7 +155,7 @@ func UpdateRestoreSessionStatus(
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update status of RestoreSession %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
+		err = fmt.Errorf("failed to update status of RestoreSession %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }

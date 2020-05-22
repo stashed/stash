@@ -53,14 +53,14 @@ func (c *StashController) runBackupBatchProcessor(key string) error {
 	if err != nil {
 		return err
 	}
-	err = c.applyBackupInvokerReconciliationLogic(invoker)
+	err = c.applyBackupInvokerReconciliationLogic(invoker, key)
 	if err != nil {
 		return err
 	}
 
 	// We have successfully completed respective stuffs for the current state of this resource.
 	// Hence, let's set observed generation as same as the current generation.
-	_, err = v1beta1_util.UpdateBackupBatchStatus(c.stashClient.StashV1beta1(), backupBatch, func(in *api_v1beta1.BackupBatchStatus) *api_v1beta1.BackupBatchStatus {
+	_, err = v1beta1_util.UpdateBackupBatchStatus(c.stashClient.StashV1beta1(), backupBatch.ObjectMeta, func(in *api_v1beta1.BackupBatchStatus) *api_v1beta1.BackupBatchStatus {
 		in.ObservedGeneration = backupBatch.Generation
 		return in
 	})

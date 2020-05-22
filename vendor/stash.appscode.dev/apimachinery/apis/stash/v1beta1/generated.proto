@@ -26,6 +26,7 @@ import "k8s.io/apimachinery/pkg/api/resource/generated.proto";
 import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
 import "k8s.io/apimachinery/pkg/runtime/generated.proto";
 import "k8s.io/apimachinery/pkg/runtime/schema/generated.proto";
+import "kmodules.xyz/client-go/api/v1/generated.proto";
 import "kmodules.xyz/offshoot-api/api/v1/generated.proto";
 import "kmodules.xyz/prober/api/v1/generated.proto";
 import "stash.appscode.dev/apimachinery/apis/stash/v1alpha1/generated.proto";
@@ -101,6 +102,14 @@ message BackupBatchStatus {
   // BackupBatch's generation, which is updated on mutation by the API Server.
   // +optional
   optional int64 observedGeneration = 1;
+
+  // Conditions shows current backup setup condition of the BackupBatch.
+  // +optional
+  repeated kmodules.xyz.client_go.api.v1.Condition conditions = 2;
+
+  // MemberConditions shows current backup setup condition of the members of the BackupBatch.
+  // +optional
+  repeated MemberConditions memberConditions = 3;
 }
 
 // +kubebuilder:object:root=true
@@ -212,6 +221,10 @@ message BackupConfigurationStatus {
   // BackupConfiguration's generation, which is updated on mutation by the API Server.
   // +optional
   optional int64 observedGeneration = 1;
+
+  // Conditions shows current backup setup condition of the BackupConfiguration.
+  // +optional
+  repeated kmodules.xyz.client_go.api.v1.Condition conditions = 2;
 }
 
 message BackupConfigurationTemplateSpec {
@@ -494,6 +507,15 @@ message HostRestoreStats {
   optional string error = 4;
 }
 
+message MemberConditions {
+  // Target is the reference to the respective target whose condition is shown here.
+  optional TargetRef target = 1;
+
+  // Conditions shows current backup setup condition of this member.
+  // +optional
+  repeated kmodules.xyz.client_go.api.v1.Condition conditions = 2;
+}
+
 // Param declares a value to use for the Param called Name.
 message Param {
   optional string name = 1;
@@ -594,6 +616,10 @@ message RestoreSessionStatus {
   // Stats shows statistics of individual hosts for this restore session
   // +optional
   repeated HostRestoreStats stats = 4;
+
+  // Conditions shows current restore condition of the RestoreSession.
+  // +optional
+  repeated kmodules.xyz.client_go.api.v1.Condition conditions = 5;
 }
 
 message RestoreTarget {

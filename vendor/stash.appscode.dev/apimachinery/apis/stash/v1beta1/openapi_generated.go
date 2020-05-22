@@ -332,6 +332,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/runtime.Unknown":                                            schema_k8sio_apimachinery_pkg_runtime_Unknown(ref),
 		"k8s.io/apimachinery/pkg/util/intstr.IntOrString":                                    schema_apimachinery_pkg_util_intstr_IntOrString(ref),
 		"k8s.io/apimachinery/pkg/version.Info":                                               schema_k8sio_apimachinery_pkg_version_Info(ref),
+		"kmodules.xyz/client-go/api/v1.Condition":                                            schema_kmodulesxyz_client_go_api_v1_Condition(ref),
 		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.AddKeyTransform":             schema_custom_resources_apis_appcatalog_v1alpha1_AddKeyTransform(ref),
 		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.AddKeysFromTransform":        schema_custom_resources_apis_appcatalog_v1alpha1_AddKeysFromTransform(ref),
 		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.AppBinding":                  schema_custom_resources_apis_appcatalog_v1alpha1_AppBinding(ref),
@@ -395,6 +396,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.FunctionSpec":                    schema_apimachinery_apis_stash_v1beta1_FunctionSpec(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.HostBackupStats":                 schema_apimachinery_apis_stash_v1beta1_HostBackupStats(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.HostRestoreStats":                schema_apimachinery_apis_stash_v1beta1_HostRestoreStats(ref),
+		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.MemberConditions":                schema_apimachinery_apis_stash_v1beta1_MemberConditions(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.Param":                           schema_apimachinery_apis_stash_v1beta1_Param(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreHooks":                    schema_apimachinery_apis_stash_v1beta1_RestoreHooks(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreSession":                  schema_apimachinery_apis_stash_v1beta1_RestoreSession(ref),
@@ -15552,6 +15554,62 @@ func schema_k8sio_apimachinery_pkg_version_Info(ref common.ReferenceCallback) co
 	}
 }
 
+func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type of condition in CamelCase or in foo.example.com/CamelCase. Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status of the condition, one of True, False, Unknown.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "If set, this represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.condition[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"lastTransitionTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"reason": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The reason for the condition's last transition in CamelCase. The specific API may choose whether or not this field is considered a guaranteed API. This field may not be empty.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Description: "A human readable message indicating details about the transition. This field may be empty.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"type", "status", "lastTransitionTime", "reason", "message"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
 func schema_custom_resources_apis_appcatalog_v1alpha1_AddKeyTransform(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -17568,9 +17626,37 @@ func schema_apimachinery_apis_stash_v1beta1_BackupBatchStatus(ref common.Referen
 							Format:      "int64",
 						},
 					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions shows current backup setup condition of the BackupBatch.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("kmodules.xyz/client-go/api/v1.Condition"),
+									},
+								},
+							},
+						},
+					},
+					"memberConditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MemberConditions shows current backup setup condition of the members of the BackupBatch.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.MemberConditions"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"kmodules.xyz/client-go/api/v1.Condition", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.MemberConditions"},
 	}
 }
 
@@ -17920,9 +18006,24 @@ func schema_apimachinery_apis_stash_v1beta1_BackupConfigurationStatus(ref common
 							Format:      "int64",
 						},
 					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions shows current backup setup condition of the BackupConfiguration.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("kmodules.xyz/client-go/api/v1.Condition"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"kmodules.xyz/client-go/api/v1.Condition"},
 	}
 }
 
@@ -18658,6 +18759,40 @@ func schema_apimachinery_apis_stash_v1beta1_HostRestoreStats(ref common.Referenc
 	}
 }
 
+func schema_apimachinery_apis_stash_v1beta1_MemberConditions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"target": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Target is the reference to the respective target whose condition is shown here.",
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetRef"),
+						},
+					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions shows current backup setup condition of this member.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("kmodules.xyz/client-go/api/v1.Condition"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"target"},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/client-go/api/v1.Condition", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetRef"},
+	}
+}
+
 func schema_apimachinery_apis_stash_v1beta1_Param(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -18915,11 +19050,24 @@ func schema_apimachinery_apis_stash_v1beta1_RestoreSessionStatus(ref common.Refe
 							},
 						},
 					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions shows current restore condition of the RestoreSession.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("kmodules.xyz/client-go/api/v1.Condition"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"stash.appscode.dev/apimachinery/apis/stash/v1beta1.HostRestoreStats"},
+			"kmodules.xyz/client-go/api/v1.Condition", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.HostRestoreStats"},
 	}
 }
 

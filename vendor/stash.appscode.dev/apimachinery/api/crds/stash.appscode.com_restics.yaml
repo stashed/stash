@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
   labels:
-    app: stash
+    app.kubernetes.io/name: stash
   name: restics.stash.appscode.com
 spec:
   additionalPrinterColumns:
@@ -1444,6 +1444,9 @@ spec:
               type: object
             type:
               description: https://github.com/stashed/stash/issues/225
+              enum:
+              - online
+              - offline
               type: string
             volumeMounts:
               description: Pod volumes to mount into the sidecar container's filesystem.

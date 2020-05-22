@@ -141,11 +141,14 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) {
 	}
 }
 
-func (c *StashController) handleInitContainerInjectionFailure(ref *core.ObjectReference, err error) error {
+func (c *StashController) handleInitContainerInjectionFailure(ref *core.ObjectReference, rs *api_v1beta1.RestoreSession, err error) error {
 	if ref == nil {
 		return errors.NewAggregate([]error{err, fmt.Errorf("failed to init-container injection failure event. Reason: provided ObjectReference is nil")})
 	}
 	log.Warningf("Failed to inject stash init-container into %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// Set "StashInitContainerInjected" condition to "False"
+	cerr := c.setInitContainerInjectedConditionToFalse(rs, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -156,14 +159,17 @@ func (c *StashController) handleInitContainerInjectionFailure(ref *core.ObjectRe
 		eventer.EventReasonInitContainerInjectionFailed,
 		fmt.Sprintf("Failed to inject stash init-container into %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
 	)
-	return err2
+	return errors.NewAggregate([]error{err2, cerr})
 }
 
-func (c *StashController) handleInitContainerInjectionSuccess(ref *core.ObjectReference) error {
+func (c *StashController) handleInitContainerInjectionSuccess(ref *core.ObjectReference, rs *api_v1beta1.RestoreSession) error {
 	if ref == nil {
 		return fmt.Errorf("failed to init-container injection success event. Reason: provided ObjectReference is nil")
 	}
 	log.Infof("Successfully injected stash init-container into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// Set "StashInitContainerInjected" condition to "True"
+	cerr := c.setInitContainerInjectedConditionToTrue(rs)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -174,7 +180,7 @@ func (c *StashController) handleInitContainerInjectionSuccess(ref *core.ObjectRe
 		eventer.EventReasonInitContainerInjectionSucceeded,
 		fmt.Sprintf("Successfully injected stash init-container into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
 	)
-	return err2
+	return errors.NewAggregate([]error{err2, cerr})
 }
 
 func (c *StashController) handleInitContainerDeletionSuccess(ref *core.ObjectReference) error {

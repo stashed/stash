@@ -29,7 +29,7 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-aggregator v0.0.0-20191114103820-f023614fb9ea
 	k8s.io/kubernetes v1.16.3
-	kmodules.xyz/client-go v0.0.0-20200216080917-08714f78f885
+	kmodules.xyz/client-go v0.0.0-20200515063639-98d65435fd5d
 	kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6
 	kmodules.xyz/custom-resources v0.0.0-20191130062942-f41b54f62419
 	kmodules.xyz/objectstore-api v0.0.0-20200214040336-fe8f39a4210d
@@ -37,7 +37,7 @@ require (
 	kmodules.xyz/openshift v0.0.0-20191127145035-f6c48a90dbb7
 	kmodules.xyz/prober v0.0.0-20191216013129-7c91e2b0edb2
 	kmodules.xyz/webhook-runtime v0.0.0-20191127075323-d4bfdee6974d
-	stash.appscode.dev/apimachinery v0.9.0-rc.6
+	stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200520105618-e83b90a7160f
 )
 
 replace (

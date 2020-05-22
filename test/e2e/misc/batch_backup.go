@@ -31,6 +31,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pfutil "kmodules.xyz/client-go/tools/portforward"
+	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 var _ = Describe("Batch Backup", func() {
@@ -140,7 +141,7 @@ var _ = Describe("Batch Backup", func() {
 				},
 				Target: &v1beta1.BackupTarget{
 					Ref: v1beta1.TargetRef{
-						APIVersion: core.SchemeGroupVersion.String(),
+						APIVersion: appcatalog.SchemeGroupVersion.String(),
 						Kind:       apis.KindAppBinding,
 						Name:       appBinding.Name,
 					},

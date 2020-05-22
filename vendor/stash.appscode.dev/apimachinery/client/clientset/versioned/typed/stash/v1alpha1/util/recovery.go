@@ -98,7 +98,7 @@ func TryUpdateRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, tran
 	return
 }
 
-func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path string, d time.Duration, phase api.RecoveryPhase) (*api.Recovery, error) {
+func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery metav1.ObjectMeta, path string, d time.Duration, phase api.RecoveryPhase) (*api.Recovery, error) {
 	out, err := UpdateRecoveryStatus(c, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		found := false
 		for _, stats := range in.Stats {
@@ -109,7 +109,7 @@ func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path 
 			}
 		}
 		if !found {
-			recovery.Status.Stats = append(recovery.Status.Stats, api.RestoreStats{
+			in.Stats = append(in.Stats, api.RestoreStats{
 				Path:     path,
 				Duration: d.String(),
 				Phase:    phase,
@@ -122,7 +122,7 @@ func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path 
 
 func UpdateRecoveryStatus(
 	c cs.StashV1alpha1Interface,
-	in *api.Recovery,
+	meta metav1.ObjectMeta,
 	transform func(*api.RecoveryStatus) *api.RecoveryStatus,
 ) (result *api.Recovery, err error) {
 	apply := func(x *api.Recovery) *api.Recovery {
@@ -130,19 +130,22 @@ func UpdateRecoveryStatus(
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
-			Status:     *transform(in.Status.DeepCopy()),
+			Status:     *transform(x.Status.DeepCopy()),
 		}
 		return out
 	}
 
 	attempt := 0
-	cur := in.DeepCopy()
+	cur, err := c.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.Recoveries(in.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.Recoveries(meta.Namespace).UpdateStatus(apply(cur))
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.Recoveries(in.Namespace).Get(in.Name, metav1.GetOptions{})
+			latest, e3 := c.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest
@@ -159,7 +162,7 @@ func UpdateRecoveryStatus(
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update status of Recovery %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
+		err = fmt.Errorf("failed to update status of Recovery %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }
