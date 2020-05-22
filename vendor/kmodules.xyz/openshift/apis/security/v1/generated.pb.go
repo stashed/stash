@@ -65,9 +65,11 @@ func (m *IDRange) Reset()                    { *m = IDRange{} }
 func (*IDRange) ProtoMessage()               {}
 func (*IDRange) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{2} }
 
-func (m *PodSecurityPolicyReview) Reset()                    { *m = PodSecurityPolicyReview{} }
-func (*PodSecurityPolicyReview) ProtoMessage()               {}
-func (*PodSecurityPolicyReview) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{3} }
+func (m *PodSecurityPolicyReview) Reset()      { *m = PodSecurityPolicyReview{} }
+func (*PodSecurityPolicyReview) ProtoMessage() {}
+func (*PodSecurityPolicyReview) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{3}
+}
 
 func (m *PodSecurityPolicyReviewSpec) Reset()      { *m = PodSecurityPolicyReviewSpec{} }
 func (*PodSecurityPolicyReviewSpec) ProtoMessage() {}

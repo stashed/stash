@@ -18,6 +18,7 @@ package analytics
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"net"
@@ -136,14 +137,14 @@ func ClientID() string {
 	if err != nil {
 		return "$k8s$newforconfig"
 	}
-	nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{
+	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "node-role.kubernetes.io/master",
 	})
 	if err != nil {
 		return reasonForError(err)
 	}
 	if len(nodes.Items) == 0 {
-		nodes, err = client.CoreV1().Nodes().List(metav1.ListOptions{
+		nodes, err = client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(map[string]string{
 				"kubernetes.io/hostname": "minikube",
 			}).String(),

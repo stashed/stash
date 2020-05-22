@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -170,7 +171,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	}
 	job.Spec.Template.Spec.ServiceAccountName = job.Name
 
-	job, err = c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
+	job, err = c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(context.TODO(), job, metav1.CreateOptions{})
 	if err != nil {
 		if kerr.IsAlreadyExists(err) {
 			log.Infoln("Skipping to create recovery job. Reason: job already exist")
@@ -178,10 +179,16 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		}
 		log.Errorln(err)
 
-		_, err2 := stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
-			in.Phase = api.RecoveryFailed
-			return in
-		})
+		_, err2 := stash_util.UpdateRecoveryStatus(
+			context.TODO(),
+			c.stashClient.StashV1alpha1(),
+			rec.ObjectMeta,
+			func(in *api.RecoveryStatus) *api.RecoveryStatus {
+				in.Phase = api.RecoveryFailed
+				return in
+			},
+			metav1.UpdateOptions{},
+		)
 		if err2 != nil {
 			return err
 		}
@@ -211,10 +218,16 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	if rerr == nil {
 		c.recorder.Eventf(ref, core.EventTypeNormal, eventer.EventReasonJobCreated, "Recovery job created: %s", job.Name)
 	}
-	_, err = stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
-		in.Phase = api.RecoveryRunning
-		return in
-	})
+	_, err = stash_util.UpdateRecoveryStatus(
+		context.TODO(),
+		c.stashClient.StashV1alpha1(),
+		rec.ObjectMeta,
+		func(in *api.RecoveryStatus) *api.RecoveryStatus {
+			in.Phase = api.RecoveryRunning
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 
 	return err
 }

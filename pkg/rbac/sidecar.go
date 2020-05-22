@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -42,9 +43,9 @@ func getSidecarRoleBindingName(name string, kind string) string {
 	return meta_util.ValidNameWithPefixNSuffix(apis.StashSidecarClusterRole, strings.ToLower(kind), name)
 }
 
-func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
+func EnsureSidecarClusterRole(kc kubernetes.Interface) error {
 	meta := metav1.ObjectMeta{Name: apis.StashSidecarClusterRole}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -113,17 +114,17 @@ func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
-func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func EnsureSidecarRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: namespace,
 		Name:      getSidecarRoleBindingName(owner.Name, owner.Kind),
 		Labels:    labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Annotations == nil {
@@ -143,15 +144,15 @@ func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, owner *metav1.Own
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
 func ensureSidecarRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
+		context.TODO(),
 		getSidecarRoleBindingName(w.Name, w.Kind),
-		&metav1.DeleteOptions{},
-	)
+		metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

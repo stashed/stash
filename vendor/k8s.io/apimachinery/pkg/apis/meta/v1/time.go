@@ -154,6 +154,16 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// ToUnstructured implements the value.UnstructuredConverter interface.
+func (t Time) ToUnstructured() interface{} {
+	if t.IsZero() {
+		return nil
+	}
+	buf := make([]byte, 0, len(time.RFC3339))
+	buf = t.UTC().AppendFormat(buf, time.RFC3339)
+	return string(buf)
+}
+
 func (t Time) MarshalJSONPB(_ *jsonpb.Marshaler) ([]byte, error) {
 	return t.MarshalJSON()
 }

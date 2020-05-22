@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -31,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchBackupBatch(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupBatch) *api.BackupBatch) (*api.BackupBatch, kutil.VerbType, error) {
-	cur, err := c.BackupBatches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchBackupBatch(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupBatch) *api.BackupBatch, opts metav1.PatchOptions) (*api.BackupBatch, kutil.VerbType, error) {
+	cur, err := c.BackupBatches(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating BackupBatch %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.BackupBatches(meta.Namespace).Create(transform(&api.BackupBatch{
+		out, err := c.BackupBatches(meta.Namespace).Create(ctx, transform(&api.BackupBatch{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "BackupBatch",
+				Kind:       api.ResourceKindBackupBatch,
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchBackupBatch(c, cur, transform)
+	return PatchBackupBatch(ctx, c, cur, transform, opts)
 }
 
-func PatchBackupBatch(c cs.StashV1beta1Interface, cur *api.BackupBatch, transform func(*api.BackupBatch) *api.BackupBatch) (*api.BackupBatch, kutil.VerbType, error) {
-	return PatchBackupBatchObject(c, cur, transform(cur.DeepCopy()))
+func PatchBackupBatch(ctx context.Context, c cs.StashV1beta1Interface, cur *api.BackupBatch, transform func(*api.BackupBatch) *api.BackupBatch, opts metav1.PatchOptions) (*api.BackupBatch, kutil.VerbType, error) {
+	return PatchBackupBatchObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchBackupBatchObject(c cs.StashV1beta1Interface, cur, mod *api.BackupBatch) (*api.BackupBatch, kutil.VerbType, error) {
+func PatchBackupBatchObject(ctx context.Context, c cs.StashV1beta1Interface, cur, mod *api.BackupBatch, opts metav1.PatchOptions) (*api.BackupBatch, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +76,19 @@ func PatchBackupBatchObject(c cs.StashV1beta1Interface, cur, mod *api.BackupBatc
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching BackupBatch %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.BackupBatches(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.BackupBatches(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateBackupBatch(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupBatch) *api.BackupBatch) (result *api.BackupBatch, err error) {
+func TryUpdateBackupBatch(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupBatch) *api.BackupBatch, opts metav1.UpdateOptions) (result *api.BackupBatch, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.BackupBatches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.BackupBatches(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.BackupBatches(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.BackupBatches(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update BackupBatch %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -98,9 +102,11 @@ func TryUpdateBackupBatch(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, tr
 }
 
 func UpdateBackupBatchStatus(
+	ctx context.Context,
 	c cs.StashV1beta1Interface,
 	meta metav1.ObjectMeta,
 	transform func(*api.BackupBatchStatus) *api.BackupBatchStatus,
+	opts metav1.UpdateOptions,
 ) (result *api.BackupBatch, err error) {
 	apply := func(x *api.BackupBatch) *api.BackupBatch {
 		out := &api.BackupBatch{
@@ -113,16 +119,16 @@ func UpdateBackupBatchStatus(
 	}
 
 	attempt := 0
-	cur, err := c.BackupBatches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	cur, err := c.BackupBatches(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.BackupBatches(meta.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.BackupBatches(meta.Namespace).UpdateStatus(ctx, apply(cur), opts)
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.BackupBatches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			latest, e3 := c.BackupBatches(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest

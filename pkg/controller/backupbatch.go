@@ -17,11 +17,14 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
 	"github.com/golang/glog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/tools/queue"
 )
 
@@ -60,10 +63,16 @@ func (c *StashController) runBackupBatchProcessor(key string) error {
 
 	// We have successfully completed respective stuffs for the current state of this resource.
 	// Hence, let's set observed generation as same as the current generation.
-	_, err = v1beta1_util.UpdateBackupBatchStatus(c.stashClient.StashV1beta1(), backupBatch.ObjectMeta, func(in *api_v1beta1.BackupBatchStatus) *api_v1beta1.BackupBatchStatus {
-		in.ObservedGeneration = backupBatch.Generation
-		return in
-	})
+	_, err = v1beta1_util.UpdateBackupBatchStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		backupBatch.ObjectMeta,
+		func(in *api_v1beta1.BackupBatchStatus) *api_v1beta1.BackupBatchStatus {
+			in.ObservedGeneration = backupBatch.Generation
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 
 	return err
 }

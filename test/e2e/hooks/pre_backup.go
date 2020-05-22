@@ -17,6 +17,7 @@ limitations under the License.
 package hooks
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -98,7 +99,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -142,7 +143,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -187,12 +188,12 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
 					By("Verifying that Repository has zero SnapshotCount")
-					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
+					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
@@ -248,7 +249,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -292,7 +293,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -337,7 +338,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -391,7 +392,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -446,12 +447,12 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
 					By("Verifying that Repository has zero SnapshotCount")
-					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
+					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
@@ -505,7 +506,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -547,7 +548,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
@@ -590,12 +591,12 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
 					By("Verifying that Repository has zero SnapshotCount")
-					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
+					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
@@ -647,7 +648,7 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has succeeded")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 				})
@@ -689,12 +690,12 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
 					By("Verifying that Repository has zero SnapshotCount")
-					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
+					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
@@ -749,7 +750,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -769,7 +770,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that RestoreSession succeeded")
-						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
@@ -823,12 +824,12 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has failed")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
 						By("Verifying that Repository has zero SnapshotCount")
-						repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
+						repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
@@ -912,7 +913,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has succeeded")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -982,12 +983,12 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Verifying that BackupSession has failed")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
 						By("Verifying that Repository has zero SnapshotCount")
-						repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
+						repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
@@ -1114,7 +1115,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 			})
@@ -1236,7 +1237,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -1364,7 +1365,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has failed")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 

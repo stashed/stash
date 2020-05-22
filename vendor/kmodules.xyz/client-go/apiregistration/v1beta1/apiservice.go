@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
+
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -29,11 +31,11 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchAPIService(c apireg_cs.Interface, name string, transform func(*reg.APIService) *reg.APIService) (*reg.APIService, kutil.VerbType, error) {
-	cur, err := c.ApiregistrationV1beta1().APIServices().Get(name, metav1.GetOptions{})
+func CreateOrPatchAPIService(ctx context.Context, c apireg_cs.Interface, name string, transform func(*reg.APIService) *reg.APIService, opts metav1.PatchOptions) (*reg.APIService, kutil.VerbType, error) {
+	cur, err := c.ApiregistrationV1beta1().APIServices().Get(ctx, name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating APIService %s.", name)
-		out, err := c.ApiregistrationV1beta1().APIServices().Create(transform(&reg.APIService{
+		out, err := c.ApiregistrationV1beta1().APIServices().Create(ctx, transform(&reg.APIService{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "APIService",
 				APIVersion: reg.SchemeGroupVersion.String(),
@@ -41,19 +43,22 @@ func CreateOrPatchAPIService(c apireg_cs.Interface, name string, transform func(
 			ObjectMeta: metav1.ObjectMeta{
 				Name: name,
 			},
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchAPIService(c, cur, transform)
+	return PatchAPIService(ctx, c, cur, transform, opts)
 }
 
-func PatchAPIService(c apireg_cs.Interface, cur *reg.APIService, transform func(*reg.APIService) *reg.APIService) (*reg.APIService, kutil.VerbType, error) {
-	return PatchAPIServiceObject(c, cur, transform(cur.DeepCopy()))
+func PatchAPIService(ctx context.Context, c apireg_cs.Interface, cur *reg.APIService, transform func(*reg.APIService) *reg.APIService, opts metav1.PatchOptions) (*reg.APIService, kutil.VerbType, error) {
+	return PatchAPIServiceObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchAPIServiceObject(c apireg_cs.Interface, cur, mod *reg.APIService) (*reg.APIService, kutil.VerbType, error) {
+func PatchAPIServiceObject(ctx context.Context, c apireg_cs.Interface, cur, mod *reg.APIService, opts metav1.PatchOptions) (*reg.APIService, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +77,19 @@ func PatchAPIServiceObject(c apireg_cs.Interface, cur, mod *reg.APIService) (*re
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching APIService %s with %s.", cur.Name, string(patch))
-	out, err := c.ApiregistrationV1beta1().APIServices().Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.ApiregistrationV1beta1().APIServices().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateAPIService(c apireg_cs.Interface, name string, transform func(*reg.APIService) *reg.APIService) (result *reg.APIService, err error) {
+func TryUpdateAPIService(ctx context.Context, c apireg_cs.Interface, name string, transform func(*reg.APIService) *reg.APIService, opts metav1.UpdateOptions) (result *reg.APIService, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.ApiregistrationV1beta1().APIServices().Get(name, metav1.GetOptions{})
+		cur, e2 := c.ApiregistrationV1beta1().APIServices().Get(ctx, name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.ApiregistrationV1beta1().APIServices().Update(transform(cur.DeepCopy()))
+			result, e2 = c.ApiregistrationV1beta1().APIServices().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update APIService %s due to %v.", attempt, cur.Name, e2)

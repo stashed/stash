@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -49,13 +50,12 @@ func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerRef
 	return nil
 }
 
-func ensureBackupJobClusterRole(kubeClient kubernetes.Interface, psps []string, labels map[string]string) error {
-
+func ensureBackupJobClusterRole(kc kubernetes.Interface, psps []string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashBackupJobClusterRole,
 		Labels: labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -96,18 +96,17 @@ func ensureBackupJobClusterRole(kubeClient kubernetes.Interface, psps []string, 
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
-func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
-
+func ensureBackupJobRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Name:      getBackupJobRoleBindingName(sa),
 		Namespace: namespace,
 		Labels:    labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.RoleRef = rbac.RoleRef{
@@ -123,7 +122,7 @@ func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.O
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 

@@ -17,6 +17,7 @@ limitations under the License.
 package apis
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -73,7 +74,7 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 	switch invokerType {
 	case v1beta1.ResourceKindBackupBatch:
 		// get BackupBatch
-		backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(invokerName, metav1.GetOptions{})
+		backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 		if err != nil {
 			return invoker, err
 		}
@@ -114,23 +115,21 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			})
 		}
 		invoker.AddFinalizer = func() error {
-			_, _, err := v1beta1_util.PatchBackupBatch(stashClient.StashV1beta1(), backupBatch, func(in *v1beta1.BackupBatch) *v1beta1.BackupBatch {
+			_, _, err := v1beta1_util.PatchBackupBatch(context.TODO(), stashClient.StashV1beta1(), backupBatch, func(in *v1beta1.BackupBatch) *v1beta1.BackupBatch {
 				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, v1beta1.StashKey)
 				return in
-
-			})
+			}, metav1.PatchOptions{})
 			return err
 		}
 		invoker.RemoveFinalizer = func() error {
-			_, _, err := v1beta1_util.PatchBackupBatch(stashClient.StashV1beta1(), backupBatch, func(in *v1beta1.BackupBatch) *v1beta1.BackupBatch {
+			_, _, err := v1beta1_util.PatchBackupBatch(context.TODO(), stashClient.StashV1beta1(), backupBatch, func(in *v1beta1.BackupBatch) *v1beta1.BackupBatch {
 				in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, v1beta1.StashKey)
 				return in
-
-			})
+			}, metav1.PatchOptions{})
 			return err
 		}
 		invoker.HasCondition = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (bool, error) {
-			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(invokerName, metav1.GetOptions{})
+			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
@@ -140,7 +139,7 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			return kmapi.HasCondition(backupBatch.Status.Conditions, string(condType)), nil
 		}
 		invoker.GetCondition = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (int, *kmapi.Condition, error) {
-			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(invokerName, metav1.GetOptions{})
+			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return -1, nil, err
 			}
@@ -153,18 +152,18 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 
 		}
 		invoker.SetCondition = func(target *v1beta1.TargetRef, condition kmapi.Condition) error {
-			_, err = v1beta1_util.UpdateBackupBatchStatus(stashClient.StashV1beta1(), backupBatch.ObjectMeta, func(in *v1beta1.BackupBatchStatus) *v1beta1.BackupBatchStatus {
+			_, err = v1beta1_util.UpdateBackupBatchStatus(context.TODO(), stashClient.StashV1beta1(), backupBatch.ObjectMeta, func(in *v1beta1.BackupBatchStatus) *v1beta1.BackupBatchStatus {
 				if target != nil {
 					in.MemberConditions = setMemberCondition(in.MemberConditions, *target, condition)
 				} else {
 					in.Conditions = kmapi.SetCondition(in.Conditions, condition)
 				}
 				return in
-			})
+			}, metav1.UpdateOptions{})
 			return err
 		}
 		invoker.IsConditionTrue = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (bool, error) {
-			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(invokerName, metav1.GetOptions{})
+			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
@@ -175,7 +174,7 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 		}
 	case v1beta1.ResourceKindBackupConfiguration:
 		// get BackupConfiguration
-		backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(invokerName, metav1.GetOptions{})
+		backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 		if err != nil {
 			return invoker, err
 		}
@@ -213,30 +212,28 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			Hooks:                 backupConfig.Spec.Hooks,
 		})
 		invoker.AddFinalizer = func() error {
-			_, _, err := v1beta1_util.PatchBackupConfiguration(stashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
+			_, _, err := v1beta1_util.PatchBackupConfiguration(context.TODO(), stashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
 				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, v1beta1.StashKey)
 				return in
-
-			})
+			}, metav1.PatchOptions{})
 			return err
 		}
 		invoker.RemoveFinalizer = func() error {
-			_, _, err := v1beta1_util.PatchBackupConfiguration(stashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
+			_, _, err := v1beta1_util.PatchBackupConfiguration(context.TODO(), stashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
 				in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, v1beta1.StashKey)
 				return in
-
-			})
+			}, metav1.PatchOptions{})
 			return err
 		}
 		invoker.HasCondition = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (bool, error) {
-			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(invokerName, metav1.GetOptions{})
+			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
 			return kmapi.HasCondition(backupConfig.Status.Conditions, string(condType)), nil
 		}
 		invoker.GetCondition = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (int, *kmapi.Condition, error) {
-			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(invokerName, metav1.GetOptions{})
+			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return -1, nil, err
 			}
@@ -244,14 +241,14 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			return idx, cond, nil
 		}
 		invoker.SetCondition = func(target *v1beta1.TargetRef, condition kmapi.Condition) error {
-			_, err = v1beta1_util.UpdateBackupConfigurationStatus(stashClient.StashV1beta1(), backupConfig.ObjectMeta, func(in *v1beta1.BackupConfigurationStatus) *v1beta1.BackupConfigurationStatus {
+			_, err = v1beta1_util.UpdateBackupConfigurationStatus(context.TODO(), stashClient.StashV1beta1(), backupConfig.ObjectMeta, func(in *v1beta1.BackupConfigurationStatus) *v1beta1.BackupConfigurationStatus {
 				in.Conditions = kmapi.SetCondition(in.Conditions, condition)
 				return in
-			})
+			}, metav1.UpdateOptions{})
 			return err
 		}
 		invoker.IsConditionTrue = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (bool, error) {
-			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(invokerName, metav1.GetOptions{})
+			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}

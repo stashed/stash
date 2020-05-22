@@ -38,29 +38,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchNode(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node) (*core.Node, kutil.VerbType, error) {
-	cur, err := c.CoreV1().Nodes().Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchNode(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node, opts metav1.PatchOptions) (*core.Node, kutil.VerbType, error) {
+	cur, err := c.CoreV1().Nodes().Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Node %s", meta.Name)
-		out, err := c.CoreV1().Nodes().Create(transform(&core.Node{
+		out, err := c.CoreV1().Nodes().Create(ctx, transform(&core.Node{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Node",
 				APIVersion: core.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchNode(c, cur, transform)
+	return PatchNode(ctx, c, cur, transform, opts)
 }
 
-func PatchNode(c kubernetes.Interface, cur *core.Node, transform func(*core.Node) *core.Node) (*core.Node, kutil.VerbType, error) {
-	return PatchNodeObject(c, cur, transform(cur.DeepCopy()))
+func PatchNode(ctx context.Context, c kubernetes.Interface, cur *core.Node, transform func(*core.Node) *core.Node, opts metav1.PatchOptions) (*core.Node, kutil.VerbType, error) {
+	return PatchNodeObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchNodeObject(c kubernetes.Interface, cur, mod *core.Node) (*core.Node, kutil.VerbType, error) {
+func PatchNodeObject(ctx context.Context, c kubernetes.Interface, cur, mod *core.Node, opts metav1.PatchOptions) (*core.Node, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -79,19 +82,19 @@ func PatchNodeObject(c kubernetes.Interface, cur, mod *core.Node) (*core.Node, k
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Node %s with %s", cur.Name, string(patch))
-	out, err := c.CoreV1().Nodes().Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.CoreV1().Nodes().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateNode(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node) (result *core.Node, err error) {
+func TryUpdateNode(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node, opts metav1.UpdateOptions) (result *core.Node, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.CoreV1().Nodes().Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.CoreV1().Nodes().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.CoreV1().Nodes().Update(transform(cur.DeepCopy()))
+			result, e2 = c.CoreV1().Nodes().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Node %s due to %v.", attempt, cur.Name, e2)
@@ -196,7 +199,7 @@ func (t Topology) convertWeightedPodAffinityTerm(terms []core.WeightedPodAffinit
 	}
 }
 
-func DetectTopology(kc kubernetes.Interface) (*Topology, error) {
+func DetectTopology(ctx context.Context, kc kubernetes.Interface) (*Topology, error) {
 	// TODO: Use https://github.com/kubernetes/client-go/blob/kubernetes-1.17.0/metadata/interface.go once upgraded to 1.17
 
 	var topology Topology
@@ -225,7 +228,7 @@ func DetectTopology(kc kubernetes.Interface) (*Topology, error) {
 	instances := make(map[string]int)
 
 	lister := pager.New(pager.SimplePageFunc(func(opts metav1.ListOptions) (runtime.Object, error) {
-		return kc.CoreV1().Nodes().List(opts)
+		return kc.CoreV1().Nodes().List(ctx, opts)
 	}))
 	err = lister.EachListItem(context.Background(), metav1.ListOptions{Limit: 100}, func(obj runtime.Object) error {
 		topology.TotalNodes++

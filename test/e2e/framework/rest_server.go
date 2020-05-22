@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -90,7 +91,7 @@ func (fi *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
 	}
 	fi.AppendToCleanupList(rsvc)
 
-	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, rdeploy.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(context.TODO(), fi.KubeClient, rdeploy.ObjectMeta)
 	if err != nil {
 		return "", err
 	}
@@ -134,7 +135,7 @@ func (fi *Invocation) PVCForRestServer() core.PersistentVolumeClaim {
 }
 
 func (f *Framework) CreatePersistentVolumeClaimForRestServer(obj core.PersistentVolumeClaim) (*core.PersistentVolumeClaim, error) {
-	return f.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(&obj)
+	return f.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) DeploymentForRestServer() apps.Deployment {
@@ -232,7 +233,7 @@ func (fi *Invocation) RemoveRestSecretVolume(volumes []core.Volume) []core.Volum
 }
 
 func (fi *Invocation) CreateDeploymentForRestServer(obj apps.Deployment) (*apps.Deployment, error) {
-	return fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
+	return fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) ServiceForRestServer() core.Service {
@@ -258,7 +259,7 @@ func (fi *Invocation) ServiceForRestServer() core.Service {
 }
 
 func (fi *Invocation) CreateServiceForRestServer(obj core.Service) (*core.Service, error) {
-	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
+	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) RestServerSANs(ips []net.IP) cert.AltNames {

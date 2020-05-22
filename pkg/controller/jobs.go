@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -71,7 +72,7 @@ func (c *StashController) runJobInjector(key string) error {
 			glog.Infof("Deleting succeeded job %s", job.GetName())
 
 			deletePolicy := metav1.DeletePropagationBackground
-			err := c.kubeClient.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{
+			err := c.kubeClient.BatchV1().Jobs(job.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			})
 

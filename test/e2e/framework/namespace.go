@@ -17,9 +17,12 @@ limitations under the License.
 package framework
 
 import (
+	"context"
+
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (f *Framework) Namespace() string {
@@ -32,19 +35,19 @@ func (f *Framework) CreateTestNamespace() error {
 			Name: f.namespace,
 		},
 	}
-	if _, err := f.KubeClient.CoreV1().Namespaces().Create(&obj); err != nil && !kerr.IsAlreadyExists(err) {
+	if _, err := f.KubeClient.CoreV1().Namespaces().Create(context.TODO(), &obj, metav1.CreateOptions{}); err != nil && !kerr.IsAlreadyExists(err) {
 		return err
 	}
 	return nil
 }
 
 func (f *Framework) CreateNamespace(ns *core.Namespace) error {
-	_, err := f.KubeClient.CoreV1().Namespaces().Create(ns)
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
 	return err
 }
 
 func (f *Framework) DeleteNamespace(name string) error {
-	err := f.KubeClient.CoreV1().Namespaces().Delete(name, deleteInBackground())
+	err := f.KubeClient.CoreV1().Namespaces().Delete(context.TODO(), name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

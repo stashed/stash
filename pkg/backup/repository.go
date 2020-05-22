@@ -17,11 +17,14 @@ limitations under the License.
 package backup
 
 import (
+	"context"
+
 	"stash.appscode.dev/apimachinery/apis"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 
 	"github.com/appscode/go/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix string) (*api.Repository, error) {
@@ -57,10 +60,16 @@ func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix st
 		repository.Spec.Backend.Swift.Prefix = prefix
 	}
 
-	repo, _, err := util.CreateOrPatchRepository(c.stashClient.StashV1alpha1(), repository.ObjectMeta, func(in *api.Repository) *api.Repository {
-		in.Spec = repository.Spec
-		return in
-	})
+	repo, _, err := util.CreateOrPatchRepository(
+		context.TODO(),
+		c.stashClient.StashV1alpha1(),
+		repository.ObjectMeta,
+		func(in *api.Repository) *api.Repository {
+			in.Spec = repository.Spec
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 	if err == nil {
 		log.Infof("Repository %v created", repository.Name)
 	}

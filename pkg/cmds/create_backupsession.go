@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -103,21 +104,27 @@ func (opt *options) createBackupSession() error {
 	}
 
 	// create BackupSession
-	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
-		// Set BackupConfiguration  as BackupSession Owner
-		core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
-		in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
-			APIGroup: api_v1beta1.SchemeGroupVersion.Group,
-			Kind:     opt.invokerType,
-			Name:     opt.invokerName,
-		}
+	_, _, err = v1beta1_util.CreateOrPatchBackupSession(
+		context.TODO(),
+		opt.stashClient.StashV1beta1(),
+		bsMeta,
+		func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
+			// Set BackupConfiguration  as BackupSession Owner
+			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
+			in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
+				APIGroup: api_v1beta1.SchemeGroupVersion.Group,
+				Kind:     opt.invokerType,
+				Name:     opt.invokerName,
+			}
 
-		in.Labels = invoker.Labels
-		// Add invoker name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
-		in.Labels[apis.LabelInvokerName] = opt.invokerName
-		in.Labels[apis.LabelInvokerType] = opt.invokerType
+			in.Labels = invoker.Labels
+			// Add invoker name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
+			in.Labels[apis.LabelInvokerName] = opt.invokerName
+			in.Labels[apis.LabelInvokerType] = opt.invokerType
 
-		return in
-	})
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 	return err
 }

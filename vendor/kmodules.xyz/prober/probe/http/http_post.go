@@ -96,8 +96,8 @@ func DoHTTPPostProbe(addr *url.URL, headers http.Header, client HTTPInterface, f
 			// Convert errors into failures to catch timeouts.
 			return api.Failure, err.Error(), nil
 		}
-		mime, _ := mimetype.Detect([]byte(body))
-		headers.Set(ContentType, mime)
+		mime := mimetype.Detect([]byte(body))
+		headers.Set(ContentType, mime.String())
 	} else {
 		req, err = http.NewRequest(http.MethodPost, addr.String(), nil)
 		if err != nil {

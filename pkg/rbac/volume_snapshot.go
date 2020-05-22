@@ -17,13 +17,14 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1beta1"
+	crdv1 "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -51,13 +52,13 @@ func EnsureVolumeSnapshotterJobRBAC(kubeClient kubernetes.Interface, owner *meta
 	return nil
 }
 
-func ensureVolumeSnapshotterJobClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
+func ensureVolumeSnapshotterJobClusterRole(kc kubernetes.Interface, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashVolumeSnapshotterClusterRole,
 		Labels: labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -107,18 +108,18 @@ func ensureVolumeSnapshotterJobClusterRole(kubeClient kubernetes.Interface, labe
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
-func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func ensureVolumeSnapshotterJobRoleBinding(kc kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Namespace: namespace,
 		Name:      getVolumesnapshotterJobRoleBindingName(sa),
 		Labels:    labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		in.RoleRef = rbac.RoleRef{
@@ -134,7 +135,7 @@ func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, reso
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
@@ -172,13 +173,13 @@ func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, owner 
 	return nil
 }
 
-func ensureVolumeSnapshotRestorerJobClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
+func ensureVolumeSnapshotRestorerJobClusterRole(kc kubernetes.Interface, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashVolumeSnapshotRestorerClusterRole,
 		Labels: labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -208,19 +209,18 @@ func ensureVolumeSnapshotRestorerJobClusterRole(kubeClient kubernetes.Interface,
 			},
 		}
 		return in
-
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
-func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func ensureVolumeSnapshotRestorerJobRoleBinding(kc kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Namespace: namespace,
 		Name:      getVolumeSnapshotRestorerJobRoleBindingName(sa),
 		Labels:    labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		in.RoleRef = rbac.RoleRef{
@@ -236,7 +236,7 @@ func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface,
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
@@ -246,13 +246,13 @@ func getVolumeSnapshotRestorerJobRoleBindingName(name string) string {
 	return strings.ReplaceAll(name, ".", "-")
 }
 
-func ensureStorageReaderClassClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
+func ensureStorageReaderClassClusterRole(kc kubernetes.Interface, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashStorageClassReaderClusterRole,
 		Labels: labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -268,18 +268,18 @@ func ensureStorageReaderClassClusterRole(kubeClient kubernetes.Interface, labels
 		}
 		return in
 
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
-func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func ensureStorageClassReaderClusterRoleBinding(kc kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Name:      getStorageClassReaderClusterRoleBindingName(sa),
 		Namespace: namespace,
 		Labels:    labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(kubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
+	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), kc, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		in.RoleRef = rbac.RoleRef{
@@ -295,7 +295,7 @@ func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface,
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 

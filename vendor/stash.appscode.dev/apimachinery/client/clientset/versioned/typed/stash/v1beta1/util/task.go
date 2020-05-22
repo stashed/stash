@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -31,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchTask(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.Task) *api.Task) (*api.Task, kutil.VerbType, error) {
-	cur, err := c.Tasks().Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchTask(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.Task) *api.Task, opts metav1.PatchOptions) (*api.Task, kutil.VerbType, error) {
+	cur, err := c.Tasks().Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Task %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Tasks().Create(transform(&api.Task{
+		out, err := c.Tasks().Create(ctx, transform(&api.Task{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Task",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchTask(c, cur, transform)
+	return PatchTask(ctx, c, cur, transform, opts)
 }
 
-func PatchTask(c cs.StashV1beta1Interface, cur *api.Task, transform func(*api.Task) *api.Task) (*api.Task, kutil.VerbType, error) {
-	return PatchTaskObject(c, cur, transform(cur.DeepCopy()))
+func PatchTask(ctx context.Context, c cs.StashV1beta1Interface, cur *api.Task, transform func(*api.Task) *api.Task, opts metav1.PatchOptions) (*api.Task, kutil.VerbType, error) {
+	return PatchTaskObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchTaskObject(c cs.StashV1beta1Interface, cur, mod *api.Task) (*api.Task, kutil.VerbType, error) {
+func PatchTaskObject(ctx context.Context, c cs.StashV1beta1Interface, cur, mod *api.Task, opts metav1.PatchOptions) (*api.Task, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +76,19 @@ func PatchTaskObject(c cs.StashV1beta1Interface, cur, mod *api.Task) (*api.Task,
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Task %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Tasks().Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.Tasks().Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateTask(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.Task) *api.Task) (result *api.Task, err error) {
+func TryUpdateTask(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.Task) *api.Task, opts metav1.UpdateOptions) (result *api.Task, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Tasks().Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Tasks().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Tasks().Update(transform(cur.DeepCopy()))
+			result, e2 = c.Tasks().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Task %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

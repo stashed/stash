@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -64,7 +65,7 @@ var _ = XDescribe("Deployment", func() {
 		err := framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+		err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, deployment.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -205,12 +206,12 @@ var _ = XDescribe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of Deployment " + deployment.Name)
-			_, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+			_, _, err = apps_util.PatchDeployment(context.TODO(), f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
@@ -369,12 +370,12 @@ var _ = XDescribe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of Deployment " + deployment.Name)
-			obj, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+			obj, _, err = apps_util.PatchDeployment(context.TODO(), f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
@@ -402,10 +403,10 @@ var _ = XDescribe("Deployment", func() {
 			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + deployment.Name)
-			obj, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+			obj, _, err = apps_util.PatchDeployment(context.TODO(), f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
 				in.Labels = previousLabel
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
@@ -643,7 +644,7 @@ var _ = XDescribe("Deployment", func() {
 
 				By("Checking Job exists")
 				Eventually(func() bool {
-					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 					return err == nil
 				}, time.Minute*3, time.Second*2).Should(BeTrue())
 
@@ -735,7 +736,7 @@ var _ = XDescribe("Deployment", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -797,7 +798,7 @@ var _ = XDescribe("Deployment", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -1182,7 +1183,7 @@ var _ = XDescribe("Deployment", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, deployment.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
@@ -1225,7 +1226,7 @@ var _ = XDescribe("Deployment", func() {
 				By("Creating Deployment " + deployment.Name)
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
-				err = apps_util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				err = apps_util.WaitUntilDeploymentReady(context.TODO(), f.KubeClient, deployment.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating demo data in hostPath")
@@ -1270,7 +1271,7 @@ var _ = XDescribe("Deployment", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, deployment.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
@@ -1379,7 +1380,7 @@ var _ = XDescribe("Deployment", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, deployment.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating new namespace: " + recoveryNamespace.Name)
@@ -1446,7 +1447,7 @@ var _ = XDescribe("Deployment", func() {
 				By("Creating Deployment " + deployment.Name)
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
-				err = apps_util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				err = apps_util.WaitUntilDeploymentReady(context.TODO(), f.KubeClient, deployment.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating demo data in hostPath")
@@ -1476,7 +1477,7 @@ var _ = XDescribe("Deployment", func() {
 				previousBackupCount := repos[0].Status.BackupCount
 
 				By("Listing old snapshots")
-				oldSnapshots, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "repository=" + repos[0].Name})
+				oldSnapshots, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: "repository=" + repos[0].Name})
 				Expect(err).NotTo(HaveOccurred())
 
 				latestOldSnapashot := f.LatestSnapshot(oldSnapshots.Items) // latest snapshot of oldSnapshots
@@ -1512,7 +1513,7 @@ var _ = XDescribe("Deployment", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, deployment.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
@@ -1565,7 +1566,7 @@ var _ = XDescribe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				if pod.Spec.NodeName != "minikube" {
-					node, err := f.KubeClient.CoreV1().Nodes().Get(pod.Spec.NodeName, metav1.GetOptions{})
+					node, err := f.KubeClient.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					for _, addr := range node.Status.Addresses {
@@ -1580,7 +1581,7 @@ var _ = XDescribe("Deployment", func() {
 				_, err = f.CreateMinioServer(true, []net.IP{clusterIP})
 				Expect(err).NotTo(HaveOccurred())
 
-				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
+				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get(context.TODO(), "minio-service", metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
 
@@ -1669,7 +1670,7 @@ var _ = XDescribe("Deployment", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 

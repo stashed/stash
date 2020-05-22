@@ -43,6 +43,7 @@ type REST struct {
 	stashClient versioned.Interface
 	kubeClient  kubernetes.Interface
 	config      *restconfig.Config
+	convertor   rest.TableConvertor
 }
 
 var _ rest.Scoper = &REST{}
@@ -57,6 +58,10 @@ func NewREST(config *restconfig.Config) *REST {
 		stashClient: versioned.NewForConfigOrDie(config),
 		kubeClient:  kubernetes.NewForConfigOrDie(config),
 		config:      config,
+		convertor: rest.NewDefaultTableConvertor(schema.GroupResource{
+			Group:    repov1alpha1.SchemeGroupVersion.Group,
+			Resource: repov1alpha1.ResourcePluralSnapshot,
+		}),
 	}
 }
 
@@ -87,7 +92,7 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 		return nil, apierrors.NewBadRequest(err.Error())
 	}
 
-	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(repoName, metav1.GetOptions{})
+	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(context.TODO(), repoName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
@@ -119,7 +124,7 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 		return nil, apierrors.NewBadRequest("missing namespace")
 	}
 
-	repos, err := r.stashClient.StashV1alpha1().Repositories(ns).List(metav1.ListOptions{})
+	repos, err := r.stashClient.StashV1alpha1().Repositories(ns).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, apierrors.NewInternalError(err)
 	}
@@ -157,6 +162,10 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 	return snapshotList, nil
 }
 
+func (r *REST) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
+	return r.convertor.ConvertToTable(ctx, object, tableOptions)
+}
+
 func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
@@ -166,7 +175,7 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 	if err != nil {
 		return nil, false, apierrors.NewBadRequest(err.Error())
 	}
-	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(repoName, metav1.GetOptions{})
+	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(context.TODO(), repoName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil, false, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)

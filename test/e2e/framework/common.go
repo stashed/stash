@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"path/filepath"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -126,7 +127,7 @@ func (fi *Invocation) CreateBackupConfigForWorkload(objMeta metav1.ObjectMeta, r
 	}
 
 	By("Creating BackupConfiguration: " + backupConfig.Name)
-	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(context.TODO(), backupConfig, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +146,7 @@ func (fi *Invocation) SetupBatchBackup(repo *api.Repository, transformFuncs ...f
 	}
 
 	By("Creating BackupBatch: " + backupBatch.Name)
-	createdBackupBatch, err := fi.StashClient.StashV1beta1().BackupBatches(backupBatch.Namespace).Create(backupBatch)
+	createdBackupBatch, err := fi.StashClient.StashV1beta1().BackupBatches(backupBatch.Namespace).Create(context.TODO(), backupBatch, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +338,7 @@ func (fi *Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta,
 
 	By("Waiting for BackupConfiguration")
 	fi.EventuallyBackupConfigurationCreated(objMeta).Should(BeTrue())
-	backupConfig, err := fi.StashClient.StashV1beta1().BackupConfigurations(objMeta.Namespace).Get(objMeta.Name, metav1.GetOptions{})
+	backupConfig, err := fi.StashClient.StashV1beta1().BackupConfigurations(objMeta.Namespace).Get(context.TODO(), objMeta.Name, metav1.GetOptions{})
 	if err != nil {
 		return backupConfig, err
 	}

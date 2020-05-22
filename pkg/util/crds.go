@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -45,10 +46,16 @@ func EnsureDefaultFunctions(stashClient cs.Interface, registry, imageTag string)
 	}
 
 	for _, fn := range defaultFunctions {
-		_, _, err := util_v1beta1.CreateOrPatchFunction(stashClient.StashV1beta1(), fn.ObjectMeta, func(in *api_v1beta1.Function) *api_v1beta1.Function {
-			in.Spec = fn.Spec
-			return in
-		})
+		_, _, err := util_v1beta1.CreateOrPatchFunction(
+			context.TODO(),
+			stashClient.StashV1beta1(),
+			fn.ObjectMeta,
+			func(in *api_v1beta1.Function) *api_v1beta1.Function {
+				in.Spec = fn.Spec
+				return in
+			},
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return err
 		}
@@ -64,10 +71,16 @@ func EnsureDefaultTasks(stashClient cs.Interface) error {
 	}
 
 	for _, task := range defaultTasks {
-		_, _, err := util_v1beta1.CreateOrPatchTask(stashClient.StashV1beta1(), task.ObjectMeta, func(in *api_v1beta1.Task) *api_v1beta1.Task {
-			in.Spec = task.Spec
-			return in
-		})
+		_, _, err := util_v1beta1.CreateOrPatchTask(
+			context.TODO(),
+			stashClient.StashV1beta1(),
+			task.ObjectMeta,
+			func(in *api_v1beta1.Task) *api_v1beta1.Task {
+				in.Spec = task.Spec
+				return in
+			},
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return err
 		}

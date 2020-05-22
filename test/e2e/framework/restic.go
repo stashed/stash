@@ -17,6 +17,8 @@ limitations under the License.
 package framework
 
 import (
+	"context"
+
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	stash_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 
@@ -25,6 +27,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
@@ -185,12 +188,12 @@ func (fi *Invocation) ResticForB2Backend() api.Restic {
 }
 
 func (f *Framework) CreateRestic(obj api.Restic) error {
-	_, err := f.StashClient.StashV1alpha1().Restics(obj.Namespace).Create(&obj)
+	_, err := f.StashClient.StashV1alpha1().Restics(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 	return err
 }
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
-	err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -198,25 +201,25 @@ func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(*api.Restic) *api.Restic) error {
-	_, err := stash_util.TryUpdateRestic(f.StashClient.StashV1alpha1(), meta, transformer)
+	_, err := stash_util.TryUpdateRestic(context.TODO(), f.StashClient.StashV1alpha1(), meta, transformer, metav1.UpdateOptions{})
 	return err
 }
 
 func (f *Framework) CreateOrPatchRestic(meta metav1.ObjectMeta, transformer func(*api.Restic) *api.Restic) error {
-	_, _, err := stash_util.CreateOrPatchRestic(f.StashClient.StashV1alpha1(), meta, transformer)
+	_, _, err := stash_util.CreateOrPatchRestic(context.TODO(), f.StashClient.StashV1alpha1(), meta, transformer, metav1.PatchOptions{})
 	return err
 
 }
 
 func (f *Framework) CreateOrPatchRepository(meta metav1.ObjectMeta, transformer func(repository *api.Repository) *api.Repository) error {
-	_, _, err := stash_util.CreateOrPatchRepository(f.StashClient.StashV1alpha1(), meta, transformer)
+	_, _, err := stash_util.CreateOrPatchRepository(context.TODO(), f.StashClient.StashV1alpha1(), meta, transformer, metav1.PatchOptions{})
 	return err
 
 }
 
 func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *api.Restic {
-		obj, err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})

@@ -17,6 +17,7 @@ limitations under the License.
 package resolve
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -46,7 +47,7 @@ type TaskResolver struct {
 }
 
 func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetName string) (core.PodSpec, error) {
-	task, err := o.StashClient.StashV1beta1().Tasks().Get(o.TaskName, metav1.GetOptions{})
+	task, err := o.StashClient.StashV1beta1().Tasks().Get(context.TODO(), o.TaskName, metav1.GetOptions{})
 	if err != nil {
 		return core.PodSpec{}, err
 	}
@@ -62,7 +63,7 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 
 	// get Functions for Task
 	for i, fn := range task.Spec.Steps {
-		function, err := o.StashClient.StashV1beta1().Functions().Get(fn.Name, metav1.GetOptions{})
+		function, err := o.StashClient.StashV1beta1().Functions().Get(context.TODO(), fn.Name, metav1.GetOptions{})
 		if err != nil {
 			return core.PodSpec{}, fmt.Errorf("can't get Function %s for Task %s, reason: %s", fn.Name, task.Name, err)
 		}

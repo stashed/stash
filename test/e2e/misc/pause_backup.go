@@ -17,6 +17,7 @@ limitations under the License.
 package misc
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -78,10 +79,10 @@ var _ = Describe("Pause Backup", func() {
 			f.EventuallyBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", 1))
 
 			By("Pausing scheduled backup")
-			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
+			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(context.TODO(), f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
 				in.Spec.Paused = true
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the CronJob has been suspended")
@@ -101,15 +102,15 @@ var _ = Describe("Pause Backup", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the instant backup has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 			By("Resuming scheduled backup")
-			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
+			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(context.TODO(), f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
 				in.Spec.Paused = false
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the CronJob has been resumed")
@@ -150,10 +151,10 @@ var _ = Describe("Pause Backup", func() {
 			f.EventuallyBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", 1))
 
 			By("Pausing scheduled backup")
-			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
+			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(context.TODO(), f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
 				in.Spec.Paused = true
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the CronJob has been suspended")
@@ -173,15 +174,15 @@ var _ = Describe("Pause Backup", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the instant backup has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 			By("Resuming scheduled backup")
-			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
+			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(context.TODO(), f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
 				in.Spec.Paused = false
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the CronJob has been resumed")
@@ -306,10 +307,10 @@ var _ = Describe("Pause Backup", func() {
 			f.EventuallyBackupCount(backupBatch.ObjectMeta, v1beta1.ResourceKindBackupBatch).Should(BeNumerically("==", 1))
 
 			By("Pausing scheduled backup")
-			backupBatch, _, err = v1beta1_util.PatchBackupBatch(f.StashClient.StashV1beta1(), backupBatch, func(in *v1beta1.BackupBatch) *v1beta1.BackupBatch {
+			backupBatch, _, err = v1beta1_util.PatchBackupBatch(context.TODO(), f.StashClient.StashV1beta1(), backupBatch, func(in *v1beta1.BackupBatch) *v1beta1.BackupBatch {
 				in.Spec.Paused = true
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the CronJob has been suspended")
@@ -329,15 +330,15 @@ var _ = Describe("Pause Backup", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the instant backup has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 			By("Resuming scheduled backup")
-			backupBatch, _, err = v1beta1_util.PatchBackupBatch(f.StashClient.StashV1beta1(), backupBatch, func(in *v1beta1.BackupBatch) *v1beta1.BackupBatch {
+			backupBatch, _, err = v1beta1_util.PatchBackupBatch(context.TODO(), f.StashClient.StashV1beta1(), backupBatch, func(in *v1beta1.BackupBatch) *v1beta1.BackupBatch {
 				in.Spec.Paused = false
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that the CronJob has been resumed")

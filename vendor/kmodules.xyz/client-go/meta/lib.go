@@ -57,9 +57,14 @@ func AddLabelBlacklistFlag(fs *pflag.FlagSet) {
 	fs.StringSliceVar(&labelKeyBlacklist, "label-key-blacklist", labelKeyBlacklist, "list of keys that are not propagated from a CRD object to its offshoots")
 }
 
-func DeleteInBackground() *metav1.DeleteOptions {
+func DeleteInBackground() metav1.DeleteOptions {
 	policy := metav1.DeletePropagationBackground
-	return &metav1.DeleteOptions{PropagationPolicy: &policy}
+	return metav1.DeleteOptions{PropagationPolicy: &policy}
+}
+
+func DeleteInForeground() metav1.DeleteOptions {
+	policy := metav1.DeletePropagationForeground
+	return metav1.DeleteOptions{PropagationPolicy: &policy}
 }
 
 func GetKind(v interface{}) string {

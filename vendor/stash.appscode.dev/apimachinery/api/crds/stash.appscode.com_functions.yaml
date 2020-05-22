@@ -161,7 +161,7 @@ spec:
                             description: 'Selects a field of the pod: supports metadata.name,
                               metadata.namespace, metadata.labels, metadata.annotations,
                               spec.nodeName, spec.serviceAccountName, status.hostIP,
-                              status.podIP.'
+                              status.podIP, status.podIPs.'
                             properties:
                               apiVersion:
                                 description: Version of the schema the FieldPath is
@@ -185,9 +185,13 @@ spec:
                                   optional for env vars'
                                 type: string
                               divisor:
+                                anyOf:
+                                - type: integer
+                                - type: string
                                 description: Specifies the output format of the exposed
                                   resources, defaults to "1"
-                                type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
                               resource:
                                 description: 'Required: resource to select'
                                 type: string
@@ -699,13 +703,21 @@ spec:
                   properties:
                     limits:
                       additionalProperties:
-                        type: string
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
                       description: 'Limits describes the maximum amount of compute
                         resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                       type: object
                     requests:
                       additionalProperties:
-                        type: string
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
                       description: 'Requests describes the minimum amount of compute
                         resources required. If Requests is omitted for a container,
                         it defaults to Limits if that is explicitly specified, otherwise
@@ -816,15 +828,11 @@ spec:
                           description: GMSACredentialSpec is where the GMSA admission
                             webhook (https://github.com/kubernetes-sigs/windows-gmsa)
                             inlines the contents of the GMSA credential spec named
-                            by the GMSACredentialSpecName field. This field is alpha-level
-                            and is only honored by servers that enable the WindowsGMSA
-                            feature flag.
+                            by the GMSACredentialSpecName field.
                           type: string
                         gmsaCredentialSpecName:
                           description: GMSACredentialSpecName is the name of the GMSA
-                            credential spec to use. This field is alpha-level and
-                            is only honored by servers that enable the WindowsGMSA
-                            feature flag.
+                            credential spec to use.
                           type: string
                         runAsUserName:
                           description: The UserName in Windows to run the entrypoint
@@ -832,8 +840,6 @@ spec:
                             in image metadata if unspecified. May also be set in PodSecurityContext.
                             If set in both SecurityContext and PodSecurityContext,
                             the value specified in SecurityContext takes precedence.
-                            This field is alpha-level and it is only honored by servers
-                            that enable the WindowsRunAsUserName feature flag.
                           type: string
                       type: object
                   type: object
@@ -890,7 +896,7 @@ spec:
                       volume should be mounted. Behaves similarly to SubPath but environment
                       variable references $(VAR_NAME) are expanded using the container's
                       environment. Defaults to "" (volume's root). SubPathExpr and
-                      SubPath are mutually exclusive. This field is beta in 1.15.
+                      SubPath are mutually exclusive.
                     type: string
                 required:
                 - mountPath

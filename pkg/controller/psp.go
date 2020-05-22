@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,14 +42,14 @@ func (c *StashController) getBackupJobPSPNames(taskRef api_v1beta1.TaskRef) ([]s
 	}
 
 	// find out task and then functions. finally, get psp names from the functions
-	task, err := c.stashClient.StashV1beta1().Tasks().Get(taskRef.Name, metav1.GetOptions{})
+	task, err := c.stashClient.StashV1beta1().Tasks().Get(context.TODO(), taskRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	var psps []string
 	for _, step := range task.Spec.Steps {
-		fn, err := c.stashClient.StashV1beta1().Functions().Get(step.Name, metav1.GetOptions{})
+		fn, err := c.stashClient.StashV1beta1().Functions().Get(context.TODO(), step.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -71,14 +73,14 @@ func (c *StashController) getRestoreJobPSPNames(restoreSession *api_v1beta1.Rest
 	}
 
 	// find out task and then functions. finally, get psp names from the functions
-	task, err := c.stashClient.StashV1beta1().Tasks().Get(restoreSession.Spec.Task.Name, metav1.GetOptions{})
+	task, err := c.stashClient.StashV1beta1().Tasks().Get(context.TODO(), restoreSession.Spec.Task.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	var psps []string
 	for _, step := range task.Spec.Steps {
-		fn, err := c.stashClient.StashV1beta1().Functions().Get(step.Name, metav1.GetOptions{})
+		fn, err := c.stashClient.StashV1beta1().Functions().Get(context.TODO(), step.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

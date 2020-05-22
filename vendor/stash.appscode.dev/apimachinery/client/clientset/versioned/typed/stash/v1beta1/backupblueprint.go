@@ -19,6 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	"time"
 
 	v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -38,14 +39,14 @@ type BackupBlueprintsGetter interface {
 
 // BackupBlueprintInterface has methods to work with BackupBlueprint resources.
 type BackupBlueprintInterface interface {
-	Create(*v1beta1.BackupBlueprint) (*v1beta1.BackupBlueprint, error)
-	Update(*v1beta1.BackupBlueprint) (*v1beta1.BackupBlueprint, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1beta1.BackupBlueprint, error)
-	List(opts v1.ListOptions) (*v1beta1.BackupBlueprintList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupBlueprint, err error)
+	Create(ctx context.Context, backupBlueprint *v1beta1.BackupBlueprint, opts v1.CreateOptions) (*v1beta1.BackupBlueprint, error)
+	Update(ctx context.Context, backupBlueprint *v1beta1.BackupBlueprint, opts v1.UpdateOptions) (*v1beta1.BackupBlueprint, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.BackupBlueprint, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.BackupBlueprintList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.BackupBlueprint, err error)
 	BackupBlueprintExpansion
 }
 
@@ -62,19 +63,19 @@ func newBackupBlueprints(c *StashV1beta1Client) *backupBlueprints {
 }
 
 // Get takes name of the backupBlueprint, and returns the corresponding backupBlueprint object, and an error if there is any.
-func (c *backupBlueprints) Get(name string, options v1.GetOptions) (result *v1beta1.BackupBlueprint, err error) {
+func (c *backupBlueprints) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.BackupBlueprint, err error) {
 	result = &v1beta1.BackupBlueprint{}
 	err = c.client.Get().
 		Resource("backupblueprints").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of BackupBlueprints that match those selectors.
-func (c *backupBlueprints) List(opts v1.ListOptions) (result *v1beta1.BackupBlueprintList, err error) {
+func (c *backupBlueprints) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.BackupBlueprintList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -84,13 +85,13 @@ func (c *backupBlueprints) List(opts v1.ListOptions) (result *v1beta1.BackupBlue
 		Resource("backupblueprints").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested backupBlueprints.
-func (c *backupBlueprints) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *backupBlueprints) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -100,66 +101,69 @@ func (c *backupBlueprints) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("backupblueprints").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a backupBlueprint and creates it.  Returns the server's representation of the backupBlueprint, and an error, if there is any.
-func (c *backupBlueprints) Create(backupBlueprint *v1beta1.BackupBlueprint) (result *v1beta1.BackupBlueprint, err error) {
+func (c *backupBlueprints) Create(ctx context.Context, backupBlueprint *v1beta1.BackupBlueprint, opts v1.CreateOptions) (result *v1beta1.BackupBlueprint, err error) {
 	result = &v1beta1.BackupBlueprint{}
 	err = c.client.Post().
 		Resource("backupblueprints").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(backupBlueprint).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a backupBlueprint and updates it. Returns the server's representation of the backupBlueprint, and an error, if there is any.
-func (c *backupBlueprints) Update(backupBlueprint *v1beta1.BackupBlueprint) (result *v1beta1.BackupBlueprint, err error) {
+func (c *backupBlueprints) Update(ctx context.Context, backupBlueprint *v1beta1.BackupBlueprint, opts v1.UpdateOptions) (result *v1beta1.BackupBlueprint, err error) {
 	result = &v1beta1.BackupBlueprint{}
 	err = c.client.Put().
 		Resource("backupblueprints").
 		Name(backupBlueprint.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(backupBlueprint).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the backupBlueprint and deletes it. Returns an error if one occurs.
-func (c *backupBlueprints) Delete(name string, options *v1.DeleteOptions) error {
+func (c *backupBlueprints) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("backupblueprints").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *backupBlueprints) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *backupBlueprints) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Resource("backupblueprints").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched backupBlueprint.
-func (c *backupBlueprints) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupBlueprint, err error) {
+func (c *backupBlueprints) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.BackupBlueprint, err error) {
 	result = &v1beta1.BackupBlueprint{}
 	err = c.client.Patch(pt).
 		Resource("backupblueprints").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

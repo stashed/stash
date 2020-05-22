@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 const (
@@ -67,11 +69,11 @@ func (fi *Invocation) Deployment(name, pvcName, volName string) apps.Deployment 
 }
 
 func (f *Framework) CreateDeployment(obj apps.Deployment) (*apps.Deployment, error) {
-	return f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
+	return f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -80,7 +82,7 @@ func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {
 
 func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.Deployment {
-		obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	},
@@ -91,7 +93,7 @@ func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAsse
 
 func (fi *Invocation) WaitUntilDeploymentReadyWithSidecar(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -119,7 +121,7 @@ func (fi *Invocation) WaitUntilDeploymentReadyWithSidecar(meta metav1.ObjectMeta
 
 func (fi *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -150,7 +152,7 @@ func (fi *Invocation) DeployDeployment(name string, replica int32, volName strin
 	pvcName := fmt.Sprintf("%s-%s", volName, fi.app)
 
 	// If the PVC does not exist, create PVC for Deployment
-	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(pvcName, metav1.GetOptions{})
+	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(context.TODO(), pvcName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			pvc, err = fi.CreateNewPVC(pvcName)
@@ -180,7 +182,7 @@ func (fi *Invocation) DeployDeployment(name string, replica int32, volName strin
 	fi.AppendToCleanupList(createdDeployment)
 
 	By("Waiting for Deployment to be ready")
-	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, createdDeployment.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(context.TODO(), fi.KubeClient, createdDeployment.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data

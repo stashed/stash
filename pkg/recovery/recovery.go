@@ -17,6 +17,7 @@ limitations under the License.
 package recovery
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -63,7 +64,7 @@ func (c *Controller) Run() {
 	var err error
 
 	operation := func() error {
-		recovery, err = c.stashClient.Recoveries(c.namespace).Get(c.recoveryName, metav1.GetOptions{})
+		recovery, err = c.stashClient.Recoveries(c.namespace).Get(context.TODO(), c.recoveryName, metav1.GetOptions{})
 		return err
 	}
 
@@ -78,10 +79,10 @@ func (c *Controller) Run() {
 
 	if err = recovery.IsValid(); err != nil {
 		log.Errorf("Failed to validate recovery %s, reason: %s", recovery.Name, err)
-		_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		_, err = stash_util.UpdateRecoveryStatus(context.TODO(), c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		})
+		}, metav1.UpdateOptions{})
 		if err != nil {
 			log.Errorln(err)
 		}
@@ -103,10 +104,10 @@ func (c *Controller) Run() {
 
 	if err = c.RecoverOrErr(recovery); err != nil {
 		log.Errorf("Failed to complete recovery %s, reason: %s", recovery.Name, err)
-		_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		_, err = stash_util.UpdateRecoveryStatus(context.TODO(), c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		})
+		}, metav1.UpdateOptions{})
 		if err != nil {
 			log.Errorln(err)
 		}
@@ -127,11 +128,11 @@ func (c *Controller) Run() {
 	}
 
 	log.Infof("Recovery %s succeeded\n", recovery.Name)
-	_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+	_, err = stash_util.UpdateRecoveryStatus(context.TODO(), c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		in.Phase = api.RecoverySucceeded
 		// TODO: status.Stats
 		return in
-	})
+	}, metav1.UpdateOptions{})
 	if err != nil {
 		log.Errorln(err)
 	}
@@ -151,7 +152,7 @@ func (c *Controller) Run() {
 }
 
 func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
-	repository, err := c.stashClient.Repositories(recovery.Spec.Repository.Namespace).Get(recovery.Spec.Repository.Name, metav1.GetOptions{})
+	repository, err := c.stashClient.Repositories(recovery.Spec.Repository.Namespace).Get(context.TODO(), recovery.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -159,7 +160,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 	if err != nil {
 		return err
 	}
-	secret, err := c.k8sClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -205,12 +206,12 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 			} else {
 				log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 			}
-			_, err = stash_util.SetRecoveryStats(c.stashClient, recovery.ObjectMeta, path, d, api.RecoveryFailed)
+			_, err = stash_util.SetRecoveryStats(context.TODO(), c.stashClient, recovery.ObjectMeta, path, d, api.RecoveryFailed, metav1.UpdateOptions{})
 			if err != nil {
 				return err
 			}
 		} else {
-			_, err = stash_util.SetRecoveryStats(c.stashClient, recovery.ObjectMeta, path, d, api.RecoverySucceeded)
+			_, err = stash_util.SetRecoveryStats(context.TODO(), c.stashClient, recovery.ObjectMeta, path, d, api.RecoverySucceeded, metav1.UpdateOptions{})
 			if err != nil {
 				return err
 			}

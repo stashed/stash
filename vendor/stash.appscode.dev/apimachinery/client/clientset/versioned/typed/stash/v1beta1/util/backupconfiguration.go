@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -31,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchBackupConfiguration(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupConfiguration) *api.BackupConfiguration) (*api.BackupConfiguration, kutil.VerbType, error) {
-	cur, err := c.BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchBackupConfiguration(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupConfiguration) *api.BackupConfiguration, opts metav1.PatchOptions) (*api.BackupConfiguration, kutil.VerbType, error) {
+	cur, err := c.BackupConfigurations(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating BackupConfiguration %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.BackupConfigurations(meta.Namespace).Create(transform(&api.BackupConfiguration{
+		out, err := c.BackupConfigurations(meta.Namespace).Create(ctx, transform(&api.BackupConfiguration{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "BackupConfiguration",
+				Kind:       api.ResourceKindBackupConfiguration,
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchBackupConfiguration(c, cur, transform)
+	return PatchBackupConfiguration(ctx, c, cur, transform, opts)
 }
 
-func PatchBackupConfiguration(c cs.StashV1beta1Interface, cur *api.BackupConfiguration, transform func(*api.BackupConfiguration) *api.BackupConfiguration) (*api.BackupConfiguration, kutil.VerbType, error) {
-	return PatchBackupConfigurationObject(c, cur, transform(cur.DeepCopy()))
+func PatchBackupConfiguration(ctx context.Context, c cs.StashV1beta1Interface, cur *api.BackupConfiguration, transform func(*api.BackupConfiguration) *api.BackupConfiguration, opts metav1.PatchOptions) (*api.BackupConfiguration, kutil.VerbType, error) {
+	return PatchBackupConfigurationObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchBackupConfigurationObject(c cs.StashV1beta1Interface, cur, mod *api.BackupConfiguration) (*api.BackupConfiguration, kutil.VerbType, error) {
+func PatchBackupConfigurationObject(ctx context.Context, c cs.StashV1beta1Interface, cur, mod *api.BackupConfiguration, opts metav1.PatchOptions) (*api.BackupConfiguration, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +76,19 @@ func PatchBackupConfigurationObject(c cs.StashV1beta1Interface, cur, mod *api.Ba
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching BackupConfiguration %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.BackupConfigurations(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.BackupConfigurations(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateBackupConfiguration(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupConfiguration) *api.BackupConfiguration) (result *api.BackupConfiguration, err error) {
+func TryUpdateBackupConfiguration(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupConfiguration) *api.BackupConfiguration, opts metav1.UpdateOptions) (result *api.BackupConfiguration, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.BackupConfigurations(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.BackupConfigurations(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.BackupConfigurations(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update BackupConfiguration %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -98,9 +102,11 @@ func TryUpdateBackupConfiguration(c cs.StashV1beta1Interface, meta metav1.Object
 }
 
 func UpdateBackupConfigurationStatus(
+	ctx context.Context,
 	c cs.StashV1beta1Interface,
 	meta metav1.ObjectMeta,
 	transform func(*api.BackupConfigurationStatus) *api.BackupConfigurationStatus,
+	opts metav1.UpdateOptions,
 ) (result *api.BackupConfiguration, err error) {
 	apply := func(x *api.BackupConfiguration) *api.BackupConfiguration {
 		out := &api.BackupConfiguration{
@@ -113,16 +119,16 @@ func UpdateBackupConfigurationStatus(
 	}
 
 	attempt := 0
-	cur, err := c.BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	cur, err := c.BackupConfigurations(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.BackupConfigurations(meta.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.BackupConfigurations(meta.Namespace).UpdateStatus(ctx, apply(cur), opts)
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			latest, e3 := c.BackupConfigurations(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest

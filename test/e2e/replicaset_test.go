@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -60,7 +61,7 @@ var _ = XDescribe("ReplicaSet", func() {
 		err := framework.WaitUntilReplicaSetDeleted(f.KubeClient, rs.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rs.Namespace, f.AppLabel())
+		err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, rs.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -200,12 +201,12 @@ var _ = XDescribe("ReplicaSet", func() {
 			f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicaSet " + rs.Name)
-			_, _, err = apps_util.PatchReplicaSet(f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
+			_, _, err = apps_util.PatchReplicaSet(context.TODO(), f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
@@ -363,12 +364,12 @@ var _ = XDescribe("ReplicaSet", func() {
 			f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicaSet " + rs.Name)
-			obj, _, err = apps_util.PatchReplicaSet(f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
+			obj, _, err = apps_util.PatchReplicaSet(context.TODO(), f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
@@ -396,10 +397,10 @@ var _ = XDescribe("ReplicaSet", func() {
 			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + rs.Name)
-			obj, _, err = apps_util.PatchReplicaSet(f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
+			obj, _, err = apps_util.PatchReplicaSet(context.TODO(), f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
 				in.Labels = previousLabel
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
@@ -666,7 +667,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -728,7 +729,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -962,7 +963,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rs.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, rs.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
@@ -1017,7 +1018,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				By("Creating ReplicaSet " + rs.Name)
 				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
-				err = apps_util.WaitUntilReplicaSetReady(f.KubeClient, rs.ObjectMeta)
+				err = apps_util.WaitUntilReplicaSetReady(context.TODO(), f.KubeClient, rs.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating demo data in hostPath")
@@ -1062,7 +1063,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rs.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, rs.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
@@ -1165,7 +1166,7 @@ var _ = XDescribe("ReplicaSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rs.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, rs.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")

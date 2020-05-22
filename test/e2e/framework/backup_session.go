@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ import (
 func (f *Framework) EventuallyBackupSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() (phase v1beta1.BackupSessionPhase) {
-			bs, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			bs, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return bs.Status.Phase
 		},
@@ -42,7 +43,7 @@ func (f *Framework) EventuallyBackupSessionPhase(meta metav1.ObjectMeta) GomegaA
 func (f *Framework) EventuallyBackupProcessCompleted(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			bs, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			bs, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
@@ -59,7 +60,7 @@ func (f *Framework) EventuallyBackupProcessCompleted(meta metav1.ObjectMeta) Gom
 func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(metav1.ListOptions{})
+			backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(context.TODO(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return len(backupsnlist.Items) > 0
 		},
@@ -67,7 +68,7 @@ func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) Gomeg
 }
 
 func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSession, error) {
-	backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(metav1.ListOptions{})
+	backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (fi *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta, invokerRef
 		},
 	}
 
-	return fi.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Create(backupSession)
+	return fi.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Create(context.TODO(), backupSession, metav1.CreateOptions{})
 }
 
 func (fi *Invocation) EventuallyBackupCount(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
@@ -115,7 +116,7 @@ func (fi *Invocation) EventuallyBackupCount(invokerMeta metav1.ObjectMeta, invok
 }
 
 func (fi *Invocation) GetSuccessfulBackupSessionCount(invokerMeta metav1.ObjectMeta, invokerKind string) (int64, error) {
-	backupSessions, err := fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(metav1.ListOptions{})
+	backupSessions, err := fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return 0, err
 	}
@@ -133,7 +134,7 @@ func (fi *Invocation) GetSuccessfulBackupSessionCount(invokerMeta metav1.ObjectM
 
 func (fi *Invocation) EventuallyRunningBackupCompleted(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
 	return Eventually(func() bool {
-		backupSessions, err := fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(metav1.ListOptions{})
+		backupSessions, err := fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return false
 		}

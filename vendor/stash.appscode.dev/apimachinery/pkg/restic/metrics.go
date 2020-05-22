@@ -17,6 +17,7 @@ limitations under the License.
 package restic
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -728,7 +729,7 @@ func repoMetricLabels(clientConfig *rest.Config, invoker apis.Invoker, userProvi
 	if err != nil {
 		return nil, err
 	}
-	repository, err := stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(invoker.Repository, metav1.GetOptions{})
+	repository, err := stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -811,7 +812,7 @@ func getAppGroupKind(clientConfig *rest.Config, name, namespace string) (string,
 	if err != nil {
 		return "", "", err
 	}
-	appbinding, err := appClient.AppcatalogV1alpha1().AppBindings(namespace).Get(name, metav1.GetOptions{})
+	appbinding, err := appClient.AppcatalogV1alpha1().AppBindings(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return "", "", err
 	}

@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"strconv"
@@ -34,6 +35,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	pfutil "kmodules.xyz/client-go/tools/portforward"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	"kmodules.xyz/objectstore-api/osm"
@@ -66,7 +68,7 @@ func (f *Framework) EventuallyRepository(workload interface{}) GomegaAsyncAssert
 
 func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() bool {
-		_, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		_, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		if err == nil && !kerr.IsNotFound(err) {
 			return true
 		}
@@ -91,7 +93,7 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 	}
 	repositories := make([]*api.Repository, 0)
 	for _, repoName := range repoNames {
-		obj, err := f.StashClient.StashV1alpha1().Repositories(kmr.Meta.Namespace).Get(repoName, metav1.GetOptions{})
+		obj, err := f.StashClient.StashV1alpha1().Repositories(kmr.Meta.Namespace).Get(context.TODO(), repoName, metav1.GetOptions{})
 		if err == nil {
 			repositories = append(repositories, obj)
 		}
@@ -101,13 +103,13 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 
 func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 	for _, repo := range repositories {
-		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInBackground())
+		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(context.TODO(), repo.Name, meta_util.DeleteInBackground())
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
 
 func (f *Framework) DeleteRepository(repository *api.Repository) error {
-	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(repository.Name, &metav1.DeleteOptions{})
+	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(context.TODO(), repository.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -182,7 +184,7 @@ func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int
 }
 
 func (f *Framework) CreateRepository(repo *api.Repository) error {
-	_, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	_, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 
 	return err
 
@@ -413,7 +415,7 @@ func (fi *Invocation) SetupLocalRepositoryWithPVC() (*api.Repository, error) {
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -436,7 +438,7 @@ func (fi *Invocation) SetupLocalRepositoryWithHostPath() (*api.Repository, error
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -459,7 +461,7 @@ func (fi *Invocation) SetupLocalRepositoryWithNFSServer() (*api.Repository, erro
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -486,7 +488,7 @@ func (fi *Invocation) SetupGCSRepository(maxConnection int64, appendRepoToCleanu
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return repo, err
 	}
@@ -519,7 +521,7 @@ func (fi *Invocation) SetupMinioRepository() (*api.Repository, error) {
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return repo, err
 	}
@@ -549,7 +551,7 @@ func (fi *Invocation) SetupS3Repository(appendToCleanupList bool) (*api.Reposito
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return repo, err
 	}
@@ -582,7 +584,7 @@ func (fi *Invocation) SetupAzureRepository(maxConnection int64, addRepoToCleanup
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return repo, err
 	}
@@ -615,7 +617,7 @@ func (fi *Invocation) SetupRestRepository(tls bool) (*api.Repository, error) {
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return repo, err
 	}
@@ -646,7 +648,7 @@ func (fi *Invocation) SetupSwiftRepository(appendRepoToCleanupList bool) (*api.R
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return repo, err
 	}
@@ -679,7 +681,7 @@ func (fi *Invocation) SetupB2Repository(maxConnection int64) (*api.Repository, e
 
 	// Create Repository
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return repo, err
 	}

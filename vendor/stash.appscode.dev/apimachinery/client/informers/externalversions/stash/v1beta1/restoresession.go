@@ -19,6 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	time "time"
 
 	stashv1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -62,13 +63,13 @@ func NewFilteredRestoreSessionInformer(client versioned.Interface, namespace str
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1beta1().RestoreSessions(namespace).List(options)
+				return client.StashV1beta1().RestoreSessions(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1beta1().RestoreSessions(namespace).Watch(options)
+				return client.StashV1beta1().RestoreSessions(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&stashv1beta1.RestoreSession{},

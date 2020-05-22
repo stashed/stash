@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -135,10 +136,16 @@ func (c *StashController) applyRestoreSessionReconciliationLogic(restoreSession 
 			}
 
 			// remove finalizer
-			_, _, err := v1beta1_util.PatchRestoreSession(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
-				in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-				return in
-			})
+			_, _, err := v1beta1_util.PatchRestoreSession(
+				context.TODO(),
+				c.stashClient.StashV1beta1(),
+				restoreSession,
+				func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
+					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
+					return in
+				},
+				metav1.PatchOptions{},
+			)
 			if err != nil {
 				log.Errorln(err)
 				return err
@@ -146,10 +153,16 @@ func (c *StashController) applyRestoreSessionReconciliationLogic(restoreSession 
 		}
 	} else {
 		// add finalizer
-		_, _, err := v1beta1_util.PatchRestoreSession(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
-			in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-			return in
-		})
+		_, _, err := v1beta1_util.PatchRestoreSession(
+			context.TODO(),
+			c.stashClient.StashV1beta1(),
+			restoreSession,
+			func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
+				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
+				return in
+			},
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return err
 		}
@@ -313,11 +326,17 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			Namespace: restoreSession.Namespace,
 			Labels:    restoreSession.Labels,
 		}
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
-			in.Labels = offshootLabels
-			return in
-		})
+		_, _, err := core_util.CreateOrPatchServiceAccount(
+			context.TODO(),
+			c.kubeClient,
+			saMeta,
+			func(in *core.ServiceAccount) *core.ServiceAccount {
+				core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+				in.Labels = offshootLabels
+				return in
+			},
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return err
 		}
@@ -334,7 +353,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	}
 
 	// get repository for RestoreSession
-	repository, err := c.stashClient.StashV1alpha1().Repositories(restoreSession.Namespace).Get(
+	repository, err := c.stashClient.StashV1alpha1().Repositories(restoreSession.Namespace).Get(context.TODO(),
 		restoreSession.Spec.Repository.Name,
 		metav1.GetOptions{},
 	)
@@ -444,15 +463,21 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 }
 
 func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, meta metav1.ObjectMeta, owner *metav1.OwnerReference, serviceAccountName string) error {
-	_, _, err := batch_util.CreateOrPatchJob(c.kubeClient, meta, func(in *batchv1.Job) *batchv1.Job {
-		// set RestoreSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+	_, _, err := batch_util.CreateOrPatchJob(
+		context.TODO(),
+		c.kubeClient,
+		meta,
+		func(in *batchv1.Job) *batchv1.Job {
+			// set RestoreSession as owner of this Job
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
-		in.Spec.Template = *jobTemplate
-		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-		in.Spec.BackoffLimit = types.Int32P(1)
-		return in
-	})
+			in.Spec.Template = *jobTemplate
+			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Spec.BackoffLimit = types.Int32P(1)
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 	return err
 }
 
@@ -554,11 +579,17 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 			Labels:    restoreSession.Labels,
 		}
 
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
-			in.Labels = offshootLabels
-			return in
-		})
+		_, _, err := core_util.CreateOrPatchServiceAccount(
+			context.TODO(),
+			c.kubeClient,
+			saMeta,
+			func(in *core.ServiceAccount) *core.ServiceAccount {
+				core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+				in.Labels = offshootLabels
+				return in
+			},
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return err
 		}
@@ -581,17 +612,23 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 	}
 
 	// Create Volume restorer Job
-	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
-		// set RestoreSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+	_, _, err = batch_util.CreateOrPatchJob(
+		context.TODO(),
+		c.kubeClient,
+		jobMeta,
+		func(in *batchv1.Job) *batchv1.Job {
+			// set RestoreSession as owner of this Job
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
-		in.Labels = offshootLabels
+			in.Labels = offshootLabels
 
-		in.Spec.Template = *jobTemplate
-		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-		in.Spec.BackoffLimit = types.Int32P(1)
-		return in
-	})
+			in.Spec.Template = *jobTemplate
+			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Spec.BackoffLimit = types.Int32P(1)
+			return in
+		},
+		metav1.PatchOptions{},
+	)
 	return err
 }
 
@@ -603,11 +640,17 @@ func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.R
 	}
 
 	// set RestoreSession phase to "Running"
-	_, err = v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession.ObjectMeta, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		in.Phase = api_v1beta1.RestoreSessionRunning
-		in.TotalHosts = totalHosts
-		return in
-	})
+	_, err = v1beta1_util.UpdateRestoreSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		restoreSession.ObjectMeta,
+		func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+			in.Phase = api_v1beta1.RestoreSessionRunning
+			in.TotalHosts = totalHosts
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	if err != nil {
 		return err
 	}
@@ -631,11 +674,17 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 	sessionDuration := time.Since(restoreSession.CreationTimestamp.Time)
 
 	// update RestoreSession status
-	updatedRestoreSession, err := stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession.ObjectMeta, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		in.Phase = api_v1beta1.RestoreSessionSucceeded
-		in.SessionDuration = sessionDuration.String()
-		return in
-	})
+	updatedRestoreSession, err := stash_util.UpdateRestoreSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		restoreSession.ObjectMeta,
+		func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+			in.Phase = api_v1beta1.RestoreSessionSucceeded
+			in.SessionDuration = sessionDuration.String()
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	if err != nil {
 		return err
 	}
@@ -665,10 +714,16 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.RestoreSession, restoreErr error) error {
 
 	// set RestoreSession phase to "Failed"
-	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession.ObjectMeta, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		in.Phase = api_v1beta1.RestoreSessionFailed
-		return in
-	})
+	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		restoreSession.ObjectMeta,
+		func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+			in.Phase = api_v1beta1.RestoreSessionFailed
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	if err != nil {
 		return errors.NewAggregate([]error{restoreErr, err})
 	}
@@ -696,10 +751,16 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.RestoreSession, restoreErr error) error {
 
 	// set RestoreSession phase to "Unknown"
-	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession.ObjectMeta, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		in.Phase = api_v1beta1.RestoreSessionUnknown
-		return in
-	})
+	_, err := v1beta1_util.UpdateRestoreSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		restoreSession.ObjectMeta,
+		func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+			in.Phase = api_v1beta1.RestoreSessionUnknown
+			return in
+		},
+		metav1.UpdateOptions{},
+	)
 	if err != nil {
 		return errors.NewAggregate([]error{restoreErr, err})
 	}

@@ -19,6 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	time "time"
 
 	stashv1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -62,13 +63,13 @@ func NewFilteredResticInformer(client versioned.Interface, namespace string, res
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1alpha1().Restics(namespace).List(options)
+				return client.StashV1alpha1().Restics(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1alpha1().Restics(namespace).Watch(options)
+				return client.StashV1alpha1().Restics(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&stashv1alpha1.Restic{},

@@ -17,6 +17,7 @@ limitations under the License.
 package probe
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -72,7 +73,7 @@ func RunProbe(config *rest.Config, probes *api_v1.Handler, podName, namespace st
 			return fmt.Errorf("failed to create kuberentes client. Error: %v", err.Error())
 		}
 
-		pod, err = kubeClient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+		pod, err = kubeClient.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("filed to get pod %s/%s. Error: %v", namespace, podName, err.Error())
 		}

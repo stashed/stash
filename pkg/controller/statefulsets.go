@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
@@ -24,6 +26,7 @@ import (
 	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -141,7 +144,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			}
 
 			// workload has been modified. patch the workload so that respective pods start with the updated spec
-			_, _, err = apps_util.PatchStatefulSetObject(c.kubeClient, ss, w.Object.(*appsv1.StatefulSet))
+			_, _, err = apps_util.PatchStatefulSetObject(context.TODO(), c.kubeClient, ss, w.Object.(*appsv1.StatefulSet), metav1.PatchOptions{})
 			if err != nil {
 				glog.Errorf("failed to update statefulset %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
 				return err

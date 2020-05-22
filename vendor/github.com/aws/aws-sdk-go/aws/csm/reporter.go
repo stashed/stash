@@ -66,7 +66,6 @@ func (rep *Reporter) sendAPICallAttemptMetric(r *request.Request) {
 
 		XAmzRequestID: aws.String(r.RequestID),
 
-		AttemptCount:   aws.Int(r.RetryCount + 1),
 		AttemptLatency: aws.Int(int(now.Sub(r.AttemptTime).Nanoseconds() / int64(time.Millisecond))),
 		AccessKey:      aws.String(creds.AccessKeyID),
 	}
@@ -90,7 +89,7 @@ func getMetricException(err awserr.Error) metricException {
 	code := err.Code()
 
 	switch code {
-	case "RequestError",
+	case request.ErrCodeRequestError,
 		request.ErrCodeSerialization,
 		request.CanceledErrorCode:
 		return sdkException{
@@ -118,7 +117,7 @@ func (rep *Reporter) sendAPICallMetric(r *request.Request) {
 		Type:               aws.String("ApiCall"),
 		AttemptCount:       aws.Int(r.RetryCount + 1),
 		Region:             r.Config.Region,
-		Latency:            aws.Int(int(time.Now().Sub(r.Time) / time.Millisecond)),
+		Latency:            aws.Int(int(time.Since(r.Time) / time.Millisecond)),
 		XAmzRequestID:      aws.String(r.RequestID),
 		MaxRetriesExceeded: aws.Int(boolIntValue(r.RetryCount >= r.MaxRetries())),
 	}

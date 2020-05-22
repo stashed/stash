@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "stash.appscode.dev/apimachinery/apis/repositories/v1alpha1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +40,7 @@ var snapshotsResource = schema.GroupVersionResource{Group: "repositories.stash.a
 var snapshotsKind = schema.GroupVersionKind{Group: "repositories.stash.appscode.com", Version: "v1alpha1", Kind: "Snapshot"}
 
 // Get takes name of the snapshot, and returns the corresponding snapshot object, and an error if there is any.
-func (c *FakeSnapshots) Get(name string, options v1.GetOptions) (result *v1alpha1.Snapshot, err error) {
+func (c *FakeSnapshots) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Snapshot, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(snapshotsResource, c.ns, name), &v1alpha1.Snapshot{})
 
@@ -49,7 +51,7 @@ func (c *FakeSnapshots) Get(name string, options v1.GetOptions) (result *v1alpha
 }
 
 // List takes label and field selectors, and returns the list of Snapshots that match those selectors.
-func (c *FakeSnapshots) List(opts v1.ListOptions) (result *v1alpha1.SnapshotList, err error) {
+func (c *FakeSnapshots) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SnapshotList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(snapshotsResource, snapshotsKind, c.ns, opts), &v1alpha1.SnapshotList{})
 
@@ -72,7 +74,7 @@ func (c *FakeSnapshots) List(opts v1.ListOptions) (result *v1alpha1.SnapshotList
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeSnapshots) UpdateStatus(snapshot *v1alpha1.Snapshot) (*v1alpha1.Snapshot, error) {
+func (c *FakeSnapshots) UpdateStatus(ctx context.Context, snapshot *v1alpha1.Snapshot, opts v1.UpdateOptions) (*v1alpha1.Snapshot, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(snapshotsResource, "status", c.ns, snapshot), &v1alpha1.Snapshot{})
 
@@ -83,7 +85,7 @@ func (c *FakeSnapshots) UpdateStatus(snapshot *v1alpha1.Snapshot) (*v1alpha1.Sna
 }
 
 // Delete takes name of the snapshot and deletes it. Returns an error if one occurs.
-func (c *FakeSnapshots) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeSnapshots) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(snapshotsResource, c.ns, name), &v1alpha1.Snapshot{})
 

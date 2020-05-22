@@ -39,11 +39,11 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchValidatingWebhookConfiguration(c kubernetes.Interface, name string, transform func(*reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration) (*reg.ValidatingWebhookConfiguration, kutil.VerbType, error) {
-	cur, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Get(name, metav1.GetOptions{})
+func CreateOrPatchValidatingWebhookConfiguration(ctx context.Context, c kubernetes.Interface, name string, transform func(*reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration, opts metav1.PatchOptions) (*reg.ValidatingWebhookConfiguration, kutil.VerbType, error) {
+	cur, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ValidatingWebhookConfiguration %s.", name)
-		out, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Create(transform(&reg.ValidatingWebhookConfiguration{
+		out, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Create(ctx, transform(&reg.ValidatingWebhookConfiguration{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ValidatingWebhookConfiguration",
 				APIVersion: reg.SchemeGroupVersion.String(),
@@ -51,19 +51,22 @@ func CreateOrPatchValidatingWebhookConfiguration(c kubernetes.Interface, name st
 			ObjectMeta: metav1.ObjectMeta{
 				Name: name,
 			},
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchValidatingWebhookConfiguration(c, cur, transform)
+	return PatchValidatingWebhookConfiguration(ctx, c, cur, transform, opts)
 }
 
-func PatchValidatingWebhookConfiguration(c kubernetes.Interface, cur *reg.ValidatingWebhookConfiguration, transform func(*reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration) (*reg.ValidatingWebhookConfiguration, kutil.VerbType, error) {
-	return PatchValidatingWebhookConfigurationObject(c, cur, transform(cur.DeepCopy()))
+func PatchValidatingWebhookConfiguration(ctx context.Context, c kubernetes.Interface, cur *reg.ValidatingWebhookConfiguration, transform func(*reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration, opts metav1.PatchOptions) (*reg.ValidatingWebhookConfiguration, kutil.VerbType, error) {
+	return PatchValidatingWebhookConfigurationObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchValidatingWebhookConfigurationObject(c kubernetes.Interface, cur, mod *reg.ValidatingWebhookConfiguration) (*reg.ValidatingWebhookConfiguration, kutil.VerbType, error) {
+func PatchValidatingWebhookConfigurationObject(ctx context.Context, c kubernetes.Interface, cur, mod *reg.ValidatingWebhookConfiguration, opts metav1.PatchOptions) (*reg.ValidatingWebhookConfiguration, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -82,19 +85,19 @@ func PatchValidatingWebhookConfigurationObject(c kubernetes.Interface, cur, mod 
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching ValidatingWebhookConfiguration %s with %s.", cur.Name, string(patch))
-	out, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateValidatingWebhookConfiguration(c kubernetes.Interface, name string, transform func(*reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration) (result *reg.ValidatingWebhookConfiguration, err error) {
+func TryUpdateValidatingWebhookConfiguration(ctx context.Context, c kubernetes.Interface, name string, transform func(*reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration, opts metav1.UpdateOptions) (result *reg.ValidatingWebhookConfiguration, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Get(name, metav1.GetOptions{})
+		cur, e2 := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Update(transform(cur.DeepCopy()))
+			result, e2 = c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update ValidatingWebhookConfiguration %s due to %v.", attempt, cur.Name, e2)
@@ -121,11 +124,11 @@ func UpdateValidatingWebhookCABundle(config *rest.Config, webhookConfigName stri
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 			options.FieldSelector = fields.OneTermEqualSelector(kutil.ObjectNameField, webhookConfigName).String()
-			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(options)
+			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(ctx, options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 			options.FieldSelector = fields.OneTermEqualSelector(kutil.ObjectNameField, webhookConfigName).String()
-			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Watch(options)
+			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Watch(ctx, options)
 		},
 	}
 
@@ -138,12 +141,12 @@ func UpdateValidatingWebhookCABundle(config *rest.Config, webhookConfigName stri
 				return false, errors.New("error watching")
 			case watch.Added, watch.Modified:
 				cur := event.Object.(*reg.ValidatingWebhookConfiguration)
-				_, _, err := PatchValidatingWebhookConfiguration(kc, cur, func(in *reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration {
+				_, _, err := PatchValidatingWebhookConfiguration(context.TODO(), kc, cur, func(in *reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration {
 					for i := range in.Webhooks {
 						in.Webhooks[i].ClientConfig.CABundle = config.CAData
 					}
 					return in
-				})
+				}, metav1.PatchOptions{})
 				if err != nil {
 					glog.Warning(err)
 				}
@@ -176,11 +179,11 @@ func SyncValidatingWebhookCABundle(config *rest.Config, webhookConfigName string
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 			options.FieldSelector = fields.OneTermEqualSelector(kutil.ObjectNameField, webhookConfigName).String()
-			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(options)
+			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(ctx, options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 			options.FieldSelector = fields.OneTermEqualSelector(kutil.ObjectNameField, webhookConfigName).String()
-			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Watch(options)
+			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Watch(ctx, options)
 		},
 	}
 
@@ -198,12 +201,12 @@ func SyncValidatingWebhookCABundle(config *rest.Config, webhookConfigName string
 					return false, errors.New("error watching")
 				case watch.Added, watch.Modified:
 					cur := event.Object.(*reg.ValidatingWebhookConfiguration)
-					_, _, err := PatchValidatingWebhookConfiguration(kc, cur, func(in *reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration {
+					_, _, err := PatchValidatingWebhookConfiguration(context.TODO(), kc, cur, func(in *reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration {
 						for i := range in.Webhooks {
 							in.Webhooks[i].ClientConfig.CABundle = config.CAData
 						}
 						return in
-					})
+					}, metav1.PatchOptions{})
 					if err != nil {
 						glog.Warning(err)
 					}

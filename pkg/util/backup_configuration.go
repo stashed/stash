@@ -18,6 +18,7 @@ package util
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"reflect"
 
@@ -121,7 +122,7 @@ func BackupPending(phase v1beta1_api.BackupSessionPhase) bool {
 
 func FindBackupConfigForRepository(stashClient cs.Interface, repository v1alpha1.Repository) (*v1beta1_api.BackupConfiguration, error) {
 	// list all backup config in the namespace
-	bcList, err := stashClient.StashV1beta1().BackupConfigurations(repository.Namespace).List(metav1.ListOptions{})
+	bcList, err := stashClient.StashV1beta1().BackupConfigurations(repository.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

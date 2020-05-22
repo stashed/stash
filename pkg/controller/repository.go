@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -25,6 +27,7 @@ import (
 
 	"github.com/golang/glog"
 	"gomodules.xyz/stow"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -86,17 +89,29 @@ func (c *StashController) runRepositoryReconciler(key string) error {
 						return err
 					}
 				}
-				_, _, err = stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repo, func(in *api.Repository) *api.Repository {
-					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, apis.RepositoryFinalizer)
-					return in
-				})
+				_, _, err = stash_util.PatchRepository(
+					context.TODO(),
+					c.stashClient.StashV1alpha1(),
+					repo,
+					func(in *api.Repository) *api.Repository {
+						in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, apis.RepositoryFinalizer)
+						return in
+					},
+					metav1.PatchOptions{},
+				)
 				return err
 			}
 		} else {
-			_, _, err = stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repo, func(in *api.Repository) *api.Repository {
-				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, apis.RepositoryFinalizer)
-				return in
-			})
+			_, _, err = stash_util.PatchRepository(
+				context.TODO(),
+				c.stashClient.StashV1alpha1(),
+				repo,
+				func(in *api.Repository) *api.Repository {
+					in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, apis.RepositoryFinalizer)
+					return in
+				},
+				metav1.PatchOptions{},
+			)
 			return err
 		}
 	}

@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	rbac "k8s.io/api/rbac/v1"
@@ -29,29 +31,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchClusterRole(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRole) *rbac.ClusterRole) (*rbac.ClusterRole, kutil.VerbType, error) {
-	cur, err := c.RbacV1().ClusterRoles().Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchClusterRole(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRole) *rbac.ClusterRole, opts metav1.PatchOptions) (*rbac.ClusterRole, kutil.VerbType, error) {
+	cur, err := c.RbacV1().ClusterRoles().Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ClusterRole %s.", meta.Name)
-		out, err := c.RbacV1().ClusterRoles().Create(transform(&rbac.ClusterRole{
+		out, err := c.RbacV1().ClusterRoles().Create(ctx, transform(&rbac.ClusterRole{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ClusterRole",
 				APIVersion: rbac.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchClusterRole(c, cur, transform)
+	return PatchClusterRole(ctx, c, cur, transform, opts)
 }
 
-func PatchClusterRole(c kubernetes.Interface, cur *rbac.ClusterRole, transform func(*rbac.ClusterRole) *rbac.ClusterRole) (*rbac.ClusterRole, kutil.VerbType, error) {
-	return PatchClusterRoleObject(c, cur, transform(cur.DeepCopy()))
+func PatchClusterRole(ctx context.Context, c kubernetes.Interface, cur *rbac.ClusterRole, transform func(*rbac.ClusterRole) *rbac.ClusterRole, opts metav1.PatchOptions) (*rbac.ClusterRole, kutil.VerbType, error) {
+	return PatchClusterRoleObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchClusterRoleObject(c kubernetes.Interface, cur, mod *rbac.ClusterRole) (*rbac.ClusterRole, kutil.VerbType, error) {
+func PatchClusterRoleObject(ctx context.Context, c kubernetes.Interface, cur, mod *rbac.ClusterRole, opts metav1.PatchOptions) (*rbac.ClusterRole, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -70,19 +75,19 @@ func PatchClusterRoleObject(c kubernetes.Interface, cur, mod *rbac.ClusterRole) 
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching ClusterRole %s with %s.", cur.Name, string(patch))
-	out, err := c.RbacV1().ClusterRoles().Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.RbacV1().ClusterRoles().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateClusterRole(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRole) *rbac.ClusterRole) (result *rbac.ClusterRole, err error) {
+func TryUpdateClusterRole(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRole) *rbac.ClusterRole, opts metav1.UpdateOptions) (result *rbac.ClusterRole, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.RbacV1().ClusterRoles().Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.RbacV1().ClusterRoles().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.RbacV1().ClusterRoles().Update(transform(cur.DeepCopy()))
+			result, e2 = c.RbacV1().ClusterRoles().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update ClusterRole %s due to %v.", attempt, cur.Name, e2)
@@ -90,7 +95,7 @@ func TryUpdateClusterRole(c kubernetes.Interface, meta metav1.ObjectMeta, transf
 	})
 
 	if err != nil {
-		err = errors.Errorf("failed to update ClusterRole %s after %d attempts due to %v", meta.Name, attempt, err)
+		err = errors.Errorf("failed to update Role %s after %d attempts due to %v", meta.Name, attempt, err)
 	}
 	return
 }

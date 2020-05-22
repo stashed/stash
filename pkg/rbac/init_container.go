@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -51,12 +52,12 @@ func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, owner *meta
 	return nil
 }
 
-func ensureRestoreInitContainerClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
+func ensureRestoreInitContainerClusterRole(kc kubernetes.Interface, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashRestoreInitContainerClusterRole,
 		Labels: labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -91,17 +92,17 @@ func ensureRestoreInitContainerClusterRole(kubeClient kubernetes.Interface, labe
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
-func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func ensureRestoreInitContainerRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: namespace,
 		Name:      getRestoreInitContainerRoleBindingName(owner.Kind, owner.Name),
 		Labels:    labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Annotations == nil {
@@ -121,7 +122,7 @@ func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, owne
 			},
 		}
 		return in
-	})
+	}, metav1.PatchOptions{})
 	return err
 }
 
@@ -131,9 +132,9 @@ func getRestoreInitContainerRoleBindingName(kind, name string) string {
 
 func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
+		context.TODO(),
 		getRestoreInitContainerRoleBindingName(w.Kind, w.Name),
-		&metav1.DeleteOptions{},
-	)
+		metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

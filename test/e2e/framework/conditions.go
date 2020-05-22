@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -32,19 +33,19 @@ func (f *Framework) EventuallyCondition(meta metav1.ObjectMeta, kind string, con
 			var conditions []kmapi.Condition
 			switch kind {
 			case v1beta1.ResourceKindBackupConfiguration:
-				bc, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+				bc, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 				if err != nil {
 					return kmapi.ConditionUnknown
 				}
 				conditions = bc.Status.Conditions
 			case v1beta1.ResourceKindBackupBatch:
-				bb, err := f.StashClient.StashV1beta1().BackupBatches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+				bb, err := f.StashClient.StashV1beta1().BackupBatches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 				if err != nil {
 					return kmapi.ConditionUnknown
 				}
 				conditions = bb.Status.Conditions
 			case v1beta1.ResourceKindRestoreSession:
-				rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+				rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 				if err != nil {
 					return kmapi.ConditionUnknown
 				}
@@ -64,7 +65,7 @@ func (f *Framework) EventuallyCondition(meta metav1.ObjectMeta, kind string, con
 func (f *Framework) EventuallyTargetCondition(meta metav1.ObjectMeta, target v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) GomegaAsyncAssertion {
 	return Eventually(
 		func() kmapi.ConditionStatus {
-			bb, err := f.StashClient.StashV1beta1().BackupBatches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			bb, err := f.StashClient.StashV1beta1().BackupBatches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			if err != nil {
 				return kmapi.ConditionUnknown
 			}

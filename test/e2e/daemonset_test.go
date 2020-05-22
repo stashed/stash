@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -58,7 +59,7 @@ var _ = XDescribe("DaemonSet", func() {
 		err := framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemon.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+		err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, daemon.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -195,12 +196,12 @@ var _ = XDescribe("DaemonSet", func() {
 			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
-			_, _, err = apps_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
+			_, _, err = apps_util.PatchDaemonSet(context.TODO(), f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar to be removed")
@@ -327,12 +328,12 @@ var _ = XDescribe("DaemonSet", func() {
 			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
-			obj, _, err = apps_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
+			obj, _, err = apps_util.PatchDaemonSet(context.TODO(), f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
@@ -360,10 +361,10 @@ var _ = XDescribe("DaemonSet", func() {
 			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + daemon.Name)
-			obj, _, err = apps_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
+			obj, _, err = apps_util.PatchDaemonSet(context.TODO(), f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
 				in.Labels = previousLabel
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
@@ -607,7 +608,7 @@ var _ = XDescribe("DaemonSet", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -625,7 +626,7 @@ var _ = XDescribe("DaemonSet", func() {
 				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", 1)))
 
 				By("Ensuring initial backup is not taken by cronJob")
-				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(backupCron.Status.LastScheduleTime).Should(BeNil())
 
@@ -845,7 +846,7 @@ var _ = XDescribe("DaemonSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				nodeName := f.GetNodeName(daemon.ObjectMeta)
@@ -945,7 +946,7 @@ var _ = XDescribe("DaemonSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				nodeName := f.GetNodeName(daemon.ObjectMeta)
@@ -1051,7 +1052,7 @@ var _ = XDescribe("DaemonSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				nodeName := f.GetNodeName(daemon.ObjectMeta)

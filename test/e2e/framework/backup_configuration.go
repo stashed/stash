@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"time"
@@ -67,12 +68,12 @@ func (fi *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...
 }
 
 func (fi *Invocation) CreateBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
-	_, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Create(&backupCfg)
+	_, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Create(context.TODO(), &backupCfg, metav1.CreateOptions{})
 	return err
 }
 
 func (fi *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
-	err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(backupCfg.Name, &metav1.DeleteOptions{})
+	err := fi.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(context.TODO(), backupCfg.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -94,13 +95,13 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 }
 
 func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batch_v1beta1.CronJob, error) {
-	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
+	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 }
 
 func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
+			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
@@ -114,7 +115,7 @@ func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsy
 func (f *Framework) EventuallyCronJobResumed(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta), metav1.GetOptions{})
+			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
@@ -128,7 +129,7 @@ func (f *Framework) EventuallyCronJobResumed(meta metav1.ObjectMeta) GomegaAsync
 func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			_, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			if err == nil && !kerr.IsNotFound(err) {
 				return true
 			}
@@ -140,7 +141,7 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 }
 
 func (f *Framework) GetBackupJob(backupSessionName string) (*batchv1.Job, error) {
-	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(getBackupJobName(backupSessionName, strconv.Itoa(0)), metav1.GetOptions{})
+	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(context.TODO(), getBackupJobName(backupSessionName, strconv.Itoa(0)), metav1.GetOptions{})
 }
 
 func getBackupCronJobName(objMeta metav1.ObjectMeta) string {

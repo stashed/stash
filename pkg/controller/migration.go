@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
 	"github.com/appscode/go/encoding/json/types"
@@ -40,7 +42,7 @@ func (c *StashController) MigrateObservedGeneration() error {
 		v1alpha1.SchemeGroupVersion.WithResource(v1alpha1.ResourcePluralRecovery),
 	} {
 		client := dc.Resource(gvr)
-		objects, err := client.Namespace(core.NamespaceAll).List(metav1.ListOptions{})
+		objects, err := client.Namespace(core.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -52,7 +54,7 @@ func (c *StashController) MigrateObservedGeneration() error {
 			if e1 != nil || e2 != nil {
 				errs = append(errs, e1, e2)
 			} else if changed1 || changed2 {
-				_, e3 := client.Namespace(obj.GetNamespace()).UpdateStatus(&obj, metav1.UpdateOptions{})
+				_, e3 := client.Namespace(obj.GetNamespace()).UpdateStatus(context.TODO(), &obj, metav1.UpdateOptions{})
 				errs = append(errs, e3)
 			}
 		}

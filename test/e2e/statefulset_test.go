@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -61,7 +62,7 @@ var _ = XDescribe("StatefulSet", func() {
 		err := framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+		err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, ss.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -230,12 +231,12 @@ var _ = XDescribe("StatefulSet", func() {
 			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of StatefulSet " + ss.Name)
-			_, _, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
+			_, _, err = apps_util.PatchStatefulSet(context.TODO(), f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
@@ -387,12 +388,12 @@ var _ = XDescribe("StatefulSet", func() {
 			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of StatefulSet " + ss.Name)
-			obj, _, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
+			obj, _, err = apps_util.PatchStatefulSet(context.TODO(), f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
@@ -424,10 +425,10 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + ss.Name)
-			obj, _, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
+			obj, _, err = apps_util.PatchStatefulSet(context.TODO(), f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
 				in.Labels = previousLabel
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
@@ -687,7 +688,7 @@ var _ = XDescribe("StatefulSet", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -711,7 +712,7 @@ var _ = XDescribe("StatefulSet", func() {
 				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", 1)))
 
 				By("Ensuring initial backup is not taken by cronJob")
-				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(backupCron.Status.LastScheduleTime).Should(BeNil())
 
@@ -728,7 +729,7 @@ var _ = XDescribe("StatefulSet", func() {
 				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(context.TODO(), metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(repos.Items).NotTo(BeEmpty())
 				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
@@ -754,7 +755,7 @@ var _ = XDescribe("StatefulSet", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -779,7 +780,7 @@ var _ = XDescribe("StatefulSet", func() {
 				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", 1)))
 
 				By("Ensuring initial backup is not taken by cronJob")
-				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(backupCron.Status.LastScheduleTime).Should(BeNil())
 
@@ -1064,7 +1065,7 @@ var _ = XDescribe("StatefulSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, ss.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				repos = f.StatefulSetRepos(&ss)
@@ -1124,7 +1125,7 @@ var _ = XDescribe("StatefulSet", func() {
 				By("Creating StatefulSet " + ss.Name)
 				_, err = f.CreateStatefulSet(ss)
 				Expect(err).NotTo(HaveOccurred())
-				err = apps_util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
+				err = apps_util.WaitUntilStatefulSetReady(context.TODO(), f.KubeClient, ss.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating demo data in hostPath")
@@ -1143,7 +1144,7 @@ var _ = XDescribe("StatefulSet", func() {
 				_, err = f.CreateStatefulSet(ss)
 
 				Expect(err).NotTo(HaveOccurred())
-				err = apps_util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
+				err = apps_util.WaitUntilStatefulSetReady(context.TODO(), f.KubeClient, ss.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for init-container")
@@ -1180,7 +1181,7 @@ var _ = XDescribe("StatefulSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, ss.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				repos = f.StatefulSetRepos(&ss)
@@ -1291,7 +1292,7 @@ var _ = XDescribe("StatefulSet", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, ss.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				repos = f.StatefulSetRepos(&ss)

@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	rbac "k8s.io/api/rbac/v1"
@@ -29,29 +31,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchRole(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.Role) *rbac.Role) (*rbac.Role, kutil.VerbType, error) {
-	cur, err := c.RbacV1().Roles(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchRole(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.Role) *rbac.Role, opts metav1.PatchOptions) (*rbac.Role, kutil.VerbType, error) {
+	cur, err := c.RbacV1().Roles(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Role %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.RbacV1().Roles(meta.Namespace).Create(transform(&rbac.Role{
+		out, err := c.RbacV1().Roles(meta.Namespace).Create(ctx, transform(&rbac.Role{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Role",
 				APIVersion: rbac.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchRole(c, cur, transform)
+	return PatchRole(ctx, c, cur, transform, opts)
 }
 
-func PatchRole(c kubernetes.Interface, cur *rbac.Role, transform func(*rbac.Role) *rbac.Role) (*rbac.Role, kutil.VerbType, error) {
-	return PatchRoleObject(c, cur, transform(cur.DeepCopy()))
+func PatchRole(ctx context.Context, c kubernetes.Interface, cur *rbac.Role, transform func(*rbac.Role) *rbac.Role, opts metav1.PatchOptions) (*rbac.Role, kutil.VerbType, error) {
+	return PatchRoleObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchRoleObject(c kubernetes.Interface, cur, mod *rbac.Role) (*rbac.Role, kutil.VerbType, error) {
+func PatchRoleObject(ctx context.Context, c kubernetes.Interface, cur, mod *rbac.Role, opts metav1.PatchOptions) (*rbac.Role, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -70,19 +75,19 @@ func PatchRoleObject(c kubernetes.Interface, cur, mod *rbac.Role) (*rbac.Role, k
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Role %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.RbacV1().Roles(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.RbacV1().Roles(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateRole(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.Role) *rbac.Role) (result *rbac.Role, err error) {
+func TryUpdateRole(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.Role) *rbac.Role, opts metav1.UpdateOptions) (result *rbac.Role, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.RbacV1().Roles(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.RbacV1().Roles(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.RbacV1().Roles(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.RbacV1().Roles(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Role %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -95,9 +100,9 @@ func TryUpdateRole(c kubernetes.Interface, meta metav1.ObjectMeta, transform fun
 	return
 }
 
-func WaitUntillRoleDeleted(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
+func WaitUntillRoleDeleted(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.GCTimeout, func() (bool, error) {
-		_, err := kubeClient.RbacV1().Roles(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		_, err := c.RbacV1().Roles(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if err != nil && kerr.IsNotFound(err) {
 			return true, nil
 		}

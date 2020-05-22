@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -166,7 +167,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 
 		appCatalog.AppBinding{}.CustomResourceDefinition(),
 	}
-	return crdutils.RegisterCRDs(c.kubeClient.Discovery(), c.crdClient, crds)
+	return crdutils.RegisterCRDs(context.TODO(), c.kubeClient.Discovery(), c.crdClient, crds)
 }
 
 func (c *StashController) Run(stopCh <-chan struct{}) {

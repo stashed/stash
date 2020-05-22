@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -32,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) DaemonSet(name, volumeName string) apps.DaemonSet {
@@ -93,11 +95,11 @@ func (fi *Invocation) DaemonSet(name, volumeName string) apps.DaemonSet {
 }
 
 func (f *Framework) CreateDaemonSet(obj apps.DaemonSet) (*apps.DaemonSet, error) {
-	return f.KubeClient.AppsV1().DaemonSets(obj.Namespace).Create(&obj)
+	return f.KubeClient.AppsV1().DaemonSets(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (f *Framework) DeleteDaemonSet(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -106,7 +108,7 @@ func (f *Framework) DeleteDaemonSet(meta metav1.ObjectMeta) error {
 
 func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.DaemonSet {
-		obj, err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})
@@ -114,7 +116,7 @@ func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAsser
 
 func (fi *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -142,7 +144,7 @@ func (fi *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta)
 
 func (fi *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -180,7 +182,7 @@ func (fi *Invocation) DeployDaemonSet(name string, volumeName string) (*apps.Dae
 	fi.AppendToCleanupList(createdDmn)
 
 	By("Waiting for DaemonSet to be ready")
-	err = apps_util.WaitUntilDaemonSetReady(fi.KubeClient, createdDmn.ObjectMeta)
+	err = apps_util.WaitUntilDaemonSetReady(context.TODO(), fi.KubeClient, createdDmn.ObjectMeta)
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
 	fi.EventuallyAllPodsAccessible(createdDmn.ObjectMeta).Should(BeTrue())

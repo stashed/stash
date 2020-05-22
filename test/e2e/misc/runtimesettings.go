@@ -17,6 +17,7 @@ limitations under the License.
 package misc
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -90,7 +91,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -117,7 +118,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
-				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
@@ -165,7 +166,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(framework.HasFSGroup(cronJob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext)).Should(BeTrue())
 
 				By("Verifying that runtimeSettings hasn't been applied on the workload")
-				dpl, err := f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
+				dpl, err := f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasFSGroup(dpl.Spec.Template.Spec.SecurityContext)).ShouldNot(BeTrue())
 
@@ -177,7 +178,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -199,12 +200,12 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that the runtimeSettings hasn't been applied on the restored Deployment")
-				dpl, err = f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(restoredDeployment.Name, metav1.GetOptions{})
+				dpl, err = f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), restoredDeployment.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasFSGroup(dpl.Spec.Template.Spec.SecurityContext)).ShouldNot(BeTrue())
 
 				By("Verifying that RestoreSession succeeded")
-				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
@@ -261,7 +262,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -292,7 +293,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
-				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
@@ -354,7 +355,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(framework.HasSecurityContext(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers)).Should(BeTrue())
 
 				By("Verifying that the runtimeSettings has been applied on the workload")
-				dpl, err := f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
+				dpl, err := f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasResources(dpl.Spec.Template.Spec.Containers)).Should(BeTrue())
 				Expect(framework.HasSecurityContext(dpl.Spec.Template.Spec.Containers)).Should(BeTrue())
@@ -367,7 +368,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -397,13 +398,13 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that the runtimeSettings has been applied on the restored Deployment")
-				dpl, err = f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(restoredDeployment.Name, metav1.GetOptions{})
+				dpl, err = f.KubeClient.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), restoredDeployment.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasResources(dpl.Spec.Template.Spec.InitContainers)).Should(BeTrue())
 				Expect(framework.HasSecurityContext(dpl.Spec.Template.Spec.InitContainers)).Should(BeTrue())
 
 				By("Verifying that RestoreSession succeeded")
-				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
@@ -469,7 +470,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
@@ -509,7 +510,7 @@ var _ = Describe("Runtime Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
-				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 

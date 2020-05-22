@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -139,7 +140,7 @@ func (opt *hookOptions) executeHook() error {
 		}
 	} else if opt.restoreSessionName != "" {
 		// For restore hooks, RestoreSession name will be provided. We will read the hooks from the RestoreSession.
-		restoreSession, err := opt.stashClient.StashV1beta1().RestoreSessions(opt.namespace).Get(opt.restoreSessionName, metav1.GetOptions{})
+		restoreSession, err := opt.stashClient.StashV1beta1().RestoreSessions(opt.namespace).Get(context.TODO(), opt.restoreSessionName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -173,7 +174,7 @@ func (opt *hookOptions) getHookExecutorPodName(targetRef v1beta1.TargetRef) (str
 
 func (opt *hookOptions) getAppPodName(appbindingName string) (string, error) {
 	// get the AppBinding
-	appbinding, err := opt.appClient.AppcatalogV1alpha1().AppBindings(opt.namespace).Get(appbindingName, metav1.GetOptions{})
+	appbinding, err := opt.appClient.AppcatalogV1alpha1().AppBindings(opt.namespace).Get(context.TODO(), appbindingName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -181,7 +182,7 @@ func (opt *hookOptions) getAppPodName(appbindingName string) (string, error) {
 	// AppBinding should have a Service in ClientConfig field. This service selects the app pod. We will execute the hooks in the app pod.
 	if appbinding.Spec.ClientConfig.Service != nil {
 		// there should be an endpoint with same name as the service which contains the name of the selected pods.
-		endPoint, err := opt.kubeClient.CoreV1().Endpoints(opt.namespace).Get(appbinding.Spec.ClientConfig.Service.Name, metav1.GetOptions{})
+		endPoint, err := opt.kubeClient.CoreV1().Endpoints(opt.namespace).Get(context.TODO(), appbinding.Spec.ClientConfig.Service.Name, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}

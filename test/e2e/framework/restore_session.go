@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -53,12 +54,12 @@ func (fi *Invocation) GetRestoreSession(repoName string, transformFuncs ...func(
 }
 
 func (fi *Invocation) CreateRestoreSession(restoreSession *v1beta1.RestoreSession) error {
-	_, err := fi.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(restoreSession)
+	_, err := fi.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(context.TODO(), restoreSession, metav1.CreateOptions{})
 	return err
 }
 
 func (fi Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
-	err := fi.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	err := fi.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Delete(context.TODO(), meta.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -68,7 +69,7 @@ func (fi Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
 func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
@@ -84,7 +85,7 @@ func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta) Go
 
 func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() v1beta1.RestoreSessionPhase {
-		restoreSession, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		restoreSession, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return restoreSession.Status.Phase
 	},
@@ -94,7 +95,7 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 }
 
 func (f *Framework) GetRestoreJob(restoreSessionName string) (*batchv1.Job, error) {
-	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(getRestoreJobName(restoreSessionName), metav1.GetOptions{})
+	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(context.TODO(), getRestoreJobName(restoreSessionName), metav1.GetOptions{})
 }
 
 func getRestoreJobName(restoreSessionName string) string {

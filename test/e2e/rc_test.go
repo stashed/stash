@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -58,7 +59,7 @@ var _ = XDescribe("ReplicationController", func() {
 		err := framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
+		err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, rc.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -199,12 +200,12 @@ var _ = XDescribe("ReplicationController", func() {
 			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicationController " + rc.Name)
-			_, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
+			_, _, err = core_util.PatchRC(context.TODO(), f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
@@ -362,12 +363,12 @@ var _ = XDescribe("ReplicationController", func() {
 			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicationController " + rc.Name)
-			obj, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
+			obj, _, err = core_util.PatchRC(context.TODO(), f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar has removed")
@@ -395,10 +396,10 @@ var _ = XDescribe("ReplicationController", func() {
 			Expect(obj).ShouldNot(HaveSidecar(apis.StashContainer))
 
 			By("Adding label to match restic" + rc.Name)
-			obj, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
+			obj, _, err = core_util.PatchRC(context.TODO(), f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
 				in.Labels = previousLabel
 				return in
-			})
+			}, metav1.PatchOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking sidecar added")
@@ -665,7 +666,7 @@ var _ = XDescribe("ReplicationController", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -727,7 +728,7 @@ var _ = XDescribe("ReplicationController", func() {
 				cronJobName := apis.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(context.TODO(), cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -962,7 +963,7 @@ var _ = XDescribe("ReplicationController", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, rc.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
@@ -1020,7 +1021,7 @@ var _ = XDescribe("ReplicationController", func() {
 				By("Creating ReplicationController " + rc.Name)
 				_, err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
-				err = core_util.WaitUntilRCReady(f.KubeClient, rc.ObjectMeta)
+				err = core_util.WaitUntilRCReady(context.TODO(), f.KubeClient, rc.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating demo data")
@@ -1065,7 +1066,7 @@ var _ = XDescribe("ReplicationController", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, rc.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
@@ -1169,7 +1170,7 @@ var _ = XDescribe("ReplicationController", func() {
 				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
+				err = core_util.WaitUntillPodTerminatedByLabel(context.TODO(), f.KubeClient, rc.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")

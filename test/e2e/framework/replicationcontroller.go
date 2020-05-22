@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -31,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) ReplicationController(name, pvcName, volName string) core.ReplicationController {
@@ -54,11 +56,11 @@ func (fi *Invocation) ReplicationController(name, pvcName, volName string) core.
 }
 
 func (f *Framework) CreateReplicationController(obj core.ReplicationController) (*core.ReplicationController, error) {
-	return f.KubeClient.CoreV1().ReplicationControllers(obj.Namespace).Create(&obj)
+	return f.KubeClient.CoreV1().ReplicationControllers(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
 func (f *Framework) DeleteReplicationController(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -67,7 +69,7 @@ func (f *Framework) DeleteReplicationController(meta metav1.ObjectMeta) error {
 
 func (f *Framework) EventuallyReplicationController(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *core.ReplicationController {
-		obj, err := f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})
@@ -75,7 +77,7 @@ func (f *Framework) EventuallyReplicationController(meta metav1.ObjectMeta) Gome
 
 func (fi *Invocation) WaitUntilRCReadyWithSidecar(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -103,7 +105,7 @@ func (fi *Invocation) WaitUntilRCReadyWithSidecar(meta metav1.ObjectMeta) error 
 
 func (fi *Invocation) WaitUntilRCReadyWithInitContainer(meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := fi.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -134,7 +136,7 @@ func (fi *Invocation) DeployReplicationController(name string, replica int32, vo
 	pvcName := fmt.Sprintf("%s-%s", volName, fi.app)
 
 	// If the PVC does not exist, create PVC for Deployment
-	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(pvcName, metav1.GetOptions{})
+	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(context.TODO(), pvcName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			pvc, err = fi.CreateNewPVC(pvcName)

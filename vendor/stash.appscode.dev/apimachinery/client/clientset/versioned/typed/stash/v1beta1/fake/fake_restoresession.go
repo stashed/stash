@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +42,7 @@ var restoresessionsResource = schema.GroupVersionResource{Group: "stash.appscode
 var restoresessionsKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1beta1", Kind: "RestoreSession"}
 
 // Get takes name of the restoreSession, and returns the corresponding restoreSession object, and an error if there is any.
-func (c *FakeRestoreSessions) Get(name string, options v1.GetOptions) (result *v1beta1.RestoreSession, err error) {
+func (c *FakeRestoreSessions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.RestoreSession, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(restoresessionsResource, c.ns, name), &v1beta1.RestoreSession{})
 
@@ -51,7 +53,7 @@ func (c *FakeRestoreSessions) Get(name string, options v1.GetOptions) (result *v
 }
 
 // List takes label and field selectors, and returns the list of RestoreSessions that match those selectors.
-func (c *FakeRestoreSessions) List(opts v1.ListOptions) (result *v1beta1.RestoreSessionList, err error) {
+func (c *FakeRestoreSessions) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.RestoreSessionList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(restoresessionsResource, restoresessionsKind, c.ns, opts), &v1beta1.RestoreSessionList{})
 
@@ -73,14 +75,14 @@ func (c *FakeRestoreSessions) List(opts v1.ListOptions) (result *v1beta1.Restore
 }
 
 // Watch returns a watch.Interface that watches the requested restoreSessions.
-func (c *FakeRestoreSessions) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeRestoreSessions) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(restoresessionsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a restoreSession and creates it.  Returns the server's representation of the restoreSession, and an error, if there is any.
-func (c *FakeRestoreSessions) Create(restoreSession *v1beta1.RestoreSession) (result *v1beta1.RestoreSession, err error) {
+func (c *FakeRestoreSessions) Create(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.CreateOptions) (result *v1beta1.RestoreSession, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(restoresessionsResource, c.ns, restoreSession), &v1beta1.RestoreSession{})
 
@@ -91,7 +93,7 @@ func (c *FakeRestoreSessions) Create(restoreSession *v1beta1.RestoreSession) (re
 }
 
 // Update takes the representation of a restoreSession and updates it. Returns the server's representation of the restoreSession, and an error, if there is any.
-func (c *FakeRestoreSessions) Update(restoreSession *v1beta1.RestoreSession) (result *v1beta1.RestoreSession, err error) {
+func (c *FakeRestoreSessions) Update(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.UpdateOptions) (result *v1beta1.RestoreSession, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(restoresessionsResource, c.ns, restoreSession), &v1beta1.RestoreSession{})
 
@@ -103,7 +105,7 @@ func (c *FakeRestoreSessions) Update(restoreSession *v1beta1.RestoreSession) (re
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeRestoreSessions) UpdateStatus(restoreSession *v1beta1.RestoreSession) (*v1beta1.RestoreSession, error) {
+func (c *FakeRestoreSessions) UpdateStatus(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.UpdateOptions) (*v1beta1.RestoreSession, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(restoresessionsResource, "status", c.ns, restoreSession), &v1beta1.RestoreSession{})
 
@@ -114,7 +116,7 @@ func (c *FakeRestoreSessions) UpdateStatus(restoreSession *v1beta1.RestoreSessio
 }
 
 // Delete takes name of the restoreSession and deletes it. Returns an error if one occurs.
-func (c *FakeRestoreSessions) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeRestoreSessions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(restoresessionsResource, c.ns, name), &v1beta1.RestoreSession{})
 
@@ -122,15 +124,15 @@ func (c *FakeRestoreSessions) Delete(name string, options *v1.DeleteOptions) err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeRestoreSessions) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(restoresessionsResource, c.ns, listOptions)
+func (c *FakeRestoreSessions) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(restoresessionsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.RestoreSessionList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched restoreSession.
-func (c *FakeRestoreSessions) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.RestoreSession, err error) {
+func (c *FakeRestoreSessions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.RestoreSession, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(restoresessionsResource, c.ns, name, pt, data, subresources...), &v1beta1.RestoreSession{})
 

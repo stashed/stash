@@ -19,6 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	"time"
 
 	v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -38,15 +39,15 @@ type BackupBatchesGetter interface {
 
 // BackupBatchInterface has methods to work with BackupBatch resources.
 type BackupBatchInterface interface {
-	Create(*v1beta1.BackupBatch) (*v1beta1.BackupBatch, error)
-	Update(*v1beta1.BackupBatch) (*v1beta1.BackupBatch, error)
-	UpdateStatus(*v1beta1.BackupBatch) (*v1beta1.BackupBatch, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1beta1.BackupBatch, error)
-	List(opts v1.ListOptions) (*v1beta1.BackupBatchList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupBatch, err error)
+	Create(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.CreateOptions) (*v1beta1.BackupBatch, error)
+	Update(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.UpdateOptions) (*v1beta1.BackupBatch, error)
+	UpdateStatus(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.UpdateOptions) (*v1beta1.BackupBatch, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.BackupBatch, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.BackupBatchList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.BackupBatch, err error)
 	BackupBatchExpansion
 }
 
@@ -65,20 +66,20 @@ func newBackupBatches(c *StashV1beta1Client, namespace string) *backupBatches {
 }
 
 // Get takes name of the backupBatch, and returns the corresponding backupBatch object, and an error if there is any.
-func (c *backupBatches) Get(name string, options v1.GetOptions) (result *v1beta1.BackupBatch, err error) {
+func (c *backupBatches) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.BackupBatch, err error) {
 	result = &v1beta1.BackupBatch{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("backupbatches").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of BackupBatches that match those selectors.
-func (c *backupBatches) List(opts v1.ListOptions) (result *v1beta1.BackupBatchList, err error) {
+func (c *backupBatches) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.BackupBatchList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -89,13 +90,13 @@ func (c *backupBatches) List(opts v1.ListOptions) (result *v1beta1.BackupBatchLi
 		Resource("backupbatches").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested backupBatches.
-func (c *backupBatches) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *backupBatches) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -106,87 +107,90 @@ func (c *backupBatches) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("backupbatches").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a backupBatch and creates it.  Returns the server's representation of the backupBatch, and an error, if there is any.
-func (c *backupBatches) Create(backupBatch *v1beta1.BackupBatch) (result *v1beta1.BackupBatch, err error) {
+func (c *backupBatches) Create(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.CreateOptions) (result *v1beta1.BackupBatch, err error) {
 	result = &v1beta1.BackupBatch{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("backupbatches").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(backupBatch).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a backupBatch and updates it. Returns the server's representation of the backupBatch, and an error, if there is any.
-func (c *backupBatches) Update(backupBatch *v1beta1.BackupBatch) (result *v1beta1.BackupBatch, err error) {
+func (c *backupBatches) Update(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.UpdateOptions) (result *v1beta1.BackupBatch, err error) {
 	result = &v1beta1.BackupBatch{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("backupbatches").
 		Name(backupBatch.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(backupBatch).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *backupBatches) UpdateStatus(backupBatch *v1beta1.BackupBatch) (result *v1beta1.BackupBatch, err error) {
+func (c *backupBatches) UpdateStatus(ctx context.Context, backupBatch *v1beta1.BackupBatch, opts v1.UpdateOptions) (result *v1beta1.BackupBatch, err error) {
 	result = &v1beta1.BackupBatch{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("backupbatches").
 		Name(backupBatch.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(backupBatch).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the backupBatch and deletes it. Returns an error if one occurs.
-func (c *backupBatches) Delete(name string, options *v1.DeleteOptions) error {
+func (c *backupBatches) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("backupbatches").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *backupBatches) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *backupBatches) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("backupbatches").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched backupBatch.
-func (c *backupBatches) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupBatch, err error) {
+func (c *backupBatches) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.BackupBatch, err error) {
 	result = &v1beta1.BackupBatch{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("backupbatches").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

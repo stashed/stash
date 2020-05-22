@@ -1,3 +1,19 @@
+/*
+Copyright The osm Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package context
 
 import (
@@ -37,7 +53,10 @@ func LoadConfig(configPath string) (*OSMConfig, error) {
 	if _, err := os.Stat(configPath); err != nil {
 		return nil, err
 	}
-	os.Chmod(configPath, 0600)
+	err := os.Chmod(configPath, 0600)
+	if err != nil {
+		return nil, err
+	}
 
 	config := &OSMConfig{}
 	bytes, err := ioutil.ReadFile(configPath)
@@ -57,7 +76,10 @@ func (config *OSMConfig) Save(configPath string) error {
 	if err != nil {
 		return err
 	}
-	os.MkdirAll(filepath.Dir(configPath), 0755)
+	err = os.MkdirAll(filepath.Dir(configPath), 0755)
+	if err != nil {
+		return err
+	}
 	if err := ioutil.WriteFile(configPath, data, 0600); err != nil {
 		return err
 	}

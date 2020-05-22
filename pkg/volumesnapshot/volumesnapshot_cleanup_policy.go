@@ -17,6 +17,7 @@ limitations under the License.
 package volumesnapshot
 
 import (
+	"context"
 	"sort"
 	"time"
 
@@ -24,8 +25,8 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	"github.com/appscode/go/log"
-	vs_api "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1beta1"
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
+	vs_api "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
+	vs_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -142,7 +143,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 	}
 
 	for _, vs := range removed {
-		err := vsClient.SnapshotV1beta1().VolumeSnapshots(namespace).Delete(vs.VolumeSnap.Name, &v1.DeleteOptions{})
+		err := vsClient.SnapshotV1beta1().VolumeSnapshots(namespace).Delete(context.TODO(), vs.VolumeSnap.Name, v1.DeleteOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
 				return nil
@@ -156,7 +157,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 }
 
 func CleanupSnapshots(policy v1alpha1.RetentionPolicy, hostBackupStats []v1beta1.HostBackupStats, namespace string, vsClient vs_cs.Interface) error {
-	vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(namespace).List(v1.ListOptions{})
+	vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) || len(vsList.Items) == 0 {
 			return nil

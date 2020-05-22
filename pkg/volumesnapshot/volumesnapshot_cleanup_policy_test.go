@@ -17,6 +17,7 @@ limitations under the License.
 package volumesnapshot
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -26,8 +27,8 @@ import (
 
 	"github.com/appscode/go/strings"
 	type_util "github.com/appscode/go/types"
-	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1beta1"
-	vsfake "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned/fake"
+	crdv1 "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
+	vsfake "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -136,7 +137,7 @@ func TestCleanupSnapshots(t *testing.T) {
 				t.Errorf("Failed to cleanup VolumeSnapshots. Reason: %v", err)
 				return
 			}
-			vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(testNamespace).List(metav1.ListOptions{})
+			vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(testNamespace).List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				t.Errorf("Failed to list remaining VolumeSnapshots. Reason: %v", err)
 				return

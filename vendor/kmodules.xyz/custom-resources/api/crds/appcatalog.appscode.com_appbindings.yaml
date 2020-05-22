@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
   labels:
-    app: catalog
+    app.kubernetes.io/name: catalog
   name: appbindings.appcatalog.appscode.com
 spec:
   additionalPrinterColumns:

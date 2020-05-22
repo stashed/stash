@@ -19,6 +19,7 @@ package snapshot
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -65,7 +66,7 @@ func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) 
 		return nil, err
 	}
 
-	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +128,7 @@ func (r *REST) forgetSnapshots(repository *stash.Repository, snapshotIDs []strin
 		return err
 	}
 
-	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -213,7 +214,7 @@ func (r *REST) execOnSidecar(repository *stash.Repository, cmd string, snapshotI
 }
 
 func (r *REST) getPodWithStashSidecar(namespace, workloadname string) (*core.Pod, error) {
-	podList, err := r.kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+	podList, err := r.kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +287,7 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 	secretDir := filepath.Join(tempDir, secretDirName)
 
 	// get source repository secret
-	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +370,7 @@ func (r *REST) forgetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs 
 	secretDir := filepath.Join(tempDir, secretDirName)
 
 	// get source repository secret
-	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

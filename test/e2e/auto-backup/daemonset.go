@@ -17,6 +17,7 @@ limitations under the License.
 package auto_backup
 
 import (
+	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -90,7 +91,7 @@ var _ = Describe("Auto-Backup", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 			})
@@ -136,7 +137,7 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 				})
@@ -176,7 +177,7 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 				})
@@ -235,7 +236,7 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 				})
