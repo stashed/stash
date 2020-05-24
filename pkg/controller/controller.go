@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"context"
 	"fmt"
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -29,8 +28,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
-	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -41,7 +39,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
-	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
+	"kmodules.xyz/client-go/apiextensions"
 	"kmodules.xyz/client-go/tools/queue"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -59,7 +57,7 @@ type StashController struct {
 	kubeClient       kubernetes.Interface
 	ocClient         oc_cs.Interface
 	stashClient      cs.Interface
-	crdClient        crd_cs.ApiextensionsV1beta1Interface
+	crdClient        crd_cs.Interface
 	appCatalogClient appcatalog_cs.Interface
 	recorder         record.EventRecorder
 
@@ -153,7 +151,7 @@ type StashController struct {
 }
 
 func (c *StashController) ensureCustomResourceDefinitions() error {
-	crds := []*crd_api.CustomResourceDefinition{
+	crds := []*apiextensions.CustomResourceDefinition{
 		api.Restic{}.CustomResourceDefinition(),
 		api.Recovery{}.CustomResourceDefinition(),
 		api.Repository{}.CustomResourceDefinition(),
@@ -167,7 +165,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 
 		appCatalog.AppBinding{}.CustomResourceDefinition(),
 	}
-	return crdutils.RegisterCRDs(context.TODO(), c.kubeClient.Discovery(), c.crdClient, crds)
+	return apiextensions.RegisterCRDs(c.crdClient, crds)
 }
 
 func (c *StashController) Run(stopCh <-chan struct{}) {

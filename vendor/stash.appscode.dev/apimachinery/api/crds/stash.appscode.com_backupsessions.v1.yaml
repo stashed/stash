@@ -1,0 +1,203 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: stash
+  name: backupsessions.stash.appscode.com
+spec:
+  group: stash.appscode.com
+  names:
+    categories:
+    - stash
+    - appscode
+    - all
+    kind: BackupSession
+    listKind: BackupSessionList
+    plural: backupsessions
+    singular: backupsession
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.invoker.kind
+      name: Invoker-Type
+      type: string
+    - jsonPath: .spec.invoker.name
+      name: Invoker-Name
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              invoker:
+                description: Invoker refers to the BackupConfiguration or BackupBatch
+                  being used to invoke this backup session
+                properties:
+                  apiGroup:
+                    description: APIGroup is the group for the resource being referenced
+                    type: string
+                  kind:
+                    description: Kind is the type of resource being referenced
+                    type: string
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+            type: object
+          status:
+            properties:
+              phase:
+                description: Phase indicates the overall phase of the backup process
+                  for this BackupSession. Phase will be "Succeeded" only if phase
+                  of all hosts are "Succeeded". If any of the host fail to complete
+                  backup, Phase will be "Failed".
+                enum:
+                - Pending
+                - Running
+                - Succeeded
+                - Failed
+                - Unknown
+                type: string
+              sessionDuration:
+                description: SessionDuration specify total time taken to complete
+                  current backup session (sum of backup duration of all targets)
+                type: string
+              targets:
+                description: Targets specify the backup status of individual targets
+                  optional
+                items:
+                  properties:
+                    phase:
+                      description: Phase indicates backup phase of this target
+                      enum:
+                      - Succeeded
+                      - Running
+                      - Failed
+                      type: string
+                    ref:
+                      description: Ref refers to the backup target
+                      properties:
+                        apiVersion:
+                          type: string
+                        kind:
+                          type: string
+                        name:
+                          type: string
+                      type: object
+                    stats:
+                      description: Stats shows statistics of individual hosts for
+                        this backup session
+                      items:
+                        properties:
+                          duration:
+                            description: Duration indicates total time taken to complete
+                              backup for this hosts
+                            type: string
+                          error:
+                            description: Error indicates string value of error in
+                              case of backup failure
+                            type: string
+                          hostname:
+                            description: Hostname indicate name of the host that has
+                              been backed up
+                            type: string
+                          phase:
+                            description: Phase indicates backup phase of this host
+                            enum:
+                            - Succeeded
+                            - Failed
+                            type: string
+                          snapshots:
+                            description: Snapshots specifies the stats of individual
+                              snapshots that has been taken for this host in current
+                              backup session
+                            items:
+                              properties:
+                                fileStats:
+                                  description: FileStats shows statistics of files
+                                    of this snapshot
+                                  properties:
+                                    modifiedFiles:
+                                      description: ModifiedFiles shows total number
+                                        of files that has been modified since last
+                                        backup
+                                      format: int64
+                                      type: integer
+                                    newFiles:
+                                      description: NewFiles shows total number of
+                                        new files that has been created since last
+                                        backup
+                                      format: int64
+                                      type: integer
+                                    totalFiles:
+                                      description: TotalFiles shows total number of
+                                        files that has been backed up
+                                      format: int64
+                                      type: integer
+                                    unmodifiedFiles:
+                                      description: UnmodifiedFiles shows total number
+                                        of files that has not been changed since last
+                                        backup
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                name:
+                                  description: Name indicates the name of the backup
+                                    snapshot created for this host
+                                  type: string
+                                path:
+                                  description: Path indicates the directory that has
+                                    been backed up in this snapshot
+                                  type: string
+                                processingTime:
+                                  description: ProcessingTime indicates time taken
+                                    to process the target data
+                                  type: string
+                                totalSize:
+                                  description: TotalSize indicates the size of data
+                                    to backup in target directory
+                                  type: string
+                                uploaded:
+                                  description: Uploaded indicates size of data uploaded
+                                    to backend for this snapshot
+                                  type: string
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    totalHosts:
+                      description: TotalHosts specifies total number of hosts for
+                        this target that will be backed up for a BackupSession
+                      format: int32
+                      type: integer
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

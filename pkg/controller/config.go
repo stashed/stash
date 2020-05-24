@@ -26,7 +26,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	core "k8s.io/api/core/v1"
-	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -61,7 +61,7 @@ type Config struct {
 	KubeClient       kubernetes.Interface
 	OcClient         oc_cs.Interface
 	StashClient      cs.Interface
-	CRDClient        crd_cs.ApiextensionsV1beta1Interface
+	CRDClient        crd_cs.Interface
 	AppCatalogClient appcatalog_cs.Interface
 }
 

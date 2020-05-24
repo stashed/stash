@@ -281,7 +281,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 			return false, err
 		}
 
-		_ = dynamic_util.WaitUntilDeleted(ctx, ri, d.stopCh, accessor.GetName())
+		_ = dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
 		return false, ErrWebhookNotActivated
 	} else if d.op == v1beta1.Update {
 		_, err := ri.Create(ctx, &u, metav1.CreateOptions{})
@@ -302,7 +302,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 		}
 
 		_, err = ri.Patch(ctx, accessor.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})
-		defer func() { _ = dynamic_util.WaitUntilDeleted(ctx, ri, d.stopCh, accessor.GetName()) }()
+		defer func() { _ = dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName()) }()
 
 		if kutil.AdmissionWebhookDeniedRequest(err) {
 			glog.V(10).Infof("failed to update test object as expected with error: %s", err)
@@ -337,7 +337,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 				_, _ = ri.Patch(ctx, accessor.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})
 
 				// delete
-				_ = dynamic_util.WaitUntilDeleted(ctx, ri, d.stopCh, accessor.GetName())
+				_ = dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
 			}()
 
 			glog.V(10).Infof("failed to delete test object as expected with error: %s", err)

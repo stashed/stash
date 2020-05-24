@@ -44,8 +44,8 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func WaitUntilDeleted(ctx context.Context, ri dynamic.ResourceInterface, stopCh <-chan struct{}, name string, subresources ...string) error {
-	err := ri.Delete(ctx, name, metav1.DeleteOptions{}, subresources...)
+func WaitUntilDeleted(ri dynamic.ResourceInterface, stopCh <-chan struct{}, name string, subresources ...string) error {
+	err := ri.Delete(context.TODO(), name, metav1.DeleteOptions{}, subresources...)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -53,7 +53,7 @@ func WaitUntilDeleted(ctx context.Context, ri dynamic.ResourceInterface, stopCh 
 	}
 	// delete operation was successful, now wait for obj to be removed(eg: objects with finalizers)
 	return wait.PollImmediateUntil(kutil.RetryInterval, func() (bool, error) {
-		_, e2 := ri.Get(ctx, name, metav1.GetOptions{}, subresources...)
+		_, e2 := ri.Get(context.TODO(), name, metav1.GetOptions{}, subresources...)
 		if kerr.IsNotFound(e2) {
 			return true, nil
 		} else if e2 != nil && !kutil.IsRequestRetryable(e2) {
