@@ -61,7 +61,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        k8s: [v1.12.10, v1.14.10, v1.16.4, v1.18.2]
+        k8s: [v1.11.10, v1.12.10, v1.14.10, v1.16.9, v1.18.2]
     steps:
 
     - name: Check out code into the Go module directory
@@ -69,8 +69,11 @@ jobs:
 
     - name: Create Kubernetes ${{ matrix.k8s }} cluster
       id: kind
-      run: |
-        kind create cluster --image=kindest/node:${{ matrix.k8s }} --config=hack/kubernetes/kind.yaml
+      uses: engineerd/setup-kind@v0.3.0
+      with:
+        version: v0.7.0
+        config: hack/kubernetes/kind.yaml
+        image: kindest/node:${{ matrix.k8s }}
 
     - name: Prepare cluster for testing
       id: local-path
