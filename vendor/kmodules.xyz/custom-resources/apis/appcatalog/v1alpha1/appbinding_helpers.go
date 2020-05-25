@@ -23,9 +23,8 @@ import (
 	"strconv"
 	"strings"
 
+	"kmodules.xyz/client-go/apiextensions"
 	"kmodules.xyz/custom-resources/api/crds"
-
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 func (_ AppBinding) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {

@@ -25,6 +25,8 @@ import (
 // List of common condition types
 const (
 	ConditionProgressing = "Progressing"
+	ConditionInitialized = "Initialized"
+	ConditionReady       = "Ready"
 	ConditionAvailable   = "Available"
 	ConditionFailure     = "Failure"
 

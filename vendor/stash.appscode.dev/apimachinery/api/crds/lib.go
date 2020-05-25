@@ -19,21 +19,39 @@ package crds
 import (
 	"fmt"
 
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"kmodules.xyz/client-go/apiextensions"
 	"sigs.k8s.io/yaml"
 )
 
+func load(filename string, o interface{}) error {
+	if _, ok := _bindata[filename]; ok {
+		data, err := Asset(filename)
+		if err != nil {
+			return err
+		}
+		return yaml.Unmarshal(data, o)
+	}
+	return nil
+}
+
 func CustomResourceDefinition(gvr schema.GroupVersionResource) (*apiextensions.CustomResourceDefinition, error) {
-	data, err := Asset(fmt.Sprintf("%s_%s.yaml", gvr.Group, gvr.Resource))
-	if err != nil {
-		return nil, err
-	}
 	var out apiextensions.CustomResourceDefinition
-	err = yaml.Unmarshal(data, &out)
-	if err != nil {
+
+	v1file := fmt.Sprintf("%s_%s.v1.yaml", gvr.Group, gvr.Resource)
+	if err := load(v1file, &out.V1); err != nil {
 		return nil, err
 	}
+
+	v1beta1file := fmt.Sprintf("%s_%s.yaml", gvr.Group, gvr.Resource)
+	if err := load(v1beta1file, &out.V1beta1); err != nil {
+		return nil, err
+	}
+
+	if out.V1 == nil && out.V1beta1 == nil {
+		return nil, fmt.Errorf("missing crd yamls for gvr: %s", gvr)
+	}
+
 	return &out, nil
 }
 
