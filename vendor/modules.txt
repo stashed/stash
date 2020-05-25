@@ -1039,7 +1039,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20200525112657-3b8ebfcb5e19
+# kmodules.xyz/client-go v0.0.0-20200525195850-2fd180961371
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/api/v1
@@ -1153,7 +1153,7 @@ sigs.k8s.io/structured-merge-diff/v3/typed
 sigs.k8s.io/structured-merge-diff/v3/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.9.0-rc.6.0.20200525113026-1a09ffde2a0a
+# stash.appscode.dev/apimachinery v0.10.0-alpha.0
 stash.appscode.dev/apimachinery/api/crds
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
