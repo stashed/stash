@@ -17,7 +17,6 @@ limitations under the License.
 package server
 
 import (
-	"flag"
 	"fmt"
 	"time"
 
@@ -46,9 +45,9 @@ type ExtraOptions struct {
 	ResyncPeriod            time.Duration
 	EnableValidatingWebhook bool
 	EnableMutatingWebhook   bool
-	CronJobPSPNames         string
-	BackupJobPSPNames       string
-	RestoreJobPSPNames      string
+	CronJobPSPNames         []string
+	BackupJobPSPNames       []string
+	RestoreJobPSPNames      []string
 }
 
 func NewExtraOptions() *ExtraOptions {
@@ -64,7 +63,7 @@ func NewExtraOptions() *ExtraOptions {
 	}
 }
 
-func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
+func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ScratchDir, "scratch-dir", s.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	fs.StringVar(&s.StashImageTag, "image-tag", s.StashImageTag, "Image tag for sidecar, init-container, check-job and recovery-job")
 	fs.StringVar(&s.DockerRegistry, "docker-registry", s.DockerRegistry, "Docker image registry for sidecar, init-container, check-job, recovery-job and kubectl-job")
@@ -76,15 +75,9 @@ func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&s.EnableMutatingWebhook, "enable-mutating-webhook", s.EnableMutatingWebhook, "If true, enables mutating webhooks for KubeDB CRDs.")
 	fs.BoolVar(&s.EnableValidatingWebhook, "enable-validating-webhook", s.EnableValidatingWebhook, "If true, enables validating webhooks for KubeDB CRDs.")
 
-	fs.StringVar(&s.CronJobPSPNames, "cron-job-psp", s.CronJobPSPNames, "Name of the PSPs for backup triggering CronJob. Use comma to separate multiple PSP names.")
-	fs.StringVar(&s.BackupJobPSPNames, "backup-job-psp", s.BackupJobPSPNames, "Name of the PSPs for backup job. Use comma to separate multiple PSP names.")
-	fs.StringVar(&s.RestoreJobPSPNames, "restore-job-psp", s.RestoreJobPSPNames, "Name of the PSPs for restore job. Use comma to separate multiple PSP names.")
-}
-
-func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
-	pfs := flag.NewFlagSet("stash", flag.ExitOnError)
-	s.AddGoFlags(pfs)
-	fs.AddGoFlagSet(pfs)
+	fs.StringSliceVar(&s.CronJobPSPNames, "cron-job-psp", s.CronJobPSPNames, "Name of the PSPs for backup triggering CronJob. Use comma to separate multiple PSP names.")
+	fs.StringSliceVar(&s.BackupJobPSPNames, "backup-job-psp", s.BackupJobPSPNames, "Name of the PSPs for backup job. Use comma to separate multiple PSP names.")
+	fs.StringSliceVar(&s.RestoreJobPSPNames, "restore-job-psp", s.RestoreJobPSPNames, "Name of the PSPs for restore job. Use comma to separate multiple PSP names.")
 }
 
 func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {

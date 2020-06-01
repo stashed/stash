@@ -52,9 +52,9 @@ type config struct {
 	ResyncPeriod            time.Duration
 	EnableValidatingWebhook bool
 	EnableMutatingWebhook   bool
-	CronJobPSPNames         string
-	BackupJobPSPNames       string
-	RestoreJobPSPNames      string
+	CronJobPSPNames         []string
+	BackupJobPSPNames       []string
+	RestoreJobPSPNames      []string
 }
 
 type Config struct {
