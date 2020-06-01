@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -266,7 +267,7 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 	}
 
 	if backupSession.Spec.Invoker.Kind == api_v1beta1.ResourceKindBackupBatch {
-		repoInputs[apis.RepositoryPrefix] = fmt.Sprintf("%s/%s/%s", repoInputs[apis.RepositoryPrefix], strings.ToLower(targetInfo.Target.Ref.Kind), targetInfo.Target.Ref.Name)
+		repoInputs[apis.RepositoryPrefix] = filepath.Join(repoInputs[apis.RepositoryPrefix], strings.ToLower(targetInfo.Target.Ref.Kind), targetInfo.Target.Ref.Name)
 	}
 
 	bcInputs, err := c.inputsForBackupConfig(invoker, targetInfo)
