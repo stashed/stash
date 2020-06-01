@@ -46,6 +46,9 @@ type ExtraOptions struct {
 	ResyncPeriod            time.Duration
 	EnableValidatingWebhook bool
 	EnableMutatingWebhook   bool
+	CronJobPSPNames         string
+	BackupJobPSPNames       string
+	RestoreJobPSPNames      string
 }
 
 func NewExtraOptions() *ExtraOptions {
@@ -72,6 +75,10 @@ func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 
 	fs.BoolVar(&s.EnableMutatingWebhook, "enable-mutating-webhook", s.EnableMutatingWebhook, "If true, enables mutating webhooks for KubeDB CRDs.")
 	fs.BoolVar(&s.EnableValidatingWebhook, "enable-validating-webhook", s.EnableValidatingWebhook, "If true, enables validating webhooks for KubeDB CRDs.")
+
+	fs.StringVar(&s.CronJobPSPNames, "cron-job-psp", s.CronJobPSPNames, "Name of the PSPs for backup triggering CronJob. Use comma to separate multiple PSP names.")
+	fs.StringVar(&s.BackupJobPSPNames, "backup-job-psp", s.BackupJobPSPNames, "Name of the PSPs for backup job. Use comma to separate multiple PSP names.")
+	fs.StringVar(&s.RestoreJobPSPNames, "restore-job-psp", s.RestoreJobPSPNames, "Name of the PSPs for restore job. Use comma to separate multiple PSP names.")
 }
 
 func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
@@ -92,6 +99,10 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	cfg.ClientConfig.Burst = s.Burst
 	cfg.EnableMutatingWebhook = s.EnableMutatingWebhook
 	cfg.EnableValidatingWebhook = s.EnableValidatingWebhook
+
+	cfg.CronJobPSPNames = s.CronJobPSPNames
+	cfg.BackupJobPSPNames = s.BackupJobPSPNames
+	cfg.RestoreJobPSPNames = s.RestoreJobPSPNames
 
 	if cfg.KubeClient, err = kubernetes.NewForConfig(cfg.ClientConfig); err != nil {
 		return err

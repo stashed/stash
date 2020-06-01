@@ -18,25 +18,22 @@ package controller
 
 import (
 	"context"
+	"strings"
 
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	BaselinePSP = "baseline"
-)
-
 func (c *StashController) getBackupSessionCronJobPSPNames() []string {
 	// BackupSession cron does not need any custom PSP. So, default minimum privileged
-	return []string{BaselinePSP}
+	return strings.Split(c.CronJobPSPNames, ",")
 }
 
 func (c *StashController) getBackupJobPSPNames(taskRef api_v1beta1.TaskRef) ([]string, error) {
 	// if task field is empty then return default backup job psp
 	if taskRef.Name == "" {
-		return []string{BaselinePSP}, nil
+		return strings.Split(c.BackupJobPSPNames, ","), nil
 	}
 
 	// find out task and then functions. finally, get psp names from the functions
@@ -61,13 +58,13 @@ func (c *StashController) getBackupJobPSPNames(taskRef api_v1beta1.TaskRef) ([]s
 	}
 
 	// if no PSP name is specified, then return default PSP for backup job
-	return []string{BaselinePSP}, nil
+	return strings.Split(c.BackupJobPSPNames, ","), nil
 }
 
 func (c *StashController) getRestoreJobPSPNames(restoreSession *api_v1beta1.RestoreSession) ([]string, error) {
 	// if task field is empty then return default restore job psp
 	if restoreSession.Spec.Task.Name == "" {
-		return []string{BaselinePSP}, nil
+		return strings.Split(c.RestoreJobPSPNames, ","), nil
 	}
 
 	// find out task and then functions. finally, get psp names from the functions
@@ -92,5 +89,5 @@ func (c *StashController) getRestoreJobPSPNames(restoreSession *api_v1beta1.Rest
 	}
 
 	// if no PSP name is specified, then return default PSP for restore job
-	return []string{BaselinePSP}, nil
+	return strings.Split(c.RestoreJobPSPNames, ","), nil
 }
