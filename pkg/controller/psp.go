@@ -25,20 +25,18 @@ import (
 )
 
 const (
-	DefaultBackupSessionCronJobPSPName = "stash-backupsession-cron"
-	DefaultBackupJobPSPName            = "stash-backup-job"
-	DefaultRestoreJobPSPName           = "stash-restore-job"
+	BaselinePSP = "baseline"
 )
 
 func (c *StashController) getBackupSessionCronJobPSPNames() []string {
 	// BackupSession cron does not need any custom PSP. So, default minimum privileged
-	return []string{DefaultBackupSessionCronJobPSPName}
+	return []string{BaselinePSP}
 }
 
 func (c *StashController) getBackupJobPSPNames(taskRef api_v1beta1.TaskRef) ([]string, error) {
 	// if task field is empty then return default backup job psp
 	if taskRef.Name == "" {
-		return []string{DefaultBackupJobPSPName}, nil
+		return []string{BaselinePSP}, nil
 	}
 
 	// find out task and then functions. finally, get psp names from the functions
@@ -63,13 +61,13 @@ func (c *StashController) getBackupJobPSPNames(taskRef api_v1beta1.TaskRef) ([]s
 	}
 
 	// if no PSP name is specified, then return default PSP for backup job
-	return []string{DefaultBackupJobPSPName}, nil
+	return []string{BaselinePSP}, nil
 }
 
 func (c *StashController) getRestoreJobPSPNames(restoreSession *api_v1beta1.RestoreSession) ([]string, error) {
 	// if task field is empty then return default restore job psp
 	if restoreSession.Spec.Task.Name == "" {
-		return []string{DefaultRestoreJobPSPName}, nil
+		return []string{BaselinePSP}, nil
 	}
 
 	// find out task and then functions. finally, get psp names from the functions
@@ -94,5 +92,5 @@ func (c *StashController) getRestoreJobPSPNames(restoreSession *api_v1beta1.Rest
 	}
 
 	// if no PSP name is specified, then return default PSP for restore job
-	return []string{DefaultRestoreJobPSPName}, nil
+	return []string{BaselinePSP}, nil
 }
