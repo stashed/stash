@@ -144,7 +144,7 @@ func (fi *Invocation) ResticForGCSBackend() api.Restic {
 	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
 		GCS: &store.GCSSpec{
-			Bucket: "stash-qa",
+			Bucket: "stash-ci",
 			Prefix: fi.app,
 		},
 	}
