@@ -60,9 +60,6 @@ const (
 	TestSoucreDemoDataPath   = "/data/stash-test/demo-data"
 	TestSourceDataDir1       = "/source/data/dir-1"
 	TestSourceDataDir2       = "/source/data/dir-2"
-	KindRestic               = "Restic"
-	KindRepository           = "Repository"
-	KindRecovery             = "Recovery"
 	PullInterval             = time.Second * 2
 	WaitTimeOut              = time.Minute * 3
 	TaskPVCBackup            = "pvc-backup"
@@ -349,18 +346,6 @@ func FileGroupsForHostPathVolumeWithMultipleDirectory() []api.FileGroup {
 	}
 }
 
-func (fi *Invocation) RecoveredVolume() []core.Volume {
-	return []core.Volume{
-		{
-			Name: TestSourceDataVolumeName,
-			VolumeSource: core.VolumeSource{
-				HostPath: &core.HostPathVolumeSource{
-					Path: filepath.Join(TestRecoveredVolumePath, fi.App()),
-				},
-			},
-		},
-	}
-}
 func (fi *Invocation) CleanupRecoveredVolume(meta metav1.ObjectMeta) error {
 	pod, err := fi.GetPod(meta)
 	if err != nil {
@@ -763,7 +748,13 @@ func (fi *Invocation) CleanupTestResources() error {
 		if err != nil {
 			return err
 		}
-		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, meta_util.DeleteInBackground())
+		deletionPolicy := meta_util.DeleteInBackground()
+		// Repository has finalizer wipeOut finalizer.
+		// Hence, we should ensure that it has been deleted before deleting the respective secret.
+		if gvr.Resource == api.ResourceKindRepository {
+			deletionPolicy = meta_util.DeleteInForeground()
+		}
+		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, deletionPolicy)
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}

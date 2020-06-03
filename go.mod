@@ -60,6 +60,7 @@ replace (
 	github.com/Azure/go-autorest/autorest/validation => github.com/Azure/go-autorest/autorest/validation v0.1.0
 	github.com/Azure/go-autorest/logger => github.com/Azure/go-autorest/logger v0.1.0
 	github.com/Azure/go-autorest/tracing => github.com/Azure/go-autorest/tracing v0.5.0
+	github.com/imdario/mergo => github.com/imdario/mergo v0.3.5
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.0.0
 	go.etcd.io/etcd => go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738
 	google.golang.org/grpc => google.golang.org/grpc v1.26.0

@@ -269,7 +269,7 @@ func (fi *Invocation) NewGCSRepository(secretName string, maxConnection int64) *
 		Spec: api.RepositorySpec{
 			Backend: store.Backend{
 				GCS: &store.GCSSpec{
-					Bucket:         "stash-testing",
+					Bucket:         "stash-ci",
 					Prefix:         fmt.Sprintf("stash-e2e/%s/%s", fi.namespace, fi.app),
 					MaxConnections: maxConnection,
 				},

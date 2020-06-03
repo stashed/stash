@@ -470,3 +470,9 @@ run:
 		--authentication-skip-lookup \
 		--docker-registry=$(REGISTRY) \
 		--image-tag=$(TAG)
+
+# make and load docker image to kind cluster
+.PHONY: load
+load: container
+	@echo "Loading docker image into kind cluster...."
+	@kind load docker-image $(REGISTRY)/stash:$(TAG)
