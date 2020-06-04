@@ -22,9 +22,6 @@ import (
 	"fmt"
 	"time"
 
-	pfutil "kmodules.xyz/client-go/tools/portforward"
-	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
-
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
@@ -36,6 +33,8 @@ import (
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pfutil "kmodules.xyz/client-go/tools/portforward"
+	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
