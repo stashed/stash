@@ -33,7 +33,7 @@ import (
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-var _ = XDescribe("Clone", func() {
+var _ = Describe("Clone", func() {
 
 	var f *framework.Invocation
 
