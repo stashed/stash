@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
-	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) ReplicaSet(name, pvcName, volName string) apps.ReplicaSet {
@@ -61,14 +60,6 @@ func (f *Framework) CreateReplicaSet(obj apps.ReplicaSet) (*apps.ReplicaSet, err
 	return f.KubeClient.AppsV1().ReplicaSets(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
-func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
-	if err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
 func (f *Framework) EventuallyReplicaSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.ReplicaSet {
 		obj, err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
@@ -94,34 +85,6 @@ func (fi *Invocation) WaitUntilRSReadyWithSidecar(meta metav1.ObjectMeta) error 
 						}
 					}
 					if !hasSidecar {
-						return false, nil
-					}
-				}
-				return true, nil
-			}
-			return false, nil
-		}
-		return false, nil
-	})
-}
-
-func (fi *Invocation) WaitUntilRSReadyWithInitContainer(meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := fi.GetAllPods(obj.ObjectMeta)
-				if err != nil {
-					return false, err
-				}
-
-				for i := range pods {
-					hasInitContainer := false
-					for _, c := range pods[i].Spec.InitContainers {
-						if c.Name == apis.StashInitContainer {
-							hasInitContainer = true
-						}
-					}
-					if !hasInitContainer {
 						return false, nil
 					}
 				}

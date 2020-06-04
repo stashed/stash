@@ -27,13 +27,11 @@ import (
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
-	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (fi *Invocation) DaemonSet(name, volumeName string) apps.DaemonSet {
@@ -98,14 +96,6 @@ func (f *Framework) CreateDaemonSet(obj apps.DaemonSet) (*apps.DaemonSet, error)
 	return f.KubeClient.AppsV1().DaemonSets(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
-func (f *Framework) DeleteDaemonSet(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
-	if err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
 func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.DaemonSet {
 		obj, err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
@@ -131,34 +121,6 @@ func (fi *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta)
 						}
 					}
 					if !hasSidecar {
-						return false, nil
-					}
-				}
-				return true, nil
-			}
-			return false, nil
-		}
-		return false, nil
-	})
-}
-
-func (fi *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
-				pods, err := fi.GetAllPods(obj.ObjectMeta)
-				if err != nil {
-					return false, err
-				}
-
-				for i := range pods {
-					hasInitContainer := false
-					for _, c := range pods[i].Spec.InitContainers {
-						if c.Name == apis.StashInitContainer {
-							hasInitContainer = true
-						}
-					}
-					if !hasInitContainer {
 						return false, nil
 					}
 				}

@@ -20,13 +20,7 @@ import (
 	"context"
 
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	core_util "kmodules.xyz/client-go/core/v1"
-)
-
-const (
-	TEST_HEADLESS_SERVICE = "headless"
 )
 
 func (fi *Invocation) HeadlessService(name string) core.Service {
@@ -52,20 +46,4 @@ func (fi *Invocation) HeadlessService(name string) core.Service {
 
 func (f *Framework) CreateService(obj core.Service) (*core.Service, error) {
 	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
-}
-
-func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
-	if err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
-func (f *Framework) CreateOrPatchService(obj core.Service) error {
-	_, _, err := core_util.CreateOrPatchService(context.TODO(), f.KubeClient, obj.ObjectMeta, func(in *core.Service) *core.Service {
-		in.Spec = obj.Spec
-		return in
-	}, metav1.PatchOptions{})
-	return err
 }

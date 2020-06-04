@@ -38,7 +38,6 @@ const (
 	TestSourceDataMountPath  = "/source/data"
 	TestSafeDataMountPath    = "/safe/data"
 	OperatorNamespace        = "kube-system"
-	OperatorName             = "stash-operator"
 )
 
 func (fi *Invocation) PodTemplate(labels map[string]string, pvcName, volName string) core.PodTemplateSpec {

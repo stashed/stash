@@ -22,48 +22,19 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 
-	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
-	meta_util "kmodules.xyz/client-go/meta"
 )
 
-func (fi *Invocation) StatefulSet(name, pvcName, volName string) apps.StatefulSet {
-	name = rand.WithUniqSuffix(fmt.Sprintf("%s-%s", name, fi.app))
-	labels := map[string]string{
-		"app":  name,
-		"kind": "statefulset",
-	}
-	return apps.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("stash"),
-			Namespace: fi.namespace,
-			Labels:    labels,
-		},
-		Spec: apps.StatefulSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Replicas:    types.Int32P(1),
-			Template:    fi.PodTemplate(labels, pvcName, volName),
-			ServiceName: name,
-			UpdateStrategy: apps.StatefulSetUpdateStrategy{
-				Type: apps.RollingUpdateStatefulSetStrategyType,
-			},
-		},
-	}
-}
-
-func (fi *Invocation) StatefulSetForV1beta1API(name, volName string, replica int32) apps.StatefulSet {
+func (fi *Invocation) StatefulSet(name, volName string, replica int32) apps.StatefulSet {
 	labels := map[string]string{
 		"app":  name,
 		"kind": "statefulset",
@@ -130,14 +101,6 @@ func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) (*apps.StatefulSet, 
 	return f.KubeClient.AppsV1().StatefulSets(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
-func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
-	if err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
 func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.StatefulSet {
 		obj, err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
@@ -174,38 +137,10 @@ func (fi *Invocation) WaitUntilStatefulSetReadyWithSidecar(meta metav1.ObjectMet
 	})
 }
 
-func (fi *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := fi.GetAllPods(obj.ObjectMeta)
-				if err != nil {
-					return false, err
-				}
-
-				for i := range pods {
-					hasInitContainer := false
-					for _, c := range pods[i].Spec.InitContainers {
-						if c.Name == apis.StashInitContainer {
-							hasInitContainer = true
-						}
-					}
-					if !hasInitContainer {
-						return false, nil
-					}
-				}
-				return true, nil
-			}
-			return false, nil
-		}
-		return false, nil
-	})
-}
-
 func (fi *Invocation) DeployStatefulSet(name string, replica int32, volName string, transformFuncs ...func(ss *apps.StatefulSet)) (*apps.StatefulSet, error) {
 	// Generate StatefulSet definition
 	name = fmt.Sprintf("%s-%s", name, fi.app)
-	ss := fi.StatefulSetForV1beta1API(name, volName, replica)
+	ss := fi.StatefulSet(name, volName, replica)
 
 	// transformFuncs provides a array of functions that made test specific change on the StatefulSet
 	// apply these test specific changes

@@ -19,7 +19,6 @@ package framework
 import (
 	"context"
 	"fmt"
-	"math"
 	"strconv"
 	"time"
 
@@ -31,11 +30,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/stow"
-	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	meta_util "kmodules.xyz/client-go/meta"
 	pfutil "kmodules.xyz/client-go/tools/portforward"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	"kmodules.xyz/objectstore-api/osm"
@@ -45,25 +42,6 @@ type KindMetaReplicas struct {
 	Kind     string
 	Meta     metav1.ObjectMeta
 	Replicas int
-}
-
-func (f *Framework) EventuallyRepository(workload interface{}) GomegaAsyncAssertion {
-	return Eventually(func() []*api.Repository {
-		switch w := workload.(type) {
-		case *apps.DaemonSet:
-			return f.DaemonSetRepos(w)
-		case *apps.Deployment:
-			return f.DeploymentRepos(w)
-		case *core.ReplicationController:
-			return f.ReplicationControllerRepos(w)
-		case *apps.ReplicaSet:
-			return f.ReplicaSetRepos(w)
-		case *apps.StatefulSet:
-			return f.StatefulSetRepos(w)
-		default:
-			return nil
-		}
-	})
 }
 
 func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -99,13 +77,6 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 		}
 	}
 	return repositories
-}
-
-func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
-	for _, repo := range repositories {
-		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(context.TODO(), repo.Name, meta_util.DeleteInBackground())
-		Expect(err).NotTo(HaveOccurred())
-	}
 }
 
 func (f *Framework) DeleteRepository(repository *api.Repository) error {
@@ -169,25 +140,6 @@ func (f *Framework) BrowseMinioRepository(repo *api.Repository) ([]stow.Item, er
 	// update endpoint so that BrowseBackendRepository() function uses the port-forwarded address
 	repo.Spec.Backend.S3.Endpoint = fmt.Sprintf("https://%s:%d", LocalHostIP, tunnel.Local)
 	return f.BrowseBackendRepository(repo)
-}
-
-func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int64 {
-	var backupCount int64 = math.MaxInt64
-
-	// use minimum backupCount among all repos
-	for _, repo := range repos {
-		if int64(repo.Status.BackupCount) < backupCount {
-			backupCount = int64(repo.Status.BackupCount)
-		}
-	}
-	return backupCount
-}
-
-func (f *Framework) CreateRepository(repo *api.Repository) error {
-	_, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
-
-	return err
-
 }
 
 func (fi *Invocation) NewLocalRepositoryWithPVC(secretName string, pvcName string) *api.Repository {

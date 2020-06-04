@@ -29,7 +29,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -57,14 +56,6 @@ func (fi *Invocation) PersistentVolumeClaim(name string) *core.PersistentVolumeC
 
 func (f *Framework) CreatePersistentVolumeClaim(pvc *core.PersistentVolumeClaim) (*core.PersistentVolumeClaim, error) {
 	return f.KubeClient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Create(context.TODO(), pvc, metav1.CreateOptions{})
-}
-
-func (fi *Invocation) DeletePersistentVolumeClaim(meta metav1.ObjectMeta) error {
-	err := fi.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
-	if err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	return nil
 }
 
 func (fi *Invocation) CreateNewPVC(name string) (*core.PersistentVolumeClaim, error) {

@@ -19,7 +19,6 @@ package framework
 import (
 	"context"
 	"strings"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -80,17 +79,6 @@ func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta) Go
 			}
 			return false
 		},
-	)
-}
-
-func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() v1beta1.RestoreSessionPhase {
-		restoreSession, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
-		Expect(err).NotTo(HaveOccurred())
-		return restoreSession.Status.Phase
-	},
-		time.Minute*7,
-		time.Second*7,
 	)
 }
 

@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
-	meta_util "kmodules.xyz/client-go/meta"
 )
 
 const (
@@ -72,14 +71,6 @@ func (f *Framework) CreateDeployment(obj apps.Deployment) (*apps.Deployment, err
 	return f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
 }
 
-func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {
-	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
-	if err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
 func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.Deployment {
 		obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
@@ -108,34 +99,6 @@ func (fi *Invocation) WaitUntilDeploymentReadyWithSidecar(meta metav1.ObjectMeta
 						}
 					}
 					if !hasSidecar {
-						return false, nil
-					}
-				}
-				return true, nil
-			}
-			return false, nil
-		}
-		return false, nil
-	})
-}
-
-func (fi *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			if obj.Status.Replicas == obj.Status.ReadyReplicas {
-				pods, err := fi.GetAllPods(obj.ObjectMeta)
-				if err != nil {
-					return false, err
-				}
-
-				for i := range pods {
-					hasInitContainer := false
-					for _, c := range pods[i].Spec.InitContainers {
-						if c.Name == apis.StashInitContainer {
-							hasInitContainer = true
-						}
-					}
-					if !hasInitContainer {
 						return false, nil
 					}
 				}

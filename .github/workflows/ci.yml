@@ -123,4 +123,4 @@ jobs:
         make install
         echo
         sleep 10
-        make e2e-tests
+        make e2e-parallel
