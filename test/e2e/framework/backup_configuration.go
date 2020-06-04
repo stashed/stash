@@ -20,7 +20,6 @@ import (
 	"context"
 	"strconv"
 	"strings"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -89,8 +88,8 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 			}
 			return false
 		},
-		time.Minute*2,
-		time.Second*5,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 
@@ -107,8 +106,8 @@ func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsy
 			}
 			return *cronJob.Spec.Suspend
 		},
-		time.Minute*2,
-		time.Second*5,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 
@@ -121,8 +120,8 @@ func (f *Framework) EventuallyCronJobResumed(meta metav1.ObjectMeta) GomegaAsync
 			}
 			return !*cronJob.Spec.Suspend
 		},
-		time.Minute*2,
-		time.Second*5,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 
@@ -135,8 +134,8 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 			}
 			return false
 		},
-		time.Minute*2,
-		time.Second*5,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 

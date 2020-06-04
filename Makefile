@@ -367,7 +367,7 @@ install:
 		--namespace=kube-system \
 		--set operator.registry=$(REGISTRY) \
 		--set operator.tag=$(TAG) \
-		--set imagePullPolicy=Always \
+		--set imagePullPolicy=IfNotPresent \
 		$(IMAGE_PULL_SECRETS); \
 	kubectl wait --for=condition=Available apiservice -l 'app.kubernetes.io/name=stash,app.kubernetes.io/instance=stash' --timeout=5m
 
@@ -470,3 +470,10 @@ run:
 		--authentication-skip-lookup \
 		--docker-registry=$(REGISTRY) \
 		--image-tag=$(TAG)
+
+# make and load docker image to kind cluster
+.PHONY: push-to-kind
+push-to-kind: container
+	@echo "Loading docker image into kind cluster...."
+	@kind load docker-image $(REGISTRY)/stash:$(TAG)
+	@echo "Image has been pushed successfully into kind cluster."

@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
@@ -38,7 +37,6 @@ const (
 	TestSourceDataMountPath  = "/source/data"
 	TestSafeDataMountPath    = "/safe/data"
 	OperatorNamespace        = "kube-system"
-	OperatorName             = "stash-operator"
 )
 
 func (fi *Invocation) PodTemplate(labels map[string]string, pvcName, volName string) core.PodTemplateSpec {
@@ -217,8 +215,8 @@ func (f *Framework) EventuallyAllPodsAccessible(meta metav1.ObjectMeta) GomegaAs
 		}
 		return allPodAccessible
 	},
-		time.Minute*2,
-		time.Second*2,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 
@@ -230,7 +228,7 @@ func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncA
 		_, err = f.ExecOnPod(pod, "ls", "-R")
 		return err == nil
 
-	}, time.Minute*2, time.Second*2)
+	}, WaitTimeOut, PullInterval)
 }
 
 func (fi *Invocation) DeployPod(pvcName string) (*core.Pod, error) {

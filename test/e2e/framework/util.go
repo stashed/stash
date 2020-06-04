@@ -19,18 +19,14 @@ package framework
 import (
 	"context"
 	"fmt"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
-	rep "stash.appscode.dev/apimachinery/apis/repositories/v1alpha1"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/eventer"
-	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 
 	"github.com/appscode/go/sets"
 	shell "github.com/codeskyblue/go-sh"
@@ -44,7 +40,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"kmodules.xyz/client-go/dynamic"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -57,14 +52,8 @@ var (
 )
 
 const (
-	TestSoucreDemoDataPath   = "/data/stash-test/demo-data"
-	TestSourceDataDir1       = "/source/data/dir-1"
-	TestSourceDataDir2       = "/source/data/dir-2"
-	KindRestic               = "Restic"
-	KindRepository           = "Repository"
-	KindRecovery             = "Recovery"
 	PullInterval             = time.Second * 2
-	WaitTimeOut              = time.Minute * 3
+	WaitTimeOut              = time.Minute * 10
 	TaskPVCBackup            = "pvc-backup"
 	TaskPVCRestore           = "pvc-restore"
 	TestSourceDataTargetPath = "/source/data"
@@ -101,34 +90,6 @@ const (
 	TestUserID          = 2000
 )
 
-func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() []core.Event {
-		fieldSelector := fields.SelectorFromSet(fields.Set{
-			"involvedObject.kind":      "Repository",
-			"involvedObject.name":      meta.Name,
-			"involvedObject.namespace": meta.Namespace,
-			"type":                     core.EventTypeNormal,
-		})
-		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
-		Expect(err).NotTo(HaveOccurred())
-		return events.Items
-	})
-}
-
-func (f *Framework) EventualWarning(meta metav1.ObjectMeta, involvedObjectKind string) GomegaAsyncAssertion {
-	return Eventually(func() []core.Event {
-		fieldSelector := fields.SelectorFromSet(fields.Set{
-			"involvedObject.kind":      involvedObjectKind,
-			"involvedObject.name":      meta.Name,
-			"involvedObject.namespace": meta.Namespace,
-			"type":                     core.EventTypeWarning,
-		})
-		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
-		Expect(err).NotTo(HaveOccurred())
-		return events.Items
-	})
-}
-
 func (f *Framework) EventuallyEvent(meta metav1.ObjectMeta, involvedObjectKind string) GomegaAsyncAssertion {
 	return Eventually(func() []core.Event {
 		fieldSelector := fields.SelectorFromSet(fields.Set{
@@ -143,123 +104,9 @@ func (f *Framework) EventuallyEvent(meta metav1.ObjectMeta, involvedObjectKind s
 	})
 }
 
-func (f *Framework) CountSuccessfulBackups(events []core.Event) int {
-	count := 0
-	for _, e := range events {
-		if e.Reason == eventer.EventReasonSuccessfulBackup {
-			count++
-		}
-	}
-	return count
-}
-
-func (f *Framework) CountFailedSetup(events []core.Event) int {
-	count := 0
-	for _, e := range events {
-		if e.Reason == eventer.EventReasonFailedSetup {
-			count++
-		}
-	}
-	return count
-}
-
 func deleteInForeground() *metav1.DeleteOptions {
 	policy := metav1.DeletePropagationForeground
 	return &metav1.DeleteOptions{PropagationPolicy: &policy}
-}
-
-func CleanupMinikubeHostPath() error {
-	cmd := "minikube"
-	args := []string{"ssh", "sudo rm -rf /data/stash-test"}
-	return exec.Command(cmd, args...).Run()
-}
-
-func (f *Framework) DeleteJobAndDependents(jobName string, recovery *api.Recovery) {
-	By("Checking Job deleted")
-	Eventually(func() bool {
-		_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
-		return kerr.IsNotFound(err) || kerr.IsGone(err)
-	}, time.Minute*3, time.Second*2).Should(BeTrue())
-
-	By("Checking pods deleted")
-	Eventually(func() bool {
-		pods, err := f.KubeClient.CoreV1().Pods(recovery.Namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: "job-name=" + jobName, // pods created by job has a job-name label
-		})
-		Expect(err).NotTo(HaveOccurred())
-		return len(pods.Items) == 0
-	}, time.Minute*3, time.Second*2).Should(BeTrue())
-
-	By("Checking service-account deleted")
-	Eventually(func() bool {
-		_, err := f.KubeClient.CoreV1().ServiceAccounts(recovery.Namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
-		return kerr.IsNotFound(err) || kerr.IsGone(err)
-	}, time.Minute*3, time.Second*2).Should(BeTrue())
-
-	By("Checking role-binding deleted")
-	Eventually(func() bool {
-		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
-		return kerr.IsNotFound(err) || kerr.IsGone(err)
-	}, time.Minute*3, time.Second*2).Should(BeTrue())
-
-	By("Checking repo-reader role-binding deleted")
-	Eventually(func() bool {
-		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Get(context.TODO(), stash_rbac.GetRepoReaderRoleBindingName(jobName, recovery.Namespace), metav1.GetOptions{})
-		return kerr.IsNotFound(err) || kerr.IsGone(err)
-	}, time.Minute*3, time.Second*2).Should(BeTrue())
-}
-
-func (f *Framework) CreateDemoData(meta metav1.ObjectMeta) error {
-	err := f.CreateDirectory(meta, []string{TestSourceDataDir1, TestSourceDataDir2})
-	if err != nil {
-		return err
-	}
-	err = f.CreateDataOnMountedDir(meta, []string{TestSourceDataDir1}, "file1.txt")
-	if err != nil {
-		return err
-	}
-	err = f.CreateDataOnMountedDir(meta, []string{TestSourceDataDir2}, "file2.txt")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (f *Framework) ReadSampleDataFromMountedDirectory(meta metav1.ObjectMeta, paths []string, resourceKind string) ([]string, error) {
-	switch resourceKind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
-		pod, err := f.GetPod(meta)
-		if err != nil {
-			return nil, err
-		}
-		var data string
-		datas := make([]string, 0)
-		for _, p := range paths {
-			data, err = f.ExecOnPod(pod, "ls", p)
-			if err != nil {
-				return nil, err
-			}
-			datas = append(datas, data)
-		}
-		return datas, err
-	case apis.KindStatefulSet, apis.KindDaemonSet:
-		datas := make([]string, 0)
-		pods, err := f.GetAllPods(meta)
-		if err != nil {
-			return datas, err
-		}
-		for _, path := range paths {
-			for _, pod := range pods {
-				data, err := f.ExecOnPod(&pod, "ls", path)
-				if err != nil {
-					continue
-				}
-				datas = append(datas, data)
-			}
-		}
-		return datas, err
-	}
-	return []string{}, nil
 }
 
 func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resourceKind string) ([]string, error) {
@@ -294,351 +141,6 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 	return nil, nil
 }
 
-func (f *Framework) CreateDirectory(meta metav1.ObjectMeta, directories []string) error {
-	pod, err := f.GetPod(meta)
-	if err != nil {
-		return err
-	}
-
-	for _, dir := range directories {
-		_, err := f.ExecOnPod(pod, "mkdir", "-p", dir)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-func (f *Framework) CreateDataOnMountedDir(meta metav1.ObjectMeta, paths []string, fileName string) error {
-	pod, err := f.GetPod(meta)
-	if err != nil {
-		return err
-	}
-	for _, path := range paths {
-		_, err := f.ExecOnPod(pod, "touch", filepath.Join(path, fileName))
-		if err != nil {
-			return err
-		}
-
-	}
-	return nil
-}
-
-func (fi *Invocation) HostPathVolumeWithMultipleDirectory() []core.Volume {
-	return []core.Volume{
-		{
-			Name: TestSourceDataVolumeName,
-			VolumeSource: core.VolumeSource{
-				HostPath: &core.HostPathVolumeSource{
-					Path: filepath.Join(TestSoucreDemoDataPath, fi.app),
-				},
-			},
-		},
-	}
-}
-
-func FileGroupsForHostPathVolumeWithMultipleDirectory() []api.FileGroup {
-	return []api.FileGroup{
-		{
-			Path:                TestSourceDataDir1,
-			RetentionPolicyName: "keep-last-5",
-		},
-		{
-			Path:                TestSourceDataDir2,
-			RetentionPolicyName: "keep-last-5",
-		},
-	}
-}
-
-func (fi *Invocation) RecoveredVolume() []core.Volume {
-	return []core.Volume{
-		{
-			Name: TestSourceDataVolumeName,
-			VolumeSource: core.VolumeSource{
-				HostPath: &core.HostPathVolumeSource{
-					Path: filepath.Join(TestRecoveredVolumePath, fi.App()),
-				},
-			},
-		},
-	}
-}
-func (fi *Invocation) CleanupRecoveredVolume(meta metav1.ObjectMeta) error {
-	pod, err := fi.GetPod(meta)
-	if err != nil {
-		return err
-	}
-	_, err = fi.ExecOnPod(pod, "rm", "-rf", TestSourceDataMountPath)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (f *Framework) DaemonSetRepos(daemon *apps.DaemonSet) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1})
-}
-
-func (f *Framework) DeploymentRepos(deployment *apps.Deployment) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)})
-}
-
-func (f *Framework) ReplicationControllerRepos(rc *core.ReplicationController) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)})
-}
-
-func (f *Framework) ReplicaSetRepos(rs *apps.ReplicaSet) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)})
-}
-
-func (f *Framework) StatefulSetRepos(ss *apps.StatefulSet) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)})
-}
-
-func (f *Framework) LatestSnapshot(snapshots []rep.Snapshot) rep.Snapshot {
-	latestSnapshot := snapshots[0]
-	for _, snap := range snapshots {
-		if snap.CreationTimestamp.After(latestSnapshot.CreationTimestamp.Time) {
-			latestSnapshot = snap
-		}
-	}
-	return latestSnapshot
-}
-
-func GetPathsFromResticFileGroups(restic *api.Restic) []string {
-	paths := make([]string, 0)
-	for _, fg := range restic.Spec.FileGroups {
-		paths = append(paths, fg.Path)
-	}
-	return paths
-}
-
-func GetPathsFromRestoreSession(restoreSession *v1beta1.RestoreSession) []string {
-	paths := make([]string, 0)
-	for i := range restoreSession.Spec.Rules {
-		paths = append(paths, restoreSession.Spec.Rules[i].Paths...)
-	}
-	paths = removeDuplicates(paths)
-	return paths
-}
-
-func removeDuplicates(elements []string) []string {
-	encountered := map[string]bool{}
-
-	// Create a map of all unique elements.
-	for v := range elements {
-		encountered[elements[v]] = true
-	}
-
-	// Place all keys from the map into a slice.
-	result := []string{}
-	for key := range encountered {
-		result = append(result, key)
-	}
-	return result
-}
-
-func (f *Framework) EventuallyJobSucceed(name string) GomegaAsyncAssertion {
-	jobCreated := false
-	return Eventually(func() bool {
-		obj, err := f.KubeClient.BatchV1().Jobs(f.namespace).Get(context.TODO(), name, metav1.GetOptions{})
-		if err != nil && !kerr.IsNotFound(err) {
-			Expect(err).NotTo(HaveOccurred())
-		}
-
-		if err != nil && kerr.IsNotFound(err) && jobCreated {
-			return true
-		}
-
-		jobCreated = true
-		return obj.Status.Succeeded > 0
-	}, time.Minute*5, time.Second*5)
-}
-
-func WaitUntilNamespaceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.CoreV1().Namespaces().Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilDeploymentDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilDaemonSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilStatefulSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilReplicaSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilReplicationControllerDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilSecretDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.CoreV1().Secrets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilServiceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.CoreV1().Services(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilResticDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1alpha1().Restics(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilBackupConfigurationDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1beta1().BackupConfigurations(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilRestoreSessionDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilRecoveryDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1alpha1().Recoveries(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err != nil {
-			if kerr.IsNotFound(err) {
-				return true, nil
-			} else {
-				return true, err
-			}
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repository) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		allDeleted := true
-		for _, repo := range repositories {
-			if _, err := sc.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{}); err != nil {
-				if kerr.IsNotFound(err) {
-					continue
-				} else {
-					return true, err
-				}
-			}
-			allDeleted = false
-		}
-		if allDeleted {
-			return true, nil
-		}
-		return false, nil
-	})
-}
 func WaitUntilRepositoryDeleted(sc cs.Interface, repository *api.Repository) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
@@ -650,21 +152,6 @@ func WaitUntilRepositoryDeleted(sc cs.Interface, repository *api.Repository) err
 			}
 		}
 		return false, nil
-	})
-}
-
-func (f *Framework) WaitUntilDaemonPodReady(meta metav1.ObjectMeta) error {
-
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		pod, err := f.GetPod(meta)
-		if err != nil {
-			return false, nil
-		}
-		if pod.Status.Phase == core.PodPhase(core.PodRunning) {
-			return true, nil
-		}
-		return false, nil
-
 	})
 }
 
@@ -740,15 +227,6 @@ func (fi *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, reso
 	return nil
 }
 
-func (fi *Invocation) ReadDataFromPod(meta metav1.ObjectMeta) (data string, err error) {
-	pod, err := fi.GetPod(meta)
-	if err != nil {
-		return "", err
-	}
-	data, err = fi.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
-	return data, err
-}
-
 func (fi *Invocation) AppendToCleanupList(resources ...interface{}) {
 	for i := range resources {
 		fi.testResources = append(fi.testResources, resources[i])
@@ -763,7 +241,13 @@ func (fi *Invocation) CleanupTestResources() error {
 		if err != nil {
 			return err
 		}
-		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, meta_util.DeleteInBackground())
+		deletionPolicy := meta_util.DeleteInBackground()
+		// Repository has finalizer wipeOut finalizer.
+		// Hence, we should ensure that it has been deleted before deleting the respective secret.
+		if gvr.Resource == api.ResourceKindRepository {
+			deletionPolicy = meta_util.DeleteInForeground()
+		}
+		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, deletionPolicy)
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
@@ -912,8 +396,8 @@ func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]st
 			}
 			return true
 		},
-		time.Minute*2,
-		time.Second*5,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 
@@ -1045,7 +529,7 @@ func (f *Framework) EventuallyEventWritten(involvedObjectMeta metav1.ObjectMeta,
 			}
 		}
 		return false
-	}, time.Minute*2, time.Second*5)
+	}, WaitTimeOut, PullInterval)
 }
 
 func HasFSGroup(sc *core.PodSecurityContext) bool {

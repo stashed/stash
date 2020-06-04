@@ -194,7 +194,7 @@ func (c *StashController) applyRestoreSessionReconciliationLogic(restoreSession 
 			return nil
 		}
 
-		if restoreSession.Spec.Target != nil {
+		if restoreSession.Spec.Target != nil && restoreSession.Spec.Target.Ref.Name != "" {
 			tref := restoreSession.Spec.Target.Ref
 			wc := util.WorkloadClients{
 				KubeClient:       c.kubeClient,
