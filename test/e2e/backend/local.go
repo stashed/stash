@@ -464,7 +464,6 @@ var _ = Describe("Local Backend", func() {
 
 				By("Verifying that BackupSession has succeeded")
 				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-				time.Sleep(3 * time.Minute)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 			})
