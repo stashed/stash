@@ -19,7 +19,6 @@ package framework
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 
@@ -77,8 +76,8 @@ func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAsse
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	},
-		time.Minute*2,
-		time.Second*5,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 

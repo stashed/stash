@@ -52,11 +52,8 @@ var (
 )
 
 const (
-	TestSoucreDemoDataPath   = "/data/stash-test/demo-data"
-	TestSourceDataDir1       = "/source/data/dir-1"
-	TestSourceDataDir2       = "/source/data/dir-2"
 	PullInterval             = time.Second * 2
-	WaitTimeOut              = time.Minute * 3
+	WaitTimeOut              = time.Minute * 10
 	TaskPVCBackup            = "pvc-backup"
 	TaskPVCRestore           = "pvc-restore"
 	TestSourceDataTargetPath = "/source/data"
@@ -399,8 +396,8 @@ func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]st
 			}
 			return true
 		},
-		time.Minute*2,
-		time.Second*5,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 
@@ -532,7 +529,7 @@ func (f *Framework) EventuallyEventWritten(involvedObjectMeta metav1.ObjectMeta,
 			}
 		}
 		return false
-	}, time.Minute*2, time.Second*5)
+	}, WaitTimeOut, PullInterval)
 }
 
 func HasFSGroup(sc *core.PodSecurityContext) bool {

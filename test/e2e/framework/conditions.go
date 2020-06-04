@@ -18,7 +18,6 @@ package framework
 
 import (
 	"context"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
@@ -57,8 +56,8 @@ func (f *Framework) EventuallyCondition(meta metav1.ObjectMeta, kind string, con
 			}
 			return cond.Status
 		},
-		5*time.Minute,
-		2*time.Second,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 
@@ -83,7 +82,7 @@ func (f *Framework) EventuallyTargetCondition(meta metav1.ObjectMeta, target v1b
 			}
 			return kmapi.ConditionUnknown
 		},
-		5*time.Minute,
-		2*time.Second,
+		WaitTimeOut,
+		PullInterval,
 	)
 }

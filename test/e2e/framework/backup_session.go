@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -112,7 +111,7 @@ func (fi *Invocation) EventuallyBackupCount(invokerMeta metav1.ObjectMeta, invok
 			return 0
 		}
 		return count
-	}, 3*time.Minute, 5*time.Second)
+	}, WaitTimeOut, PullInterval)
 }
 
 func (fi *Invocation) GetSuccessfulBackupSessionCount(invokerMeta metav1.ObjectMeta, invokerKind string) (int64, error) {
@@ -146,5 +145,5 @@ func (fi *Invocation) EventuallyRunningBackupCompleted(invokerMeta metav1.Object
 			}
 		}
 		return true
-	}, 3*time.Minute, 5*time.Second)
+	}, WaitTimeOut, PullInterval)
 }

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -52,8 +51,8 @@ func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAs
 		}
 		return false
 	},
-		time.Minute*2,
-		time.Second*5,
+		WaitTimeOut,
+		PullInterval,
 	)
 }
 
