@@ -150,14 +150,6 @@ spec:
                       description: AddKey represents a transform that adds an additional
                         key to the credentials Secret
                       properties:
-                        jsonPathExpression:
-                          description: 'The JSONPath expression, the result of which
-                            will be added to the Secret under the specified key. For
-                            example, given the following credentials: { "foo": { "bar":
-                            "foobar" } } and the jsonPathExpression "{.foo.bar}",
-                            the value "foobar" will be stored in the credentials Secret
-                            under the specified key.'
-                          type: string
                         key:
                           description: The name of the key to add
                           type: string
@@ -173,7 +165,6 @@ spec:
                           format: byte
                           type: string
                       required:
-                      - jsonPathExpression
                       - key
                       - stringValue
                       - value

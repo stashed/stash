@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -24,7 +25,10 @@ import (
 	"strings"
 
 	"kmodules.xyz/client-go/apiextensions"
-	"kmodules.xyz/custom-resources/api/crds"
+	"kmodules.xyz/custom-resources/crds"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 func (_ AppBinding) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
@@ -116,4 +120,39 @@ func (a AppBinding) AppGroupResource() (string, string) {
 		return "", t
 	}
 	return t[:idx], t[idx+1:]
+}
+
+// xref: https://github.com/kubernetes-sigs/service-catalog/blob/a204c0d26c60b42121aa608c39a179680e499d2a/pkg/controller/controller_binding.go#L605
+func (a AppBinding) TransformSecret(kc kubernetes.Interface, credentials map[string][]byte) error {
+	for _, t := range a.Spec.SecretTransforms {
+		switch {
+		case t.AddKey != nil:
+			var value []byte
+			if t.AddKey.StringValue != nil {
+				value = []byte(*t.AddKey.StringValue)
+			} else {
+				value = t.AddKey.Value
+			}
+			credentials[t.AddKey.Key] = value
+		case t.RenameKey != nil:
+			value, ok := credentials[t.RenameKey.From]
+			if ok {
+				credentials[t.RenameKey.To] = value
+				delete(credentials, t.RenameKey.From)
+			}
+		case t.AddKeysFrom != nil:
+			secret, err := kc.CoreV1().
+				Secrets(t.AddKeysFrom.SecretRef.Namespace).
+				Get(context.Background(), t.AddKeysFrom.SecretRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			for k, v := range secret.Data {
+				credentials[k] = v
+			}
+		case t.RemoveKey != nil:
+			delete(credentials, t.RemoveKey.Key)
+		}
+	}
+	return nil
 }

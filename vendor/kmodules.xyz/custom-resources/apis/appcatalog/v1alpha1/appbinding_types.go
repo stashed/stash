@@ -201,7 +201,7 @@ type ObjectReference struct {
 	Name string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
 }
 
-// ref: https://github.com/kubernetes-incubator/service-catalog/blob/37b874716ad709a175e426f5f5638322a600849f/pkg/apis/servicecatalog/v1beta1/types.go#L1397
+// ref: https://github.com/kubernetes-sigs/service-catalog/blob/37b874716ad709a175e426f5f5638322a600849f/pkg/apis/servicecatalog/v1beta1/types.go#L1397
 
 // SecretTransform is a single transformation that is applied to the
 // credentials returned from the broker before they are inserted into
@@ -262,12 +262,6 @@ type AddKeyTransform struct {
 	Value []byte `json:"value" protobuf:"bytes,2,opt,name=value"`
 	// The string (non-binary) value to add to the Secret under the specified key.
 	StringValue *string `json:"stringValue" protobuf:"bytes,3,opt,name=stringValue"`
-	// The JSONPath expression, the result of which will be added to the Secret under the specified key.
-	// For example, given the following credentials:
-	// { "foo": { "bar": "foobar" } }
-	// and the jsonPathExpression "{.foo.bar}", the value "foobar" will be
-	// stored in the credentials Secret under the specified key.
-	JSONPathExpression *string `json:"jsonPathExpression" protobuf:"bytes,4,opt,name=jsonPathExpression"`
 }
 
 // AddKeysFromTransform specifies that Service Catalog should merge
