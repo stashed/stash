@@ -38,11 +38,6 @@ func (in *AddKeyTransform) DeepCopyInto(out *AddKeyTransform) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.JSONPathExpression != nil {
-		in, out := &in.JSONPathExpression, &out.JSONPathExpression
-		*out = new(string)
-		**out = **in
-	}
 	return
 }
 

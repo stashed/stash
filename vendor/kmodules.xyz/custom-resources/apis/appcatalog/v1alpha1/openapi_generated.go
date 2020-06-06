@@ -14948,15 +14948,8 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_AddKeyTransform(ref common
 							Format:      "",
 						},
 					},
-					"jsonPathExpression": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The JSONPath expression, the result of which will be added to the Secret under the specified key. For example, given the following credentials: { \"foo\": { \"bar\": \"foobar\" } } and the jsonPathExpression \"{.foo.bar}\", the value \"foobar\" will be stored in the credentials Secret under the specified key.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 				},
-				Required: []string{"key", "value", "stringValue", "jsonPathExpression"},
+				Required: []string{"key", "value", "stringValue"},
 			},
 		},
 	}

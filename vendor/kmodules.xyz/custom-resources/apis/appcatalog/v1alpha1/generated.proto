@@ -48,13 +48,6 @@ message AddKeyTransform {
 
   // The string (non-binary) value to add to the Secret under the specified key.
   optional string stringValue = 3;
-
-  // The JSONPath expression, the result of which will be added to the Secret under the specified key.
-  // For example, given the following credentials:
-  // { "foo": { "bar": "foobar" } }
-  // and the jsonPathExpression "{.foo.bar}", the value "foobar" will be
-  // stored in the credentials Secret under the specified key.
-  optional string jsonPathExpression = 4;
 }
 
 // AddKeysFromTransform specifies that Service Catalog should merge
