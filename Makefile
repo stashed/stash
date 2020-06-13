@@ -353,6 +353,7 @@ $(BUILD_DIRS):
 	@mkdir -p $@
 
 REGISTRY_SECRET ?=
+KUBE_NAMESPACE  ?= kube-system
 
 ifeq ($(strip $(REGISTRY_SECRET)),)
 	IMAGE_PULL_SECRETS =
@@ -364,7 +365,7 @@ endif
 install:
 	@cd ../installer; \
 	helm install stash charts/stash --wait \
-		--namespace=kube-system \
+		--namespace=$(KUBE_NAMESPACE) \
 		--set operator.registry=$(REGISTRY) \
 		--set operator.tag=$(TAG) \
 		--set imagePullPolicy=IfNotPresent \
@@ -374,7 +375,7 @@ install:
 .PHONY: uninstall
 uninstall:
 	@cd ../installer; \
-	helm uninstall stash --namespace=kube-system || true
+	helm uninstall stash --namespace=$(KUBE_NAMESPACE) || true
 
 .PHONY: purge
 purge: uninstall
