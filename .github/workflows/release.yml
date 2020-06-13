@@ -3,38 +3,36 @@ name: Release
 on:
   push:
     tags:
-      - '*.*'
+      - "*.*"
 
 jobs:
-
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
+      - name: Print version info
+        id: semver
+        run: |
+          make version
 
-    - name: Print version info
-      id: semver
-      run: |
-        make version
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          buildx-version: latest
+          qemu-version: latest
 
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: crazy-max/ghaction-docker-buildx@v1
-      with:
-        buildx-version: latest
-        qemu-version: latest
+      - name: Available platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
 
-    - name: Available platforms
-      run: echo ${{ steps.buildx.outputs.platforms }}
-
-    - name: Build
-      env:
-        DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        USERNAME: 1gtm
-        APPSCODE_ENV: prod
-      run: |
-        docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
-        make release
+      - name: Build
+        env:
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          USERNAME: 1gtm
+          APPSCODE_ENV: prod
+        run: |
+          docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
+          make release
