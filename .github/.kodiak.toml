@@ -1,17 +1,18 @@
 version = 1
 
 [merge]
+method = "squash" # default: "merge"
 delete_branch_on_merge = true # default: false
 optimistic_updates = true # default: true
 prioritize_ready_to_merge = true # default: false
 
 [merge.message]
 title = "pull_request_title" # default: "github_default"
-body = "pull_request_body" # default: "github_default"
+body = "github_default" # default: "github_default"
 strip_html_comments = true # default: false
 
 [update]
 always = true # default: false
 
 [approve]
-auto_approve_usernames = ["1gtm"]
+auto_approve_usernames = ["1gtm", "tamalsaha"]
