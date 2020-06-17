@@ -59,7 +59,7 @@ case $GITHUB_BASE_REF in
         msg="/ready-to-tag github.com/${GITHUB_REPOSITORY} ${GITHUB_SHA}"
         ;;
     *)
-        msg="/cherry-picked github.com/${GITHUB_REPOSITORY} ${GITHUB_REF} ${GITHUB_SHA}"
+        msg="/cherry-picked github.com/${GITHUB_REPOSITORY} ${GITHUB_BASE_REF} ${GITHUB_SHA}"
         ;;
 esac
 
