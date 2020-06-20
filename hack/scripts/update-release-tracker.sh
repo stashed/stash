@@ -35,7 +35,7 @@ parse_url() {
 
 RELEASE_TRACKER=
 
-while IFS=$': \t' read -r -u9 marker v; do
+while IFS=$': \r\t' read -r -u9 marker v; do
     case $marker in
         Release-tracker)
             export RELEASE_TRACKER=$v
