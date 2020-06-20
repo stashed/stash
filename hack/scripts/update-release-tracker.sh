@@ -33,21 +33,27 @@ parse_url() {
     export RELEASE_TRACKER_PR=${PARTS[4]}
 }
 
-RELEASE_TRACKER=
+RELEASE_TRACKER=${RELEASE_TRACKER:-}
+GITHUB_BASE_REF=${GITHUB_BASE_REF:-}
 
 while IFS=$': \r\t' read -r -u9 marker v; do
     case $marker in
         Release-tracker)
-            export RELEASE_TRACKER=$v
+            export RELEASE_TRACKER=$(echo $v | tr -d '\r\t')
             ;;
         Release)
-            export RELEASE=$v
+            export RELEASE=$(echo $v | tr -d '\r\t')
             ;;
     esac
 done 9< <(git show -s --format=%b)
 
-[ ! -z $RELEASE_TRACKER ] || {
+[ ! -z "$RELEASE_TRACKER" ] || {
     echo "Release-tracker url not found."
+    exit 0
+}
+
+[ ! -z "$GITHUB_BASE_REF" ] || {
+    echo "GitHub base ref not found."
     exit 0
 }
 
