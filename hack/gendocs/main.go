@@ -34,14 +34,14 @@ import (
 
 var (
 	tplFrontMatter = template.Must(template.New("index").Parse(`---
-title: Stash Operator
+title: Reference | Stash Operator
 description: Stash Operator Reference
 menu:
   docs_{{ "{{ .version }}" }}:
-    identifier: operator
+    identifier: reference-operator
     name: Stash Operator
+    weight: 10
     parent: reference
-    weight: 20
 menu_name: docs_{{ "{{ .version }}" }}
 ---
 `))
@@ -52,26 +52,32 @@ menu:
   docs_{{ "{{ .version }}" }}:
     identifier: {{ .ID }}
     name: {{ .Name }}
-    parent: operator
+    parent: reference-operator
 {{- if .RootCmd }}
     weight: 0
 {{ end }}
-product_name: stash
-section_menu_id: reference
 menu_name: docs_{{ "{{ .version }}" }}
+section_menu_id: reference
 {{- if .RootCmd }}
 url: /docs/{{ "{{ .version }}" }}/reference/operator/
 aliases:
-  - /docs/{{ "{{ .version }}" }}/reference/operator/operator/
-{{ end }}
+- /docs/{{ "{{ .version }}" }}/reference/operator/{{ .ID }}/
+{{- end }}
 ---
 `))
 )
 
+func docsDir() string {
+	if dir, ok := os.LookupEnv("DOCS_ROOT"); ok {
+		return dir
+	}
+	return runtime.GOPath() + "/src/stash.appscode.dev/docs"
+}
+
 // ref: https://github.com/spf13/cobra/blob/master/doc/md_docs.md
 func main() {
 	rootCmd := cmds.NewRootCmd()
-	dir := runtime.GOPath() + "/src/stash.appscode.dev/docs/docs/reference/operator"
+	dir := filepath.Join(docsDir(), "docs", "reference", "operator")
 	fmt.Printf("Generating cli markdown tree in: %v\n", dir)
 	err := os.RemoveAll(dir)
 	if err != nil {
