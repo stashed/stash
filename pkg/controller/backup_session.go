@@ -617,11 +617,11 @@ func (c *StashController) handleBackupJobCreationFailure(invoker apis.Invoker, b
 }
 
 func getBackupJobName(backupSession *api_v1beta1.BackupSession, index string) string {
-	return meta.ValidNameWithPefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSession.Name, ".", "-"), index)
+	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSession.Name, ".", "-"), index)
 }
 
 func getBackupJobServiceAccountName(invokerName, index string) string {
-	return meta.ValidNameWithPefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(invokerName, ".", "-"), index)
+	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(invokerName, ".", "-"), index)
 }
 
 func getVolumeSnapshotterJobName(targetRef api_v1beta1.TargetRef, name string) string {
@@ -631,7 +631,7 @@ func getVolumeSnapshotterJobName(targetRef api_v1beta1.TargetRef, name string) s
 }
 
 func getVolumeSnapshotterServiceAccountName(invokerName, index string) string {
-	return meta.ValidNameWithPefixNSuffix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(invokerName, ".", "-"), index)
+	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(invokerName, ".", "-"), index)
 }
 
 // cleanupBackupHistory deletes old BackupSessions and theirs associate resources according to BackupHistoryLimit

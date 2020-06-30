@@ -98,7 +98,7 @@ func (opt *options) createBackupSession() error {
 
 	bsMeta := metav1.ObjectMeta{
 		// Name format: <invoker name>-<timestamp in unix format>
-		Name:            meta.ValidNameWithSuffix(opt.invokerName, fmt.Sprintf("%d", time.Now().Unix())),
+		Name:            meta.NameWithSuffix(opt.invokerName, fmt.Sprintf("%d", time.Now().Unix())),
 		Namespace:       opt.namespace,
 		OwnerReferences: []metav1.OwnerReference{},
 	}

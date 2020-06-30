@@ -127,7 +127,7 @@ func ensureRestoreInitContainerRoleBinding(kc kubernetes.Interface, owner *metav
 }
 
 func getRestoreInitContainerRoleBindingName(kind, name string) string {
-	return meta_util.ValidNameWithPefixNSuffix(apis.StashRestoreInitContainerClusterRole, strings.ToLower(kind), name)
+	return meta_util.ValidNameWithPrefixNSuffix(apis.StashRestoreInitContainerClusterRole, strings.ToLower(kind), name)
 }
 
 func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
