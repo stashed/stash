@@ -110,9 +110,29 @@ func MergeKeys(out, in map[string]string) map[string]string {
 	}
 
 	for k, v := range in {
+		if _, ok := out[k]; !ok {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+func OverwriteKeys(out, in map[string]string) map[string]string {
+	if in == nil {
+		return out
+	}
+	if out == nil {
+		out = make(map[string]string, len(in))
+	}
+
+	for k, v := range in {
 		out[k] = v
 	}
 	return out
+}
+
+func NameWithPrefix(prefix, name string, customLength ...int) string {
+	return ValidNameWithPrefix(prefix, name, customLength...)
 }
 
 func ValidNameWithPrefix(prefix, name string, customLength ...int) string {
@@ -124,6 +144,19 @@ func ValidNameWithPrefix(prefix, name string, customLength ...int) string {
 	return strings.Trim(out[:min(maxLength, len(out))], "-")
 }
 
+func NameWithSuffix(name, suffix string, customLength ...int) string {
+	maxLength := validation.DNS1123LabelMaxLength
+	if len(customLength) != 0 {
+		maxLength = customLength[0]
+	}
+	if len(suffix) >= maxLength {
+		return strings.Trim(suffix[max(0, len(suffix)-maxLength):], "-")
+	}
+	out := fmt.Sprintf("%s-%s", name[:min(len(name), maxLength-len(suffix)-1)], suffix)
+	return strings.Trim(out, "-")
+}
+
+// Deprecated: Use NameWithSuffix in new code
 func ValidNameWithSuffix(name, suffix string, customLength ...int) string {
 	maxLength := validation.DNS1123LabelMaxLength
 	if len(customLength) != 0 {
@@ -133,7 +166,7 @@ func ValidNameWithSuffix(name, suffix string, customLength ...int) string {
 	return strings.Trim(out[max(0, len(out)-maxLength):], "-")
 }
 
-func ValidNameWithPefixNSuffix(prefix, name, suffix string, customLength ...int) string {
+func ValidNameWithPrefixNSuffix(prefix, name, suffix string, customLength ...int) string {
 	maxLength := validation.DNS1123LabelMaxLength
 	if len(customLength) != 0 {
 		maxLength = customLength[0]
@@ -154,8 +187,8 @@ func ValidCronJobNameWithSuffix(name, suffix string) string {
 	return ValidNameWithSuffix(name, suffix, MaxCronJobNameLength)
 }
 
-func ValidCronJobNameWithPefixNSuffix(prefix, name, suffix string) string {
-	return ValidNameWithPefixNSuffix(prefix, name, suffix, MaxCronJobNameLength)
+func ValidCronJobNameWithPrefixNSuffix(prefix, name, suffix string) string {
+	return ValidNameWithPrefixNSuffix(prefix, name, suffix, MaxCronJobNameLength)
 }
 
 func min(x, y int) int {

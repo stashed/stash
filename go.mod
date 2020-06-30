@@ -34,7 +34,7 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-aggregator v0.18.3
 	k8s.io/kubernetes v1.18.3
-	kmodules.xyz/client-go v0.0.0-20200525195850-2fd180961371
+	kmodules.xyz/client-go v0.0.0-20200630053911-20d035822d35
 	kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72
 	kmodules.xyz/custom-resources v0.0.0-20200604135349-9e9f5c4fdba9
 	kmodules.xyz/objectstore-api v0.0.0-20200521103120-92080446e04d
