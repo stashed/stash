@@ -54,8 +54,8 @@ func RegisterCRDs(client crd_cs.Interface, crds []*CustomResourceDefinition) err
 				client,
 				crd.V1.Name,
 				func(in *crdv1.CustomResourceDefinition) *crdv1.CustomResourceDefinition {
-					in.Labels = meta_util.MergeKeys(in.Labels, crd.V1.Labels)
-					in.Annotations = meta_util.MergeKeys(in.Annotations, crd.V1.Annotations)
+					in.Labels = meta_util.OverwriteKeys(in.Labels, crd.V1.Labels)
+					in.Annotations = meta_util.OverwriteKeys(in.Annotations, crd.V1.Annotations)
 
 					in.Spec = crd.V1.Spec
 					return in
@@ -86,8 +86,8 @@ func RegisterCRDs(client crd_cs.Interface, crds []*CustomResourceDefinition) err
 				client,
 				crd.V1beta1.Name,
 				func(in *crdv1beta1.CustomResourceDefinition) *crdv1beta1.CustomResourceDefinition {
-					in.Labels = meta_util.MergeKeys(in.Labels, crd.V1beta1.Labels)
-					in.Annotations = meta_util.MergeKeys(in.Annotations, crd.V1beta1.Annotations)
+					in.Labels = meta_util.OverwriteKeys(in.Labels, crd.V1beta1.Labels)
+					in.Annotations = meta_util.OverwriteKeys(in.Annotations, crd.V1beta1.Annotations)
 
 					in.Spec = crd.V1beta1.Spec
 					return in

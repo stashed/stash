@@ -40,7 +40,7 @@ import (
 )
 
 func getSidecarRoleBindingName(name string, kind string) string {
-	return meta_util.ValidNameWithPefixNSuffix(apis.StashSidecarClusterRole, strings.ToLower(kind), name)
+	return meta_util.ValidNameWithPrefixNSuffix(apis.StashSidecarClusterRole, strings.ToLower(kind), name)
 }
 
 func EnsureSidecarClusterRole(kc kubernetes.Interface) error {

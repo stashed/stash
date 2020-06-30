@@ -148,5 +148,5 @@ func getBackupCronJobName(objMeta metav1.ObjectMeta) string {
 }
 
 func getBackupJobName(backupSessionName string, index string) string {
-	return meta_util.ValidNameWithPefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSessionName, ".", "-"), index)
+	return meta_util.ValidNameWithPrefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSessionName, ".", "-"), index)
 }
