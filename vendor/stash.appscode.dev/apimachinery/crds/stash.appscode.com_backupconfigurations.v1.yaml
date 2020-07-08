@@ -58,6 +58,7 @@ spec:
                 format: int32
                 type: integer
               driver:
+                default: Restic
                 description: Driver indicates the name of the agent to use to backup
                   the target. Supported values are "Restic", "VolumeSnapshotter".
                   Default value is "Restic".
