@@ -1,5 +1,5 @@
 /*
-Copyright The Stash Authors.
+Copyright AppsCode Inc. and Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -72,6 +72,7 @@ message BackupBatchSpec {
   // Supported values are "Restic", "VolumeSnapshotter".
   // Default value is "Restic".
   // +optional
+  // +kubebuilder:default=Restic
   optional string driver = 4;
 
   // Repository refer to the Repository crd that holds backend information
@@ -196,6 +197,7 @@ message BackupConfigurationSpec {
   // Supported values are "Restic", "VolumeSnapshotter".
   // Default value is "Restic".
   // +optional
+  // +kubebuilder:default=Restic
   optional string driver = 3;
 
   // Repository refer to the Repository crd that holds backend information
@@ -561,6 +563,7 @@ message RestoreSessionSpec {
   // Supported values are "Restic", "VolumeSnapshotter".
   // Default value is "Restic".
   // +optional
+  // +kubebuilder:default=Restic
   optional string driver = 1;
 
   // Repository refer to the Repository crd that hold backend information

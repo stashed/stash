@@ -1,5 +1,5 @@
 /*
-Copyright The Stash Authors.
+Copyright AppsCode Inc. and Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	"stash.appscode.dev/apimachinery/api/crds"
+	"stash.appscode.dev/apimachinery/crds"
 
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
 	"kmodules.xyz/client-go/apiextensions"
