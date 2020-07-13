@@ -757,6 +757,7 @@ k8s.io/cli-runtime/pkg/resource
 # k8s.io/client-go v12.0.0+incompatible => k8s.io/client-go v0.18.3
 k8s.io/client-go/discovery
 k8s.io/client-go/discovery/cached/disk
+k8s.io/client-go/discovery/cached/memory
 k8s.io/client-go/discovery/fake
 k8s.io/client-go/dynamic
 k8s.io/client-go/informers
@@ -1043,7 +1044,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20200630053911-20d035822d35
+# kmodules.xyz/client-go v0.0.0-20200713013004-81c7c59b7cfa
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/api/v1

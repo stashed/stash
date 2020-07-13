@@ -1,5 +1,5 @@
 /*
-Copyright The Kmodules Authors.
+Copyright AppsCode Inc. and Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,14 +17,11 @@ limitations under the License.
 package clientcmd
 
 import (
-	"os"
-	"time"
-
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/discovery/cached/disk"
+	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
@@ -46,7 +43,13 @@ func (r restClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterfac
 	if err != nil {
 		return nil, err
 	}
-	return disk.NewCachedDiscoveryClientForConfig(config, os.TempDir(), "", 10*time.Minute)
+
+	// Don't use disk based cache as that makes it unsafe for multi-tenant backend servers
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return memory.NewMemCacheClient(discoveryClient), nil
 }
 
 func (r restClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
