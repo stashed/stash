@@ -1,5 +1,5 @@
 /*
-Copyright The Kmodules Authors.
+Copyright AppsCode Inc. and Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ limitations under the License.
 package queue
 
 import (
+	"time"
+
 	meta_util "kmodules.xyz/client-go/meta"
 
 	"github.com/golang/glog"
@@ -95,6 +97,15 @@ func Enqueue(queue workqueue.RateLimitingInterface, obj interface{}) {
 		return
 	}
 	queue.Add(key)
+}
+
+func EnqueueAfter(queue workqueue.RateLimitingInterface, obj interface{}, duration time.Duration) {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
+		return
+	}
+	queue.AddAfter(key, duration)
 }
 
 func (h *QueueingEventHandler) OnAdd(obj interface{}) {
