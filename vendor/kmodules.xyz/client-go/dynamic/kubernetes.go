@@ -327,3 +327,62 @@ func EnsureOwnerReferenceForSelector(
 	}
 	return utilerrors.NewAggregate(errs)
 }
+
+func ResourceExists(
+	ctx context.Context,
+	c dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	namespace string,
+	name string,
+) (bool, error) {
+	var ri dynamic.ResourceInterface
+	if namespace == "" {
+		ri = c.Resource(gvr)
+	} else {
+		ri = c.Resource(gvr).Namespace(namespace)
+	}
+	_, err := ri.Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func ResourcesExists(
+	c dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	namespace string,
+	names ...string,
+) (bool, error) {
+	for _, name := range names {
+		ok, err := ResourceExists(context.TODO(), c, gvr, namespace, name)
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func ResourcesNotExists(
+	c dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	namespace string,
+	names ...string,
+) (bool, error) {
+	for _, name := range names {
+		ok, err := ResourceExists(context.TODO(), c, gvr, namespace, name)
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}
