@@ -1,3 +1,8 @@
+# Usage: /ok-to-test [k8s-version] [db-version]
+# Examples:
+# /ok-to-test
+# /ok-to-test v1.18.4
+
 name: e2e
 
 on:
@@ -5,13 +10,40 @@ on:
     types: [created]
 
 jobs:
+  config:
+    if: contains(github.event.issue.html_url, '/pull/') && startsWith(github.event.comment.body, '/ok-to-test')
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        name: Generate test matrix
+        run: |
+          k8s=(v1.12.10 v1.14.10 v1.16.9 v1.18.4)
+
+          IFS=' '
+          read -ra COMMENT <<< "${{ github.event.comment.body }}"
+          if [ ! -z ${COMMENT[1]} ]; then
+            k8s=(${COMMENT[1]})
+          fi
+
+          matrix=()
+          for x in ${k8s[@]}; do
+            matrix+=( $( jq -n -c --arg x "$x" '{"k8s":$x}' ) )
+          done
+
+          # https://stackoverflow.com/a/63046305/244009
+          function join { local IFS="$1"; shift; echo "$*"; }
+          matrix=$(echo "{"include":[$(join , ${matrix[@]})]}")
+          echo $matrix
+          echo "::set-output name=matrix::$matrix"
+
   kubernetes:
     name: Kubernetes
+    needs: config
     runs-on: ubuntu-latest
-    if: contains(github.event.issue.html_url, '/pull/') && github.event.comment.body == '/ok-to-test'
     strategy:
-      matrix:
-        k8s: [v1.12.10, v1.14.10, v1.16.9, v1.18.4]
+      matrix: ${{ fromJson(needs.config.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v1
 
