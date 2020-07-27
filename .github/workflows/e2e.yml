@@ -1,4 +1,4 @@
-# Usage: /ok-to-test [k8s-version] [db-version]
+# Usage: /ok-to-test [k8s-version]
 # Examples:
 # /ok-to-test
 # /ok-to-test v1.18.4
@@ -16,6 +16,15 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          buildx-version: latest
+          qemu-version: latest
+
       - id: set-matrix
         name: Generate test matrix
         run: |
@@ -37,6 +46,24 @@ jobs:
           matrix=$(echo "{"include":[$(join , ${matrix[@]})]}")
           echo $matrix
           echo "::set-output name=matrix::$matrix"
+
+      - name: Checkout pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
+          sudo mv bin/hub /usr/local/bin
+          hub pr checkout $PR_NUMBER
+
+      - name: Build
+        env:
+          REGISTRY: appscodeci
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          USERNAME: 1gtm
+        run: |
+          docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
+          make push
 
   kubernetes:
     name: Kubernetes

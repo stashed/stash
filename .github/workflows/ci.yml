@@ -19,8 +19,7 @@ jobs:
           go-version: 1.14
         id: go
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
+      - uses: actions/checkout@v1
 
       - name: Set up Docker Buildx
         id: buildx
@@ -43,12 +42,3 @@ jobs:
       - name: Run checks
         run: |
           make ci
-
-      - name: Build
-        env:
-          REGISTRY: appscodeci
-          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          USERNAME: 1gtm
-        run: |
-          docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
-          make push
