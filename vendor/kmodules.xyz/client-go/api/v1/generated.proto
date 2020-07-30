@@ -21,10 +21,50 @@ syntax = 'proto2';
 
 package kmodules.xyz.client_go.api.v1;
 
+import "k8s.io/api/core/v1/generated.proto";
 import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
 
 // Package-wide variables from generator "generated".
 option go_package = "v1";
+
+message CertificateSpec {
+  // Alias represents the identifier of the certificate.
+  optional string alias = 1;
+
+  // Specifies the k8s secret name that holds the certificates.
+  // Default to <resource-name>-<cert-alias>-cert.
+  // +optional
+  optional string secretName = 2;
+
+  // Full X509 name specification (https://golang.org/pkg/crypto/x509/pkix/#Name).
+  // +optional
+  optional X509Subject subject = 3;
+
+  // Certificate default Duration
+  // +optional
+  optional k8s.io.apimachinery.pkg.apis.meta.v1.Duration duration = 4;
+
+  // Certificate renew before expiration duration
+  // +optional
+  optional k8s.io.apimachinery.pkg.apis.meta.v1.Duration renewBefore = 5;
+
+  // DNSNames is a list of subject alt names to be used on the Certificate.
+  // +optional
+  repeated string dnsNames = 6;
+
+  // IPAddresses is a list of IP addresses to be used on the Certificate
+  // +optional
+  repeated string ipAddresses = 7;
+
+  // URISANs is a list of URI Subject Alternative Names to be set on this
+  // Certificate.
+  // +optional
+  repeated string uriSANs = 8;
+
+  // EmailSANs is a list of email subjectAltNames to be set on the Certificate.
+  // +optional
+  repeated string emailSANs = 9;
+}
 
 message Condition {
   // Type of condition in CamelCase or in foo.example.com/CamelCase.
@@ -58,5 +98,51 @@ message Condition {
   // This field may be empty.
   // +required
   optional string message = 6;
+}
+
+message TLSConfig {
+  // IssuerRef is a reference to a Certificate Issuer.
+  optional k8s.io.api.core.v1.TypedLocalObjectReference issuerRef = 1;
+
+  // Certificate provides server and/or client certificate options used by application pods.
+  // These options are passed to a cert-manager Certificate object.
+  // xref: https://github.com/jetstack/cert-manager/blob/v0.16.0/pkg/apis/certmanager/v1beta1/types_certificate.go#L82-L162
+  // +optional
+  repeated CertificateSpec certificates = 2;
+}
+
+// X509Subject Full X509 name specification
+message X509Subject {
+  // Organizations to be used on the Certificate.
+  // +optional
+  repeated string organizations = 1;
+
+  // Countries to be used on the CertificateSpec.
+  // +optional
+  repeated string countries = 2;
+
+  // Organizational Units to be used on the CertificateSpec.
+  // +optional
+  repeated string organizationalUnits = 3;
+
+  // Cities to be used on the CertificateSpec.
+  // +optional
+  repeated string localities = 4;
+
+  // State/Provinces to be used on the CertificateSpec.
+  // +optional
+  repeated string provinces = 5;
+
+  // Street addresses to be used on the CertificateSpec.
+  // +optional
+  repeated string streetAddresses = 6;
+
+  // Postal codes to be used on the CertificateSpec.
+  // +optional
+  repeated string postalCodes = 7;
+
+  // Serial number to be used on the CertificateSpec.
+  // +optional
+  optional string serialNumber = 8;
 }
 
