@@ -25,6 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/docker"
 
 	"github.com/appscode/go/types"
+	"github.com/imdario/mergo"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
@@ -129,4 +130,18 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 	}
 
 	return initContainer
+}
+
+func UpsertContainer(containers []core.Container, upsert core.Container) []core.Container {
+	for i, container := range containers {
+		if container.Name == upsert.Name {
+			err := mergo.MergeWithOverwrite(&container, upsert)
+			if err != nil {
+				panic(err)
+			}
+			containers[i] = container
+			return containers
+		}
+	}
+	return append([]core.Container{upsert}, containers...)
 }

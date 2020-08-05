@@ -84,7 +84,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 	}
 
 	// insert restore init container
-	w.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
+	w.Spec.Template.Spec.InitContainers = util.UpsertContainer(
 		w.Spec.Template.Spec.InitContainers,
 		util.NewRestoreInitContainer(rs, repository, image),
 	)
