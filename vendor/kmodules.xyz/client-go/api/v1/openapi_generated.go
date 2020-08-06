@@ -56,6 +56,13 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"keyEncoding": {
+						SchemaProps: spec.SchemaProps{
+							Description: "KeyEncoding is the private key cryptography standards (PKCS) for this certificate's private key to be encoded in. If provided, allowed values are \"pkcs1\" and \"pkcs8\". If KeyEncoding is not specified, then PKCS#1 will be used by default.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"subject": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Full X509 name specification (https://golang.org/pkg/crypto/x509/pkix/#Name).",
