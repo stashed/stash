@@ -109,6 +109,7 @@ message Condition {
 
 message TLSConfig {
   // IssuerRef is a reference to a Certificate Issuer.
+  // +optional
   optional k8s.io.api.core.v1.TypedLocalObjectReference issuerRef = 1;
 
   // Certificate provides server and/or client certificate options used by application pods.

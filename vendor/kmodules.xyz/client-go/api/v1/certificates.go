@@ -7,7 +7,8 @@ import (
 
 type TLSConfig struct {
 	// IssuerRef is a reference to a Certificate Issuer.
-	IssuerRef *core.TypedLocalObjectReference `json:"issuerRef" protobuf:"bytes,1,opt,name=issuerRef"`
+	// +optional
+	IssuerRef *core.TypedLocalObjectReference `json:"issuerRef,omitempty" protobuf:"bytes,1,opt,name=issuerRef"`
 
 	// Certificate provides server and/or client certificate options used by application pods.
 	// These options are passed to a cert-manager Certificate object.
