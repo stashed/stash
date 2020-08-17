@@ -84,10 +84,11 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 	}
 
 	// insert restore init container
-	w.Spec.Template.Spec.InitContainers = util.UpsertContainer(
-		w.Spec.Template.Spec.InitContainers,
-		util.NewRestoreInitContainer(rs, repository, image),
-	)
+	initContainers := []core.Container{util.NewRestoreInitContainer(rs, repository, image)}
+	for i := range w.Spec.Template.Spec.InitContainers {
+		initContainers = core_util.UpsertContainer(initContainers, w.Spec.Template.Spec.InitContainers[i])
+	}
+	w.Spec.Template.Spec.InitContainers = initContainers
 
 	// add an emptyDir volume for holding temporary files
 	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, rs.Spec.TempDir)
