@@ -35,6 +35,11 @@ func Namespace() string {
 	if ns := os.Getenv("KUBE_NAMESPACE"); ns != "" {
 		return ns
 	}
+
+	if ns := os.Getenv("MY_POD_NAMESPACE"); ns != "" {
+		return ns
+	}
+
 	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
 		if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
 			return ns
