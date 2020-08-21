@@ -30,7 +30,8 @@ const (
 // +genclient:skipVerbs=create,update,patch,deleteCollection,watch
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
+// +kubebuilder:printcolumn:name="Repository",type="string",JSONPath=".status.repository"
+// +kubebuilder:printcolumn:name="Hostname",type="string",JSONPath=".status.hostname"
 type Snapshot struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
@@ -38,13 +39,14 @@ type Snapshot struct {
 }
 
 type SnapshotStatus struct {
-	Tree     string   `json:"tree" protobuf:"bytes,1,opt,name=tree"`
-	Paths    []string `json:"paths" protobuf:"bytes,2,rep,name=paths"`
-	Hostname string   `json:"hostname" protobuf:"bytes,3,opt,name=hostname"`
-	Username string   `json:"username" protobuf:"bytes,4,opt,name=username"`
-	UID      int32    `json:"uid" protobuf:"varint,5,opt,name=uid"`
-	Gid      int32    `json:"gid" protobuf:"varint,6,opt,name=gid"`
-	Tags     []string `json:",omitempty" protobuf:"bytes,7,rep,name=tags"`
+	Tree       string   `json:"tree" protobuf:"bytes,1,opt,name=tree"`
+	Paths      []string `json:"paths" protobuf:"bytes,2,rep,name=paths"`
+	Hostname   string   `json:"hostname" protobuf:"bytes,3,opt,name=hostname"`
+	Username   string   `json:"username" protobuf:"bytes,4,opt,name=username"`
+	UID        int32    `json:"uid" protobuf:"varint,5,opt,name=uid"`
+	Gid        int32    `json:"gid" protobuf:"varint,6,opt,name=gid"`
+	Tags       []string `json:",omitempty" protobuf:"bytes,7,rep,name=tags"`
+	Repository string   `json:"repository" protobuf:"bytes,8,opt,name=repository"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

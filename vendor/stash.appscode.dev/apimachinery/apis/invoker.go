@@ -57,16 +57,18 @@ type Invoker struct {
 	RuntimeSettings    ofst.RuntimeSettings
 	BackupHistoryLimit *int32
 	TargetsInfo        []TargetInfo
+	ExecutionOrder     v1beta1.ExecutionOrder
 	Hooks              *v1beta1.BackupHooks
 	ObjectRef          *core.ObjectReference
 	OwnerRef           *metav1.OwnerReference
 	ObjectJson         []byte
 	AddFinalizer       func() error
 	RemoveFinalizer    func() error
-	HasCondition       func(*v1beta1.TargetRef, v1beta1.BackupInvokerCondition) (bool, error)
-	GetCondition       func(*v1beta1.TargetRef, v1beta1.BackupInvokerCondition) (int, *kmapi.Condition, error)
+	HasCondition       func(*v1beta1.TargetRef, string) (bool, error)
+	GetCondition       func(*v1beta1.TargetRef, string) (int, *kmapi.Condition, error)
 	SetCondition       func(*v1beta1.TargetRef, kmapi.Condition) error
-	IsConditionTrue    func(*v1beta1.TargetRef, v1beta1.BackupInvokerCondition) (bool, error)
+	IsConditionTrue    func(*v1beta1.TargetRef, string) (bool, error)
+	NextInOrder        func(v1beta1.TargetRef, []v1beta1.BackupTargetStatus) bool
 }
 
 func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName, namespace string) (Invoker, error) {
@@ -93,6 +95,7 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 		invoker.RuntimeSettings = backupBatch.Spec.RuntimeSettings
 		invoker.BackupHistoryLimit = backupBatch.Spec.BackupHistoryLimit
 		invoker.Hooks = backupBatch.Spec.Hooks
+		invoker.ExecutionOrder = backupBatch.Spec.ExecutionOrder
 		invoker.OwnerRef = metav1.NewControllerRef(backupBatch, v1beta1.SchemeGroupVersion.WithKind(v1beta1.ResourceKindBackupBatch))
 		invoker.ObjectRef, err = reference.GetReference(stash_scheme.Scheme, backupBatch)
 		if err != nil {
@@ -128,26 +131,26 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			}, metav1.PatchOptions{})
 			return err
 		}
-		invoker.HasCondition = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (bool, error) {
+		invoker.HasCondition = func(target *v1beta1.TargetRef, condType string) (bool, error) {
 			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
 			if target != nil {
-				return hasMemberCondition(backupBatch.Status.MemberConditions, *target, string(condType)), nil
+				return hasMemberCondition(backupBatch.Status.MemberConditions, *target, condType), nil
 			}
-			return kmapi.HasCondition(backupBatch.Status.Conditions, string(condType)), nil
+			return kmapi.HasCondition(backupBatch.Status.Conditions, condType), nil
 		}
-		invoker.GetCondition = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (int, *kmapi.Condition, error) {
+		invoker.GetCondition = func(target *v1beta1.TargetRef, condType string) (int, *kmapi.Condition, error) {
 			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return -1, nil, err
 			}
 			if target != nil {
-				idx, cond := getMemberCondition(backupBatch.Status.MemberConditions, *target, string(condType))
+				idx, cond := getMemberCondition(backupBatch.Status.MemberConditions, *target, condType)
 				return idx, cond, nil
 			}
-			idx, cond := kmapi.GetCondition(backupBatch.Status.Conditions, string(condType))
+			idx, cond := kmapi.GetCondition(backupBatch.Status.Conditions, condType)
 			return idx, cond, nil
 
 		}
@@ -162,15 +165,29 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			}, metav1.UpdateOptions{})
 			return err
 		}
-		invoker.IsConditionTrue = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (bool, error) {
+		invoker.IsConditionTrue = func(target *v1beta1.TargetRef, condType string) (bool, error) {
 			backupBatch, err := stashClient.StashV1beta1().BackupBatches(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
 			if target != nil {
-				return isMemberConditionTrue(backupBatch.Status.MemberConditions, *target, string(condType)), nil
+				return isMemberConditionTrue(backupBatch.Status.MemberConditions, *target, condType), nil
 			}
-			return kmapi.IsConditionTrue(backupBatch.Status.Conditions, string(condType)), nil
+			return kmapi.IsConditionTrue(backupBatch.Status.Conditions, condType), nil
+		}
+		invoker.NextInOrder = func(ref v1beta1.TargetRef, targetStatus []v1beta1.BackupTargetStatus) bool {
+			for _, t := range invoker.TargetsInfo {
+				if t.Target != nil {
+					if TargetMatched(t.Target.Ref, ref) {
+						return true
+					}
+					if !TargetBackupCompleted(t.Target.Ref, targetStatus) {
+						return false
+					}
+				}
+			}
+			// By default, return true so that nil target(i.e. cluster backup) does not get stuck here.
+			return true
 		}
 	case v1beta1.ResourceKindBackupConfiguration:
 		// get BackupConfiguration
@@ -225,19 +242,19 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			}, metav1.PatchOptions{})
 			return err
 		}
-		invoker.HasCondition = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (bool, error) {
+		invoker.HasCondition = func(target *v1beta1.TargetRef, condType string) (bool, error) {
 			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
-			return kmapi.HasCondition(backupConfig.Status.Conditions, string(condType)), nil
+			return kmapi.HasCondition(backupConfig.Status.Conditions, condType), nil
 		}
-		invoker.GetCondition = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (int, *kmapi.Condition, error) {
+		invoker.GetCondition = func(target *v1beta1.TargetRef, condType string) (int, *kmapi.Condition, error) {
 			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return -1, nil, err
 			}
-			idx, cond := kmapi.GetCondition(backupConfig.Status.Conditions, string(condType))
+			idx, cond := kmapi.GetCondition(backupConfig.Status.Conditions, condType)
 			return idx, cond, nil
 		}
 		invoker.SetCondition = func(target *v1beta1.TargetRef, condition kmapi.Condition) error {
@@ -247,12 +264,26 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 			}, metav1.UpdateOptions{})
 			return err
 		}
-		invoker.IsConditionTrue = func(target *v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) (bool, error) {
+		invoker.IsConditionTrue = func(target *v1beta1.TargetRef, condType string) (bool, error) {
 			backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
-			return kmapi.IsConditionTrue(backupConfig.Status.Conditions, string(condType)), nil
+			return kmapi.IsConditionTrue(backupConfig.Status.Conditions, condType), nil
+		}
+		invoker.NextInOrder = func(ref v1beta1.TargetRef, targetStatus []v1beta1.BackupTargetStatus) bool {
+			for _, t := range invoker.TargetsInfo {
+				if t.Target != nil {
+					if TargetMatched(t.Target.Ref, ref) {
+						return true
+					}
+					if !TargetBackupCompleted(t.Target.Ref, targetStatus) {
+						return false
+					}
+				}
+			}
+			// By default, return true so that nil target(i.e. cluster backup) does not get stuck here.
+			return true
 		}
 	default:
 		return invoker, fmt.Errorf("failed to extract invoker info. Reason: unknown invoker")
@@ -263,7 +294,7 @@ func ExtractBackupInvokerInfo(stashClient cs.Interface, invokerType, invokerName
 func hasMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.TargetRef, condType string) bool {
 	// If the target is present in the list, then return the respective value
 	for i := range conditions {
-		if targetMatched(conditions[i].Target, target) {
+		if TargetMatched(conditions[i].Target, target) {
 			return kmapi.HasCondition(conditions[i].Conditions, condType)
 		}
 	}
@@ -274,7 +305,7 @@ func hasMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.Ta
 func getMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.TargetRef, condType string) (int, *kmapi.Condition) {
 	// If the target is present in the list, then return the respective condition
 	for i := range conditions {
-		if targetMatched(conditions[i].Target, target) {
+		if TargetMatched(conditions[i].Target, target) {
 			return kmapi.GetCondition(conditions[i].Conditions, condType)
 		}
 	}
@@ -282,10 +313,14 @@ func getMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.Ta
 	return -1, nil
 }
 
+func TargetMatched(t1, t2 v1beta1.TargetRef) bool {
+	return t1.APIVersion == t2.APIVersion && t1.Kind == t2.Kind && t1.Name == t2.Name
+}
+
 func setMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.TargetRef, newCondition kmapi.Condition) []v1beta1.MemberConditions {
 	// If the target is already exist in the list, update its condition
 	for i := range conditions {
-		if targetMatched(conditions[i].Target, target) {
+		if TargetMatched(conditions[i].Target, target) {
 			conditions[i].Conditions = kmapi.SetCondition(conditions[i].Conditions, newCondition)
 			return conditions
 		}
@@ -301,7 +336,7 @@ func setMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.Ta
 func isMemberConditionTrue(conditions []v1beta1.MemberConditions, target v1beta1.TargetRef, condType string) bool {
 	// If the target is present in the list, then return the respective value
 	for i := range conditions {
-		if targetMatched(conditions[i].Target, target) {
+		if TargetMatched(conditions[i].Target, target) {
 			return kmapi.IsConditionTrue(conditions[i].Conditions, condType)
 		}
 	}
@@ -309,6 +344,23 @@ func isMemberConditionTrue(conditions []v1beta1.MemberConditions, target v1beta1
 	return false
 }
 
-func targetMatched(t1, t2 v1beta1.TargetRef) bool {
-	return t1.APIVersion == t2.APIVersion && t1.Kind == t2.Kind && t1.Name == t2.Name
+func TargetBackupInitiated(ref v1beta1.TargetRef, targetStatus []v1beta1.BackupTargetStatus) bool {
+	for i := range targetStatus {
+		if TargetMatched(ref, targetStatus[i].Ref) {
+			return targetStatus[i].Phase == v1beta1.TargetBackupRunning ||
+				targetStatus[i].Phase == v1beta1.TargetBackupSucceeded ||
+				targetStatus[i].Phase == v1beta1.TargetBackupFailed
+		}
+	}
+	return false
+}
+
+func TargetBackupCompleted(ref v1beta1.TargetRef, targetStatus []v1beta1.BackupTargetStatus) bool {
+	for i := range targetStatus {
+		if TargetMatched(ref, targetStatus[i].Ref) {
+			return targetStatus[i].Phase == v1beta1.TargetBackupSucceeded ||
+				targetStatus[i].Phase == v1beta1.TargetBackupFailed
+		}
+	}
+	return false
 }

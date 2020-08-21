@@ -22,14 +22,13 @@ import (
 	"strconv"
 
 	"stash.appscode.dev/apimachinery/apis"
-	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/stow"
-	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pfutil "kmodules.xyz/client-go/tools/portforward"
@@ -56,10 +55,10 @@ func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAs
 	)
 }
 
-func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
+func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*v1alpha1.Repository {
 	repoNames := make([]string, 0)
 	nodeName := f.GetNodeName(kmr.Meta)
-	workload := api.LocalTypedReference{Name: kmr.Meta.Name, Kind: kmr.Kind}
+	workload := v1alpha1.LocalTypedReference{Name: kmr.Meta.Name, Kind: kmr.Kind}
 	switch kmr.Kind {
 	case apis.KindDeployment, apis.KindReplicationController, apis.KindReplicaSet, apis.KindDaemonSet:
 		repoNames = append(repoNames, workload.GetRepositoryCRDName("", nodeName))
@@ -68,7 +67,7 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 			repoNames = append(repoNames, workload.GetRepositoryCRDName(kmr.Meta.Name+"-"+strconv.Itoa(i), nodeName))
 		}
 	}
-	repositories := make([]*api.Repository, 0)
+	repositories := make([]*v1alpha1.Repository, 0)
 	for _, repoName := range repoNames {
 		obj, err := f.StashClient.StashV1alpha1().Repositories(kmr.Meta.Namespace).Get(context.TODO(), repoName, metav1.GetOptions{})
 		if err == nil {
@@ -78,14 +77,14 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 	return repositories
 }
 
-func (f *Framework) DeleteRepository(repository *api.Repository) error {
+func (f *Framework) DeleteRepository(repository *v1alpha1.Repository) error {
 	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(context.TODO(), repository.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
 }
-func (f *Framework) BrowseBackendRepository(repository *api.Repository) ([]stow.Item, error) {
+func (f *Framework) BrowseBackendRepository(repository *v1alpha1.Repository) ([]stow.Item, error) {
 	cfg, err := osm.NewOSMContext(f.KubeClient, repository.Spec.Backend, repository.Namespace)
 	if err != nil {
 		return nil, err
@@ -119,7 +118,7 @@ func (f *Framework) BrowseBackendRepository(repository *api.Repository) ([]stow.
 // Minio server is running inside the cluster but the test is running outside of the cluster.
 // So, we can't access the Minio server using the service created for it.
 // Here, we are going to port-forward the Minio pod and and use the port-forwarded address to access the backend.
-func (f *Framework) BrowseMinioRepository(repo *api.Repository) ([]stow.Item, error) {
+func (f *Framework) BrowseMinioRepository(repo *v1alpha1.Repository) ([]stow.Item, error) {
 	if repo.Spec.Backend.S3 == nil {
 		return nil, fmt.Errorf("failed to browse desired backend repository. Reason: Provided Repository does not use S3 or S3 compatible backend")
 	}
@@ -141,83 +140,13 @@ func (f *Framework) BrowseMinioRepository(repo *api.Repository) ([]stow.Item, er
 	return f.BrowseBackendRepository(repo)
 }
 
-func (fi *Invocation) NewLocalRepositoryWithPVC(secretName string, pvcName string) *api.Repository {
-	return &api.Repository{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(fi.app + "-local"),
-			Namespace: fi.namespace,
-		},
-		Spec: api.RepositorySpec{
-			Backend: store.Backend{
-				Local: &store.LocalSpec{
-					VolumeSource: core.VolumeSource{
-						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-							ClaimName: pvcName,
-						},
-					},
-					MountPath: TestSafeDataMountPath,
-				},
-				StorageSecretName: secretName,
-			},
-		},
-	}
-}
-
-func (fi *Invocation) NewLocalRepositoryInHostPath(secretName string) *api.Repository {
-	hostPathType := core.HostPathDirectoryOrCreate
-	return &api.Repository{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(fi.app + "-local"),
-			Namespace: fi.namespace,
-		},
-		Spec: api.RepositorySpec{
-			Backend: store.Backend{
-				Local: &store.LocalSpec{
-					VolumeSource: core.VolumeSource{
-						HostPath: &core.HostPathVolumeSource{
-							Path: "/data/stash-test",
-							Type: &hostPathType,
-						},
-					},
-					MountPath: TestSafeDataMountPath,
-				},
-				StorageSecretName: secretName,
-			},
-		},
-	}
-}
-
-func (fi *Invocation) NewLocalRepositoryInNFSServer(secretName string) *api.Repository {
-	return &api.Repository{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(fi.app + "-local"),
-			Namespace: fi.namespace,
-		},
-		Spec: api.RepositorySpec{
-			Backend: store.Backend{
-				Local: &store.LocalSpec{
-					MountPath: TestSafeDataMountPath,
-					VolumeSource: core.VolumeSource{
-						NFS: &core.NFSVolumeSource{
-							//Server: fmt.Sprintf("%s.%s.%s", nfsService, "cluster", "local"), // NFS server address
-							Server: fi.GetNFSService(),
-							Path:   "/", // this path is relative to "/exports" path of NFS server
-						},
-					},
-				},
-				StorageSecretName: secretName,
-			},
-		},
-	}
-}
-
-func (fi *Invocation) NewGCSRepository(secretName string, maxConnection int64) *api.Repository {
-	return &api.Repository{
+func (fi *Invocation) NewGCSRepository(secretName string, maxConnection int64) *v1alpha1.Repository {
+	return &v1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("gcs-%s", fi.app)),
 			Namespace: fi.namespace,
 		},
-		Spec: api.RepositorySpec{
+		Spec: v1alpha1.RepositorySpec{
 			Backend: store.Backend{
 				GCS: &store.GCSSpec{
 					Bucket:         "stash-ci",
@@ -231,13 +160,13 @@ func (fi *Invocation) NewGCSRepository(secretName string, maxConnection int64) *
 	}
 }
 
-func (fi *Invocation) NewMinioRepository(secretName string) *api.Repository {
-	return &api.Repository{
+func (fi *Invocation) NewMinioRepository(secretName string) *v1alpha1.Repository {
+	return &v1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("minio-%s", fi.app)),
 			Namespace: fi.namespace,
 		},
-		Spec: api.RepositorySpec{
+		Spec: v1alpha1.RepositorySpec{
 			Backend: store.Backend{
 				S3: &store.S3Spec{
 					Endpoint: fi.MinioServiceAddres(),
@@ -251,13 +180,13 @@ func (fi *Invocation) NewMinioRepository(secretName string) *api.Repository {
 	}
 }
 
-func (fi *Invocation) NewS3Repository(secretName string) *api.Repository {
-	return &api.Repository{
+func (fi *Invocation) NewS3Repository(secretName string) *v1alpha1.Repository {
+	return &v1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("s3-%s", fi.app)),
 			Namespace: fi.namespace,
 		},
-		Spec: api.RepositorySpec{
+		Spec: v1alpha1.RepositorySpec{
 			Backend: store.Backend{
 				S3: &store.S3Spec{
 					Endpoint: "s3.amazonaws.com",
@@ -271,13 +200,13 @@ func (fi *Invocation) NewS3Repository(secretName string) *api.Repository {
 	}
 }
 
-func (fi *Invocation) NewAzureRepository(secretName string, maxConnection int64) *api.Repository {
-	return &api.Repository{
+func (fi *Invocation) NewAzureRepository(secretName string, maxConnection int64) *v1alpha1.Repository {
+	return &v1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("azure-%s", fi.app)),
 			Namespace: fi.namespace,
 		},
-		Spec: api.RepositorySpec{
+		Spec: v1alpha1.RepositorySpec{
 			Backend: store.Backend{
 				Azure: &store.AzureSpec{
 					Container:      "appscode-qa",
@@ -291,16 +220,16 @@ func (fi *Invocation) NewAzureRepository(secretName string, maxConnection int64)
 	}
 }
 
-func (fi *Invocation) NewRestRepository(secretName string) *api.Repository {
-	return &api.Repository{
+func (fi *Invocation) NewRestRepository(secretName string) *v1alpha1.Repository {
+	return &v1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("rest-%s", fi.app)),
 			Namespace: fi.namespace,
 		},
-		Spec: api.RepositorySpec{
+		Spec: v1alpha1.RepositorySpec{
 			Backend: store.Backend{
 				Rest: &store.RestServerSpec{
-					URL: fmt.Sprintf("http://%s:8000/myuser", fi.RestServiceAddres()),
+					URL: fmt.Sprintf("https://%s:8000/myuser", fi.RestServiceAddres()),
 				},
 				StorageSecretName: secretName,
 			},
@@ -308,13 +237,13 @@ func (fi *Invocation) NewRestRepository(secretName string) *api.Repository {
 	}
 }
 
-func (fi *Invocation) NewSwiftRepository(secretName string) *api.Repository {
-	return &api.Repository{
+func (fi *Invocation) NewSwiftRepository(secretName string) *v1alpha1.Repository {
+	return &v1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("swift-%s", fi.app)),
 			Namespace: fi.namespace,
 		},
-		Spec: api.RepositorySpec{
+		Spec: v1alpha1.RepositorySpec{
 			Backend: store.Backend{
 				Swift: &store.SwiftSpec{
 					Container: "stash-backup",
@@ -327,13 +256,13 @@ func (fi *Invocation) NewSwiftRepository(secretName string) *api.Repository {
 	}
 }
 
-func (fi *Invocation) NewB2Repository(secretName string, maxConnection int64) *api.Repository {
-	return &api.Repository{
+func (fi *Invocation) NewB2Repository(secretName string, maxConnection int64) *v1alpha1.Repository {
+	return &v1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("b2-%s", fi.app)),
 			Namespace: fi.namespace,
 		},
-		Spec: api.RepositorySpec{
+		Spec: v1alpha1.RepositorySpec{
 			Backend: store.Backend{
 				B2: &store.B2Spec{
 					Bucket:         "stash-qa",
@@ -346,82 +275,7 @@ func (fi *Invocation) NewB2Repository(secretName string, maxConnection int64) *a
 	}
 }
 
-func (fi *Invocation) SetupLocalRepositoryWithPVC() (*api.Repository, error) {
-	// Create Storage Secret
-	By("Creating Storage Secret")
-	cred := fi.SecretForLocalBackend()
-	_, err := fi.CreateSecret(cred)
-	Expect(err).NotTo(HaveOccurred())
-	fi.AppendToCleanupList(&cred)
-
-	// We are going to use a PVC as backend
-	By("Creating Backend PVC")
-	backendPVC := fi.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
-	backendPVC, err = fi.CreatePersistentVolumeClaim(backendPVC)
-	Expect(err).NotTo(HaveOccurred())
-	fi.AppendToCleanupList(backendPVC)
-
-	// Generate Repository Definition
-	repo := fi.NewLocalRepositoryWithPVC(cred.Name, backendPVC.Name)
-
-	// Create Repository
-	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	fi.AppendToCleanupList(repo)
-
-	return repo, nil
-}
-
-func (fi *Invocation) SetupLocalRepositoryWithHostPath() (*api.Repository, error) {
-	// Create Storage Secret
-	By("Creating Storage Secret")
-	cred := fi.SecretForLocalBackend()
-	_, err := fi.CreateSecret(cred)
-	Expect(err).NotTo(HaveOccurred())
-	fi.AppendToCleanupList(&cred)
-
-	// We are going to use a hostPath as backend
-	// Generate Repository Definition
-	repo := fi.NewLocalRepositoryInHostPath(cred.Name)
-
-	// Create Repository
-	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	fi.AppendToCleanupList(repo)
-
-	return repo, nil
-}
-
-func (fi *Invocation) SetupLocalRepositoryWithNFSServer() (*api.Repository, error) {
-	// Create Storage Secret
-	By("Creating Storage Secret")
-	cred := fi.SecretForLocalBackend()
-	createdCred, err := fi.CreateSecret(cred)
-	Expect(err).NotTo(HaveOccurred())
-	fi.AppendToCleanupList(createdCred)
-
-	// We are going to use a nfs server as backend
-	// Generate Repository Definition
-	repo := fi.NewLocalRepositoryInNFSServer(cred.Name)
-
-	// Create Repository
-	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	fi.AppendToCleanupList(repo)
-
-	return repo, nil
-}
-
-func (fi *Invocation) SetupGCSRepository(maxConnection int64, appendRepoToCleanupList bool) (*api.Repository, error) {
+func (fi *Invocation) SetupGCSRepository(maxConnection int64, appendRepoToCleanupList bool, transformFuncs ...func(repo *v1alpha1.Repository)) (*v1alpha1.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := fi.SecretForGCSBackend()
@@ -437,6 +291,11 @@ func (fi *Invocation) SetupGCSRepository(maxConnection int64, appendRepoToCleanu
 	// Generate Repository Definition
 	repo := fi.NewGCSRepository(cred.Name, maxConnection)
 
+	// transformFuncs provides a array of functions that made test specific change on the Repository
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(repo)
+	}
 	// Create Repository
 	By("Creating Repository")
 	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
@@ -454,7 +313,7 @@ func (fi *Invocation) SetupGCSRepository(maxConnection int64, appendRepoToCleanu
 	return repo, nil
 }
 
-func (fi *Invocation) SetupMinioRepository() (*api.Repository, error) {
+func (fi *Invocation) SetupMinioRepository(transformFuncs ...func(repo *v1alpha1.Repository)) (*v1alpha1.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := fi.SecretForMinioBackend(true)
@@ -470,6 +329,11 @@ func (fi *Invocation) SetupMinioRepository() (*api.Repository, error) {
 	// Generate Repository Definition
 	repo := fi.NewMinioRepository(cred.Name)
 
+	// transformFuncs provides a array of functions that made test specific change on the Repository
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(repo)
+	}
 	// Create Repository
 	By("Creating Repository")
 	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
@@ -484,7 +348,7 @@ func (fi *Invocation) SetupMinioRepository() (*api.Repository, error) {
 	return repo, nil
 }
 
-func (fi *Invocation) SetupS3Repository(appendToCleanupList bool) (*api.Repository, error) {
+func (fi *Invocation) SetupS3Repository(appendToCleanupList bool, transformFuncs ...func(repo *v1alpha1.Repository)) (*v1alpha1.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := fi.SecretForS3Backend()
@@ -500,6 +364,11 @@ func (fi *Invocation) SetupS3Repository(appendToCleanupList bool) (*api.Reposito
 	// Generate Repository Definition
 	repo := fi.NewS3Repository(cred.Name)
 
+	// transformFuncs provides a array of functions that made test specific change on the Repository
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(repo)
+	}
 	// Create Repository
 	By("Creating Repository")
 	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
@@ -517,7 +386,7 @@ func (fi *Invocation) SetupS3Repository(appendToCleanupList bool) (*api.Reposito
 	return repo, nil
 }
 
-func (fi *Invocation) SetupAzureRepository(maxConnection int64, addRepoToCleanupList bool) (*api.Repository, error) {
+func (fi *Invocation) SetupAzureRepository(maxConnection int64, addRepoToCleanupList bool, transformFuncs ...func(repo *v1alpha1.Repository)) (*v1alpha1.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := fi.SecretForAzureBackend()
@@ -533,6 +402,11 @@ func (fi *Invocation) SetupAzureRepository(maxConnection int64, addRepoToCleanup
 	// Generate Repository Definition
 	repo := fi.NewAzureRepository(cred.Name, maxConnection)
 
+	// transformFuncs provides a array of functions that made test specific change on the Repository
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(repo)
+	}
 	// Create Repository
 	By("Creating Repository")
 	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
@@ -550,10 +424,10 @@ func (fi *Invocation) SetupAzureRepository(maxConnection int64, addRepoToCleanup
 	return repo, nil
 }
 
-func (fi *Invocation) SetupRestRepository(tls bool) (*api.Repository, error) {
+func (fi *Invocation) SetupRestRepository(tls bool, username, password string, transformFuncs ...func(repo *v1alpha1.Repository)) (*v1alpha1.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
-	cred := fi.SecretForRestBackend(tls)
+	cred := fi.SecretForRestBackend(tls, username, password)
 
 	if missing, _ := BeZero().Match(cred); missing {
 		Skip("Missing Rest credential")
@@ -566,6 +440,11 @@ func (fi *Invocation) SetupRestRepository(tls bool) (*api.Repository, error) {
 	// Generate Repository Definition
 	repo := fi.NewRestRepository(cred.Name)
 
+	// transformFuncs provides a array of functions that made test specific change on the Repository
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(repo)
+	}
 	// Create Repository
 	By("Creating Repository")
 	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
@@ -581,7 +460,7 @@ func (fi *Invocation) SetupRestRepository(tls bool) (*api.Repository, error) {
 	return repo, nil
 }
 
-func (fi *Invocation) SetupSwiftRepository(appendRepoToCleanupList bool) (*api.Repository, error) {
+func (fi *Invocation) SetupSwiftRepository(appendRepoToCleanupList bool, transformFuncs ...func(repo *v1alpha1.Repository)) (*v1alpha1.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := fi.SecretForSwiftBackend()
@@ -597,6 +476,11 @@ func (fi *Invocation) SetupSwiftRepository(appendRepoToCleanupList bool) (*api.R
 	// Generate Repository Definition
 	repo := fi.NewSwiftRepository(cred.Name)
 
+	// transformFuncs provides a array of functions that made test specific change on the Repository
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(repo)
+	}
 	// Create Repository
 	By("Creating Repository")
 	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
@@ -614,7 +498,7 @@ func (fi *Invocation) SetupSwiftRepository(appendRepoToCleanupList bool) (*api.R
 	return repo, nil
 }
 
-func (fi *Invocation) SetupB2Repository(maxConnection int64) (*api.Repository, error) {
+func (fi *Invocation) SetupB2Repository(maxConnection int64, transformFuncs ...func(repo *v1alpha1.Repository)) (*v1alpha1.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := fi.SecretForB2Backend()
@@ -630,6 +514,11 @@ func (fi *Invocation) SetupB2Repository(maxConnection int64) (*api.Repository, e
 	// Generate Repository Definition
 	repo := fi.NewB2Repository(cred.Name, maxConnection)
 
+	// transformFuncs provides a array of functions that made test specific change on the Repository
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(repo)
+	}
 	// Create Repository
 	By("Creating Repository")
 	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})

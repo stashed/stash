@@ -28,6 +28,12 @@ import "k8s.io/apimachinery/pkg/runtime/schema/generated.proto";
 // Package-wide variables from generator "generated".
 option go_package = "v1alpha1";
 
+// +genclient
+// +genclient:skipVerbs=create,update,patch,deleteCollection,watch
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:printcolumn:name="Repository",type="string",JSONPath=".status.repository"
+// +kubebuilder:printcolumn:name="Hostname",type="string",JSONPath=".status.hostname"
 message Snapshot {
   optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
 
@@ -54,5 +60,7 @@ message SnapshotStatus {
   optional int32 gid = 6;
 
   repeated string tags = 7;
+
+  optional string repository = 8;
 }
 

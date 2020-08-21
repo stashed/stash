@@ -18,6 +18,7 @@ package workloads
 
 import (
 	"context"
+	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -29,7 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("StatefulSet", func() {
+var _ = Describe("Workload Test", func() {
 
 	var f *framework.Invocation
 
@@ -94,7 +95,7 @@ var _ = Describe("StatefulSet", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(ss.ObjectMeta, apis.KindStatefulSet)
@@ -147,7 +148,7 @@ var _ = Describe("StatefulSet", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredSS.ObjectMeta, apis.KindStatefulSet)
@@ -159,7 +160,7 @@ var _ = Describe("StatefulSet", func() {
 		})
 
 		Context("Restore on scaled up StatefulSet", func() {
-			It("should restore backed up data into scaled up StatefulSet", func() {
+			It("should restore the backed up data into scaled up StatefulSet", func() {
 				// Deploy a StatefulSet
 				ss, err := f.DeployStatefulSet(framework.SourceStatefulSet, int32(3), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
@@ -195,13 +196,13 @@ var _ = Describe("StatefulSet", func() {
 				// Restore the backed up data
 				By("Restoring the backed up data in different StatefulSet")
 				restoreSession, err := f.SetupRestoreProcess(restoredSS.ObjectMeta, repo, apis.KindStatefulSet, framework.RestoredVolume, func(restore *v1beta1.RestoreSession) {
-					restore.Spec.Rules = []v1beta1.Rule{
+					restore.Spec.Target.Rules = []v1beta1.Rule{
 						{
 							TargetHosts: []string{
-								"host-3",
-								"host-4",
+								fmt.Sprintf("%s-3", f.App()),
+								fmt.Sprintf("%s-4", f.App()),
 							},
-							SourceHost: "host-0",
+							SourceHost: fmt.Sprintf("%s-0", f.App()),
 							Paths: []string{
 								framework.TestSourceDataMountPath,
 							},
@@ -219,7 +220,7 @@ var _ = Describe("StatefulSet", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredSS.ObjectMeta, apis.KindStatefulSet)

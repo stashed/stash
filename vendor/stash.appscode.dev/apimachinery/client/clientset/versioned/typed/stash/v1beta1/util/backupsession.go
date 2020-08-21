@@ -150,37 +150,29 @@ func UpdateBackupSessionStatus(
 	return
 }
 
-func UpdateBackupSessionStatusForHost(ctx context.Context, c cs.StashV1beta1Interface, targetRef api_v1beta1.TargetRef, backupSession metav1.ObjectMeta, hostStats api_v1beta1.HostBackupStats, opts metav1.UpdateOptions) (*api_v1beta1.BackupSession, error) {
+func UpdateBackupSessionStatusForHost(
+	ctx context.Context,
+	c cs.StashV1beta1Interface,
+	targetRef api_v1beta1.TargetRef,
+	backupSession metav1.ObjectMeta,
+	hostStats api_v1beta1.HostBackupStats,
+	opts metav1.UpdateOptions,
+) (*api_v1beta1.BackupSession, error) {
+
 	return UpdateBackupSessionStatus(ctx, c, backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		targetIdx, hostIdx, targets := UpsertHostForTarget(in.Targets, targetRef, hostStats)
-		in.Targets = targets
-		if int32(len(targets[targetIdx].Stats)) != *targets[targetIdx].TotalHosts {
-			in.Targets[targetIdx].Phase = api_v1beta1.TargetBackupRunning
-			return in
-		}
-		if targets[targetIdx].Stats[hostIdx].Phase == api_v1beta1.HostBackupFailed {
-			in.Targets[targetIdx].Phase = api_v1beta1.TargetBackupFailed
-			return in
-		}
-		in.Targets[targetIdx].Phase = api_v1beta1.TargetBackupSucceeded
+		in.Targets = UpsertHostForTarget(in.Targets, targetRef, hostStats)
 		return in
 	}, opts)
 }
 
-func UpsertHostForTarget(targets []api_v1beta1.Target, targetRef api_v1beta1.TargetRef, stat api_v1beta1.HostBackupStats) (int, int, []api_v1beta1.Target) {
-	var targetIdx, hostIdx int
+func UpsertHostForTarget(targets []api_v1beta1.BackupTargetStatus, targetRef api_v1beta1.TargetRef, stat api_v1beta1.HostBackupStats) []api_v1beta1.BackupTargetStatus {
 	for i, target := range targets {
-		if target.Ref.Name == targetRef.Name && target.Ref.Kind == targetRef.Kind {
+		if target.Ref.Name == targetRef.Name &&
+			target.Ref.Kind == targetRef.Kind {
 			targets[i].Stats = UpsertHost(target.Stats, stat)
-			for j, stat := range target.Stats {
-				if stat.Hostname == stat.Hostname {
-					hostIdx = j
-				}
-			}
-			targetIdx = i
 		}
 	}
-	return targetIdx, hostIdx, targets
+	return targets
 }
 
 func UpsertHost(stats []api_v1beta1.HostBackupStats, stat ...api_v1beta1.HostBackupStats) []api_v1beta1.HostBackupStats {

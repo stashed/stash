@@ -26,7 +26,7 @@ import (
 )
 
 // RunRestore run restore process for a single host.
-func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutput, error) {
+func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions, targetRef api_v1beta1.TargetRef) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
 
@@ -44,7 +44,10 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 	restoreStats.Phase = api_v1beta1.HostRestoreSucceeded
 
 	restoreOutput := &RestoreOutput{
-		HostRestoreStats: []api_v1beta1.HostRestoreStats{restoreStats},
+		RestoreTargetStatus: api_v1beta1.RestoreMemberStatus{
+			Ref:   targetRef,
+			Stats: []api_v1beta1.HostRestoreStats{restoreStats},
+		},
 	}
 
 	return restoreOutput, nil
@@ -52,7 +55,7 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 
 // RunParallelRestore run restore process for multiple hosts in parallel using go routine.
 // You can control maximum number of parallel restore using maxConcurrency parameter.
-func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxConcurrency int) (*RestoreOutput, error) {
+func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, targetRef api_v1beta1.TargetRef, maxConcurrency int) (*RestoreOutput, error) {
 
 	// WaitGroup to wait until all go routine finish
 	wg := sync.WaitGroup{}
@@ -64,7 +67,11 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 		restoreErrs []error
 		mu          sync.Mutex
 	)
-	restoreOutput := &RestoreOutput{}
+	restoreOutput := &RestoreOutput{
+		RestoreTargetStatus: api_v1beta1.RestoreMemberStatus{
+			Ref: targetRef,
+		},
+	}
 
 	for i := range restoreOptions {
 		// try to send message in concurrencyLimiter channel.
@@ -114,7 +121,7 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 }
 
 // Dump run restore process for a single host and output the restored files in stdout.
-func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
+func (w *ResticWrapper) Dump(dumpOptions DumpOptions, targetRef api_v1beta1.TargetRef) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
 
@@ -136,14 +143,17 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 	restoreStats.Phase = api_v1beta1.HostRestoreSucceeded
 
 	restoreOutput := &RestoreOutput{
-		HostRestoreStats: []api_v1beta1.HostRestoreStats{restoreStats},
+		RestoreTargetStatus: api_v1beta1.RestoreMemberStatus{
+			Ref:   targetRef,
+			Stats: []api_v1beta1.HostRestoreStats{restoreStats},
+		},
 	}
 	return restoreOutput, nil
 }
 
 // ParallelDump run dump for multiple hosts concurrently using go routine.
 // You can control maximum number of parallel restore process using maxConcurrency parameter.
-func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency int) (*RestoreOutput, error) {
+func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, targetRef api_v1beta1.TargetRef, maxConcurrency int) (*RestoreOutput, error) {
 
 	// WaitGroup to wait until all go routine finish
 	wg := sync.WaitGroup{}
@@ -156,7 +166,11 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 		mu          sync.Mutex
 	)
 
-	restoreOutput := &RestoreOutput{}
+	restoreOutput := &RestoreOutput{
+		RestoreTargetStatus: api_v1beta1.RestoreMemberStatus{
+			Ref: targetRef,
+		},
+	}
 
 	for i := range dumpOptions {
 		// try to send message in concurrencyLimiter channel.
@@ -214,13 +228,26 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 	if len(restoreOptions.Snapshots) != 0 {
 		for _, snapshot := range restoreOptions.Snapshots {
 			// if snapshot is specified then host and path does not matter.
-			if _, err := w.restore("", "", snapshot, restoreOptions.Destination); err != nil {
+			params := restoreParams{
+				destination: restoreOptions.Destination,
+				snapshotId:  snapshot,
+				excludes:    restoreOptions.Exclude,
+				includes:    restoreOptions.Include,
+			}
+			if _, err := w.restore(params); err != nil {
 				return err
 			}
 		}
 	} else if len(restoreOptions.RestorePaths) != 0 {
 		for _, path := range restoreOptions.RestorePaths {
-			if _, err := w.restore(path, restoreOptions.SourceHost, "", restoreOptions.Destination); err != nil {
+			params := restoreParams{
+				path:        path,
+				host:        restoreOptions.SourceHost,
+				destination: restoreOptions.Destination,
+				excludes:    restoreOptions.Exclude,
+				includes:    restoreOptions.Include,
+			}
+			if _, err := w.restore(params); err != nil {
 				return err
 			}
 		}
@@ -231,13 +258,13 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 func (restoreOutput *RestoreOutput) upsertHostRestoreStats(hostStats api_v1beta1.HostRestoreStats) {
 
 	// check if a entry already exist for this host in restoreOutput. If exist then update it.
-	for i, v := range restoreOutput.HostRestoreStats {
+	for i, v := range restoreOutput.RestoreTargetStatus.Stats {
 		if v.Hostname == hostStats.Hostname {
-			restoreOutput.HostRestoreStats[i] = hostStats
+			restoreOutput.RestoreTargetStatus.Stats[i] = hostStats
 			return
 		}
 	}
 
 	// no entry for this host. add a new entry
-	restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, hostStats)
+	restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, hostStats)
 }

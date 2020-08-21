@@ -101,7 +101,7 @@ func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAsser
 		obj, err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
-	})
+	}, WaitTimeOut, PullInterval)
 }
 
 func (fi *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta) error {
@@ -132,9 +132,15 @@ func (fi *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta)
 	})
 }
 
-func (fi *Invocation) DeployDaemonSet(name string, volumeName string) (*apps.DaemonSet, error) {
+func (fi *Invocation) DeployDaemonSet(name string, volumeName string, transformFuncs ...func(dmn *apps.DaemonSet)) (*apps.DaemonSet, error) {
 	// Generate DaemonSet definition
 	dmn := fi.DaemonSet(name, volumeName)
+
+	// transformFuncs provides a array of functions that made test specific change on the DaemonSet
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(&dmn)
+	}
 
 	By(fmt.Sprintf("Deploying DaemonSet: %s/%s", dmn.Namespace, dmn.Name))
 	createdDmn, err := fi.CreateDaemonSet(dmn)

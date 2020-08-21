@@ -36,19 +36,16 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes/scheme"
-	"kmodules.xyz/client-go/dynamic"
 	meta_util "kmodules.xyz/client-go/meta"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 )
 
 var (
-	files = []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
+	sampleFiles = []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
 )
 
 const (
@@ -101,7 +98,7 @@ func (f *Framework) EventuallyEvent(meta metav1.ObjectMeta, involvedObjectKind s
 		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
 		return events.Items
-	})
+	}, WaitTimeOut, PullInterval)
 }
 
 func deleteInForeground() *metav1.DeleteOptions {
@@ -121,7 +118,10 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return nil, err
 		}
-		set.Insert(strings.TrimSpace(data))
+		files := strings.Fields(data)
+		for i := range files {
+			set.Insert(strings.TrimSpace(files[i]))
+		}
 		return set.List(), nil
 	case apis.KindStatefulSet, apis.KindDaemonSet:
 		set := sets.NewString()
@@ -134,7 +134,10 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 			if err != nil {
 				return set.List(), err
 			}
-			set.Insert(strings.TrimSpace(data))
+			files := strings.Fields(data)
+			for i := range files {
+				set.Insert(strings.TrimSpace(files[i]))
+			}
 		}
 		return set.List(), err
 	}
@@ -181,7 +184,7 @@ func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return err
 		}
-		_, err = f.ExecOnPod(pod, "touch", filepath.Join(TestSourceDataMountPath, files[0]))
+		_, err = f.ExecOnPod(pod, "touch", filepath.Join(TestSourceDataMountPath, sampleFiles[0]))
 		if err != nil {
 			return err
 		}
@@ -191,11 +194,26 @@ func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resou
 			return err
 		}
 		for i, pod := range pods {
-			_, err := f.ExecOnPod(&pod, "touch", filepath.Join(TestSourceDataMountPath, files[i]))
+			_, err := f.ExecOnPod(&pod, "touch", filepath.Join(TestSourceDataMountPath, sampleFiles[i]))
 			if err != nil {
 				return err
 			}
 		}
+	}
+	return nil
+}
+func (fi *Invocation) CreateSampleFiles(objMeta metav1.ObjectMeta, sampleFiles []string) error {
+	pod, err := fi.GetPod(objMeta)
+	if err != nil {
+		return err
+	}
+	commands := []string{"touch"}
+	for i := range sampleFiles {
+		commands = append(commands, filepath.Join(TestSourceDataMountPath, sampleFiles[i]))
+	}
+	_, err = fi.ExecOnPod(pod, commands...)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -237,35 +255,47 @@ func (fi *Invocation) CleanupTestResources() error {
 	// delete all test resources
 	By("Cleaning Test Resources")
 	for i := range fi.testResources {
-		gvr, objMeta, err := getGVRAndObjectMeta(fi.testResources[i])
+		err := fi.DeleteResource(fi.testResources[i])
 		if err != nil {
-			return err
-		}
-		deletionPolicy := meta_util.DeleteInBackground()
-		// Repository has finalizer wipeOut finalizer.
-		// Hence, we should ensure that it has been deleted before deleting the respective secret.
-		if gvr.Resource == api.ResourceKindRepository {
-			deletionPolicy = meta_util.DeleteInForeground()
-		}
-		err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, deletionPolicy)
-		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
 	}
 
 	// wait until resource has been deleted
 	for i := range fi.testResources {
-		gvr, objMeta, err := getGVRAndObjectMeta(fi.testResources[i])
-		if err != nil {
-			return err
-		}
-		err = fi.waitUntilResourceDeleted(gvr, objMeta)
+		err := fi.WaitUntilResourceDeleted(fi.testResources[i])
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (fi *Invocation) DeleteResource(obj interface{}) error {
+	gvr, objMeta, err := getGVRAndObjectMeta(obj)
+	if err != nil {
+		return err
+	}
+	deletionPolicy := meta_util.DeleteInBackground()
+	// Repository has finalizer wipeOut finalizer.
+	// Hence, we should ensure that it has been deleted before deleting the respective secret.
+	if gvr.Resource == api.ResourceKindRepository {
+		deletionPolicy = meta_util.DeleteInForeground()
+	}
+	err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Delete(context.TODO(), objMeta.Name, deletionPolicy)
+	if err != nil && !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
+
+func (fi *Invocation) WaitUntilResourceDeleted(obj interface{}) error {
+	gvr, objMeta, err := getGVRAndObjectMeta(obj)
+	if err != nil {
+		return err
+	}
+	return fi.waitUntilResourceDeleted(gvr, objMeta)
 }
 
 func (fi *Invocation) waitUntilResourceDeleted(gvr schema.GroupVersionResource, objMeta metav1.ObjectMeta) error {
@@ -323,10 +353,6 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 		w.GetObjectKind().SetGroupVersionKind(v1beta1.SchemeGroupVersion.WithKind(v1beta1.ResourceKindBackupConfiguration))
 		gvk := w.TypeMeta.GroupVersionKind()
 		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: v1beta1.ResourcePluralBackupConfiguration}, w.ObjectMeta, nil
-	case *v1beta1.BackupBatch:
-		w.GetObjectKind().SetGroupVersionKind(v1beta1.SchemeGroupVersion.WithKind(v1beta1.ResourceKindBackupBatch))
-		gvk := w.TypeMeta.GroupVersionKind()
-		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: v1beta1.ResourcePluralBackupBatch}, w.ObjectMeta, nil
 	case *v1beta1.BackupSession:
 		w.GetObjectKind().SetGroupVersionKind(v1beta1.SchemeGroupVersion.WithKind(v1beta1.ResourceKindBackupSession))
 		gvk := w.GroupVersionKind()
@@ -357,50 +383,6 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 	}
 }
 
-func (fi *Invocation) AddAnnotations(annotations map[string]string, obj interface{}) error {
-	schm := scheme.Scheme
-	gvr, _, _ := getGVRAndObjectMeta(obj)
-	cur := &unstructured.Unstructured{}
-	err := schm.Convert(obj, cur, nil)
-	if err != nil {
-		return err
-	}
-	mod := cur.DeepCopy()
-	mod.SetAnnotations(annotations)
-	out, _, err := dynamic.PatchObject(context.TODO(), fi.dmClient, gvr, cur, mod, metav1.PatchOptions{})
-	if err != nil {
-
-		return err
-	}
-	err = schm.Convert(out, obj, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]string, obj interface{}) GomegaAsyncAssertion {
-	return Eventually(
-		func() bool {
-			schm := scheme.Scheme
-			cur := &unstructured.Unstructured{}
-			err := schm.Convert(obj, cur, nil)
-			if err != nil {
-				return false
-			}
-			annotations := cur.GetAnnotations()
-			for k, v := range expectedAnnotations {
-				if !(meta_util.HasKey(annotations, k) && annotations[k] == v) {
-					return false
-				}
-			}
-			return true
-		},
-		WaitTimeOut,
-		PullInterval,
-	)
-}
-
 func (fi *Invocation) PrintDebugHelpers() {
 	const kubectl = "/usr/bin/kubectl"
 	sh := shell.NewSession()
@@ -412,11 +394,6 @@ func (fi *Invocation) PrintDebugHelpers() {
 
 	fmt.Println("\n======================================[ Describe BackupConfiguration ]==========================================")
 	if err := sh.Command(kubectl, "describe", "backupconfiguration", "-n", fi.Namespace()).Run(); err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println("\n======================================[ Describe BackupBatch ]==========================================")
-	if err := sh.Command(kubectl, "describe", "backupbatch", "-n", fi.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 

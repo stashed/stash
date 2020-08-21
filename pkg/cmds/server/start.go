@@ -26,6 +26,7 @@ import (
 	"stash.appscode.dev/stash/pkg/server"
 
 	"github.com/spf13/pflag"
+	licenseEnforcer "go.bytebuilders.dev/license-verifier/kubernetes"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
@@ -108,6 +109,7 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 		"/apis/admission.stash.appscode.com/v1alpha1/replicasetmutators",
 		"/apis/admission.stash.appscode.com/v1alpha1/deploymentconfigmutators",
 		"/apis/admission.stash.appscode.com/v1beta1/restoresessionvalidators",
+		"/apis/admission.stash.appscode.com/v1beta1/restoresessionmutators",
 	}
 
 	extraConfig := controller.NewConfig(serverConfig.ClientConfig)
@@ -132,6 +134,10 @@ func (o StashOptions) Run(stopCh <-chan struct{}) error {
 	if err != nil {
 		return err
 	}
+
+	// Start periodic license verification
+	//nolint:errcheck
+	go licenseEnforcer.VerifyLicensePeriodically(config.ExtraConfig.ClientConfig, o.ExtraOptions.LicenseFile, stopCh)
 
 	return s.Run(stopCh)
 }

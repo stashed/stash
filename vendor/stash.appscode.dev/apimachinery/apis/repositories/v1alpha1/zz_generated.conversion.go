@@ -145,6 +145,7 @@ func autoConvert_v1alpha1_SnapshotStatus_To_repositories_SnapshotStatus(in *Snap
 	out.UID = int(in.UID)
 	out.Gid = int(in.Gid)
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
+	out.Repository = in.Repository
 	return nil
 }
 
@@ -161,6 +162,7 @@ func autoConvert_repositories_SnapshotStatus_To_v1alpha1_SnapshotStatus(in *repo
 	out.UID = int32(in.UID)
 	out.Gid = int32(in.Gid)
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
+	out.Repository = in.Repository
 	return nil
 }
 

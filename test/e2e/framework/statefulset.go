@@ -106,7 +106,7 @@ func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAss
 		obj, err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
-	})
+	}, WaitTimeOut, PullInterval)
 }
 
 func (fi *Invocation) WaitUntilStatefulSetReadyWithSidecar(meta metav1.ObjectMeta) error {

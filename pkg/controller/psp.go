@@ -60,14 +60,14 @@ func (c *StashController) getBackupJobPSPNames(taskRef api_v1beta1.TaskRef) ([]s
 	return c.BackupJobPSPNames, nil
 }
 
-func (c *StashController) getRestoreJobPSPNames(restoreSession *api_v1beta1.RestoreSession) ([]string, error) {
+func (c *StashController) getRestoreJobPSPNames(taskRef api_v1beta1.TaskRef) ([]string, error) {
 	// if task field is empty then return default restore job psp
-	if restoreSession.Spec.Task.Name == "" {
+	if taskRef.Name == "" {
 		return c.RestoreJobPSPNames, nil
 	}
 
 	// find out task and then functions. finally, get psp names from the functions
-	task, err := c.stashClient.StashV1beta1().Tasks().Get(context.TODO(), restoreSession.Spec.Task.Name, metav1.GetOptions{})
+	task, err := c.stashClient.StashV1beta1().Tasks().Get(context.TODO(), taskRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

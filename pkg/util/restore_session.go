@@ -31,8 +31,9 @@ import (
 
 // GetAppliedRestoreSession check whether RestoreSession was applied as annotation and returns the object definition if exist.
 func GetAppliedRestoreSession(m map[string]string) (*v1beta1_api.RestoreSession, error) {
-	data := GetString(m, v1beta1_api.KeyLastAppliedRestoreSession)
-	if data == "" {
+	data := GetString(m, v1beta1_api.KeyLastAppliedRestoreInvoker)
+	invokerKind := GetString(m, v1beta1_api.KeyLastAppliedRestoreInvokerKind)
+	if data == "" || invokerKind != v1beta1_api.ResourceKindRestoreSession {
 		return nil, nil
 	}
 
@@ -42,7 +43,7 @@ func GetAppliedRestoreSession(m map[string]string) (*v1beta1_api.RestoreSession,
 	}
 	restoreSession, ok := obj.(*v1beta1_api.RestoreSession)
 	if !ok {
-		return nil, fmt.Errorf("%s annotations has invalid RestoreSession object", v1beta1_api.KeyLastAppliedRestoreSession)
+		return nil, fmt.Errorf("%s annotations has invalid restore invoker object", v1beta1_api.KeyLastAppliedRestoreInvoker)
 	}
 	return restoreSession, nil
 }
@@ -72,19 +73,19 @@ func FindRestoreSession(lister v1beta1_listers.RestoreSessionLister, w *wapi.Wor
 
 	// return currently running RestoreSession
 	for _, r := range result {
-		if r.Status.Phase == v1beta1_api.RestoreSessionRunning {
+		if r.Status.Phase == v1beta1_api.RestoreRunning {
 			return r, nil
 		}
 	}
 	// no running RestoreSession. so return pending one
 	for _, r := range result {
-		if r.Status.Phase == v1beta1_api.RestoreSessionPending {
+		if r.Status.Phase == v1beta1_api.RestorePending {
 			return r, nil
 		}
 	}
 	// no pending or running restore session so return failed one
 	for _, r := range result {
-		if r.Status.Phase == v1beta1_api.RestoreSessionFailed {
+		if r.Status.Phase == v1beta1_api.RestoreFailed {
 			return r, nil
 		}
 	}

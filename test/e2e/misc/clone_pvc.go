@@ -112,7 +112,7 @@ var _ = Describe("Clone", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Deploy restored Deployment
 				restoredDeploy, err := f.DeployDeployment(framework.RestoredDeployment, int32(1), framework.RestoredVolume)
@@ -195,7 +195,7 @@ var _ = Describe("Clone", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				//Deploy restored StatefulSet
 				restoredSS, err := f.DeployStatefulSet(framework.RestoredStatefulSet, int32(3), framework.RestoredVolume)

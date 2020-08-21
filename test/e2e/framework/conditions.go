@@ -37,12 +37,6 @@ func (f *Framework) EventuallyCondition(meta metav1.ObjectMeta, kind string, con
 					return kmapi.ConditionUnknown
 				}
 				conditions = bc.Status.Conditions
-			case v1beta1.ResourceKindBackupBatch:
-				bb, err := f.StashClient.StashV1beta1().BackupBatches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
-				if err != nil {
-					return kmapi.ConditionUnknown
-				}
-				conditions = bb.Status.Conditions
 			case v1beta1.ResourceKindRestoreSession:
 				rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 				if err != nil {
@@ -55,32 +49,6 @@ func (f *Framework) EventuallyCondition(meta metav1.ObjectMeta, kind string, con
 				return kmapi.ConditionUnknown
 			}
 			return cond.Status
-		},
-		WaitTimeOut,
-		PullInterval,
-	)
-}
-
-func (f *Framework) EventuallyTargetCondition(meta metav1.ObjectMeta, target v1beta1.TargetRef, condType v1beta1.BackupInvokerCondition) GomegaAsyncAssertion {
-	return Eventually(
-		func() kmapi.ConditionStatus {
-			bb, err := f.StashClient.StashV1beta1().BackupBatches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
-			if err != nil {
-				return kmapi.ConditionUnknown
-			}
-			for _, mc := range bb.Status.MemberConditions {
-				if mc.Target.APIVersion == target.APIVersion &&
-					mc.Target.Kind == target.Kind &&
-					mc.Target.Name == target.Name {
-					_, cond := kmapi.GetCondition(mc.Conditions, string(condType))
-					if cond != nil {
-						return cond.Status
-					}
-					return kmapi.ConditionUnknown
-
-				}
-			}
-			return kmapi.ConditionUnknown
 		},
 		WaitTimeOut,
 		PullInterval,

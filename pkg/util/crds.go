@@ -32,10 +32,10 @@ import (
 )
 
 // EnsureDefaultFunctions creates "update-status", "pvc-backup" and "pvc-restore" Functions if they are not already present
-func EnsureDefaultFunctions(stashClient cs.Interface, registry, imageTag string) error {
+func EnsureDefaultFunctions(stashClient cs.Interface, registry, stashImage, imageTag string) error {
 	image := docker.Docker{
 		Registry: registry,
-		Image:    docker.ImageStash,
+		Image:    stashImage,
 		Tag:      imageTag,
 	}
 
@@ -102,16 +102,31 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 			Image: image.ToContainerImage(),
 			Args: []string{
 				"update-status",
+				"--provider=${REPOSITORY_PROVIDER:=}",
+				"--bucket=${REPOSITORY_BUCKET:=}",
+				"--endpoint=${REPOSITORY_ENDPOINT:=}",
+				"--path=${REPOSITORY_PREFIX:=}",
+				"--secret-dir=/etc/repository/secret",
+				"--scratch-dir=/tmp",
+				"--enable-cache=${ENABLE_CACHE:=true}",
+				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--namespace=${NAMESPACE:=default}",
 				"--backupsession=${BACKUP_SESSION:=}",
 				"--repository=${REPOSITORY_NAME:=}",
-				"--target-name=${TARGET_NAME:=}",
+				"--invoker-kind=${INVOKER_KIND:=}",
+				"--invoker-name=${INVOKER_NAME:=}",
 				"--target-kind=${TARGET_KIND:=}",
-				"--restoresession=${RESTORE_SESSION:=}",
+				"--target-name=${TARGET_NAME:=}",
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",
 				fmt.Sprintf("--metrics-pushgateway-url=%s", pushgateway.URL()),
 				"--prom-job-name=${PROMETHEUS_JOB_NAME:=}",
+			},
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      "${secretVolume}",
+					MountPath: "/etc/repository/secret",
+				},
 			},
 		},
 	}
@@ -136,6 +151,12 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--hostname=${HOSTNAME:=}",
 				"--backup-paths=${TARGET_PATHS}",
+				"--exclude=${EXCLUDE_PATTERNS:=}",
+				"--invoker-kind=${INVOKER_KIND:=}",
+				"--invoker-name=${INVOKER_NAME:=}",
+				"--target-kind=${TARGET_KIND:=}",
+				"--target-name=${TARGET_NAME:=}",
+				"--backupsession=${BACKUP_SESSION:=}",
 				"--retention-keep-last=${RETENTION_KEEP_LAST:=0}",
 				"--retention-keep-hourly=${RETENTION_KEEP_HOURLY:=0}",
 				"--retention-keep-daily=${RETENTION_KEEP_DAILY:=0}",
@@ -180,8 +201,14 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--hostname=${HOSTNAME:=}",
 				"--restore-paths=${RESTORE_PATHS}",
+				"--include=${INCLUDE_PATTERNS:=}",
+				"--exclude=${EXCLUDE_PATTERNS:=}",
 				"--snapshots=${RESTORE_SNAPSHOTS:=}",
 				"--output-dir=${outputDir:=}",
+				"--invoker-kind=${INVOKER_KIND:=}",
+				"--invoker-name=${INVOKER_NAME:=}",
+				"--target-kind=${TARGET_KIND:=}",
+				"--target-name=${TARGET_NAME:=}",
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
@@ -227,6 +254,10 @@ func pvcBackupTask() *api_v1beta1.Task {
 						{
 							Name:  "outputDir",
 							Value: "/tmp/output",
+						},
+						{
+							Name:  "secretVolume",
+							Value: "secret-volume",
 						},
 					},
 				},
@@ -283,6 +314,10 @@ func pvcRestoreTask() *api_v1beta1.Task {
 						{
 							Name:  "outputDir",
 							Value: "/tmp/output",
+						},
+						{
+							Name:  "secretVolume",
+							Value: "secret-volume",
 						},
 					},
 				},

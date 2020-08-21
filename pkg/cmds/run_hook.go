@@ -41,23 +41,22 @@ import (
 )
 
 type hookOptions struct {
-	masterURL          string
-	kubeConfigPath     string
-	namespace          string
-	hookType           string
-	backupSessionName  string
-	restoreSessionName string
-	targetKind         string
-	targetName         string
-	invokerType        string
-	invokerName        string
-	hostname           string
-	config             *rest.Config
-	kubeClient         kubernetes.Interface
-	stashClient        cs.Interface
-	appClient          appcatalog_cs.Interface
-	metricOpts         restic.MetricsOptions
-	outputDir          string
+	masterURL         string
+	kubeConfigPath    string
+	namespace         string
+	hookType          string
+	backupSessionName string
+	targetKind        string
+	targetName        string
+	invokerKind       string
+	invokerName       string
+	hostname          string
+	config            *rest.Config
+	kubeClient        kubernetes.Interface
+	stashClient       cs.Interface
+	appClient         appcatalog_cs.Interface
+	metricOpts        restic.MetricsOptions
+	outputDir         string
 }
 
 func NewCmdRunHook() *cobra.Command {
@@ -102,8 +101,7 @@ func NewCmdRunHook() *cobra.Command {
 	cmd.Flags().StringVar(&opt.masterURL, "master", opt.masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&opt.kubeConfigPath, "kubeconfig", opt.kubeConfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.backupSessionName, "backupsession", opt.backupSessionName, "Name of the respective BackupSession object")
-	cmd.Flags().StringVar(&opt.restoreSessionName, "restoresession", opt.restoreSessionName, "Name of the respective RestoreSession")
-	cmd.Flags().StringVar(&opt.invokerType, "invoker-type", opt.invokerType, "Type of the backup invoker")
+	cmd.Flags().StringVar(&opt.invokerKind, "invoker-kind", opt.invokerKind, "Type of the backup invoker")
 	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", opt.invokerName, "Name of the respective backup invoker")
 	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
 	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetName, "Kind of the Target")
@@ -123,13 +121,13 @@ func (opt *hookOptions) executeHook() error {
 
 	if opt.backupSessionName != "" {
 		// For backup hooks, BackupSession name will be provided. We will read the hooks from the underlying backup invoker.
-		invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerType, opt.invokerName, opt.namespace)
+		invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 		if err != nil {
 			return err
 		}
 		// We need to extract the hook only for the current target
 		for _, targetInfo := range invoker.TargetsInfo {
-			if targetInfo.Target != nil && targetInfo.Target.Ref.Kind == opt.targetKind && targetInfo.Target.Ref.Name == opt.targetName {
+			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
 				hook = targetInfo.Hooks
 				executorPodName, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
 				if err != nil {
@@ -138,23 +136,22 @@ func (opt *hookOptions) executeHook() error {
 				break
 			}
 		}
-	} else if opt.restoreSessionName != "" {
-		// For restore hooks, RestoreSession name will be provided. We will read the hooks from the RestoreSession.
-		restoreSession, err := opt.stashClient.StashV1beta1().RestoreSessions(opt.namespace).Get(context.TODO(), opt.restoreSessionName, metav1.GetOptions{})
+	} else {
+		// backupSessionName flag name was not provided, it means it is restore hook.
+		invoker, err := apis.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 		if err != nil {
 			return err
 		}
-		hook = restoreSession.Spec.Hooks
-		if restoreSession.Spec.Target != nil {
-			executorPodName, err = opt.getHookExecutorPodName(restoreSession.Spec.Target.Ref)
-			if err != nil {
-				return err
+		for _, targetInfo := range invoker.TargetsInfo {
+			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+				hook = targetInfo.Hooks
+				executorPodName, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
+				if err != nil {
+					return err
+				}
+				break
 			}
-		} else {
-			executorPodName = os.Getenv(apis.KeyPodName)
 		}
-	} else {
-		return fmt.Errorf("can not execute hooks. Reason: Respective BackupSession or RestoreSession has not been specified")
 	}
 
 	// Execute the hooks
@@ -219,43 +216,57 @@ func (opt *hookOptions) handlePreTaskHookFailure(hookErr error) error {
 	}
 	if opt.hookType == apis.PreBackupHook {
 		backupOutput := &restic.BackupOutput{
-			HostBackupStats: []v1beta1.HostBackupStats{
-				{
-					Hostname: opt.hostname,
-					Phase:    v1beta1.HostBackupFailed,
-					Error:    hookErr.Error(),
+			BackupTargetStatus: v1beta1.BackupTargetStatus{
+				Ref: statusOpt.TargetRef,
+				Stats: []v1beta1.HostBackupStats{
+					{
+						Hostname: opt.hostname,
+						Phase:    v1beta1.HostBackupFailed,
+						Error:    hookErr.Error(),
+					},
 				},
 			},
 		}
 		statusOpt.BackupSession = opt.backupSessionName
-		// TODO: user real invoker
-		invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerType, opt.invokerName, opt.namespace)
+		// Extract invoker information
+		invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 		if err != nil {
 			return err
 		}
 		for _, targetInfo := range invoker.TargetsInfo {
-			if targetInfo.Target != nil && targetInfo.Target.Ref.Kind == opt.targetKind && targetInfo.Target.Ref.Name == opt.targetName {
+			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
 				err := statusOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
 				if err != nil {
 					hookErr = errors.NewAggregate([]error{hookErr, err})
 				}
 			}
 		}
-	} else { // otherwise it is postRestore hook
+	} else {
+		// otherwise it is postRestore hook
 		restoreOutput := &restic.RestoreOutput{
-			HostRestoreStats: []v1beta1.HostRestoreStats{
-				{
-					Hostname: opt.hostname,
-					Phase:    v1beta1.HostRestoreFailed,
-					Error:    hookErr.Error(),
+			RestoreTargetStatus: v1beta1.RestoreMemberStatus{
+				Ref: statusOpt.TargetRef,
+				Stats: []v1beta1.HostRestoreStats{
+					{
+						Hostname: opt.hostname,
+						Phase:    v1beta1.HostRestoreFailed,
+						Error:    hookErr.Error(),
+					},
 				},
 			},
 		}
-		statusOpt.RestoreSession = opt.restoreSessionName
-
-		err := statusOpt.UpdatePostRestoreStatus(restoreOutput)
+		invoker, err := apis.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 		if err != nil {
-			hookErr = errors.NewAggregate([]error{hookErr, err})
+			return err
+		}
+
+		for _, targetInfo := range invoker.TargetsInfo {
+			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+				err = statusOpt.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
+				if err != nil {
+					hookErr = errors.NewAggregate([]error{hookErr, err})
+				}
+			}
 		}
 	}
 	// return error so that the container fail
@@ -265,11 +276,17 @@ func (opt *hookOptions) handlePreTaskHookFailure(hookErr error) error {
 func (opt *hookOptions) handlePostTaskHookFailure(hookErr error) error {
 	if opt.hookType == apis.PostBackupHook {
 		backupOutput := &restic.BackupOutput{
-			HostBackupStats: []v1beta1.HostBackupStats{
-				{
-					Hostname: opt.hostname,
-					Phase:    v1beta1.HostBackupFailed,
-					Error:    hookErr.Error(),
+			BackupTargetStatus: v1beta1.BackupTargetStatus{
+				Ref: v1beta1.TargetRef{
+					Kind: opt.targetKind,
+					Name: opt.targetName,
+				},
+				Stats: []v1beta1.HostBackupStats{
+					{
+						Hostname: opt.hostname,
+						Phase:    v1beta1.HostBackupFailed,
+						Error:    hookErr.Error(),
+					},
 				},
 			},
 		}
@@ -281,11 +298,17 @@ func (opt *hookOptions) handlePostTaskHookFailure(hookErr error) error {
 		}
 	} else { // otherwise it is postRestore hook
 		restoreOutput := &restic.RestoreOutput{
-			HostRestoreStats: []v1beta1.HostRestoreStats{
-				{
-					Hostname: opt.hostname,
-					Phase:    v1beta1.HostRestoreFailed,
-					Error:    hookErr.Error(),
+			RestoreTargetStatus: v1beta1.RestoreMemberStatus{
+				Ref: v1beta1.TargetRef{
+					Kind: opt.targetKind,
+					Name: opt.targetName,
+				},
+				Stats: []v1beta1.HostRestoreStats{
+					{
+						Hostname: opt.hostname,
+						Phase:    v1beta1.HostRestoreFailed,
+						Error:    hookErr.Error(),
+					},
 				},
 			},
 		}

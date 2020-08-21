@@ -157,7 +157,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
+		Image:    c.StashImage,
 		Tag:      c.StashImageTag,
 	}
 

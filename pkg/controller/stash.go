@@ -19,6 +19,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -34,6 +36,8 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	wcs "kmodules.xyz/webhook-runtime/client/workload/v1"
 )
@@ -58,84 +62,6 @@ func (c *StashController) applyStashLogic(w *wapi.Workload, caller string) (bool
 		return false, err
 	}
 	return modifiedByBackupLogic || modifiedByRestoreLogic, nil
-}
-
-// applyRestoreLogic check if  RestoreSession is configured for this workload
-// and perform operation accordingly
-func (c *StashController) applyRestoreLogic(w *wapi.Workload, caller string) (bool, error) {
-	// detect old RestoreSession from annotations if it does exist.
-	oldRestore, err := util.GetAppliedRestoreSession(w.Annotations)
-	if err != nil {
-		return false, err
-	}
-	// find existing pending RestoreSession for this workload
-	newRestore, err := util.FindRestoreSession(c.restoreSessionLister, w)
-	if err != nil {
-		return false, err
-	}
-	// if RestoreSession currently exist for this workload but it is not same as old one,
-	// this means RestoreSession has been newly created/updated.
-	// in this case, we have to add/update the init-container accordingly.
-	if newRestore != nil && !util.RestoreSessionEqual(oldRestore, newRestore) {
-		err := c.ensureRestoreInitContainer(w, newRestore, caller)
-		// write init-container injection failure/success event
-		ref, rerr := util.GetWorkloadReference(w)
-		if err != nil && rerr != nil {
-			return false, err
-		} else if err != nil && rerr == nil {
-			return false, c.handleInitContainerInjectionFailure(ref, newRestore, err)
-		} else if err == nil && rerr != nil {
-			return true, nil
-		}
-		return true, c.handleInitContainerInjectionSuccess(ref, newRestore)
-	} else if oldRestore != nil && newRestore == nil {
-		// there was RestoreSession before but currently it does not exist.
-		// this means RestoreSession has been removed.
-		// in this case, we have to delete the restore init-container
-		// and remove respective annotations from the workload  and respective ConfigMapLock.
-		c.ensureRestoreInitContainerDeleted(w)
-		// write init-container deletion failure/success event
-		ref, rerr := util.GetWorkloadReference(w)
-		if rerr != nil {
-			return true, nil
-		}
-		return true, c.handleInitContainerDeletionSuccess(ref)
-	}
-
-	return false, nil
-}
-
-// applyBackupLogic check if Backup annotations or BackupConfiguration is configured for this workload
-// and perform operation accordingly
-func (c *StashController) applyBackupLogic(w *wapi.Workload, caller string) (bool, error) {
-	//Don't create repository, BackupConfiguration stuff when the caller is webhook to make the webhooks side effect free.
-	if caller != apis.CallerWebhook {
-		// check if the workload has backup annotations and perform respective operation accordingly
-		err := c.applyBackupAnnotationLogic(w)
-		if err != nil {
-			return false, err
-		}
-	}
-	// check if any BackupBatch exits for this workload. if exist then inject sidecar container
-	modified, err := c.applyBackupBatchLogic(w, caller)
-	if err != nil {
-		return false, err
-	}
-
-	// if no BackupBatch is configured then check any BackupConfiguration exist for this workload.
-	// if exist then inject sidecar container
-	if !modified {
-		modified, err = c.applyBackupConfigurationLogic(w, caller)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	// if no BackupConfiguration is configured then check if Restic is configured (backward compatibility)
-	if !modified {
-		return c.applyResticLogic(w, caller)
-	}
-	return modified, nil
 }
 
 func setRollingUpdate(w *wapi.Workload) error {
@@ -342,4 +268,41 @@ func countPVC(volList []core.Volume) *int32 {
 		}
 	}
 	return &count
+}
+
+func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, owner *metav1.OwnerReference) ([]core.LocalObjectReference, error) {
+	operatorNamespace := os.Getenv("MY_POD_NAMESPACE")
+	if operatorNamespace == "" {
+		operatorNamespace = "kube-system"
+	}
+
+	var imagePullSecrets []core.LocalObjectReference
+	for i := range c.ImagePullSecrets {
+		// get the respective secret from the operator namespace
+		secret, err := c.kubeClient.CoreV1().Secrets(operatorNamespace).Get(context.TODO(), c.ImagePullSecrets[i], metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		// generate new image pull secret from the above secret
+		newPullSecret := metav1.ObjectMeta{
+			Name:      meta_util.ValidNameWithPrefixNSuffix(secret.Name, strings.ToLower(owner.Kind), invokerMeta.Name),
+			Namespace: invokerMeta.Namespace,
+		}
+		// create the image pull secret if not present already
+		_, _, err = core_util.CreateOrPatchSecret(context.TODO(), c.kubeClient, newPullSecret, func(in *core.Secret) *core.Secret {
+			// set the invoker as the owner of this secret
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+			in.Type = secret.Type
+			in.Data = secret.Data
+			return in
+		}, metav1.PatchOptions{})
+
+		if err != nil {
+			return nil, err
+		}
+		imagePullSecrets = append(imagePullSecrets, core.LocalObjectReference{
+			Name: newPullSecret.Name,
+		})
+	}
+	return imagePullSecrets, nil
 }

@@ -15,13 +15,14 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/v2 v2.1.1-0.20200521091436-82ef6e66e992
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.2.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
+	go.bytebuilders.dev/license-verifier/kubernetes v0.2.2
 	go.opencensus.io v0.22.2 // indirect
 	gomodules.xyz/cert v1.0.3
 	gomodules.xyz/envsubst v0.1.0
@@ -29,12 +30,12 @@ require (
 	gopkg.in/ini.v1 v1.51.0
 	k8s.io/api v0.18.3
 	k8s.io/apiextensions-apiserver v0.18.3
-	k8s.io/apimachinery v0.18.3
+	k8s.io/apimachinery v0.18.8
 	k8s.io/apiserver v0.18.3
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-aggregator v0.18.3
 	k8s.io/kubernetes v1.18.3
-	kmodules.xyz/client-go v0.0.0-20200818171030-24b2ce405feb
+	kmodules.xyz/client-go v0.0.0-20200818143024-600fef263e03
 	kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72
 	kmodules.xyz/custom-resources v0.0.0-20200604135349-9e9f5c4fdba9
 	kmodules.xyz/objectstore-api v0.0.0-20200521103120-92080446e04d
@@ -42,7 +43,7 @@ require (
 	kmodules.xyz/openshift v0.0.0-20200522123204-ce4abf5433c8
 	kmodules.xyz/prober v0.0.0-20200521101241-adf06150535c
 	kmodules.xyz/webhook-runtime v0.0.0-20200522123600-ca70a7e28ed0
-	stash.appscode.dev/apimachinery v0.10.0-beta.1
+	stash.appscode.dev/apimachinery v0.10.0-beta.1.0.20200817055640-692909fead2f
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

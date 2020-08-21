@@ -57,10 +57,12 @@ type RepoLabelData struct {
 // GetHostName returns hostname for a target
 func GetHostName(target interface{}) (string, error) {
 	// target nil for cluster backup
-	var targetRef api_v1beta1.TargetRef
 	if target == nil {
 		return apis.DefaultHost, nil
 	}
+
+	var alias string
+	var targetRef api_v1beta1.TargetRef
 
 	// read targetRef field from BackupTarget or RestoreTarget
 	switch t := target.(type) {
@@ -68,23 +70,36 @@ func GetHostName(target interface{}) (string, error) {
 		if t == nil {
 			return apis.DefaultHost, nil
 		}
+		alias = t.Alias
 		targetRef = t.Ref
 	case *api_v1beta1.RestoreTarget:
 		if t == nil {
 			return apis.DefaultHost, nil
 		}
-
-		// if replicas or volumeClaimTemplate is specified then  restore is done via job.
-		// in this case, we need to know the ordinal to use as host suffix.
-		// stash operator sets desired ordinal as 'POD_ORDINAL' env while creating the job.
-		if t.Replicas != nil || len(t.VolumeClaimTemplates) != 0 {
-			if os.Getenv(apis.KeyPodOrdinal) != "" {
-				return "host-" + os.Getenv(apis.KeyPodOrdinal), nil
-			}
-			return "", fmt.Errorf("'target.replicas' or 'target.volumeClaimTemplate' has been specified in RestoreSession" +
-				" but 'POD_ORDINAL' env not found")
-		}
+		alias = t.Alias
 		targetRef = t.Ref
+
+		// if volumeClaimTemplate is specified then  restore is done via job.
+		// in this case, we have to add pod ordinal as host suffix for StatefulSet.
+		// stash operator sets desired ordinal as 'POD_ORDINAL' env while creating the job.
+		if len(t.VolumeClaimTemplates) != 0 {
+			if t.Replicas != nil {
+				// restoring the volumes of a StatefulSet. so, add pod ordinal suffix.
+				if os.Getenv(apis.KeyPodOrdinal) != "" {
+					if alias != "" {
+						return fmt.Sprintf("%s-%s", alias, os.Getenv(apis.KeyPodOrdinal)), nil
+					}
+					return "host-" + os.Getenv(apis.KeyPodOrdinal), nil
+				}
+				return "", fmt.Errorf("'target.volumeClaimTemplate' has been specified in the restore invoker" +
+					" but 'POD_ORDINAL' env not found")
+			}
+			// restoring volume of the other workloads. in this case, we don't have to add the pod ordinal suffix.
+			if alias != "" {
+				return alias, nil
+			}
+			return apis.DefaultHost, nil
+		}
 	}
 
 	// backup/restore is running through sidecar/init-container. identify hostname for them.
@@ -98,6 +113,9 @@ func GetHostName(target interface{}) (string, error) {
 		}
 		podInfo := strings.Split(podName, "-")
 		podOrdinal := podInfo[len(podInfo)-1]
+		if alias != "" {
+			return fmt.Sprintf("%s-%s", alias, podOrdinal), nil
+		}
 		return "host-" + podOrdinal, nil
 	case apis.KindDaemonSet:
 		// for DaemonSet, host name is the node name. stash operator set the respective node name as 'NODE_NAME' env
@@ -106,21 +124,16 @@ func GetHostName(target interface{}) (string, error) {
 		if nodeName == "" {
 			return "", fmt.Errorf("missing 'NODE_NAME' env for DaemonSet: %s", apis.KindDaemonSet)
 		}
+		if alias != "" {
+			return fmt.Sprintf("%s-%s", alias, nodeName), nil
+		}
 		return nodeName, nil
 	default:
+		if alias != "" {
+			return alias, nil
+		}
 		return apis.DefaultHost, nil
 	}
-}
-
-func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace string) (string, error) {
-	restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(context.TODO(), restoreSessionName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	if restoreSession.Spec.Target != nil {
-		return GetHostName(restoreSession.Spec.Target)
-	}
-	return apis.DefaultHost, nil
 }
 
 func BackupModel(kind string) string {
@@ -221,18 +234,6 @@ func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelDat
 		data.NodeName = ""
 	}
 	return data, nil
-}
-
-func AttachLocalBackend(podSpec core.PodSpec, localSpec store.LocalSpec) core.PodSpec {
-	volume, mount := localSpec.ToVolumeAndMount(apis.LocalVolumeName)
-	podSpec.Volumes = core_util.UpsertVolume(podSpec.Volumes, volume)
-	for i := range podSpec.InitContainers {
-		podSpec.InitContainers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.InitContainers[i].VolumeMounts, mount)
-	}
-	for i := range podSpec.Containers {
-		podSpec.Containers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.Containers[i].VolumeMounts, mount)
-	}
-	return podSpec
 }
 
 func AttachPVC(podSpec core.PodSpec, volumes []core.Volume, volumeMounts []core.VolumeMount) core.PodSpec {
@@ -469,15 +470,14 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 	return nil
 }
 
-func HookExecutorContainer(name string, shiblings []core.Container, invokerType, invokerName, targetKind, targetName string) core.Container {
+func HookExecutorContainer(name string, shiblings []core.Container, invokerKind, invokerName, targetKind, targetName string) core.Container {
 	hookExecutor := core.Container{
 		Name:  name,
 		Image: "${STASH_DOCKER_REGISTRY:=appscode}/${STASH_DOCKER_IMAGE:=stash}:${STASH_IMAGE_TAG:=latest}",
 		Args: []string{
 			"run-hook",
 			"--backupsession=${BACKUP_SESSION:=}",
-			"--restoresession=${RESTORE_SESSION:=}",
-			"--invoker-type=" + invokerType,
+			"--invoker-kind=" + invokerKind,
 			"--invoker-name=" + invokerName,
 			"--target-kind=" + targetKind,
 			"--target-name=" + targetName,

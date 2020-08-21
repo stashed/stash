@@ -54,7 +54,6 @@ const (
 
 	// ====================== Event Sources ===================================
 	EventSourceBackupConfigurationController = "BackupConfiguration Controller"
-	EventSourceBackupBatchController         = "BackupBatch Controller"
 	EventSourceBackupSessionController       = "BackupSession Controller"
 	EventSourceRestoreSessionController      = "RestoreSession Controller"
 	EventSourceWorkloadController            = "Workload Controller"
@@ -62,7 +61,6 @@ const (
 	EventSourceRestoreInitContainer          = "Restore Init-Container"
 	EventSourceBackupTriggeringCronJob       = "Backup Triggering CronJob"
 	EventSourceStatusUpdater                 = "Status Updater"
-	EventSourceAutoBackupHandler             = "Auto Backup Handler"
 
 	// ======================= Event Reasons ========================
 	// BackupConfiguration Events
@@ -75,19 +73,15 @@ const (
 	EventReasonBackupSessionSucceeded = "BackupSession Succeeded"
 	EventReasonHostBackupSucceded     = "Host Backup Succeeded"
 	EventReasonHostBackupFailed       = "Host Backup Failed"
-	// RestoreSession Events
-	EventReasonRestoreJobCreated        = "Restore Job Created"
-	EventReasonRestoreSessionFailed     = "RestoreSession Failed"
-	EventReasonRestoreSessionSucceeded  = "RestoreSession Succeeded"
+	// Restore Events
+	EventReasonRestoreRunning           = "Restore Running"
+	EventReasonRestoreFailed            = "Restore Failed"
+	EventReasonRestoreSucceeded         = "Restore Succeeded"
 	EventReasonRestorePhaseUnknown      = "RestoreSession Phase Unknown"
 	EventReasonRestoreJobCreationFailed = "Restore Job Creation Failed"
 	EventReasonHostRestoreSucceeded     = "Host Restore Succeeded"
 	EventReasonHostRestoreFailed        = "Host Restore Failed"
-	// Auto Backup Events
-	EventReasonAutoBackupResourcesCreationFailed    = "Auto Backup Resources Creation Failed"
-	EventReasonAutoBackupResourcesCreationSucceeded = "Auto Backup Resources Creation Succeeded"
-	EventReasonAutoBackupResourcesDeletionFailed    = "Auto Backup Resources Deletion Failed"
-	EventReasonAutoBackupResourcesDeletionSucceeded = "Auto Backup Resources Deletion Succeeded"
+
 	// Sidecar Events
 	EventReasonSidecarInjectionFailed               = "Sidecar Injection Failed"
 	EventReasonSidecarInjectionSucceeded            = "Sidecar Injection Succeeded"

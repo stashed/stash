@@ -65,7 +65,7 @@ func (f *Framework) EventuallyReplicaSet(meta metav1.ObjectMeta) GomegaAsyncAsse
 		obj, err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
-	})
+	}, WaitTimeOut, PullInterval)
 }
 
 func (fi *Invocation) WaitUntilRSReadyWithSidecar(meta metav1.ObjectMeta) error {

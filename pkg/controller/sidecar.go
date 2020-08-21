@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
@@ -74,7 +75,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
+		Image:    c.StashImage,
 		Tag:      c.StashImageTag,
 	}
 	localRef := api_v1alpha1.LocalTypedReference{
@@ -103,7 +104,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 	w.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(w.Spec.Template.Spec.Volumes)
 	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
 	// if repository backend is local backend, mount this inside sidecar container
-	w.Spec.Template.Spec.Volumes = util.MergeLocalVolume(w.Spec.Template.Spec.Volumes, &restic.Spec.Backend)
+	w.Spec.Template.Spec.Volumes = util.MergeLocalVolume(w.Spec.Template.Spec.Volumes, &restic.Spec.Backend, apis.LocalVolumeName)
 
 	if w.Annotations == nil {
 		w.Annotations = make(map[string]string)
@@ -158,12 +159,22 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 		return err
 	}
 
-	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
+	// Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != apis.CallerWebhook {
 		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, invoker.ObjectMeta.Namespace, sa, invoker.Labels)
 		if err != nil {
 			return err
 		}
+	}
+
+	// if the Stash is using a private registry, then ensure the image pull secrets
+	if c.ImagePullSecrets != nil {
+		var imagePullSecrets []core.LocalObjectReference
+		imagePullSecrets, err = c.ensureImagePullSecrets(invoker.ObjectMeta, invoker.OwnerRef)
+		if err != nil {
+			return err
+		}
+		w.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 	}
 
 	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
@@ -194,7 +205,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
+		Image:    c.StashImage,
 		Tag:      c.StashImageTag,
 	}
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
@@ -205,9 +216,6 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, targetInfo.TempDir)
 	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
 	w.Spec.Template.Spec.Volumes = util.UpsertSecretVolume(w.Spec.Template.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
-	// if Repository uses local volume as backend, append this volume to workload.
-	// otherwise, restic will not be able to access the backend
-	w.Spec.Template.Spec.Volumes = util.MergeLocalVolume(w.Spec.Template.Spec.Volumes, &repository.Spec.Backend)
 
 	if w.Annotations == nil {
 		w.Annotations = make(map[string]string)
@@ -233,14 +241,12 @@ func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload) {
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.PodinfoVolumeName)
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.StashSecretVolume)
-
-		// if stash-local volume was added for local backend, remove it
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.LocalVolumeName)
 	}
 
 	// remove respective annotations
 	if w.Annotations != nil {
 		delete(w.Annotations, api_v1beta1.KeyLastAppliedBackupInvoker)
+		delete(w.Annotations, api_v1beta1.KeyLastAppliedBackupInvokerKind)
 	}
 }
 
@@ -267,7 +273,7 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 		workloadInitContainerState := util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers)
 		workloadBackupInvokerResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupInvokerSpecHash)
 		workloadResticResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1alpha1.ResourceHash)
-		workloadRestoreResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
+		workloadRestoreInvokerResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreInvokerSpecHash)
 
 		// identify the pods that does not have latest update.
 		// we have to restart these pods so that it starts with latest update
@@ -280,13 +286,13 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 			podInitContainerState := util.HasStashInitContainer(pod.Spec.InitContainers)
 			podBackupInvokerResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupInvokerSpecHash)
 			podResticResourceHash := util.GetString(pod.Annotations, api_v1alpha1.ResourceHash)
-			podRestoreResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
+			podRestoreInvokerResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedRestoreInvokerSpecHash)
 
 			if workloadSidecarState != podSidecarState ||
 				workloadInitContainerState != podInitContainerState ||
 				workloadBackupInvokerResourceHash != podBackupInvokerResourceHash ||
 				workloadResticResourceHash != podResticResourceHash ||
-				workloadRestoreResourceHash != podRestoreResourceHash {
+				workloadRestoreInvokerResourceHash != podRestoreInvokerResourceHash {
 
 				podsToRestart = append(podsToRestart, pod)
 			}
@@ -324,7 +330,7 @@ func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, invoke
 	log.Warningf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
 
 	// Failed to inject stash sidecar. So, set "StashSidecarInjected" condition to "False".
-	cerr := c.setSidecarInjectedConditionToFalse(invoker, tref, err)
+	cerr := conditions.SetSidecarInjectedConditionToFalse(invoker, tref, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -342,7 +348,7 @@ func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload, invoke
 	log.Infof("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// Set "StashSidecarInjected" condition to "True"
-	cerr := c.setSidecarInjectedConditionToTrue(invoker, tref)
+	cerr := conditions.SetSidecarInjectedConditionToTrue(invoker, tref)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(

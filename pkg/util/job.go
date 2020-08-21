@@ -217,16 +217,20 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api_v1alpha1.Recovery, i
 }
 
 // NewPVCRestorerJob return a job definition to restore pvc.
-func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.Repository, image docker.Docker) (*core.PodTemplateSpec, error) {
+func NewPVCRestorerJob(invoker apis.RestoreInvoker, index int, repository *api_v1alpha1.Repository, image docker.Docker) (*core.PodTemplateSpec, error) {
+	targetInfo := invoker.TargetsInfo[index]
 	container := core.Container{
 		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore",
-			"--restoresession=" + rs.Name,
+			"--invoker-kind=" + invoker.TypeMeta.Kind,
+			"--invoker-name=" + invoker.ObjectMeta.Name,
+			"--target-kind=" + targetInfo.Target.Ref.Kind,
+			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--restore-model=job",
 			"--secret-dir=" + apis.StashSecretMountDir,
-			fmt.Sprintf("--enable-cache=%v", !rs.Spec.TempDir.DisableCaching),
+			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + pushgateway.URL(),
@@ -263,7 +267,7 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 	container.VolumeMounts = UpsertTmpVolumeMount(container.VolumeMounts)
 
 	// mount the volumes specified in RestoreSession into the job
-	for _, srcVol := range rs.Spec.Target.VolumeMounts {
+	for _, srcVol := range targetInfo.Target.VolumeMounts {
 		container.VolumeMounts = append(container.VolumeMounts, core.VolumeMount{
 			Name:      srcVol.Name,
 			MountPath: srcVol.MountPath,
@@ -271,15 +275,9 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 		})
 	}
 
-	// if Repository uses local volume as backend, we have to mount it inside the initContainer
-	if repository.Spec.Backend.Local != nil {
-		_, mnt := repository.Spec.Backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
-		container.VolumeMounts = append(container.VolumeMounts, mnt)
-	}
-
 	// Pass container RuntimeSettings from RestoreSession
-	if rs.Spec.RuntimeSettings.Container != nil {
-		container = ofst_util.ApplyContainerRuntimeSettings(container, *rs.Spec.RuntimeSettings.Container)
+	if targetInfo.RuntimeSettings.Container != nil {
+		container = ofst_util.ApplyContainerRuntimeSettings(container, *targetInfo.RuntimeSettings.Container)
 	}
 
 	// In order to preserve file ownership, restore process need to be run as root user.
@@ -290,8 +288,8 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 		RunAsUser:  types.Int64P(0),
 		RunAsGroup: types.Int64P(0),
 	}
-	if rs.Spec.RuntimeSettings.Container != nil {
-		container.SecurityContext = UpsertSecurityContext(securityContext, rs.Spec.RuntimeSettings.Container.SecurityContext)
+	if targetInfo.RuntimeSettings.Container != nil {
+		container.SecurityContext = UpsertSecurityContext(securityContext, targetInfo.RuntimeSettings.Container.SecurityContext)
 	} else {
 		container.SecurityContext = securityContext
 	}
@@ -304,16 +302,14 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 	}
 
 	// Pass pod RuntimeSettings from RestoreSession
-	if rs.Spec.RuntimeSettings.Pod != nil {
-		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *rs.Spec.RuntimeSettings.Pod)
+	if targetInfo.RuntimeSettings.Pod != nil {
+		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *targetInfo.RuntimeSettings.Pod)
 	}
 
 	// add an emptyDir volume for holding temporary files
-	jobTemplate.Spec.Volumes = UpsertTmpVolume(jobTemplate.Spec.Volumes, rs.Spec.TempDir)
+	jobTemplate.Spec.Volumes = UpsertTmpVolume(jobTemplate.Spec.Volumes, targetInfo.TempDir)
 	// add storage secret as volume to the workload. this has been mounted on the container above.
 	jobTemplate.Spec.Volumes = UpsertSecretVolume(jobTemplate.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
-	// if Repository uses local volume as backend, append this volume to the job
-	jobTemplate.Spec.Volumes = MergeLocalVolume(jobTemplate.Spec.Volumes, &repository.Spec.Backend)
 
 	return jobTemplate, nil
 }
@@ -363,13 +359,18 @@ func NewVolumeSnapshotterJob(bs *api_v1beta1.BackupSession, backupTarget *api_v1
 	return jobTemplate, nil
 }
 
-func NewVolumeRestorerJob(rs *api_v1beta1.RestoreSession, image docker.Docker) (*core.PodTemplateSpec, error) {
+func NewVolumeRestorerJob(invoker apis.RestoreInvoker, index int, image docker.Docker) (*core.PodTemplateSpec, error) {
+	targetInfo := invoker.TargetsInfo[index]
+
 	container := core.Container{
 		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore-vs",
-			fmt.Sprintf("--restoresession=%s", rs.Name),
+			"--invoker-kind=" + invoker.TypeMeta.Kind,
+			"--invoker-name=" + invoker.ObjectMeta.Name,
+			"--target-name=" + targetInfo.Target.Ref.Name,
+			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
@@ -388,8 +389,8 @@ func NewVolumeRestorerJob(rs *api_v1beta1.RestoreSession, image docker.Docker) (
 	}
 
 	// Pass container RuntimeSettings from RestoreSession
-	if rs.Spec.RuntimeSettings.Container != nil {
-		container = ofst_util.ApplyContainerRuntimeSettings(container, *rs.Spec.RuntimeSettings.Container)
+	if targetInfo.RuntimeSettings.Container != nil {
+		container = ofst_util.ApplyContainerRuntimeSettings(container, *targetInfo.RuntimeSettings.Container)
 	}
 
 	jobTemplate := &core.PodTemplateSpec{
@@ -400,8 +401,8 @@ func NewVolumeRestorerJob(rs *api_v1beta1.RestoreSession, image docker.Docker) (
 	}
 
 	// Pass pod RuntimeSettings from RestoreSession
-	if rs.Spec.RuntimeSettings.Pod != nil {
-		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *rs.Spec.RuntimeSettings.Pod)
+	if targetInfo.RuntimeSettings.Pod != nil {
+		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *targetInfo.RuntimeSettings.Pod)
 	}
 	return jobTemplate, nil
 }

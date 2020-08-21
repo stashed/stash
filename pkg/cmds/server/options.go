@@ -35,8 +35,11 @@ import (
 )
 
 type ExtraOptions struct {
+	LicenseFile             string
+	StashImage              string
 	StashImageTag           string
 	DockerRegistry          string
+	ImagePullSecrets        []string
 	MaxNumRequeues          int
 	NumThreads              int
 	ScratchDir              string
@@ -53,6 +56,7 @@ type ExtraOptions struct {
 func NewExtraOptions() *ExtraOptions {
 	return &ExtraOptions{
 		DockerRegistry: docker.ACRegistry,
+		StashImage:     docker.ImageStash,
 		StashImageTag:  "",
 		MaxNumRequeues: 5,
 		NumThreads:     2,
@@ -65,8 +69,11 @@ func NewExtraOptions() *ExtraOptions {
 
 func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ScratchDir, "scratch-dir", s.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
+	fs.StringVar(&s.StashImage, "image", s.StashImage, "Image for sidecar, init-container, check-job and recovery-job")
 	fs.StringVar(&s.StashImageTag, "image-tag", s.StashImageTag, "Image tag for sidecar, init-container, check-job and recovery-job")
 	fs.StringVar(&s.DockerRegistry, "docker-registry", s.DockerRegistry, "Docker image registry for sidecar, init-container, check-job, recovery-job and kubectl-job")
+	fs.StringSliceVar(&s.ImagePullSecrets, "image-pull-secrets", s.ImagePullSecrets, "List of image pull secrets for pulling image from private registries")
+	fs.StringVar(&s.LicenseFile, "license-file", s.LicenseFile, "Path to license file")
 
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
@@ -83,8 +90,10 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	var err error
 
+	cfg.StashImage = s.StashImage
 	cfg.StashImageTag = s.StashImageTag
 	cfg.DockerRegistry = s.DockerRegistry
+	cfg.ImagePullSecrets = s.ImagePullSecrets
 	cfg.MaxNumRequeues = s.MaxNumRequeues
 	cfg.NumThreads = s.NumThreads
 	cfg.ResyncPeriod = s.ResyncPeriod

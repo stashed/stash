@@ -211,11 +211,11 @@ func UpsertPodSecurityContext(currentSC, newSC *core.PodSecurityContext) *core.P
 	return finalSC
 }
 
-func MergeLocalVolume(volumes []core.Volume, backend *store.Backend) []core.Volume {
-	// check if stash-local volume already exist
+func MergeLocalVolume(volumes []core.Volume, backend *store.Backend, volName string) []core.Volume {
+	// check if the local volume already exist
 	oldPos := -1
 	for i, vol := range volumes {
-		if vol.Name == apis.LocalVolumeName {
+		if vol.Name == volName {
 			oldPos = i
 			break
 		}
@@ -223,7 +223,7 @@ func MergeLocalVolume(volumes []core.Volume, backend *store.Backend) []core.Volu
 
 	if backend != nil && backend.Local != nil {
 		// backend is local backend. we have to mount the local volume inside sidecar
-		vol, _ := backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
+		vol, _ := backend.Local.ToVolumeAndMount(volName)
 		if oldPos != -1 {
 			volumes[oldPos] = vol
 		} else {

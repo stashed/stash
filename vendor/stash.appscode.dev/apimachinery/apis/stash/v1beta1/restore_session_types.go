@@ -48,57 +48,44 @@ type RestoreSession struct {
 }
 
 type RestoreSessionSpec struct {
+	RestoreTargetSpec `json:",inline,omitempty" protobuf:"bytes,1,opt,name=restoreTargetSpec"`
 	// Driver indicates the name of the agent to use to restore the target.
 	// Supported values are "Restic", "VolumeSnapshotter".
 	// Default value is "Restic".
 	// +optional
 	// +kubebuilder:default=Restic
-	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,1,opt,name=driver,casttype=Snapshotter"`
+	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,2,opt,name=driver,casttype=Snapshotter"`
 	// Repository refer to the Repository crd that hold backend information
 	// +optional
-	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,2,opt,name=repository"`
-	// Task specify the Task crd that specifies the steps for recovery process
-	// +optional
-	Task TaskRef `json:"task,omitempty" protobuf:"bytes,3,opt,name=task"`
-	// Target indicates the target where the recovered data will be stored
-	// +optional
-	Target *RestoreTarget `json:"target,omitempty" protobuf:"bytes,4,opt,name=target"`
+	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,3,opt,name=repository"`
 	// Rules specifies different restore options for different hosts
 	// +optional
-	Rules []Rule `json:"rules,omitempty" protobuf:"bytes,5,rep,name=rules"`
+	// Deprecated. Use rules section inside `target`.
+	Rules []Rule `json:"rules,omitempty" protobuf:"bytes,4,rep,name=rules"`
+}
+
+type RestoreTargetSpec struct {
+	// Task specify the Task crd that specifies the steps for recovery process
+	// +optional
+	Task TaskRef `json:"task,omitempty" protobuf:"bytes,1,opt,name=task"`
+	// Target indicates the target where the recovered data will be stored
+	// +optional
+	Target *RestoreTarget `json:"target,omitempty" protobuf:"bytes,2,opt,name=target"`
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	// +optional
-	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty" protobuf:"bytes,6,opt,name=runtimeSettings"`
+	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty" protobuf:"bytes,3,opt,name=runtimeSettings"`
 	// Temp directory configuration for functions/sidecar
 	// An `EmptyDir` will always be mounted at /tmp with this settings
 	// +optional
-	TempDir EmptyDirSettings `json:"tempDir,omitempty" protobuf:"bytes,7,opt,name=tempDir"`
+	TempDir EmptyDirSettings `json:"tempDir,omitempty" protobuf:"bytes,4,opt,name=tempDir"`
 	// InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily
 	// before uploading to backend or inserting into target. It is only usable for job model.
 	// Don't specify it in sidecar model.
 	// +optional
-	InterimVolumeTemplate *ofst.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,8,opt,name=interimVolumeTemplate"`
+	InterimVolumeTemplate *ofst.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,5,opt,name=interimVolumeTemplate"`
 	// Actions that Stash should take in response to restore sessions.
 	// +optional
-	Hooks *RestoreHooks `json:"hooks,omitempty" protobuf:"bytes,9,opt,name=hooks"`
-}
-
-type Rule struct {
-	// Subjects specifies the list of hosts that are subject to this rule
-	// +optional
-	TargetHosts []string `json:"targetHosts,omitempty" protobuf:"bytes,1,rep,name=targetHosts"`
-	// SourceHost specifies the name of the host whose backed up state we are trying to restore
-	// By default, it will indicate the workload itself
-	// +optional
-	SourceHost string `json:"sourceHost,omitempty" protobuf:"bytes,2,opt,name=sourceHost"`
-	// Snapshots specifies the list of snapshots that will be restored for the host under this rule.
-	// Don't specify if you have specified paths field.
-	// +optional
-	Snapshots []string `json:"snapshots,omitempty" protobuf:"bytes,3,rep,name=snapshots"`
-	// Paths specifies the paths to be restored for the hosts under this rule.
-	// Don't specify if you have specified snapshots field.
-	// +optional
-	Paths []string `json:"paths,omitempty" protobuf:"bytes,4,rep,name=paths"`
+	Hooks *RestoreHooks `json:"hooks,omitempty" protobuf:"bytes,6,opt,name=hooks"`
 }
 
 // Hooks describes actions that Stash should take in response to restore sessions. For the PostRestore
@@ -123,14 +110,14 @@ type RestoreSessionList struct {
 }
 
 // +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed;Unknown
-type RestoreSessionPhase string
+type RestorePhase string
 
 const (
-	RestoreSessionPending   RestoreSessionPhase = "Pending"
-	RestoreSessionRunning   RestoreSessionPhase = "Running"
-	RestoreSessionSucceeded RestoreSessionPhase = "Succeeded"
-	RestoreSessionFailed    RestoreSessionPhase = "Failed"
-	RestoreSessionUnknown   RestoreSessionPhase = "Unknown"
+	RestorePending      RestorePhase = "Pending"
+	RestoreRunning      RestorePhase = "Running"
+	RestoreSucceeded    RestorePhase = "Succeeded"
+	RestoreFailed       RestorePhase = "Failed"
+	RestorePhaseUnknown RestorePhase = "Unknown"
 )
 
 // +kubebuilder:validation:Enum=Succeeded;Failed;Unknown
@@ -146,7 +133,7 @@ type RestoreSessionStatus struct {
 	// Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be "Succeeded" only if
 	// phase of all hosts are "Succeeded". If any of the host fail to complete restore, Phase will be "Failed".
 	// +optional
-	Phase RestoreSessionPhase `json:"phase,omitempty" protobuf:"bytes,1,opt,name=phase,casttype=RestoreSessionPhase"`
+	Phase RestorePhase `json:"phase,omitempty" protobuf:"bytes,1,opt,name=phase,casttype=RestorePhase"`
 	// TotalHosts specifies total number of hosts that will be restored for this RestoreSession
 	// +optional
 	TotalHosts *int32 `json:"totalHosts,omitempty" protobuf:"varint,2,opt,name=totalHosts"`

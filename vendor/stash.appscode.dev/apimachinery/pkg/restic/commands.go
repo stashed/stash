@@ -51,6 +51,22 @@ type Snapshot struct {
 	Tags     []string  `json:"tags"`
 }
 
+type backupParams struct {
+	path     string
+	host     string
+	tags     []string
+	excludes []string
+}
+
+type restoreParams struct {
+	path        string
+	host        string
+	snapshotId  string
+	destination string
+	excludes    []string
+	includes    []string
+}
+
 func (w *ResticWrapper) listSnapshots(snapshotIDs []string) ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--quiet", "--no-lock"})
@@ -78,35 +94,42 @@ func (w *ResticWrapper) deleteSnapshots(snapshotIDs []string) ([]byte, error) {
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
 
-func (w *ResticWrapper) initRepositoryIfAbsent() error {
-	log.Infoln("Ensuring restic repository in the backend")
+func (w *ResticWrapper) repositoryExist() bool {
+	log.Infoln("Checking whether the backend repository exist or not....")
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
-	if _, err := w.run(Command{Name: ResticCMD, Args: args}); err != nil {
-		args = w.appendCacheDirFlag([]interface{}{"init"})
-		args = w.appendCaCertFlag(args)
-		args = w.appendMaxConnectionsFlag(args)
-
-		_, err := w.run(Command{Name: ResticCMD, Args: args})
-		if err != nil {
-			return err
-		}
+	if _, err := w.run(Command{Name: ResticCMD, Args: args}); err == nil {
+		return true
 	}
-	return nil
+	return false
 }
 
-func (w *ResticWrapper) backup(path, host string, tags []string) ([]byte, error) {
+func (w *ResticWrapper) initRepository() error {
+	log.Infoln("Initializing new restic repository in the backend....")
+	args := w.appendCacheDirFlag([]interface{}{"init"})
+	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
+	_, err := w.run(Command{Name: ResticCMD, Args: args})
+	return err
+}
+
+func (w *ResticWrapper) backup(params backupParams) ([]byte, error) {
 	log.Infoln("Backing up target data")
-	args := []interface{}{"backup", path, "--quiet", "--json"}
-	if host != "" {
+	args := []interface{}{"backup", params.path, "--quiet", "--json"}
+	if params.host != "" {
 		args = append(args, "--host")
-		args = append(args, host)
+		args = append(args, params.host)
 	}
 	// add tags if any
-	for _, tag := range tags {
+	for _, tag := range params.tags {
 		args = append(args, "--tag")
 		args = append(args, tag)
+	}
+	// add exclude patterns if there any
+	for _, exclude := range params.excludes {
+		args = append(args, "--exclude")
+		args = append(args, exclude)
 	}
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCleanupCacheFlag(args)
@@ -198,29 +221,39 @@ func (w *ResticWrapper) cleanup(retentionPolicy v1alpha1.RetentionPolicy, host s
 	return nil, nil
 }
 
-func (w *ResticWrapper) restore(path, host, snapshotID, destination string) ([]byte, error) {
+func (w *ResticWrapper) restore(params restoreParams) ([]byte, error) {
 	log.Infoln("Restoring backed up data")
 
 	args := []interface{}{"restore"}
-	if snapshotID != "" {
-		args = append(args, snapshotID)
+	if params.snapshotId != "" {
+		args = append(args, params.snapshotId)
 	} else {
 		args = append(args, "latest")
 	}
-	if path != "" {
+	if params.path != "" {
 		args = append(args, "--path")
-		args = append(args, path) // source-path specified in restic fileGroup
+		args = append(args, params.path) // source-path specified in restic fileGroup
 	}
-	if host != "" {
+	if params.host != "" {
 		args = append(args, "--host")
-		args = append(args, host)
+		args = append(args, params.host)
 	}
 
-	if destination == "" {
-		destination = "/" // restore in absolute path
+	if params.destination == "" {
+		params.destination = "/" // restore in absolute path
 	}
-	args = append(args, "--target", destination)
+	args = append(args, "--target", params.destination)
 
+	// add include patterns if there any
+	for _, include := range params.includes {
+		args = append(args, "--include")
+		args = append(args, include)
+	}
+	// add exclude patterns if there any
+	for _, exclude := range params.excludes {
+		args = append(args, "--exclude")
+		args = append(args, exclude)
+	}
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)

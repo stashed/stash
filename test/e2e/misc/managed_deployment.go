@@ -31,7 +31,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	pfutil "kmodules.xyz/client-go/tools/portforward"
@@ -75,7 +74,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that BackupTargetFound condition is 'False'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.BackupTargetFound)).Should(BeEquivalentTo(kmapi.ConditionFalse))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(kmapi.ConditionFalse))
 
 			By("Creating Deployment")
 			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume, func(dp *apps.Deployment) {
@@ -88,13 +87,13 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that BackupTargetFound condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.BackupTargetFound)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			By("Checking that StashSidecarInjected condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.StashSidecarInjected)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.StashSidecarInjected).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			By("Checking that CronJobCreated condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.CronJobCreated)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.CronJobCreated).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			// Take an Instant Backup of the Sample Data
 			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
@@ -118,7 +117,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that RestoreTargetFound condition is 'False'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.RestoreTargetFound)).Should(BeEquivalentTo(kmapi.ConditionFalse))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(kmapi.ConditionFalse))
 
 			// Deploy restored Deployment
 			restoredDeployment, err := f.DeployDeployment(framework.RestoredDeployment, int32(1), framework.RestoredVolume, func(dp *apps.Deployment) {
@@ -127,15 +126,15 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that RestoreTargetFound condition is 'True'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.RestoreTargetFound)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			By("Checking that StashInitContainerInjected condition is 'True'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.StashInitContainerInjected)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.StashInitContainerInjected).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			By("Verifying that RestoreSession succeeded")
 			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 			// Get restored data
 			restoredData := f.RestoredData(restoredDeployment.ObjectMeta, apis.KindDeployment)
@@ -169,7 +168,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that BackupTargetFound condition is 'False'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.BackupTargetFound)).Should(BeEquivalentTo(kmapi.ConditionFalse))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(kmapi.ConditionFalse))
 
 			// Create PVC
 			pvc, err := f.CreateNewPVC(pvcMeta.Name)
@@ -184,10 +183,10 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that BackupTargetFound condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.BackupTargetFound)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			By("Checking that CronJobCreated condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.CronJobCreated)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.CronJobCreated).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			// Take an Instant Backup of the Sample Data
 			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
@@ -209,11 +208,12 @@ var _ = Describe("Managed Deployment", func() {
 			By("Creating RestoreSession")
 			restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
 				restore.Spec.Target = &v1beta1.RestoreTarget{
-					Ref: framework.GetTargetRef(rpvcMeta.Name, apis.KindPersistentVolumeClaim),
-				}
-				restore.Spec.Rules = []v1beta1.Rule{
-					{
-						Snapshots: []string{"latest"},
+					Alias: f.App(),
+					Ref:   framework.GetTargetRef(rpvcMeta.Name, apis.KindPersistentVolumeClaim),
+					Rules: []v1beta1.Rule{
+						{
+							Snapshots: []string{"latest"},
+						},
 					},
 				}
 				restore.Spec.Task.Name = framework.TaskPVCRestore
@@ -223,7 +223,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that RestoreTargetFound condition is 'False'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.RestoreTargetFound)).Should(BeEquivalentTo(kmapi.ConditionFalse))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(kmapi.ConditionFalse))
 
 			// Create restored PVC
 			restoredPVC, err := f.CreateNewPVC(rpvcMeta.Name)
@@ -234,18 +234,18 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that RestoreTargetFound condition is 'True'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.RestoreTargetFound)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			By("Checking that RestoreJobCreated condition is 'True'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.RestoreJobCreated)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreJobCreated).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 			By("Waiting for restore process to complete")
-			f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+			f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession).Should(BeTrue())
 
 			By("Verifying that RestoreSession succeeded")
 			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 			// Get restored data
 			restoredData := f.RestoredData(restoredPod.ObjectMeta, apis.KindPod)
@@ -290,7 +290,7 @@ var _ = Describe("Managed Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking that BackupTargetFound condition is 'False'")
-				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.BackupTargetFound)).Should(BeEquivalentTo(kmapi.ConditionFalse))
+				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(kmapi.ConditionFalse))
 
 				// Create MySQL database
 				err = f.CreateMySQL(dpl)
@@ -328,10 +328,10 @@ var _ = Describe("Managed Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking that BackupTargetFound condition is 'True'")
-				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.BackupTargetFound)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 				By("Checking that CronJobCreated condition is 'True'")
-				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, string(v1beta1.CronJobCreated)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.CronJobCreated).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
@@ -371,7 +371,7 @@ var _ = Describe("Managed Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking that RestoreTargetFound condition is 'False'")
-				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.RestoreTargetFound)).Should(BeEquivalentTo(kmapi.ConditionFalse))
+				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(kmapi.ConditionFalse))
 
 				// Create MySQL database
 				err = f.CreateMySQL(rdpl)
@@ -382,18 +382,18 @@ var _ = Describe("Managed Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking that RestoreTargetFound condition is 'True'")
-				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.RestoreTargetFound)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 				By("Checking that RestoreJobCreated condition is 'True'")
-				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, string(v1beta1.RestoreJobCreated)).Should(BeEquivalentTo(kmapi.ConditionTrue))
+				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreJobCreated).Should(BeEquivalentTo(kmapi.ConditionTrue))
 
 				By("Waiting for restore process to complete")
-				f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+				f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession).Should(BeTrue())
 
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				By("Port forwarding MySQL pod")
 				pod, err = f.GetPod(rdpl.ObjectMeta)
@@ -418,166 +418,6 @@ var _ = Describe("Managed Deployment", func() {
 				Expect(tables.Has(sampleTable)).Should(BeTrue())
 				Expect(err).NotTo(HaveOccurred())
 			})
-		})
-	})
-
-	Context("Batch Backup", func() {
-		It("should wait for the targets", func() {
-
-			// Setup a Minio Repository
-			repo, err := f.SetupMinioRepository()
-			Expect(err).NotTo(HaveOccurred())
-
-			dpMeta := metav1.ObjectMeta{
-				Name:      rand.WithUniqSuffix(fmt.Sprintf("%s-%s", framework.SourceDeployment, f.App())),
-				Namespace: f.Namespace(),
-			}
-
-			pvcMeta := metav1.ObjectMeta{
-				Name:      rand.WithUniqSuffix(fmt.Sprintf("%s-%s", framework.SourceVolume, f.App())),
-				Namespace: f.Namespace(),
-			}
-
-			// Prepare MySQL resources
-			cred, mypvc, svc, dpl, err := f.PrepareMySQLResources(framework.PrefixSource)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(dpl, svc, mypvc, cred)
-
-			appBinding := f.MySQLAppBinding(cred, svc, framework.PrefixSource)
-			f.AppendToCleanupList(appBinding)
-
-			By("Creating BackupBatch")
-			backupBatch := f.BackupBatch(repo.Name)
-			backupBatch.Spec.Members = []v1beta1.BackupConfigurationTemplateSpec{
-				{
-					Task: v1beta1.TaskRef{},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: apps.SchemeGroupVersion.String(),
-							Kind:       apis.KindDeployment,
-							Name:       dpMeta.Name,
-						},
-						Paths: []string{
-							framework.TestSourceDataMountPath,
-						},
-						VolumeMounts: []core.VolumeMount{
-							{
-								Name:      framework.SourceVolume,
-								MountPath: framework.TestSourceDataMountPath,
-							},
-						},
-					},
-				},
-				{
-					Task: v1beta1.TaskRef{
-						Name: framework.TaskPVCBackup,
-					},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: core.SchemeGroupVersion.String(),
-							Kind:       apis.KindPersistentVolumeClaim,
-							Name:       pvcMeta.Name,
-						},
-					},
-				},
-				{
-					Task: v1beta1.TaskRef{
-						Name: framework.MySQLBackupTask,
-					},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: appcatalog.SchemeGroupVersion.String(),
-							Kind:       apis.KindAppBinding,
-							Name:       appBinding.Name,
-						},
-					},
-				},
-			}
-			backupBatch, err = f.StashClient.StashV1beta1().BackupBatches(backupBatch.Namespace).Create(context.TODO(), backupBatch, metav1.CreateOptions{})
-			f.AppendToCleanupList(backupBatch)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Checking that BackupTargetFound conditions for the targets are 'False'")
-			for _, m := range backupBatch.Spec.Members {
-				f.EventuallyTargetCondition(backupBatch.ObjectMeta, m.Target.Ref, v1beta1.BackupTargetFound).Should(BeEquivalentTo(kmapi.ConditionFalse))
-			}
-
-			By("Creating Deployment")
-			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume, func(dp *apps.Deployment) {
-				dp.Name = dpMeta.Name
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			// Generate Sample Data
-			_, err = f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create PVC
-			pvc, err := f.CreateNewPVC(pvcMeta.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Deploy a Pod
-			pod, err := f.DeployPod(pvc.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Generate Sample Data
-			_, err = f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create MySQL database
-			err = f.CreateMySQL(dpl)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Port forwarding MySQL pod")
-			pod, err = f.GetPod(dpl.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
-			defer tunnel.Close()
-			err = tunnel.ForwardPort()
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Connecting with MySQL Server")
-			connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
-			db, err := sql.Open("mysql", connstr)
-			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
-			db.SetConnMaxLifetime(time.Second * 10)
-			err = f.EventuallyConnectWithMySQLServer(db)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating Sample Table")
-			err = f.CreateTable(db, sampleTable)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that the sample table has been created")
-			tables, err := f.ListTables(db)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(tables.Has(sampleTable)).Should(BeTrue())
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating AppBinding")
-			_, err = f.CreateAppBinding(appBinding)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Checking that BackupTargetFound conditions for the targets are 'True'")
-			for _, m := range backupBatch.Spec.Members {
-				f.EventuallyTargetCondition(backupBatch.ObjectMeta, m.Target.Ref, v1beta1.BackupTargetFound).Should(BeEquivalentTo(kmapi.ConditionTrue))
-			}
-
-			By("Checking that CronJobCreated condition is 'True'")
-			f.EventuallyCondition(backupBatch.ObjectMeta, v1beta1.ResourceKindBackupBatch, string(v1beta1.CronJobCreated)).Should(BeEquivalentTo(kmapi.ConditionTrue))
-
-			// Take an Instant Backup of the Sample Data
-			backupSession, err := f.TakeInstantBackup(backupBatch.ObjectMeta, v1beta1.BackupInvokerRef{
-				Name: backupBatch.Name,
-				Kind: v1beta1.ResourceKindBackupBatch,
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 		})
 	})
 })

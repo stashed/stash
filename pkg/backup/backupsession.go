@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strings"
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -30,6 +29,7 @@ import (
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
 	"stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/restic"
+	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
@@ -62,7 +62,7 @@ type BackupSessionController struct {
 	NumThreads           int
 	ResyncPeriod         time.Duration
 	//backupConfiguration/BackupBatch
-	InvokerType      string
+	InvokerKind      string
 	InvokerName      string
 	Namespace        string
 	BackupTargetName string
@@ -131,7 +131,7 @@ func (c *BackupSessionController) initBackupSessionWatcher() error {
 	// Respective CronJob creates BackupSession with invoker's name and kind as label.
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			apis.LabelInvokerType: c.InvokerType,
+			apis.LabelInvokerType: c.InvokerKind,
 			apis.LabelInvokerName: c.InvokerName,
 		},
 	})
@@ -189,9 +189,16 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 		}
 
 		for _, targetInfo := range invoker.TargetsInfo {
-			if targetInfo.Target != nil &&
-				targetInfo.Target.Ref.Kind == c.BackupTargetKind &&
-				targetInfo.Target.Ref.Name == c.BackupTargetName {
+			if targetInfo.Target != nil && c.targetMatched(targetInfo.Target.Ref) {
+
+				// Ensure Execution Order
+				if invoker.ExecutionOrder == api_v1beta1.Sequential &&
+					!invoker.NextInOrder(targetInfo.Target.Ref, backupSession.Status.Targets) {
+					// backup order is sequential and the current target is not yet to be executed.
+					glog.Infof("Skipping backup. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.")
+					return nil
+				}
+
 				backupOutput, err := c.startBackupProcess(backupSession, invoker, targetInfo)
 				if err != nil {
 					return c.handleBackupFailure(backupSession.Name, invoker, targetInfo, err)
@@ -208,31 +215,60 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 }
 
 func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.BackupSession, invoker apis.Invoker, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
-
 	// if BackupSession already has been processed for this host then skip further processing
 	if c.isBackupTakenForThisHost(backupSession, targetInfo.Target) {
 		log.Infof("Skip processing BackupSession %s/%s. Reason: BackupSession has been processed already for host %q", backupSession.Namespace, backupSession.Name, c.Host)
 		return nil, nil
 	}
 
-	if !isBackupInitiated(backupSession) {
-		log.Infof("Skip processing BackupSession %s/%s. Reason: Backup process is not initiated by it's operator", backupSession.Namespace, backupSession.Name)
+	if !apis.TargetBackupInitiated(targetInfo.Target.Ref, backupSession.Status.Targets) {
+		log.Infof("Skip processing BackupSession %s/%s. Reason: Backup process is not initiated by the operator", backupSession.Namespace, backupSession.Name)
 		return nil, nil
 	}
-
 	// For Deployment, ReplicaSet and ReplicationController only leader pod is running this controller so no problem with restic repo lock.
 	// For StatefulSet and DaemonSet all pods are running this controller and all will try to backup simultaneously. But, restic repository can be
 	// locked by only one pod. So, we need a leader election to determine who will take backup first. Once backup is complete, the leader pod will
 	// step down from leadership so that another replica can acquire leadership and start taking backup.
 	switch targetInfo.Target.Ref.Kind {
 	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindDeploymentConfig:
-		return c.backup(invoker, targetInfo)
+		return c.backup(invoker, targetInfo, backupSession)
 	default:
 		return nil, c.electBackupLeader(backupSession, invoker, targetInfo)
 	}
 }
 
-func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
+func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.TargetInfo, backupSession *api_v1beta1.BackupSession) (*restic.BackupOutput, error) {
+	_, err := c.setSetupOptions(invoker.Repository)
+	if err != nil {
+		return nil, err
+	}
+	// If there is any pre-backup actions assigned to this target, execute them first.
+	err = api_util.ExecutePreBackupActions(api_util.ActionOptions{
+		StashClient:       c.StashClient,
+		TargetRef:         targetInfo.Target.Ref,
+		SetupOptions:      c.SetupOpt,
+		BackupSessionName: backupSession.Name,
+		Namespace:         backupSession.Namespace,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	repoInitialized, err := api_util.IsRepositoryInitialized(api_util.ActionOptions{
+		StashClient:       c.StashClient,
+		BackupSessionName: backupSession.Name,
+		Namespace:         backupSession.Namespace,
+	})
+	if err != nil {
+		return nil, err
+	}
+	// If the repository hasn't been initialized yet, it means some other process is responsible to initialize the repository.
+	// So, retry after 5 seconds.
+	if !repoInitialized {
+		glog.Infof("Waiting for the backend repository.....")
+		c.bsQueue.GetQueue().AddAfter(fmt.Sprintf("%s/%s", backupSession.Namespace, backupSession.Name), 5*time.Second)
+		return nil, nil
+	}
 
 	// If preBackup hook is specified, then execute those hooks first
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PreBackup != nil {
@@ -241,37 +277,7 @@ func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.T
 			return nil, err
 		}
 	}
-
-	// get repository
-	repository, err := c.StashClient.StashV1alpha1().Repositories(c.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	// configure SourceHost, SecretDirectory, EnableCache and ScratchDirectory
-	extraOpt := util.ExtraOptions{
-		Host:        c.Host,
-		SecretDir:   c.SetupOpt.SecretDir,
-		EnableCache: c.SetupOpt.EnableCache,
-		ScratchDir:  c.SetupOpt.ScratchDir,
-	}
-
-	// configure setupOption
-	c.SetupOpt, err = util.SetupOptionsForRepository(*repository, extraOpt)
-	if err != nil {
-		return nil, fmt.Errorf("setup option for repository fail")
-	}
-
-	if c.InvokerType == api_v1beta1.ResourceKindBackupBatch {
-		c.SetupOpt.Path = fmt.Sprintf("%s/%s/%s", c.SetupOpt.Path, strings.ToLower(c.BackupTargetKind), c.BackupTargetName)
-	}
-
-	// apply nice, ionice settings from env
-	c.SetupOpt.Nice, err = v1.NiceSettingsFromEnv()
-	if err != nil {
-		return nil, err
-	}
-	c.SetupOpt.IONice, err = v1.IONiceSettingsFromEnv()
+	extraOpt, err := c.setSetupOptions(invoker.Repository)
 	if err != nil {
 		return nil, err
 	}
@@ -283,13 +289,13 @@ func (c *BackupSessionController) backup(invoker apis.Invoker, targetInfo apis.T
 	}
 
 	// BackupOptions backup target
-	backupOpt := util.BackupOptionsForBackupTarget(targetInfo.Target, invoker.RetentionPolicy, extraOpt)
+	backupOpt := util.BackupOptionsForBackupTarget(targetInfo.Target, invoker.RetentionPolicy, *extraOpt)
 	// Run Backup
 	// If there is an error during backup, don't return.
 	// We will execute postBackup hook even if the backup failed.
 	// Reason: https://github.com/stashed/stash/issues/986
 	var backupErr, hookErr error
-	output, backupErr := resticWrapper.RunBackup(backupOpt)
+	output, backupErr := resticWrapper.RunBackup(backupOpt, targetInfo.Target.Ref)
 
 	// If postBackup hook is specified, then execute those hooks
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup != nil {
@@ -394,7 +400,7 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 			OnStartedLeading: func(ctx context.Context) {
 				log.Infoln("Got leadership, preparing for backup")
 				// run backup process
-				backupOutput, backupErr := c.backup(invoker, targetInfo)
+				backupOutput, backupErr := c.backup(invoker, targetInfo, backupSession)
 				if backupErr != nil {
 					err := c.handleBackupFailure(backupSession.Name, invoker, targetInfo, backupErr)
 					if err != nil {
@@ -466,6 +472,7 @@ func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, 
 		Repository:    invoker.Repository,
 		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
+		SetupOpt:      c.SetupOpt,
 	}
 	if targetInfo.Target != nil {
 		statusOpt.TargetRef = targetInfo.Target.Ref
@@ -478,11 +485,14 @@ func (c *BackupSessionController) handleBackupFailure(backupSessionName string, 
 	// write log
 	log.Warningf("Failed to take backup for BackupSession %s. Reason: %v", backupSessionName, backupErr)
 	backupOutput := &restic.BackupOutput{
-		HostBackupStats: []api_v1beta1.HostBackupStats{
-			{
-				Hostname: c.Host,
-				Phase:    api_v1beta1.HostBackupFailed,
-				Error:    fmt.Sprintf("failed to complete backup for host %s. Reason: %v", c.Host, backupErr),
+		BackupTargetStatus: api_v1beta1.BackupTargetStatus{
+			Ref: targetInfo.Target.Ref,
+			Stats: []api_v1beta1.HostBackupStats{
+				{
+					Hostname: c.Host,
+					Phase:    api_v1beta1.HostBackupFailed,
+					Error:    fmt.Sprintf("failed to complete backup for host %s. Reason: %v", c.Host, backupErr),
+				},
 			},
 		},
 	}
@@ -496,6 +506,7 @@ func (c *BackupSessionController) handleBackupFailure(backupSessionName string, 
 		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
 		TargetRef:     targetInfo.Target.Ref,
+		SetupOpt:      c.SetupOpt,
 	}
 
 	return statusOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
@@ -524,6 +535,43 @@ func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1
 	return false
 }
 
-func isBackupInitiated(bs *api_v1beta1.BackupSession) bool {
-	return bs.Status.Phase == api_v1beta1.BackupSessionRunning
+func (c *BackupSessionController) targetMatched(ref api_v1beta1.TargetRef) bool {
+	if ref.Kind == c.BackupTargetKind &&
+		ref.Name == c.BackupTargetName {
+		return true
+	}
+	return false
+}
+
+func (c *BackupSessionController) setSetupOptions(repoName string) (*util.ExtraOptions, error) {
+	// get repository
+	repository, err := c.StashClient.StashV1alpha1().Repositories(c.Namespace).Get(context.TODO(), repoName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// configure SourceHost, SecretDirectory, EnableCache and ScratchDirectory
+	extraOpt := &util.ExtraOptions{
+		Host:        c.Host,
+		SecretDir:   c.SetupOpt.SecretDir,
+		EnableCache: c.SetupOpt.EnableCache,
+		ScratchDir:  c.SetupOpt.ScratchDir,
+	}
+
+	// configure setupOption
+	c.SetupOpt, err = util.SetupOptionsForRepository(*repository, *extraOpt)
+	if err != nil {
+		return nil, fmt.Errorf("setup option for repository fail")
+	}
+
+	// apply nice, ionice settings from env
+	c.SetupOpt.Nice, err = v1.NiceSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	c.SetupOpt.IONice, err = v1.IONiceSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return extraOpt, nil
 }

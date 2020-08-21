@@ -40,7 +40,7 @@ import (
 )
 
 type options struct {
-	invokerType      string
+	invokerKind      string
 	invokerName      string
 	namespace        string
 	k8sClient        kubernetes.Interface
@@ -85,13 +85,13 @@ func NewCmdCreateBackupSession() *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", "", "Name of the invoker")
-	cmd.Flags().StringVar(&opt.invokerType, "invoker-type", opt.invokerType, "Type of the backup invoker")
+	cmd.Flags().StringVar(&opt.invokerKind, "invoker-kind", opt.invokerKind, "Type of the backup invoker")
 
 	return cmd
 }
 
 func (opt *options) createBackupSession() error {
-	invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerType, opt.invokerName, opt.namespace)
+	invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 	if err != nil {
 		return err
 	}
@@ -113,14 +113,14 @@ func (opt *options) createBackupSession() error {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, invoker.OwnerRef)
 			in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
 				APIGroup: api_v1beta1.SchemeGroupVersion.Group,
-				Kind:     opt.invokerType,
+				Kind:     opt.invokerKind,
 				Name:     opt.invokerName,
 			}
 
 			in.Labels = invoker.Labels
 			// Add invoker name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
 			in.Labels[apis.LabelInvokerName] = opt.invokerName
-			in.Labels[apis.LabelInvokerType] = opt.invokerType
+			in.Labels[apis.LabelInvokerType] = opt.invokerKind
 
 			return in
 		},

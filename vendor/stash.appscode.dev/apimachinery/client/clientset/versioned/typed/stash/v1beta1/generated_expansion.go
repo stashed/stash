@@ -28,6 +28,8 @@ type BackupSessionExpansion interface{}
 
 type FunctionExpansion interface{}
 
+type RestoreBatchExpansion interface{}
+
 type RestoreSessionExpansion interface{}
 
 type TaskExpansion interface{}

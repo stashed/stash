@@ -18,7 +18,6 @@ package rbac
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -62,14 +61,12 @@ func ensureRestoreJobClusterRole(kc kubernetes.Interface, psps []string, labels 
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
-				Resources: []string{
-					api_v1beta1.ResourcePluralRestoreSession,
-					fmt.Sprintf("%s/status", api_v1beta1.ResourcePluralRestoreSession)},
-				Verbs: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
 			},
 			{
 				APIGroups: []string{api_v1alpha1.SchemeGroupVersion.Group},
-				Resources: []string{api_v1alpha1.ResourcePluralRepository},
+				Resources: []string{"*"},
 				Verbs:     []string{"*"},
 			},
 			{

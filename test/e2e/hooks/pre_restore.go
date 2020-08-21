@@ -120,7 +120,7 @@ var _ = Describe("PreRestore Hook", func() {
 					By("Verifying that RestoreSession succeeded")
 					completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 					By("Verifying that original data has been restored")
 					restoredData := f.RestoredData(statefulset.ObjectMeta, apis.KindStatefulSet)
@@ -190,7 +190,7 @@ var _ = Describe("PreRestore Hook", func() {
 					By("Verifying that RestoreSession has failed")
 					completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 					// Delete RestoreSession so that the StatefulSet can start normally
 					By("Deleting RestoreSession")
@@ -276,7 +276,7 @@ var _ = Describe("PreRestore Hook", func() {
 						By("Verifying that RestoreSession has succeeded")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 						By("Verifying that the restored data is same as the sample data")
 						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
@@ -347,7 +347,7 @@ var _ = Describe("PreRestore Hook", func() {
 						By("Verifying that RestoreSession has failed")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
 						By("Verifying that no data has been restored")
@@ -463,7 +463,7 @@ var _ = Describe("PreRestore Hook", func() {
 						By("Verifying that RestoreSession has succeeded")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 						By("Verifying that the original data has been restored")
 						res, err = f.ReadProperty(db, sampleTable, property)
@@ -566,7 +566,7 @@ var _ = Describe("PreRestore Hook", func() {
 						By("Verifying that RestoreSession has failed")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 						By("Verifying that the table contains corrupted data")
 						res, err = f.ReadProperty(db, sampleTable, property)

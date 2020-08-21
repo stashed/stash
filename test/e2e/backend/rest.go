@@ -64,7 +64,7 @@ var _ = Describe("Rest Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup a Rest Repository
-			repo, err := f.SetupRestRepository(true)
+			repo, err := f.SetupRestRepository(true, framework.TEST_REST_SERVER_USERNAME, framework.TEST_REST_SERVER_PASSWORD)
 			Expect(err).NotTo(HaveOccurred())
 			//
 			// Setup workload Backup
@@ -96,7 +96,7 @@ var _ = Describe("Rest Backend", func() {
 			By("Verifying that RestoreSession succeeded")
 			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 			// Get restored data
 			restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
@@ -124,7 +124,7 @@ var _ = Describe("Rest Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup a Rest Repository
-			repo, err := f.SetupRestRepository(true)
+			repo, err := f.SetupRestRepository(true, framework.TEST_REST_SERVER_USERNAME, framework.TEST_REST_SERVER_PASSWORD)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup workload Backup
@@ -156,7 +156,7 @@ var _ = Describe("Rest Backend", func() {
 			By("Verifying that RestoreSession succeeded")
 			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 			// Get restored data
 			restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
@@ -184,7 +184,7 @@ var _ = Describe("Rest Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup a Rest Repository
-			repo, err := f.SetupRestRepository(false)
+			repo, err := f.SetupRestRepository(false, framework.TEST_REST_SERVER_USERNAME, framework.TEST_REST_SERVER_PASSWORD)
 			Expect(err).NotTo(HaveOccurred())
 			//
 			// Setup workload Backup
@@ -216,7 +216,7 @@ var _ = Describe("Rest Backend", func() {
 			By("Verifying that RestoreSession succeeded")
 			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 			// Get restored data
 			restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
+	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
 	"stash.appscode.dev/apimachinery/pkg/restic"
@@ -71,15 +72,13 @@ func NewCmdRunBackup() *cobra.Command {
 			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
 			opt.Metrics.JobName = opt.InvokerName
 
-			invoker, err := apis.ExtractBackupInvokerInfo(opt.StashClient, opt.InvokerType, opt.InvokerName, opt.Namespace)
+			invoker, err := apis.ExtractBackupInvokerInfo(opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 			if err != nil {
 				return err
 			}
 
 			for _, targetInfo := range invoker.TargetsInfo {
-				if targetInfo.Target != nil &&
-					targetInfo.Target.Ref.Kind == opt.BackupTargetKind &&
-					targetInfo.Target.Ref.Name == opt.BackupTargetName {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.BackupTargetKind, opt.BackupTargetName) {
 
 					opt.Host, err = util.GetHostName(targetInfo.Target)
 					if err != nil {
@@ -99,10 +98,10 @@ func NewCmdRunBackup() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&opt.MasterURL, "master", opt.MasterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&opt.KubeconfigPath, "kubeconfig", opt.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.InvokerType, "invoker-type", opt.InvokerType, "Type of the backup invoker")
+	cmd.Flags().StringVar(&opt.InvokerKind, "invoker-kind", opt.InvokerKind, "Kind of the backup invoker")
 	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective backup invoker")
-	cmd.Flags().StringVar(&opt.BackupTargetName, "target-name", opt.BackupTargetName, "Name of the Target")
 	cmd.Flags().StringVar(&opt.BackupTargetKind, "target-kind", opt.BackupTargetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.BackupTargetName, "target-name", opt.BackupTargetName, "Name of the Target")
 	cmd.Flags().StringVar(&opt.Host, "host", opt.Host, "Name of the host that will be backed up")
 	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
@@ -111,4 +110,8 @@ func NewCmdRunBackup() *cobra.Command {
 	cmd.Flags().StringVar(&opt.Metrics.PushgatewayURL, "pushgateway-url", opt.Metrics.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
 
 	return cmd
+}
+
+func targetMatched(tref v1beta1.TargetRef, expectedKind, expectedName string) bool {
+	return tref.Kind == expectedKind && tref.Name == expectedName
 }

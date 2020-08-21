@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/repositories"
@@ -41,6 +42,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/meta"
 )
 
 const (
@@ -87,7 +89,7 @@ func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) 
 	snapshot := &repositories.Snapshot{}
 	for _, result := range results {
 		snapshot.Namespace = repository.Namespace
-		snapshot.Name = repository.Name + "-" + result.ID[0:apis.SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
+		snapshot.Name = meta.NameWithSuffix(repository.Name, result.ID[0:apis.SnapshotIDLength]) // snapshotName = repositoryName-first8CharacterOfSnapshotId
 		snapshot.UID = types.UID(result.ID)
 
 		snapshot.Labels = map[string]string{
@@ -148,8 +150,8 @@ func (r *REST) forgetSnapshots(repository *stash.Repository, snapshotIDs []strin
 	return nil
 }
 
-func (r *REST) getSnapshotsFromSidecar(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
-	response, err := r.execOnSidecar(repository, "snapshots", snapshotIDs)
+func (r *REST) getSnapshotsFromLocalBackend(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
+	response, err := r.execOnBackendMountingPod(repository, "snapshots", snapshotIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -164,38 +166,13 @@ func (r *REST) getSnapshotsFromSidecar(repository *stash.Repository, snapshotIDs
 }
 
 func (r *REST) forgetSnapshotsFromSidecar(repository *stash.Repository, snapshotIDs []string) error {
-	_, err := r.execOnSidecar(repository, "forget", snapshotIDs)
+	_, err := r.execOnBackendMountingPod(repository, "forget", snapshotIDs)
 	return err
 }
 
-func (r *REST) execOnSidecar(repository *stash.Repository, cmd string, snapshotIDs []string) ([]byte, error) {
-	// get workload name from repository
-	var workloadName string
-	if isV1Alpha1Repository(*repository) {
-		info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
-		if err != nil {
-			return nil, err
-		}
-		workloadName = info.WorkloadName
-	} else {
-		// get backup config for repository
-		bc, err := util.FindBackupConfigForRepository(r.stashClient, *repository)
-		if err != nil {
-			return nil, err
-		}
-		if bc == nil {
-			return nil, fmt.Errorf("can't list snapshots for repository %s/%s."+
-				" Reason: Reposiotry uses local backend and no BackupConfiguration exists for it.", repository.Namespace, repository.Name)
-		}
-		// only allow sidecar model
-		if bc.Spec.Target == nil || util.BackupModel(bc.Spec.Target.Ref.Kind) == apis.ModelCronJob {
-			return nil, fmt.Errorf("can't list snapshots for loacl backend with backup model 'cronjob'")
-		}
-		workloadName = bc.Spec.Target.Ref.Name
-	}
-
-	// get pod for workload
-	pod, err := r.getPodWithStashSidecar(repository.Namespace, workloadName)
+func (r *REST) execOnBackendMountingPod(repository *stash.Repository, cmd string, snapshotIDs []string) ([]byte, error) {
+	// get the pod that mount this repository as volume
+	pod, err := r.getBackendMountingPod(repository)
 	if err != nil {
 		return nil, err
 	}
@@ -213,28 +190,28 @@ func (r *REST) execOnSidecar(repository *stash.Repository, cmd string, snapshotI
 	return response, nil
 }
 
-func (r *REST) getPodWithStashSidecar(namespace, workloadname string) (*core.Pod, error) {
-	podList, err := r.kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+func (r *REST) getBackendMountingPod(repo *stash.Repository) (*core.Pod, error) {
+	vol, mnt := repo.Spec.Backend.Local.ToVolumeAndMount(repo.Name)
+	if repo.LocalNetworkVolume() {
+		mnt.MountPath = filepath.Join(mnt.MountPath, repo.LocalNetworkVolumePath())
+	}
+	// list all the pods
+	podList, err := r.kubeClient.CoreV1().Pods(repo.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-
-	for _, pod := range podList.Items {
-		if bytes.HasPrefix([]byte(pod.Name), []byte(workloadname)) && r.hasStashSidecar(&pod) {
-			return &pod, nil
+	// return the pod that has the vol and mnt
+	for i := range podList.Items {
+		if hasVolume(podList.Items[i].Spec.Volumes, vol) {
+			for _, c := range podList.Items[i].Spec.Containers {
+				if hasVolumeMount(c.VolumeMounts, mnt) {
+					return &podList.Items[i], nil
+				}
+			}
 		}
 	}
 
-	return nil, fmt.Errorf("no pod found for workload %v", workloadname)
-}
-
-func (r *REST) hasStashSidecar(pod *core.Pod) bool {
-	for _, c := range pod.Spec.Containers {
-		if c.Name == apis.StashContainer {
-			return true
-		}
-	}
-	return false
+	return nil, fmt.Errorf("no backend mounting pod found for Repository %v", repo.Name)
 }
 
 func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error) {
@@ -249,7 +226,8 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 		Resource("pods").
 		Name(pod.Name).
 		Namespace(pod.Namespace).
-		SubResource("exec")
+		SubResource("exec").
+		Timeout(5 * time.Minute)
 	req.VersionedParams(&core.PodExecOptions{
 		Container: apis.StashContainer,
 		Command:   command,
@@ -313,10 +291,18 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 	if err != nil {
 		return nil, fmt.Errorf("setup option for repository failed, reason: %s", err)
 	}
+	if repository.LocalNetworkVolume() {
+		setupOpt.Bucket = filepath.Join(setupOpt.Bucket, repository.LocalNetworkVolumePath())
+	}
 	// init restic wrapper
 	resticWrapper, err := restic.NewResticWrapper(setupOpt)
 	if err != nil {
 		return nil, err
+	}
+	// if repository does not exist in the backend, then nothing to list. Just return.
+	if !resticWrapper.RepositoryAlreadyExist() {
+		log.Infof("unable to verify whether repository exist or not in the backend for Repository: %s/%s", repository.Namespace, repository.Name)
+		return nil, nil
 	}
 	// list snapshots, returns all snapshots for empty snapshotIDs
 	// if there is no restic repository in the backend, this will return error.
@@ -339,6 +325,7 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 
 		snapshot.Labels = map[string]string{
 			"repository": repository.Name,
+			"hostname":   result.Hostname,
 		}
 		if repository.Labels != nil {
 			snapshot.Labels = core_util.UpsertMap(snapshot.Labels, repository.Labels)
@@ -352,6 +339,7 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 		snapshot.Status.Tree = result.Tree
 		snapshot.Status.Username = result.Username
 		snapshot.Status.Tags = result.Tags
+		snapshot.Status.Repository = repository.Name
 
 		snapshots = append(snapshots, *snapshot)
 	}
@@ -396,6 +384,9 @@ func (r *REST) forgetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs 
 	if err != nil {
 		return fmt.Errorf("setup option for repository failed, reason: %s", err)
 	}
+	if repository.LocalNetworkVolume() {
+		setupOpt.Bucket = filepath.Join(setupOpt.Bucket, repository.LocalNetworkVolumePath())
+	}
 	// init restic wrapper
 	resticWrapper, err := restic.NewResticWrapper(setupOpt)
 	if err != nil {
@@ -408,7 +399,7 @@ func (r *REST) forgetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs 
 
 func (r *REST) GetVersionedSnapshots(repository *stash.Repository, snapshotIDs []string, inCluster bool) ([]repositories.Snapshot, error) {
 	if repository.Spec.Backend.Local != nil && !inCluster {
-		return r.getSnapshotsFromSidecar(repository, snapshotIDs)
+		return r.getSnapshotsFromLocalBackend(repository, snapshotIDs)
 	} else if isV1Alpha1Repository(*repository) {
 		return r.getSnapshots(repository, snapshotIDs)
 	}
@@ -441,6 +432,24 @@ func repoNotFound(repo string, err error) bool {
 	for scanner.Scan() {
 		line = scanner.Text()
 		if strings.TrimSpace(line) == repoNotFoundMessage {
+			return true
+		}
+	}
+	return false
+}
+
+func hasVolume(volumes []core.Volume, vol core.Volume) bool {
+	for i := range volumes {
+		if volumes[i].Name == vol.Name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasVolumeMount(mounts []core.VolumeMount, mnt core.VolumeMount) bool {
+	for i := range mounts {
+		if mounts[i].Name == mnt.Name && mounts[i].MountPath == mnt.MountPath {
 			return true
 		}
 	}

@@ -34,6 +34,8 @@ type Interface interface {
 	BackupSessions() BackupSessionInformer
 	// Functions returns a FunctionInformer.
 	Functions() FunctionInformer
+	// RestoreBatches returns a RestoreBatchInformer.
+	RestoreBatches() RestoreBatchInformer
 	// RestoreSessions returns a RestoreSessionInformer.
 	RestoreSessions() RestoreSessionInformer
 	// Tasks returns a TaskInformer.
@@ -74,6 +76,11 @@ func (v *version) BackupSessions() BackupSessionInformer {
 // Functions returns a FunctionInformer.
 func (v *version) Functions() FunctionInformer {
 	return &functionInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// RestoreBatches returns a RestoreBatchInformer.
+func (v *version) RestoreBatches() RestoreBatchInformer {
+	return &restoreBatchInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RestoreSessions returns a RestoreSessionInformer.

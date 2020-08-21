@@ -71,50 +71,53 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
 
-			restoreOutput, err := opt.restoreVolumeSnapshot()
+			invoker, err := apis.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 			if err != nil {
 				return err
 			}
-			statOpt := status.UpdateStatusOptions{
-				Config:         config,
-				KubeClient:     opt.kubeClient,
-				StashClient:    opt.stashClient,
-				Namespace:      opt.namespace,
-				RestoreSession: opt.restoresession,
-				Metrics:        opt.metrics,
+
+			for _, targetInfo := range invoker.TargetsInfo {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+					restoreOutput, err := opt.restoreVolumeSnapshot(invoker, targetInfo)
+					if err != nil {
+						return err
+					}
+					statOpt := status.UpdateStatusOptions{
+						Config:      config,
+						KubeClient:  opt.kubeClient,
+						StashClient: opt.stashClient,
+						Namespace:   opt.namespace,
+						Metrics:     opt.metrics,
+					}
+					return statOpt.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
+				}
 			}
-			return statOpt.UpdatePostRestoreStatus(restoreOutput)
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.restoresession, "restoresession", "", "Name of the respective RestoreSession object")
+	cmd.Flags().StringVar(&opt.invokerKind, "invoker-kind", opt.invokerKind, "Kind of the restore invoker")
+	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", opt.invokerName, "Name of the respective restore invoker")
+	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetKind, "Kind of the Target")
 	cmd.Flags().BoolVar(&opt.metrics.Enabled, "metrics-enabled", opt.metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metrics.PushgatewayURL, "pushgateway-url", opt.metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
 	return cmd
 }
 
-func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
+func (opt *VSoption) restoreVolumeSnapshot(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) (*restic.RestoreOutput, error) {
 	// start clock to measure the time takes to restore the volumes
 	startTime := time.Now()
 
-	restoreSession, err := opt.stashClient.StashV1beta1().RestoreSessions(opt.namespace).Get(context.TODO(), opt.restoresession, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	if restoreSession.Spec.Target == nil {
-		return nil, fmt.Errorf("no target has been specified for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name)
-	}
-
 	// If preRestore hook is specified, then execute those hooks first
-	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
+	if invoker.Hooks != nil && invoker.Hooks.PreRestore != nil {
 		log.Infoln("Executing preRestore hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, restoreSession.Spec.Hooks.PreRestore, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, invoker.Hooks.PreRestore, podName, opt.namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -124,13 +127,13 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	var pvcList []core.PersistentVolumeClaim
 	// if replica field is specified, then use it. otherwise, default it to 1
 	replicas := int32(1)
-	if restoreSession.Spec.Target.Replicas != nil {
-		replicas = *restoreSession.Spec.Target.Replicas
+	if targetInfo.Target.Replicas != nil {
+		replicas = *targetInfo.Target.Replicas
 	}
 
 	// resolve the volumeClaimTemplates and prepare PVC definiton
 	for ordinal := int32(0); ordinal < replicas; ordinal++ {
-		pvcs, err := resolve.GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
+		pvcs, err := resolve.GetPVCFromVolumeClaimTemplates(ordinal, targetInfo.Target.VolumeClaimTemplates)
 		if err != nil {
 			return nil, err
 		}
@@ -141,14 +144,18 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	var createdPVCs []core.PersistentVolumeClaim
 
 	// now create the PVCs
-	restoreOutput := &restic.RestoreOutput{}
+	restoreOutput := &restic.RestoreOutput{
+		RestoreTargetStatus: api_v1beta1.RestoreMemberStatus{
+			Ref: targetInfo.Target.Ref,
+		},
+	}
 	for i := range pvcList {
 		// verify that the respective VolumeSnapshot exist
 		if pvcList[i].Spec.DataSource != nil {
-			_, err = opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Get(context.TODO(), pvcList[i].Spec.DataSource.Name, metav1.GetOptions{})
+			_, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Get(context.TODO(), pvcList[i].Spec.DataSource.Name, metav1.GetOptions{})
 			if err != nil {
 				if kerr.IsNotFound(err) { // respective VolumeSnapshot does not exist
-					restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
+					restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, api_v1beta1.HostRestoreStats{
 						Hostname: pvcList[i].Name,
 						Phase:    api_v1beta1.HostRestoreFailed,
 						Error:    fmt.Sprintf("VolumeSnapshot %s/%s does not exist", pvcList[i].Namespace, pvcList[i].Spec.DataSource.Name),
@@ -165,7 +172,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		pvc, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Create(context.TODO(), &pvcList[i], metav1.CreateOptions{})
 		if err != nil {
 			if kerr.IsAlreadyExists(err) {
-				restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
+				restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, api_v1beta1.HostRestoreStats{
 					Hostname: pvcList[i].Name,
 					Phase:    api_v1beta1.HostRestoreFailed,
 					Error:    fmt.Sprintf("Failed to create PVC %s/%s. Reason: PVC already exist.", pvcList[i].Namespace, pvcList[i].Name),
@@ -187,7 +194,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		storageClass, err := opt.kubeClient.StorageV1().StorageClasses().Get(context.TODO(), types.String(createdPVCs[i].Spec.StorageClassName), metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) { // storage class not found. so, restore won't be completed.
-				restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
+				restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, api_v1beta1.HostRestoreStats{
 					Hostname: createdPVCs[i].Name,
 					Phase:    api_v1beta1.HostRestoreFailed,
 					Error:    fmt.Sprintf("failed to restore. Reason: StorageClass %s not found.", *createdPVCs[i].Spec.StorageClassName),
@@ -201,7 +208,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		// don't wait for a PVC that uses "WaitForFirstConsumer" binding mode.
 		// this PVC will be bounded when a workload will use it.
 		if *storageClass.VolumeBindingMode == storage_api_v1.VolumeBindingWaitForFirstConsumer {
-			restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
+			restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, api_v1beta1.HostRestoreStats{
 				Hostname: createdPVCs[i].Name,
 				Phase:    api_v1beta1.HostRestoreUnknown,
 				Error: fmt.Sprintf("Stash is unable to verify whether the volume has been initialized from snapshot data or not." +
@@ -214,7 +221,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		// wait for the PVC to be bound with the respective PV
 		err = util.WaitUntilPVCReady(opt.kubeClient, createdPVCs[i].ObjectMeta)
 		if err != nil {
-			restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
+			restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, api_v1beta1.HostRestoreStats{
 				Hostname: createdPVCs[i].Name,
 				Phase:    api_v1beta1.HostRestoreFailed,
 				Error:    fmt.Sprintf("failed to restore the volume. Reason: %v", err),
@@ -223,20 +230,20 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 			continue
 		}
 		// restore completed for this PVC.
-		restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
+		restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, api_v1beta1.HostRestoreStats{
 			Hostname: createdPVCs[i].Name,
 			Phase:    api_v1beta1.HostRestoreSucceeded,
 			Duration: time.Since(startTime).String(),
 		})
 	}
 	// If postRestore hook is specified, then execute those hooks after restore
-	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
+	if invoker.Hooks != nil && invoker.Hooks.PostRestore != nil {
 		log.Infoln("Executing postRestore hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, restoreSession.Spec.Hooks.PostRestore, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, invoker.Hooks.PostRestore, podName, opt.namespace)
 		if err != nil {
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual restore process may be succeeded." +
 				"Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")
