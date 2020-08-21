@@ -49,6 +49,10 @@ func (c *FakeStashV1beta1) Functions() v1beta1.FunctionInterface {
 	return &FakeFunctions{c}
 }
 
+func (c *FakeStashV1beta1) RestoreBatches(namespace string) v1beta1.RestoreBatchInterface {
+	return &FakeRestoreBatches{c, namespace}
+}
+
 func (c *FakeStashV1beta1) RestoreSessions(namespace string) v1beta1.RestoreSessionInterface {
 	return &FakeRestoreSessions{c, namespace}
 }

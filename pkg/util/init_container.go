@@ -21,7 +21,6 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	v1alpha1_api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
-	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 
 	"github.com/appscode/go/types"
@@ -50,15 +49,18 @@ func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedRe
 	return container
 }
 
-func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha1_api.Repository, image docker.Docker) core.Container {
+func NewRestoreInitContainer(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo, repository *v1alpha1_api.Repository, image docker.Docker) core.Container {
 	initContainer := core.Container{
 		Name:  apis.StashInitContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore",
-			"--restoresession=" + rs.Name,
+			"--invoker-kind=" + invoker.TypeMeta.Kind,
+			"--invoker-name=" + invoker.ObjectMeta.Name,
+			"--target-name=" + targetInfo.Target.Ref.Name,
+			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--secret-dir=" + apis.StashSecretMountDir,
-			fmt.Sprintf("--enable-cache=%v", !rs.Spec.TempDir.DisableCaching),
+			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + pushgateway.URL(),
@@ -95,7 +97,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 	initContainer.VolumeMounts = UpsertTmpVolumeMount(initContainer.VolumeMounts)
 
 	// mount the volumes specified in RestoreSession inside this init-container
-	for _, srcVol := range rs.Spec.Target.VolumeMounts {
+	for _, srcVol := range targetInfo.Target.VolumeMounts {
 		initContainer.VolumeMounts = append(initContainer.VolumeMounts, core.VolumeMount{
 			Name:      srcVol.Name,
 			MountPath: srcVol.MountPath,
@@ -105,13 +107,13 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 
 	// if Repository uses local volume as backend, we have to mount it inside the initContainer
 	if repository.Spec.Backend.Local != nil {
-		_, mnt := repository.Spec.Backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
+		_, mnt := repository.Spec.Backend.Local.ToVolumeAndMount(repository.Name)
 		initContainer.VolumeMounts = append(initContainer.VolumeMounts, mnt)
 	}
 
 	// pass container runtime settings from RestoreSession to init-container
-	if rs.Spec.RuntimeSettings.Container != nil {
-		initContainer = ofst_util.ApplyContainerRuntimeSettings(initContainer, *rs.Spec.RuntimeSettings.Container)
+	if targetInfo.RuntimeSettings.Container != nil {
+		initContainer = ofst_util.ApplyContainerRuntimeSettings(initContainer, *targetInfo.RuntimeSettings.Container)
 	}
 
 	// In order to preserve file ownership, restore process need to be run as root user.
@@ -122,8 +124,8 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 		RunAsUser:  types.Int64P(0),
 		RunAsGroup: types.Int64P(0),
 	}
-	if rs.Spec.RuntimeSettings.Container != nil {
-		initContainer.SecurityContext = UpsertSecurityContext(securityContext, rs.Spec.RuntimeSettings.Container.SecurityContext)
+	if targetInfo.RuntimeSettings.Container != nil {
+		initContainer.SecurityContext = UpsertSecurityContext(securityContext, targetInfo.RuntimeSettings.Container.SecurityContext)
 	} else {
 		initContainer.SecurityContext = securityContext
 	}

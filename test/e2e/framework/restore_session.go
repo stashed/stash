@@ -18,17 +18,21 @@ package framework
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
+	"github.com/appscode/go/arrays"
 	"github.com/appscode/go/crypto/rand"
+	"github.com/appscode/go/sets"
 	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
@@ -65,27 +69,76 @@ func (fi Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
 	return nil
 }
 
-func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
 			rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			if err != nil {
 				return false
 			}
-			if rs.Status.Phase == v1beta1.RestoreSessionSucceeded ||
-				rs.Status.Phase == v1beta1.RestoreSessionFailed ||
-				rs.Status.Phase == v1beta1.RestoreSessionUnknown {
+
+			if rs.Status.Phase == v1beta1.RestoreSucceeded ||
+				rs.Status.Phase == v1beta1.RestoreFailed ||
+				rs.Status.Phase == v1beta1.RestorePhaseUnknown {
 				return true
 			}
 			return false
-		},
-	)
+		}, WaitTimeOut, PullInterval)
 }
 
-func (f *Framework) GetRestoreJob(restoreSessionName string) (*batchv1.Job, error) {
-	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(context.TODO(), getRestoreJobName(restoreSessionName), metav1.GetOptions{})
+func (f *Framework) GetRestoreJobs() ([]batchv1.Job, error) {
+	selector := labels.SelectorFromSet(map[string]string{
+		meta_util.ComponentLabelKey: v1beta1.StashRestoreComponent,
+		meta_util.ManagedByLabelKey: apis.StashKey,
+	})
+	var restoreJobs []batchv1.Job
+	jobs, err := f.KubeClient.BatchV1().Jobs(f.namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: selector.String()})
+	if err != nil {
+		return nil, err
+	}
+	for i := range jobs.Items {
+		if strings.HasPrefix(jobs.Items[i].ObjectMeta.Name, apis.PrefixStashRestore) {
+			restoreJobs = append(restoreJobs, jobs.Items[i])
+		}
+	}
+	return restoreJobs, nil
 }
 
-func getRestoreJobName(restoreSessionName string) string {
-	return meta_util.ValidNameWithPrefix(apis.PrefixStashRestore, strings.ReplaceAll(restoreSessionName, ".", "-"))
+func JobsTargetMatch(job batchv1.Job, targetRef v1beta1.TargetRef) bool {
+	containers := append(job.Spec.Template.Spec.InitContainers, job.Spec.Template.Spec.Containers...)
+	for _, c := range containers {
+		targetKindMatched, _ := arrays.Contains(c.Args, fmt.Sprintf("--target-kind=%s", targetRef.Kind))
+		targetNameMatched, _ := arrays.Contains(c.Args, fmt.Sprintf("--target-name=%s", targetRef.Name))
+		if targetKindMatched && targetNameMatched {
+			return true
+		}
+	}
+	return false
+}
+
+func RulesMigrated(restoreSession *v1beta1.RestoreSession, rules []v1beta1.Rule) bool {
+	if len(restoreSession.Spec.Rules) != 0 || len(restoreSession.Spec.Target.Rules) == 0 {
+		return false
+	}
+	for _, rule := range restoreSession.Spec.Target.Rules {
+		if !ruleExist(rule, rules) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func ruleExist(rule v1beta1.Rule, rules []v1beta1.Rule) bool {
+	for i := range rules {
+		if rules[i].SourceHost == rule.SourceHost &&
+			sets.NewString(rules[i].Paths...).Equal(sets.NewString(rule.Paths...)) &&
+			sets.NewString(rules[i].Include...).Equal(sets.NewString(rule.Include...)) &&
+			sets.NewString(rules[i].Exclude...).Equal(sets.NewString(rule.Exclude...)) &&
+			sets.NewString(rules[i].Snapshots...).Equal(sets.NewString(rule.Snapshots...)) &&
+			sets.NewString(rules[i].TargetHosts...).Equal(sets.NewString(rule.TargetHosts...)) {
+			return true
+		}
+	}
+	return false
 }

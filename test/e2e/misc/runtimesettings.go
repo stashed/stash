@@ -120,7 +120,7 @@ var _ = Describe("Runtime Settings", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
@@ -207,7 +207,7 @@ var _ = Describe("Runtime Settings", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredDeployment.ObjectMeta, apis.KindDeployment)
@@ -295,12 +295,16 @@ var _ = Describe("Runtime Settings", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				By("Verifying that the runtimeSettings has been applied on the restore job")
-				job, err = f.GetRestoreJob(restoreSession.Name)
+				jobs, err := f.GetRestoreJobs()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(framework.HasFSGroup(job.Spec.Template.Spec.SecurityContext)).Should(BeTrue())
+				for i := range jobs {
+					if framework.JobsTargetMatch(jobs[i], restoreSession.Spec.Target.Ref) {
+						Expect(framework.HasFSGroup(jobs[i].Spec.Template.Spec.SecurityContext)).Should(BeTrue())
+					}
+				}
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredPod.ObjectMeta, apis.KindPod)
@@ -406,7 +410,7 @@ var _ = Describe("Runtime Settings", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredDeployment.ObjectMeta, apis.KindDeployment)
@@ -512,13 +516,17 @@ var _ = Describe("Runtime Settings", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				By("Verifying that the runtimeSettings has been applied on the restore job")
-				job, err = f.GetRestoreJob(restoreSession.Name)
+				jobs, err := f.GetRestoreJobs()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(framework.HasResources(append(job.Spec.Template.Spec.InitContainers, job.Spec.Template.Spec.Containers...))).Should(BeTrue())
-				Expect(framework.HasSecurityContext(append(job.Spec.Template.Spec.InitContainers, job.Spec.Template.Spec.Containers...))).Should(BeTrue())
+				for i := range jobs {
+					if framework.JobsTargetMatch(jobs[i], restoreSession.Spec.Target.Ref) {
+						Expect(framework.HasResources(append(jobs[i].Spec.Template.Spec.InitContainers, jobs[i].Spec.Template.Spec.Containers...))).Should(BeTrue())
+						Expect(framework.HasSecurityContext(append(jobs[i].Spec.Template.Spec.InitContainers, jobs[i].Spec.Template.Spec.Containers...))).Should(BeTrue())
+					}
+				}
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredPod.ObjectMeta, apis.KindPod)

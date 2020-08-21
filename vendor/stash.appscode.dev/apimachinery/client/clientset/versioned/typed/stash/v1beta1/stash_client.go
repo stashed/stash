@@ -32,6 +32,7 @@ type StashV1beta1Interface interface {
 	BackupConfigurationsGetter
 	BackupSessionsGetter
 	FunctionsGetter
+	RestoreBatchesGetter
 	RestoreSessionsGetter
 	TasksGetter
 }
@@ -59,6 +60,10 @@ func (c *StashV1beta1Client) BackupSessions(namespace string) BackupSessionInter
 
 func (c *StashV1beta1Client) Functions() FunctionInterface {
 	return newFunctions(c)
+}
+
+func (c *StashV1beta1Client) RestoreBatches(namespace string) RestoreBatchInterface {
+	return newRestoreBatches(c, namespace)
 }
 
 func (c *StashV1beta1Client) RestoreSessions(namespace string) RestoreSessionInterface {

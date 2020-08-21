@@ -63,7 +63,7 @@ func (f *Framework) EventuallyReplicationController(meta metav1.ObjectMeta) Gome
 		obj, err := f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
-	})
+	}, WaitTimeOut, PullInterval)
 }
 
 func (fi *Invocation) WaitUntilRCReadyWithSidecar(meta metav1.ObjectMeta) error {

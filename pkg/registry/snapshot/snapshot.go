@@ -39,6 +39,11 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 )
 
+const (
+	KeyRepository = "repository"
+	KeyHostname   = "hostname"
+)
+
 type REST struct {
 	stashClient versioned.Interface
 	kubeClient  kubernetes.Interface
@@ -58,7 +63,7 @@ func NewREST(config *restconfig.Config) *REST {
 		stashClient: versioned.NewForConfigOrDie(config),
 		kubeClient:  kubernetes.NewForConfigOrDie(config),
 		config:      config,
-		convertor: rest.NewDefaultTableConvertor(schema.GroupResource{
+		convertor: NewCustomTableConvertor(schema.GroupResource{
 			Group:    repov1alpha1.SchemeGroupVersion.Group,
 			Resource: repov1alpha1.ResourcePluralSnapshot,
 		}),
@@ -92,7 +97,7 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 		return nil, apierrors.NewBadRequest(err.Error())
 	}
 
-	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(context.TODO(), repoName, metav1.GetOptions{})
+	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(ctx, repoName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
@@ -124,16 +129,17 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 		return nil, apierrors.NewBadRequest("missing namespace")
 	}
 
-	repos, err := r.stashClient.StashV1alpha1().Repositories(ns).List(context.TODO(), metav1.ListOptions{})
+	repos, err := r.stashClient.StashV1alpha1().Repositories(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, apierrors.NewInternalError(err)
 	}
 
+	// filter by repository label
 	var selectedRepos []stash.Repository
-	if options.LabelSelector != nil {
+	if options.LabelSelector != nil && hasSelector(options.LabelSelector, KeyRepository) {
 		for _, r := range repos.Items {
 			repoLabels := map[string]string{
-				"repository": r.Name,
+				KeyRepository: r.Name,
 			}
 			if r.Labels != nil {
 				repoLabels = core_util.UpsertMap(repoLabels, r.Labels)
@@ -154,7 +160,19 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 		if err != nil {
 			return nil, apierrors.NewInternalError(err)
 		}
-		snapshotList.Items = append(snapshotList.Items, snapshots...)
+		// filter by hostname label
+		if options.LabelSelector != nil && hasSelector(options.LabelSelector, KeyHostname) {
+			for i := range snapshots {
+				hostLabels := map[string]string{
+					KeyHostname: snapshots[i].Status.Hostname,
+				}
+				if options.LabelSelector.Matches(labels.Set(hostLabels)) {
+					snapshotList.Items = append(snapshotList.Items, snapshots[i])
+				}
+			}
+		} else {
+			snapshotList.Items = append(snapshotList.Items, snapshots...)
+		}
 	}
 
 	// k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructured_list.go
@@ -175,7 +193,7 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 	if err != nil {
 		return nil, false, apierrors.NewBadRequest(err.Error())
 	}
-	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(context.TODO(), repoName, metav1.GetOptions{})
+	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(ctx, repoName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil, false, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
@@ -195,6 +213,18 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 	if err = r.ForgetVersionedSnapshots(repo, []string{snapshotId}, false); err != nil {
 		return nil, false, apierrors.NewInternalError(err)
 	}
-
 	return nil, true, nil
+}
+
+func hasSelector(selector labels.Selector, key string) bool {
+	if selector == nil {
+		return false
+	}
+	requirements, _ := selector.Requirements()
+	for i := range requirements {
+		if requirements[i].Key() == key {
+			return true
+		}
+	}
+	return false
 }

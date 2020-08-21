@@ -69,8 +69,9 @@ type Options struct {
 	ResyncPeriod     time.Duration
 	MaxNumRequeues   int
 	RunViaCron       bool
-	DockerRegistry   string // image registry for check job
-	ImageTag         string // image tag for check job
+	DockerRegistry   string // image registry for the sidecar, init-container,and job etc.
+	StashImage       string // image for the sidecar,init-container,and jobs etc.
+	ImageTag         string // image tag for the sidecar,init-container, and jobs etc.
 	NumThreads       int
 }
 
@@ -148,7 +149,7 @@ func (c *Controller) Backup() error {
 	// create check job
 	image := docker.Docker{
 		Registry: c.opt.DockerRegistry,
-		Image:    docker.ImageStash,
+		Image:    c.opt.StashImage,
 		Tag:      c.opt.ImageTag,
 	}
 

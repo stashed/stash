@@ -46,12 +46,17 @@ const (
 )
 
 type Options struct {
-	Config             *rest.Config
-	MasterURL          string
-	KubeconfigPath     string
-	Namespace          string
-	RestoreSessionName string
-	BackoffMaxWait     time.Duration
+	Config         *rest.Config
+	MasterURL      string
+	KubeconfigPath string
+	Namespace      string
+
+	InvokerKind string
+	InvokerName string
+	TargetKind  string
+	TargetName  string
+
+	BackoffMaxWait time.Duration
 
 	SetupOpt restic.SetupOptions
 	Metrics  restic.MetricsOptions
@@ -62,18 +67,13 @@ type Options struct {
 	RestoreModel string
 }
 
-func Restore(opt *Options) (*restic.RestoreOutput, error) {
+func (opt *Options) Restore(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) (*restic.RestoreOutput, error) {
 
-	// get the RestoreSession crd
-	restoreSession, err := opt.StashClient.StashV1beta1().RestoreSessions(opt.Namespace).Get(context.TODO(), opt.RestoreSessionName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	if restoreSession.Spec.Target == nil {
-		return nil, fmt.Errorf("invalid RestoreSession. Target is nil")
+	if targetInfo.Target == nil {
+		return nil, fmt.Errorf("no restore target has specified")
 	}
 
-	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(context.TODO(), restoreSession.Spec.Repository.Name, metav1.GetOptions{})
+	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -101,14 +101,14 @@ func Restore(opt *Options) (*restic.RestoreOutput, error) {
 
 	// if we are restoring using job then there no need to lock the repository
 	if opt.RestoreModel == RestoreModelJob {
-		return opt.runRestore(restoreSession)
+		return opt.runRestore(invoker, targetInfo)
 	} else {
 		// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock
-		return nil, opt.electRestoreLeader(restoreSession)
+		return nil, opt.electRestoreLeader(invoker, targetInfo)
 	}
 }
 
-func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSession) error {
+func (opt *Options) electRestoreLeader(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) error {
 
 	log.Infoln("Attempting to elect restore leader")
 
@@ -119,8 +119,8 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 
 	resLock, err := resourcelock.New(
 		resourcelock.ConfigMapsResourceLock,
-		restoreSession.Namespace,
-		util.GetRestoreConfigmapLockName(restoreSession.Spec.Target.Ref),
+		invoker.ObjectMeta.Namespace,
+		util.GetRestoreConfigmapLockName(targetInfo.Target.Ref),
 		opt.KubeClient.CoreV1(),
 		opt.KubeClient.CoordinationV1(),
 		rlc,
@@ -144,9 +144,9 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 			OnStartedLeading: func(ctx context.Context) {
 				log.Infoln("Got leadership, preparing for restore")
 				// run restore process
-				restoreOutput, restoreErr := opt.runRestore(restoreSession)
+				restoreOutput, restoreErr := opt.runRestore(invoker, targetInfo)
 				if restoreErr != nil {
-					e2 := opt.HandleRestoreFailure(restoreErr)
+					e2 := opt.HandleRestoreFailure(invoker, targetInfo, restoreErr)
 					if e2 != nil {
 						restoreErr = errors.NewAggregate([]error{restoreErr, e2})
 					}
@@ -156,7 +156,7 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 					log.Fatalf("failed to complete restore. Reason: %v", restoreErr)
 				}
 				if restoreOutput != nil {
-					err = opt.HandleRestoreSuccess(restoreOutput)
+					err = opt.HandleRestoreSuccess(restoreOutput, invoker, targetInfo)
 					if err != nil {
 						cancel()
 						log.Fatalf("failed to complete restore. Reason: %v", err)
@@ -173,17 +173,22 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 	return nil
 }
 
-func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*restic.RestoreOutput, error) {
+func (opt *Options) runRestore(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) (*restic.RestoreOutput, error) {
 
 	// if already restored for this host then don't process further
-	if opt.isRestoredForThisHost(restoreSession, opt.Host) {
-		log.Infof("Skipping restore for RestoreSession %s/%s. Reason: RestoreSession already processed for host %q.", restoreSession.Namespace, restoreSession.Name, opt.Host)
+	if opt.isRestoredForThisHost(invoker, targetInfo, opt.Host) {
+		log.Infof("Skipping restore for %s %s/%s. Reason: restore already completed for host %q.",
+			invoker.TypeMeta.Kind,
+			invoker.ObjectMeta.Namespace,
+			invoker.ObjectMeta.Name,
+			opt.Host,
+		)
 		return nil, nil
 	}
 
 	// If preRestore hook is specified, then execute those hooks first
-	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
-		err := util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PreRestoreHook, os.Getenv(apis.KeyPodName), opt.Namespace)
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PreRestore != nil {
+		err := util.ExecuteHook(opt.Config, targetInfo.Hooks, apis.PreRestoreHook, os.Getenv(apis.KeyPodName), opt.Namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -200,11 +205,11 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 	// We will execute postRestore hook even if the restore failed.
 	// Reason: https://github.com/stashed/stash/issues/986
 	var restoreErr, hookErr error
-	output, restoreErr := w.RunRestore(util.RestoreOptionsForHost(opt.Host, restoreSession.Spec.Rules))
+	output, restoreErr := w.RunRestore(util.RestoreOptionsForHost(opt.Host, targetInfo.Target.Rules), targetInfo.Target.Ref)
 
 	// If postRestore hook is specified, then execute those hooks
-	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
-		hookErr = util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PostRestoreHook, os.Getenv(apis.KeyPodName), opt.Namespace)
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {
+		hookErr = util.ExecuteHook(opt.Config, targetInfo.Hooks, apis.PostRestoreHook, os.Getenv(apis.KeyPodName), opt.Namespace)
 	}
 
 	if restoreErr != nil || hookErr != nil {
@@ -213,73 +218,73 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 	return output, nil
 }
 
-func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput) error {
+func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput, invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) error {
 	// write log
-	log.Infof("Restore completed successfully for RestoreSession %s", c.RestoreSessionName)
-
-	// add/update entry into RestoreSession status for this host
-	restoreSession, err := c.StashClient.StashV1beta1().RestoreSessions(c.Namespace).Get(context.TODO(), c.RestoreSessionName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
+	log.Infof("Restore completed successfully for %s %s/%s",
+		invoker.TypeMeta.Kind,
+		invoker.ObjectMeta.Namespace,
+		invoker.ObjectMeta.Name,
+	)
 
 	statusOpt := status.UpdateStatusOptions{
-		Config:         c.Config,
-		KubeClient:     c.KubeClient,
-		StashClient:    c.StashClient,
-		Namespace:      c.Namespace,
-		Repository:     restoreSession.Spec.Repository.Name,
-		RestoreSession: c.RestoreSessionName,
-		Metrics:        c.Metrics,
+		Config:      c.Config,
+		KubeClient:  c.KubeClient,
+		StashClient: c.StashClient,
+		Namespace:   c.Namespace,
+		Repository:  invoker.Repository,
+		Metrics:     c.Metrics,
 	}
-	return statusOpt.UpdatePostRestoreStatus(restoreOutput)
+	return statusOpt.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
 }
 
-func (c *Options) HandleRestoreFailure(restoreErr error) error {
+func (c *Options) HandleRestoreFailure(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo, restoreErr error) error {
 	// write log
-	log.Warningf("Failed to complete restore process for RestoreSession %s. Reason: %v", c.RestoreSessionName, restoreErr)
-
-	// add/update entry into RestoreSession status for this host
-	restoreSession, err := c.StashClient.StashV1beta1().RestoreSessions(c.Namespace).Get(context.TODO(), c.RestoreSessionName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
+	log.Errorf("Failed to complete restore process for %s %s/%s. Reason: %v",
+		invoker.TypeMeta.Kind,
+		invoker.ObjectMeta.Namespace,
+		invoker.ObjectMeta.Name,
+		restoreErr,
+	)
 
 	restoreOutput := &restic.RestoreOutput{
-		HostRestoreStats: []api_v1beta1.HostRestoreStats{
-			{
-				Hostname: c.Host,
-				Phase:    api_v1beta1.HostRestoreFailed,
-				Error:    fmt.Sprintf("failed to complete restore process for host %s. Reason: %v", c.Host, restoreErr),
+		RestoreTargetStatus: api_v1beta1.RestoreMemberStatus{
+			Ref: targetInfo.Target.Ref,
+			Stats: []api_v1beta1.HostRestoreStats{
+				{
+					Hostname: c.Host,
+					Phase:    api_v1beta1.HostRestoreFailed,
+					Error:    fmt.Sprintf("failed to complete restore process for host %s. Reason: %v", c.Host, restoreErr),
+				},
 			},
 		},
 	}
 
 	statusOpt := status.UpdateStatusOptions{
-		Config:         c.Config,
-		KubeClient:     c.KubeClient,
-		StashClient:    c.StashClient,
-		Namespace:      c.Namespace,
-		Repository:     restoreSession.Spec.Repository.Name,
-		RestoreSession: c.RestoreSessionName,
-		Metrics:        c.Metrics,
+		Config:      c.Config,
+		KubeClient:  c.KubeClient,
+		StashClient: c.StashClient,
+		Namespace:   c.Namespace,
+		Repository:  invoker.Repository,
+		Metrics:     c.Metrics,
 	}
-	return statusOpt.UpdatePostRestoreStatus(restoreOutput)
+	return statusOpt.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
 }
 
-func (opt *Options) isRestoredForThisHost(restoreSession *api_v1beta1.RestoreSession, host string) bool {
+func (opt *Options) isRestoredForThisHost(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo, host string) bool {
 
-	// if overall restoreSession phase is "Succeeded" then restore has been complete for this host
-	if restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded {
+	// if overall invoker Phase is "Succeeded" then restore has been complete for this host
+	if invoker.Status.Phase == api_v1beta1.RestoreSucceeded {
 		return true
 	}
-
-	// if restoreSession has entry for this host in status field and it is succeeded, then restore has been completed for this host
-	for _, hostStats := range restoreSession.Status.Stats {
-		if hostStats.Hostname == host && hostStats.Phase == api_v1beta1.HostRestoreSucceeded {
-			return true
+	for _, member := range invoker.Status.TargetStatus {
+		if apis.TargetMatched(member.Ref, targetInfo.Target.Ref) {
+			// if restore invoker has entry for this host in status field and it is succeeded, then restore has been completed for this host
+			for _, hostStat := range member.Stats {
+				if hostStat.Hostname == host && hostStat.Phase == api_v1beta1.HostRestoreSucceeded {
+					return true
+				}
+			}
 		}
 	}
-
 	return false
 }

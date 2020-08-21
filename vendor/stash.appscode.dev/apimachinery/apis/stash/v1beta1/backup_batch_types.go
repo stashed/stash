@@ -82,6 +82,11 @@ type BackupBatchSpec struct {
 	// Cannot be updated.
 	// +optional
 	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,9,opt,name=hooks"`
+	// ExecutionOrder indicate whether to backup the members in the sequential order as they appear in the members list.
+	// The default value is "Parallel" which means the members will be backed up in parallel.
+	// +kubebuilder:default=Parallel
+	// +optional
+	ExecutionOrder ExecutionOrder `json:"executionOrder,omitempty" protobuf:"bytes,10,opt,name=executionOrder"`
 }
 
 type BackupBatchStatus struct {
@@ -94,7 +99,7 @@ type BackupBatchStatus struct {
 	Conditions []kmapi.Condition `json:"conditions,omitempty" protobuf:"bytes,2,rep,name=conditions"`
 	// MemberConditions shows current backup setup condition of the members of the BackupBatch.
 	// +optional
-	MemberConditions []MemberConditions `json:"memberConditions" protobuf:"bytes,3,rep,name=memberConditions"`
+	MemberConditions []MemberConditions `json:"memberConditions,omitempty" protobuf:"bytes,3,rep,name=memberConditions"`
 }
 
 type MemberConditions struct {

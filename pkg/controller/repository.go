@@ -112,7 +112,9 @@ func (c *StashController) runRepositoryReconciler(key string) error {
 				},
 				metav1.PatchOptions{},
 			)
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

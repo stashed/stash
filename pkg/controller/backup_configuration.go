@@ -25,6 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
@@ -97,7 +98,7 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 }
 
 func (c *StashController) applyBackupInvokerReconciliationLogic(invoker apis.Invoker, key string) error {
-	// check if BackupBatch is being deleted. if it is being deleted then delete respective resources.
+	// check if backup invoker is being deleted. if it is being deleted then delete respective resources.
 	if invoker.ObjectMeta.DeletionTimestamp != nil {
 		if core_util.HasFinalizer(invoker.ObjectMeta, api_v1beta1.StashKey) {
 			for _, targetInfo := range invoker.TargetsInfo {
@@ -115,99 +116,135 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(invoker apis.Inv
 			// Remove finalizer
 			return invoker.RemoveFinalizer()
 		}
-	} else {
-		err := invoker.AddFinalizer()
+	}
+	err := invoker.AddFinalizer()
+	if err != nil {
+		return err
+	}
+
+	if invoker.Driver == "" || invoker.Driver == api_v1beta1.ResticSnapshotter {
+		// Check whether Repository exist or not
+		repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				glog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
+					invoker.ObjectMeta.Namespace,
+					invoker.Repository,
+					invoker.TypeMeta.Kind,
+					invoker.ObjectMeta.Namespace,
+					invoker.ObjectMeta.Name,
+				)
+				err2 := conditions.SetRepositoryFoundConditionToFalse(invoker)
+				if err2 != nil {
+					return err2
+				}
+				return c.requeueInvoker(invoker, key, 5*time.Second)
+			}
+			err2 := conditions.SetRepositoryFoundConditionToUnknown(invoker, err)
+			return errors.NewAggregate([]error{err, err2})
+		}
+		err = conditions.SetRepositoryFoundConditionToTrue(invoker)
 		if err != nil {
 			return err
 		}
-		someTargetMissing := false
-		for _, targetInfo := range invoker.TargetsInfo {
-			if targetInfo.Target != nil {
-				tref := targetInfo.Target.Ref
-				wc := util.WorkloadClients{
-					KubeClient:       c.kubeClient,
-					OcClient:         c.ocClient,
-					StashClient:      c.stashClient,
-					CRDClient:        c.crdClient,
-					AppCatalogClient: c.appCatalogClient,
+
+		// Check whether the backend Secret exist or not
+		secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				glog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
+					secret.Namespace,
+					secret.Name,
+					repository.Namespace,
+					repository.Name,
+				)
+				err2 := conditions.SetBackendSecretFoundConditionToFalse(invoker, secret.Name)
+				if err2 != nil {
+					return err2
 				}
-				targetExist, err := wc.IsTargetExist(tref, invoker.ObjectMeta.Namespace)
-				if err != nil {
-					glog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
-						tref.APIVersion,
-						tref.Kind,
-						invoker.ObjectMeta.Namespace,
-						tref.Name,
-						err.Error(),
-					)
-					// Set the "BackupTargetFound" condition to "Unknown"
-					cerr := c.setBackupTargetFoundConditionToUnknown(invoker, tref, err)
-					return errors.NewAggregate([]error{err, cerr})
-				}
-				if !targetExist {
-					// Target does not exist. Log the information.
-					someTargetMissing = true
-					glog.Infof("Backup target %s %s %s/%s does not exist.",
-						tref.APIVersion,
-						tref.Kind,
-						invoker.ObjectMeta.Namespace,
-						tref.Name)
-					err = c.setBackupTargetFoundConditionToFalse(invoker, tref)
-					if err != nil {
-						return err
-					}
-					// Process next target.
-					continue
-				}
-				// Backup target exist. So, set "BackupTargetFound" condition to "True"
-				err = c.setBackupTargetFoundConditionToTrue(invoker, tref)
+				return c.requeueInvoker(invoker, key, 5*time.Second)
+			}
+			err2 := conditions.SetBackendSecretFoundConditionToUnknown(invoker, secret.Name, err)
+			return errors.NewAggregate([]error{err, err2})
+		}
+		err = conditions.SetBackendSecretFoundConditionToTrue(invoker, secret.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	someTargetMissing := false
+	for _, targetInfo := range invoker.TargetsInfo {
+		if targetInfo.Target != nil {
+			tref := targetInfo.Target.Ref
+			wc := util.WorkloadClients{
+				KubeClient:       c.kubeClient,
+				OcClient:         c.ocClient,
+				StashClient:      c.stashClient,
+				CRDClient:        c.crdClient,
+				AppCatalogClient: c.appCatalogClient,
+			}
+			targetExist, err := wc.IsTargetExist(tref, invoker.ObjectMeta.Namespace)
+			if err != nil {
+				glog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
+					tref.APIVersion,
+					tref.Kind,
+					invoker.ObjectMeta.Namespace,
+					tref.Name,
+					err.Error(),
+				)
+				// Set the "BackupTargetFound" condition to "Unknown"
+				cerr := conditions.SetBackupTargetFoundConditionToUnknown(invoker, tref, err)
+				return errors.NewAggregate([]error{err, cerr})
+			}
+			if !targetExist {
+				// Target does not exist. Log the information.
+				someTargetMissing = true
+				glog.Infof("Backup target %s %s %s/%s does not exist.",
+					tref.APIVersion,
+					tref.Kind,
+					invoker.ObjectMeta.Namespace,
+					tref.Name)
+				err = conditions.SetBackupTargetFoundConditionToFalse(invoker, tref)
 				if err != nil {
 					return err
 				}
-				// For sidecar model, ensure the stash sidecar
-				if (invoker.Driver == "" || invoker.Driver == api_v1beta1.ResticSnapshotter) && util.BackupModel(tref.Kind) == apis.ModelSidecar {
-					err := c.EnsureV1beta1Sidecar(tref, invoker.ObjectMeta.Namespace)
-					if err != nil {
-						return c.handleWorkloadControllerTriggerFailure(invoker.ObjectRef, err)
-					}
+				// Process next target.
+				continue
+			}
+			// Backup target exist. So, set "BackupTargetFound" condition to "True"
+			err = conditions.SetBackupTargetFoundConditionToTrue(invoker, tref)
+			if err != nil {
+				return err
+			}
+			// For sidecar model, ensure the stash sidecar
+			if (invoker.Driver == "" || invoker.Driver == api_v1beta1.ResticSnapshotter) && util.BackupModel(tref.Kind) == apis.ModelSidecar {
+				err := c.EnsureV1beta1Sidecar(tref, invoker.ObjectMeta.Namespace)
+				if err != nil {
+					return c.handleWorkloadControllerTriggerFailure(invoker.ObjectRef, err)
 				}
 			}
+		}
 
-		}
-		// If some backup targets are missing, then retry after some time.
-		if someTargetMissing {
-			glog.Infof("Some targets are missing for backup invoker: %s %s/%s.\nRequeueing after 5 seconds......",
-				invoker.TypeMeta.Kind,
-				invoker.ObjectMeta.Namespace,
-				invoker.ObjectMeta.Name,
-			)
-			switch invoker.TypeMeta.Kind {
-			case api_v1beta1.ResourceKindBackupConfiguration:
-				c.bcQueue.GetQueue().AddAfter(key, 5*time.Second)
-			case api_v1beta1.ResourceKindBackupBatch:
-				c.backupBatchQueue.GetQueue().AddAfter(key, 5*time.Second)
-			default:
-				return fmt.Errorf("unable to requeue. Reason: Backup invoker %s  %s is not supported",
-					invoker.TypeMeta.APIVersion,
-					invoker.TypeMeta.Kind,
-				)
-			}
-			return nil
-		}
-		// create a CronJob that will create BackupSession on each schedule
-		err = c.EnsureBackupTriggeringCronJob(invoker)
-		if err != nil {
-			// Failed to ensure the backup triggering CronJob. So, set "CronJobCreated" condition to "False"
-			cerr := c.setCronJobCreatedConditionToFalse(invoker, err)
-			return c.handleCronJobCreationFailure(invoker.ObjectRef, errors.NewAggregate([]error{err, cerr}))
-		}
-		// Successfully ensured the backup triggering CronJob. So, set "CronJobCreated" condition to "True"
-		cerr := c.setCronJobCreatedConditionToTrue(invoker)
-		if cerr != nil {
-			return cerr
-		}
 	}
-	return nil
+	// If some backup targets are missing, then retry after some time.
+	if someTargetMissing {
+		glog.Infof("Some targets are missing for backup invoker: %s %s/%s.\nRequeueing after 5 seconds......",
+			invoker.TypeMeta.Kind,
+			invoker.ObjectMeta.Namespace,
+			invoker.ObjectMeta.Name,
+		)
+		return c.requeueInvoker(invoker, key, 5*time.Second)
+	}
+	// create a CronJob that will create BackupSession on each schedule
+	err = c.EnsureBackupTriggeringCronJob(invoker)
+	if err != nil {
+		// Failed to ensure the backup triggering CronJob. So, set "CronJobCreated" condition to "False"
+		cerr := conditions.SetCronJobCreatedConditionToFalse(invoker, err)
+		return c.handleCronJobCreationFailure(invoker.ObjectRef, errors.NewAggregate([]error{err, cerr}))
+	}
+	// Successfully ensured the backup triggering CronJob. So, set "CronJobCreated" condition to "True"
+	return conditions.SetCronJobCreatedConditionToTrue(invoker)
 }
 
 // EnsureV1beta1SidecarDeleted send an event to workload respective controller
@@ -291,7 +328,7 @@ func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resourceName
 func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) error {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
+		Image:    c.StashImage,
 		Tag:      c.StashImageTag,
 	}
 
@@ -332,6 +369,14 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 		return err
 	}
 
+	// if the Stash is using a private registry, then ensure the image pull secrets
+	var imagePullSecrets []core.LocalObjectReference
+	if c.ImagePullSecrets != nil {
+		imagePullSecrets, err = c.ensureImagePullSecrets(invoker.ObjectMeta, invoker.OwnerRef)
+		if err != nil {
+			return err
+		}
+	}
 	_, _, err = batch_util.CreateOrPatchCronJob(
 		context.TODO(),
 		c.kubeClient,
@@ -353,7 +398,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 				Args: []string{
 					"create-backupsession",
 					fmt.Sprintf("--invoker-name=%s", invoker.OwnerRef.Name),
-					fmt.Sprintf("--invoker-type=%s", invoker.OwnerRef.Kind),
+					fmt.Sprintf("--invoker-kind=%s", invoker.OwnerRef.Kind),
 				},
 			}
 			// only apply the container level runtime settings that make sense for the CronJob
@@ -368,6 +413,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 				in.Spec.JobTemplate.Spec.Template.Spec.Containers, container)
 			in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
 			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 
 			// only apply the pod level runtime settings that make sense for the CronJob
 			if invoker.RuntimeSettings.Pod != nil {
@@ -419,22 +465,13 @@ func (c *StashController) handleCronJobCreationFailure(ref *core.ObjectReference
 		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write cronjob creation failure event. Reason: provided ObjectReference is nil")})
 	}
 
-	var eventSource string
-	switch ref.Kind {
-	case api_v1beta1.ResourceKindBackupConfiguration:
-		eventSource = eventer.EventSourceBackupConfigurationController
-	case api_v1beta1.ResourceKindBackupBatch:
-		eventSource = eventer.EventSourceBackupBatchController
-	default:
-		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write cronjob creation failure event. Reason: Stash does not create cron job for %s", ref.Kind)})
-	}
 	// write log
 	log.Warningf("failed to create CronJob for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to Backup invoker
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
-		eventSource,
+		eventer.EventSourceBackupConfigurationController,
 		ref,
 		core.EventTypeWarning,
 		eventer.EventReasonCronJobCreationFailed,
@@ -450,8 +487,6 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.Objec
 	switch ref.Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:
 		eventSource = eventer.EventSourceBackupConfigurationController
-	case api_v1beta1.ResourceKindBackupBatch:
-		eventSource = eventer.EventSourceBackupBatchController
 	case api_v1beta1.ResourceKindRestoreSession:
 		eventSource = eventer.EventSourceRestoreSessionController
 	}
@@ -468,4 +503,17 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.Objec
 		fmt.Sprintf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
 	)
 	return errors.NewAggregate([]error{err, err2})
+}
+
+func (c *StashController) requeueInvoker(invoker apis.Invoker, key string, delay time.Duration) error {
+	switch invoker.TypeMeta.Kind {
+	case api_v1beta1.ResourceKindBackupConfiguration:
+		c.bcQueue.GetQueue().AddAfter(key, delay)
+	default:
+		return fmt.Errorf("unable to requeue. Reason: Backup invoker %s  %s is not supported",
+			invoker.TypeMeta.APIVersion,
+			invoker.TypeMeta.Kind,
+		)
+	}
+	return nil
 }

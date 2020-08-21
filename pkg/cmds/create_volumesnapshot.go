@@ -46,8 +46,8 @@ import (
 )
 
 type VSoption struct {
-	backupsession  string
-	restoresession string
+	backupsession string
+
 	namespace      string
 	config         *rest.Config
 	kubeClient     kubernetes.Interface
@@ -55,9 +55,13 @@ type VSoption struct {
 	snapshotClient vs_cs.Interface
 	metrics        restic.MetricsOptions
 
+	// Invoker
+	invokerKind string
+	invokerName string
+
 	//Target
-	backupTargetName string
-	backupTargetKind string
+	targetName string
+	targetKind string
 }
 
 func NewCmdCreateVolumeSnapshot() *cobra.Command {
@@ -100,9 +104,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			}
 
 			for _, targetInfo := range invoker.TargetsInfo {
-				if targetInfo.Target != nil &&
-					targetInfo.Target.Ref.Kind == opt.backupTargetKind &&
-					targetInfo.Target.Ref.Name == opt.backupTargetName {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
 					backupOutput, err := opt.createVolumeSnapshot(backupSession.ObjectMeta, invoker, targetInfo)
 					if err != nil {
 						return err
@@ -116,8 +118,8 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 						BackupSession: opt.backupsession,
 						Metrics:       opt.metrics,
 					}
-					statOpt.TargetRef.Name = opt.backupTargetName
-					statOpt.TargetRef.Kind = opt.backupTargetKind
+					statOpt.TargetRef.Name = opt.targetName
+					statOpt.TargetRef.Kind = opt.targetKind
 
 					return statOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
 
@@ -128,8 +130,8 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.backupTargetName, "target-name", opt.backupTargetName, "Name of the Target")
-	cmd.Flags().StringVar(&opt.backupTargetKind, "target-kind", opt.backupTargetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetKind, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.backupsession, "backupsession", "", "Name of the respective BackupSession object")
 	cmd.Flags().BoolVar(&opt.metrics.Enabled, "metrics-enabled", opt.metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metrics.PushgatewayURL, "pushgateway-url", opt.metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
@@ -178,18 +180,22 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invoker apis
 	}
 
 	// now wait for all the VolumeSnapshots are completed (ready to to use)
-	backupOutput := &restic.BackupOutput{}
+	backupOutput := &restic.BackupOutput{
+		BackupTargetStatus: api_v1beta1.BackupTargetStatus{
+			Ref: targetInfo.Target.Ref,
+		},
+	}
 	for i, pvcName := range pvcNames {
 		// wait until this VolumeSnapshot is ready to use
 		err = util.WaitUntilVolumeSnapshotReady(opt.snapshotClient, vsMeta[i])
 		if err != nil {
-			backupOutput.HostBackupStats = append(backupOutput.HostBackupStats, api_v1beta1.HostBackupStats{
+			backupOutput.BackupTargetStatus.Stats = append(backupOutput.BackupTargetStatus.Stats, api_v1beta1.HostBackupStats{
 				Hostname: pvcName,
 				Phase:    api_v1beta1.HostBackupFailed,
 				Error:    err.Error(),
 			})
 		} else {
-			backupOutput.HostBackupStats = append(backupOutput.HostBackupStats, api_v1beta1.HostBackupStats{
+			backupOutput.BackupTargetStatus.Stats = append(backupOutput.BackupTargetStatus.Stats, api_v1beta1.HostBackupStats{
 				Hostname: pvcName,
 				Phase:    api_v1beta1.HostBackupSucceeded,
 				Duration: time.Since(startTime).String(),
@@ -197,7 +203,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invoker apis
 		}
 
 	}
-	err = volumesnapshot.CleanupSnapshots(invoker.RetentionPolicy, backupOutput.HostBackupStats, bsMeta.Namespace, opt.snapshotClient)
+	err = volumesnapshot.CleanupSnapshots(invoker.RetentionPolicy, backupOutput.BackupTargetStatus.Stats, bsMeta.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
 	}

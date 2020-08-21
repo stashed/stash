@@ -17,6 +17,10 @@ limitations under the License.
 package cmds
 
 import (
+	"time"
+
+	"stash.appscode.dev/apimachinery/apis"
+	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/restore"
@@ -25,6 +29,7 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
@@ -56,28 +61,51 @@ func NewCmdRestore() *cobra.Command {
 			opt.Config = config
 			opt.KubeClient = kubernetes.NewForConfigOrDie(config)
 			opt.StashClient = cs.NewForConfigOrDie(config)
+			opt.Metrics.JobName = opt.InvokerName
 
-			opt.Metrics.JobName = opt.RestoreSessionName
-			opt.Host, err = util.GetRestoreHostName(opt.StashClient, opt.RestoreSessionName, opt.Namespace)
+			invoker, err := apis.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 			if err != nil {
 				return err
 			}
-			// run restore
-			restoreOutput, restoreErr := restore.Restore(opt)
-			if restoreErr != nil {
-				err = opt.HandleRestoreFailure(restoreErr)
-				return errors.NewAggregate([]error{restoreErr, err})
 
+			for _, targetInfo := range invoker.TargetsInfo {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.TargetKind, opt.TargetName) {
+
+					// Ensure restore order
+					if invoker.ExecutionOrder == v1beta1_api.Sequential {
+						err = waitUntilAllPreviousTargetsExecuted(opt, targetInfo.Target.Ref)
+						if err != nil {
+							return err
+						}
+					}
+
+					opt.Host, err = util.GetHostName(targetInfo.Target)
+					if err != nil {
+						return err
+					}
+
+					// run restore
+					restoreOutput, restoreErr := opt.Restore(invoker, targetInfo)
+					if restoreErr != nil {
+						err = opt.HandleRestoreFailure(invoker, targetInfo, restoreErr)
+						return errors.NewAggregate([]error{restoreErr, err})
+
+					}
+					if restoreOutput != nil {
+						return opt.HandleRestoreSuccess(restoreOutput, invoker, targetInfo)
+					}
+				}
 			}
-			if restoreOutput != nil {
-				return opt.HandleRestoreSuccess(restoreOutput)
-			}
+
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&opt.MasterURL, "master", opt.MasterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&opt.KubeconfigPath, "kubeconfig", opt.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.RestoreSessionName, "restoresession", opt.RestoreSessionName, "Name of the respective RestoreSession object.")
+	cmd.Flags().StringVar(&opt.InvokerKind, "invoker-kind", opt.InvokerKind, "Kind of the respective restore invoker")
+	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective restore invoker")
+	cmd.Flags().StringVar(&opt.TargetName, "target-name", opt.TargetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.TargetKind, "target-kind", opt.TargetKind, "Kind of the Target")
 	cmd.Flags().DurationVar(&opt.BackoffMaxWait, "backoff-max-wait", 0, "Maximum wait for initial response from kube apiserver; 0 disables the timeout")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
@@ -88,4 +116,15 @@ func NewCmdRestore() *cobra.Command {
 	cmd.Flags().StringVar(&opt.RestoreModel, "restore-model", opt.RestoreModel, "Specify whether using job or init-container to restore (default init-container)")
 
 	return cmd
+}
+
+func waitUntilAllPreviousTargetsExecuted(opt *restore.Options, tref v1beta1_api.TargetRef) error {
+	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (bool, error) {
+		log.Infof("Waiting for all previous targets to complete their restore process...")
+		invoker, err := apis.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
+		if err != nil {
+			return false, err
+		}
+		return invoker.NextInOrder(tref, invoker.Status.TargetStatus), nil
+	})
 }

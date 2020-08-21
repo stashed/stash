@@ -40,31 +40,45 @@ type Param struct {
 
 type TaskRef struct {
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// Params specifies a list of parameter to pass to the Task. Stash will use this parameters to resolve the task.
 	// +optional
 	Params []Param `json:"params,omitempty" protobuf:"bytes,2,rep,name=params"`
 }
 
 type BackupTarget struct {
+	// Alias represents the identifier of the backed up data in the repository.
+	// This will be used as `hostname` or will be used to generate the `hostname` for the restic repository.
+	// +optional
+	Alias string `json:"alias,omitempty" protobuf:"bytes,1,opt,name=alias"`
 	// Ref refers to the backup target
-	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,1,opt,name=ref"`
+	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,2,opt,name=ref"`
 	// Paths specify the file paths to backup
 	// +optional
-	Paths []string `json:"paths,omitempty" protobuf:"bytes,2,rep,name=paths"`
+	Paths []string `json:"paths,omitempty" protobuf:"bytes,3,rep,name=paths"`
 	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
 	// Specify the volumes that contains the target directories
 	// +optional
-	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" protobuf:"bytes,3,rep,name=volumeMounts"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" protobuf:"bytes,4,rep,name=volumeMounts"`
 	//replicas are the desired number of replicas whose data should be backed up.
 	// If unspecified, defaults to 1.
 	// +optional
-	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,4,opt,name=replicas"`
+	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,5,opt,name=replicas"`
 	// Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available.
 	// Use this field only if the "driver" field is set to "volumeSnapshotter".
 	// +optional
-	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty" protobuf:"bytes,5,opt,name=snapshotClassName"`
+	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty" protobuf:"bytes,6,opt,name=snapshotClassName"`
+	// Exclude specifies a list of patterns for the files to ignore during backup.
+	// Stash will ignore those files that match the specified patterns.
+	// Supported only for "Restic" driver
+	// +optional
+	Exclude []string `json:"exclude,omitempty" protobuf:"bytes,7,rep,name=exclude"`
 }
 
 type RestoreTarget struct {
+	// Alias represents the identifier of the backed up data in the repository.
+	// This will be used as `sourceHost` and `targetHosts` or will be used to generate them.
+	// +optional
+	Alias string `json:"alias,omitempty" protobuf:"bytes,1,opt,name=alias"`
 	// Ref refers to the restore,target
 	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,2,opt,name=ref"`
 	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
@@ -76,10 +90,41 @@ type RestoreTarget struct {
 	// same Template, but individual replicas also have a consistent identity.
 	// If unspecified, defaults to 1.
 	// +optional
-	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,1,opt,name=replicas"`
+	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,4,opt,name=replicas"`
 	// volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot
 	// +optional
-	VolumeClaimTemplates []ofst.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty" protobuf:"bytes,4,rep,name=volumeClaimTemplates"`
+	VolumeClaimTemplates []ofst.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty" protobuf:"bytes,5,rep,name=volumeClaimTemplates"`
+	// Rules specifies different restore options for different hosts
+	// +optional
+	Rules []Rule `json:"rules,omitempty" protobuf:"bytes,6,rep,name=rules"`
+}
+
+type Rule struct {
+	// Subjects specifies the list of hosts that are subject to this rule
+	// +optional
+	TargetHosts []string `json:"targetHosts,omitempty" protobuf:"bytes,1,rep,name=targetHosts"`
+	// SourceHost specifies the name of the host whose backed up state we are trying to restore
+	// By default, it will indicate the workload itself
+	// +optional
+	SourceHost string `json:"sourceHost,omitempty" protobuf:"bytes,2,opt,name=sourceHost"`
+	// Snapshots specifies the list of snapshots that will be restored for the host under this rule.
+	// Don't specify if you have specified paths field.
+	// +optional
+	Snapshots []string `json:"snapshots,omitempty" protobuf:"bytes,3,rep,name=snapshots"`
+	// Paths specifies the paths to be restored for the hosts under this rule.
+	// Don't specify if you have specified snapshots field.
+	// +optional
+	Paths []string `json:"paths,omitempty" protobuf:"bytes,4,rep,name=paths"`
+	// Exclude specifies a list of patterns for the files to ignore during restore.
+	// Stash will only restore the files that does not match those patterns.
+	// Supported only for "Restic" driver
+	// +optional
+	Exclude []string `json:"exclude,omitempty" protobuf:"bytes,5,rep,name=exclude"`
+	// Include specifies a list of patterns for the files to restore.
+	// Stash will only restore the files that match those patterns.
+	// Supported only for "Restic" driver
+	// +optional
+	Include []string `json:"include,omitempty" protobuf:"bytes,6,rep,name=include"`
 }
 
 type TargetRef struct {
@@ -88,28 +133,9 @@ type TargetRef struct {
 	Name       string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
 }
 
-// +kubebuilder:validation:Enum=BackupTargetFound;StashSidecarInjected;CronJobCreated
-type BackupInvokerCondition string
+type ExecutionOrder string
 
 const (
-	// BackupTargetFound indicates whether the backup target was found
-	BackupTargetFound BackupInvokerCondition = "BackupTargetFound"
-	// StashSidecarInjected indicates whether stash sidecar was injected into the targeted workload
-	// This condition is applicable only for sidecar model
-	StashSidecarInjected BackupInvokerCondition = "StashSidecarInjected"
-	// CronJobCreated indicates whether the backup triggering CronJob was created
-	CronJobCreated BackupInvokerCondition = "CronJobCreated"
-)
-
-// +kubebuilder:validation:Enum=RestoreTargetFound;StashInitContainerInjected;RestoreJobCreated
-type RestoreSessionCondition string
-
-const (
-	// RestoreTargetFound indicates whether the restore target was found
-	RestoreTargetFound RestoreSessionCondition = "RestoreTargetFound"
-	// StashInitContainerInjected indicates whether stash init-container was injected into the targeted workload
-	// This condition is applicable only for sidecar model
-	StashInitContainerInjected RestoreSessionCondition = "StashInitContainerInjected"
-	// RestoreJobCreated indicates whether the restore job was created
-	RestoreJobCreated RestoreSessionCondition = "RestoreJobCreated"
+	Parallel   ExecutionOrder = "Parallel"
+	Sequential ExecutionOrder = "Sequential"
 )

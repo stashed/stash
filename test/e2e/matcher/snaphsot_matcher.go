@@ -50,5 +50,61 @@ func (matcher *namePrefixMatcher) FailureMessage(actual interface{}) (message st
 }
 
 func (matcher *namePrefixMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected\n\tSnapshots name\n not to have prefix %v\n\t", &matcher)
+	return fmt.Sprintf("Expected\n\tSnapshots name\n not to have prefix %v\n\t", &matcher.prefix)
+}
+
+type repositoryMatcher struct {
+	repoName string
+}
+
+func ComeFrom(repoName string) types.GomegaMatcher {
+	return &repositoryMatcher{
+		repoName: repoName,
+	}
+}
+
+func (matcher *repositoryMatcher) Match(actual interface{}) (success bool, err error) {
+	snapshotList := actual.(*snap_api.SnapshotList)
+	for _, snap := range snapshotList.Items {
+		if snap.Status.Repository != matcher.repoName {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (matcher *repositoryMatcher) FailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf("Expected\n\tSnapshots .status.repository\n to be %v\n\t", matcher.repoName)
+}
+
+func (matcher *repositoryMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf("Expected\n\tSnapshots .status.repository\n not to be %v\n\t", matcher.repoName)
+}
+
+type hostMatcher struct {
+	hostname string
+}
+
+func HaveHostname(hostname string) types.GomegaMatcher {
+	return &hostMatcher{
+		hostname: hostname,
+	}
+}
+
+func (matcher *hostMatcher) Match(actual interface{}) (success bool, err error) {
+	snapshotList := actual.(*snap_api.SnapshotList)
+	for _, snap := range snapshotList.Items {
+		if snap.Status.Hostname != matcher.hostname {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (matcher *hostMatcher) FailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf("Expected\n\tSnapshots .status.hostname\n to be %v\n\t", matcher.hostname)
+}
+
+func (matcher *hostMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf("Expected\n\tSnapshots .status.hostname\n not to be %v\n\t", matcher.hostname)
 }

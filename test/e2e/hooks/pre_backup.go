@@ -30,7 +30,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -198,10 +197,9 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
 					By("Verifying that no bucket has been created in the backend")
-					_, err = f.BrowseMinioRepository(repo)
-					// if the bucket does not exist, then it should return an error with "not found" message
-					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).Should(BeEquivalentTo("not found"))
+					snapshots, err := f.ListSnapshots("")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(snapshots.Items)).Should(BeZero())
 				})
 			})
 		})
@@ -457,10 +455,9 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
 					By("Verifying that no bucket has been created in the backend")
-					_, err = f.BrowseMinioRepository(repo)
-					// if the bucket does not exist, then it should return an error with "not found" message
-					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).Should(BeEquivalentTo("not found"))
+					snapshots, err := f.ListSnapshots("")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(snapshots.Items)).Should(BeZero())
 				})
 			})
 		})
@@ -601,10 +598,9 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
 					By("Verifying that no bucket has been created in the backend")
-					_, err = f.BrowseMinioRepository(repo)
-					// if the bucket does not exist, then it should return an error with "not found" message
-					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).Should(BeEquivalentTo("not found"))
+					snapshots, err := f.ListSnapshots("")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(snapshots.Items)).Should(BeZero())
 				})
 			})
 		})
@@ -700,10 +696,9 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
 					By("Verifying that no bucket has been created in the backend")
-					_, err = f.BrowseMinioRepository(repo)
-					// if the bucket does not exist, then it should return an error with "not found" message
-					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).Should(BeEquivalentTo("not found"))
+					snapshots, err := f.ListSnapshots("")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(snapshots.Items)).Should(BeZero())
 				})
 			})
 		})
@@ -772,7 +767,7 @@ var _ = Describe("PreBackup Hook", func() {
 						By("Verifying that RestoreSession succeeded")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 						// Get restored data
 						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
@@ -834,10 +829,9 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
 						By("Verifying that no bucket has been created in the backend")
-						_, err = f.BrowseMinioRepository(repo)
-						// if the bucket does not exist, then it should return an error with "not found" message
-						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).Should(BeEquivalentTo("not found"))
+						snapshots, err := f.ListSnapshots("")
+						Expect(err).NotTo(HaveOccurred())
+						Expect(len(snapshots.Items)).Should(BeZero())
 					})
 				})
 			})
@@ -993,389 +987,11 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(repo2.Status.SnapshotCount).Should(BeZero())
 
 						By("Verifying that no bucket has been created in the backend")
-						_, err = f.BrowseMinioRepository(repo)
-						// if the bucket does not exist, then it should return an error with "not found" message
-						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).Should(BeEquivalentTo("not found"))
+						snapshots, err := f.ListSnapshots("")
+						Expect(err).NotTo(HaveOccurred())
+						Expect(len(snapshots.Items)).Should(BeZero())
 					})
 				})
-			})
-		})
-	})
-
-	Context("Batch Backup", func() {
-		Context("HTTPGetAction", func() {
-			It("should execute global and local hooks successfully", func() {
-				// Here, we are going to deploy two different StatefulSet with probe client.
-				// Then, we are going to backup those StatefulSets using BatchBackup.
-				// Each individual StatefulSet will have a hook for them.
-				// The BackupBatch object will have a global hook.
-				var members []v1beta1.BackupConfigurationTemplateSpec
-
-				// Deploy the first StatefulSet.
-				ss1, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix + "-1")
-				Expect(err).NotTo(HaveOccurred())
-				// Generate Sample Data
-				_, err = f.GenerateSampleData(ss1.ObjectMeta, apis.KindStatefulSet)
-				Expect(err).NotTo(HaveOccurred())
-				// We will execute HTTPGetAction in the first StatefulSet
-				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
-					Hooks: &v1beta1.BackupHooks{
-						PreBackup: &probev1.Handler{
-							HTTPGet: &core.HTTPGetAction{
-								Scheme: "HTTP",
-								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss1.Name, ss1.Name, f.Namespace()),
-								Path:   "/success",
-								Port:   intstr.FromInt(framework.HttpPort),
-							},
-						},
-					},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: appsv1.SchemeGroupVersion.String(),
-							Kind:       apis.KindStatefulSet,
-							Name:       ss1.Name,
-						},
-						Paths: []string{
-							framework.TestSourceDataMountPath,
-						},
-						VolumeMounts: []core.VolumeMount{
-							{
-								Name:      framework.SourceVolume,
-								MountPath: framework.TestSourceDataMountPath,
-							},
-						},
-					},
-				})
-
-				// Deploy second StatefulSet
-				ss2, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix + "-2")
-				Expect(err).NotTo(HaveOccurred())
-				// Generate Sample Data
-				_, err = f.GenerateSampleData(ss2.ObjectMeta, apis.KindStatefulSet)
-				Expect(err).NotTo(HaveOccurred())
-				// We will execute HTTPPostAction in the second StatefulSet
-				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
-					Hooks: &v1beta1.BackupHooks{
-						PreBackup: &probev1.Handler{
-							HTTPPost: &probev1.HTTPPostAction{
-								Scheme: "HTTP",
-								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss2.Name, ss2.Name, f.Namespace()),
-								Path:   "/post-demo",
-								Port:   intstr.FromInt(framework.HttpPort),
-							},
-						},
-					},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: appsv1.SchemeGroupVersion.String(),
-							Kind:       apis.KindStatefulSet,
-							Name:       ss2.Name,
-						},
-						Paths: []string{
-							framework.TestSourceDataMountPath,
-						},
-						VolumeMounts: []core.VolumeMount{
-							{
-								Name:      framework.SourceVolume,
-								MountPath: framework.TestSourceDataMountPath,
-							},
-						},
-					},
-				})
-
-				// Setup a Minio Repository
-				repo, err := f.SetupMinioRepository()
-				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
-
-				// Setup Batch Backup
-				backupBatch, err := f.SetupBatchBackup(repo, func(in *v1beta1.BackupBatch) {
-					in.Spec.Members = members
-					in.Spec.Hooks = &v1beta1.BackupHooks{
-						// Just simply execute a http probe in the first StatefulSet.
-						// Although it does not represent the actual use case, but it probes that the global are working.
-						PreBackup: &probev1.Handler{
-							HTTPGet: &core.HTTPGetAction{
-								Scheme: "HTTP",
-								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss1.Name, ss1.Name, f.Namespace()),
-								Path:   "/success",
-								Port:   intstr.FromInt(framework.HttpPort),
-							},
-						},
-					}
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				// Take an Instant Backup the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupBatch.ObjectMeta, v1beta1.BackupInvokerRef{
-					Name: backupBatch.Name,
-					Kind: v1beta1.ResourceKindBackupBatch,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-			})
-		})
-
-		Context("ExecAction", func() {
-			It("should execute global and local hooks successfully", func() {
-				// Here, we are going to deploy two different types of workload.
-				// First workload is a StatefulSet with probe client. We will execute a simple http hook there. The other workload is a database.
-				// We will make the database readonly in local hook. We will execute a simple exec action in global hook.
-				var members []v1beta1.BackupConfigurationTemplateSpec
-
-				// Deploy the first StatefulSet.
-				ss1, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
-				Expect(err).NotTo(HaveOccurred())
-				// Generate Sample Data
-				_, err = f.GenerateSampleData(ss1.ObjectMeta, apis.KindStatefulSet)
-				Expect(err).NotTo(HaveOccurred())
-				// We will execute an ExecAction in the StatefulSet
-				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
-					Hooks: &v1beta1.BackupHooks{
-						PreBackup: &probev1.Handler{
-							Exec: &core.ExecAction{
-								Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_SUCCESS`},
-							},
-						},
-					},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: appsv1.SchemeGroupVersion.String(),
-							Kind:       apis.KindStatefulSet,
-							Name:       ss1.Name,
-						},
-						Paths: []string{
-							framework.TestSourceDataMountPath,
-						},
-						VolumeMounts: []core.VolumeMount{
-							{
-								Name:      framework.SourceVolume,
-								MountPath: framework.TestSourceDataMountPath,
-							},
-						},
-					},
-				})
-
-				// Deploy MySQL database and respective service,secret,PVC and AppBinding.
-				By("Deploying MySQL Server")
-				dpl, appBinding, err := f.DeployMySQLDatabase()
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Port forwarding MySQL pod")
-				pod, err := f.GetPod(dpl.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-				tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
-				defer tunnel.Close()
-				err = tunnel.ForwardPort()
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Connecting with MySQL Server")
-				connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
-				db, err := sql.Open("mysql", connstr)
-				Expect(err).NotTo(HaveOccurred())
-				defer db.Close()
-				db.SetConnMaxLifetime(time.Second * 10)
-				err = f.EventuallyConnectWithMySQLServer(db)
-				Expect(err).NotTo(HaveOccurred())
-
-				// add the database as member of batch backup
-				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
-					// make the database readonly in preBackup hook.
-					Hooks: &v1beta1.BackupHooks{
-						PreBackup: &probev1.Handler{
-							Exec: &core.ExecAction{
-								Command: []string{"/bin/sh", "-c",
-									`mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "SET GLOBAL super_read_only = ON;"`},
-							},
-							ContainerName: framework.MySQLContainerName,
-						},
-					},
-					Task: v1beta1.TaskRef{
-						Name: framework.MySQLBackupTask,
-					},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: core.SchemeGroupVersion.String(),
-							Kind:       apis.KindAppBinding,
-							Name:       appBinding.Name,
-						},
-					},
-				})
-
-				// Setup a Minio Repository
-				repo, err := f.SetupMinioRepository()
-				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
-
-				// Setup Batch Backup
-				backupBatch, err := f.SetupBatchBackup(repo, func(in *v1beta1.BackupBatch) {
-					in.Spec.Members = members
-					// Execute a simple exec hook in the global hook. This hook will be executed inside Stash operator.
-					// Currently, we don't have any known command that really make sense to execute inside operator.
-					// So, we are using the simplest command to test the global hook. :P
-					in.Spec.Hooks = &v1beta1.BackupHooks{
-						PreBackup: &probev1.Handler{
-							Exec: &core.ExecAction{
-								Command: []string{"/bin/sh", "-c", "exit 0"},
-							},
-							ContainerName: "operator",
-						},
-					}
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				// Take an Instant Backup the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupBatch.ObjectMeta, v1beta1.BackupInvokerRef{
-					Name: backupBatch.Name,
-					Kind: v1beta1.ResourceKindBackupBatch,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-
-				By("Verifying that the database is read-only")
-				err = f.CreateTable(db, "readOnlyTest")
-				Expect(err).Should(HaveOccurred())
-			})
-		})
-
-		Context("Different Situations", func() {
-			It("should not take backup and execute members hook when global preBackup hook failed", func() {
-				// Here, we are going to deploy two different types of workload.
-				// First workload is a StatefulSet with probe client. We will execute a simple http hook there. The other workload is a database.
-				// We will make the database readonly in local hook.
-				// We will execute a simple exec action in global hook. This global hook will fail.
-				var members []v1beta1.BackupConfigurationTemplateSpec
-
-				// Deploy the first StatefulSet.
-				ss1, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
-				Expect(err).NotTo(HaveOccurred())
-				// Generate Sample Data
-				_, err = f.GenerateSampleData(ss1.ObjectMeta, apis.KindStatefulSet)
-				Expect(err).NotTo(HaveOccurred())
-				// We will execute HTTPGetAction in the first StatefulSet
-				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
-					Hooks: &v1beta1.BackupHooks{
-						PreBackup: &probev1.Handler{
-							HTTPGet: &core.HTTPGetAction{
-								Scheme: "HTTP",
-								Host:   fmt.Sprintf("%s-0.%s.%s.svc", ss1.Name, ss1.Name, f.Namespace()),
-								Path:   "/success",
-								Port:   intstr.FromInt(framework.HttpPort),
-							},
-						},
-					},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: appsv1.SchemeGroupVersion.String(),
-							Kind:       apis.KindStatefulSet,
-							Name:       ss1.Name,
-						},
-						Paths: []string{
-							framework.TestSourceDataMountPath,
-						},
-						VolumeMounts: []core.VolumeMount{
-							{
-								Name:      framework.SourceVolume,
-								MountPath: framework.TestSourceDataMountPath,
-							},
-						},
-					},
-				})
-
-				// Deploy MySQL database and respective service,secret,PVC and AppBinding.
-				By("Deploying MySQL Server")
-				dpl, appBinding, err := f.DeployMySQLDatabase()
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Port forwarding MySQL pod")
-				pod, err := f.GetPod(dpl.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-				tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
-				defer tunnel.Close()
-				err = tunnel.ForwardPort()
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Connecting with MySQL Server")
-				connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
-				db, err := sql.Open("mysql", connstr)
-				Expect(err).NotTo(HaveOccurred())
-				defer db.Close()
-				db.SetConnMaxLifetime(time.Second * 10)
-				err = f.EventuallyConnectWithMySQLServer(db)
-				Expect(err).NotTo(HaveOccurred())
-
-				// add the database as member of batch backup
-				members = append(members, v1beta1.BackupConfigurationTemplateSpec{
-					// make the database readonly in preBackup hook.
-					Hooks: &v1beta1.BackupHooks{
-						PreBackup: &probev1.Handler{
-							Exec: &core.ExecAction{
-								Command: []string{"/bin/sh", "-c",
-									`mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "SET GLOBAL super_read_only = ON;"`},
-							},
-							ContainerName: framework.MySQLContainerName,
-						},
-					},
-					Task: v1beta1.TaskRef{
-						Name: framework.MySQLBackupTask,
-					},
-					Target: &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: core.SchemeGroupVersion.String(),
-							Kind:       apis.KindAppBinding,
-							Name:       appBinding.Name,
-						},
-					},
-				})
-
-				// Setup a Minio Repository
-				repo, err := f.SetupMinioRepository()
-				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
-
-				// Setup Batch Backup
-				backupBatch, err := f.SetupBatchBackup(repo, func(in *v1beta1.BackupBatch) {
-					in.Spec.Members = members
-					// intentionally fail the global preBackup hook
-					in.Spec.Hooks = &v1beta1.BackupHooks{
-						PreBackup: &probev1.Handler{
-							Exec: &core.ExecAction{
-								Command: []string{"/bin/sh", "-c", "exit 1"},
-							},
-							ContainerName: "operator",
-						},
-					}
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				// Take an Instant Backup the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupBatch.ObjectMeta, v1beta1.BackupInvokerRef{
-					Name: backupBatch.Name,
-					Kind: v1beta1.ResourceKindBackupBatch,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that BackupSession has failed")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
-
-				By("Verifying that the database is writable") // this ensure that the local preBackup hook hasn't been executed.
-				err = f.CreateTable(db, "readOnlyTest")
-				Expect(err).ShouldNot(HaveOccurred())
-
-				By("Verifying that no backup has been taken in the backend")
-				_, err = f.BrowseBackendRepository(repo)
-				Expect(err).To(HaveOccurred())
 			})
 		})
 	})

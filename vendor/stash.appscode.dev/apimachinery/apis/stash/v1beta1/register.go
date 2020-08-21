@@ -61,6 +61,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Function{},
 		&RestoreSessionList{},
 		&RestoreSession{},
+		&RestoreBatchList{},
+		&RestoreBatch{},
 		&TaskList{},
 		&Task{},
 	)

@@ -34,7 +34,6 @@ import (
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/discovery"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
-	appcatalog_informers "kmodules.xyz/custom-resources/client/informers/externalversions"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
 )
@@ -45,8 +44,10 @@ const (
 )
 
 type config struct {
+	StashImage              string
 	StashImageTag           string
 	DockerRegistry          string
+	ImagePullSecrets        []string
 	MaxNumRequeues          int
 	NumThreads              int
 	ResyncPeriod            time.Duration
@@ -94,10 +95,9 @@ func (c *Config) New() (*StashController, error) {
 			c.ResyncPeriod,
 			informers.WithNamespace(core.NamespaceAll),
 			informers.WithTweakListOptions(tweakListOptions)),
-		stashInformerFactory:      stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
-		appCatalogInformerFactory: appcatalog_informers.NewSharedInformerFactory(c.AppCatalogClient, c.ResyncPeriod),
-		ocInformerFactory:         oc_informers.NewSharedInformerFactory(c.OcClient, c.ResyncPeriod),
-		recorder:                  eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
+		stashInformerFactory: stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
+		ocInformerFactory:    oc_informers.NewSharedInformerFactory(c.OcClient, c.ResyncPeriod),
+		recorder:             eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
 	}
 
 	// register CRDs
@@ -106,7 +106,7 @@ func (c *Config) New() (*StashController, error) {
 	}
 
 	// ensure default functions
-	err := util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImageTag)
+	err := util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImage, ctrl.StashImageTag)
 	if err != nil {
 		return nil, err
 	}
@@ -142,9 +142,7 @@ func (c *Config) New() (*StashController, error) {
 	ctrl.initReplicaSetWatcher()
 	ctrl.initDeploymentConfigWatcher()
 
-	ctrl.initPVCWatcher()
 	ctrl.initJobWatcher()
-	ctrl.initAppBindingWatcher()
 
 	// init v1alpha1 resources watcher
 	ctrl.initResticWatcher()
@@ -153,7 +151,6 @@ func (c *Config) New() (*StashController, error) {
 
 	// init v1beta1 resources watcher
 	ctrl.initBackupConfigurationWatcher()
-	ctrl.initBackupBatchWatcher()
 	ctrl.initBackupSessionWatcher()
 	ctrl.initRestoreSessionWatcher()
 

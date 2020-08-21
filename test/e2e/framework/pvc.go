@@ -76,7 +76,8 @@ func (fi *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1al
 	// Generate desired BackupConfiguration definition
 	backupConfig := fi.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
 		bc.Spec.Target = &v1beta1.BackupTarget{
-			Ref: GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim),
+			Alias: fi.app,
+			Ref:   GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim),
 		}
 		bc.Spec.Task.Name = TaskPVCBackup
 	})
@@ -102,11 +103,12 @@ func (fi *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim,
 	By("Creating RestoreSession")
 	restoreSession := fi.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
 		restore.Spec.Target = &v1beta1.RestoreTarget{
-			Ref: GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim),
-		}
-		restore.Spec.Rules = []v1beta1.Rule{
-			{
-				Snapshots: []string{"latest"},
+			Alias: fi.app,
+			Ref:   GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim),
+			Rules: []v1beta1.Rule{
+				{
+					Snapshots: []string{"latest"},
+				},
 			},
 		}
 		restore.Spec.Task.Name = TaskPVCRestore
@@ -122,7 +124,7 @@ func (fi *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim,
 	fi.AppendToCleanupList(restoreSession)
 
 	By("Waiting for restore process to complete")
-	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession).Should(BeTrue())
 
 	return restoreSession, err
 }

@@ -34,19 +34,6 @@ const (
 	TEST_RESTIC_PASSWORD = "not@secret"
 )
 
-func (fi *Invocation) SecretForLocalBackend() core.Secret {
-	return core.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(fi.app + "-local"),
-			Namespace: fi.namespace,
-		},
-		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
-		},
-		Type: core.SecretTypeOpaque,
-	}
-}
-
 func (fi *Invocation) SecretForS3Backend() core.Secret {
 	if os.Getenv(cli.AWS_ACCESS_KEY_ID) == "" ||
 		os.Getenv(cli.AWS_SECRET_ACCESS_KEY) == "" {
@@ -191,7 +178,7 @@ func (fi *Invocation) SecretForMinioBackend(includeCacert bool) core.Secret {
 	return secret
 }
 
-func (fi *Invocation) SecretForRestBackend(includeCacert bool) core.Secret {
+func (fi *Invocation) SecretForRestBackend(includeCacert bool, username, password string) core.Secret {
 	secret := core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fi.app + "-rest"),
@@ -199,8 +186,8 @@ func (fi *Invocation) SecretForRestBackend(includeCacert bool) core.Secret {
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD:      []byte(TEST_RESTIC_PASSWORD),
-			cli.REST_SERVER_USERNAME: []byte(TEST_REST_SERVER_USERNAME),
-			cli.REST_SERVER_PASSWORD: []byte(TEST_REST_SERVER_PASSWORD),
+			cli.REST_SERVER_USERNAME: []byte(username),
+			cli.REST_SERVER_PASSWORD: []byte(password),
 		},
 	}
 	if includeCacert {

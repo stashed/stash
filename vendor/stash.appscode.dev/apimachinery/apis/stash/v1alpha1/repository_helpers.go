@@ -25,3 +25,20 @@ import (
 func (_ Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralRepository))
 }
+
+func (r *Repository) LocalNetworkVolume() bool {
+	if r.Spec.Backend.Local != nil &&
+		r.Spec.Backend.Local.NFS != nil {
+		return true
+	}
+	return false
+}
+
+func (r *Repository) LocalNetworkVolumePath() string {
+	if r.Spec.Backend.Local != nil {
+		if r.Spec.Backend.Local.NFS != nil {
+			return r.Spec.Backend.Local.NFS.Path
+		}
+	}
+	return ""
+}

@@ -121,7 +121,7 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Verifying that RestoreSession succeeded")
 					completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 					restoredData := f.RestoredData(statefulset.ObjectMeta, apis.KindStatefulSet)
 					By("Verifying that the original data has been restored and corrupted file has been removed")
@@ -187,7 +187,7 @@ var _ = Describe("PostRestore Hook", func() {
 								ContainerName: apis.StashInitContainer,
 							},
 						}
-						restore.Spec.Rules = []v1beta1.Rule{
+						restore.Spec.Target.Rules = []v1beta1.Rule{
 							{
 								Paths: []string{"/unknown/directory"},
 							},
@@ -198,7 +198,7 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Verifying that RestoreSession has failed")
 					completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 					// Delete RestoreSession so that the StatefulSet can start normally
 					By("Deleting RestoreSession")
@@ -278,7 +278,7 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Verifying that RestoreSession has failed")
 					completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 					// Delete RestoreSession so that the StatefulSet can start normally
 					By("Deleting RestoreSession")
@@ -365,7 +365,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Verifying that RestoreSession has succeeded")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
 						By("Verifying that the original data has been restored and corrupted file has been removed")
@@ -432,7 +432,7 @@ var _ = Describe("PostRestore Hook", func() {
 									ContainerName: apis.PostTaskHook,
 								},
 							}
-							restore.Spec.Rules = []v1beta1.Rule{
+							restore.Spec.Target.Rules = []v1beta1.Rule{
 								{
 									Snapshots: []string{"invalid-snapshot"},
 								},
@@ -443,7 +443,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Verifying that RestoreSession has failed")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
 						By("Verifying that the corrupted file has been removed")
@@ -514,7 +514,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Verifying that the RestoreSession has failed")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
 						By("Verifying that the sample data has been restored")
@@ -633,7 +633,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Verifying that RestoreSession has succeeded")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 						By("Verifying that the original data has been restored")
 						res, err = f.ReadProperty(db, sampleTable, property)
@@ -736,7 +736,7 @@ var _ = Describe("PostRestore Hook", func() {
 									ContainerName: framework.MySQLContainerName,
 								},
 							}
-							restore.Spec.Rules = []v1beta1.Rule{
+							restore.Spec.Target.Rules = []v1beta1.Rule{
 								{
 									Snapshots: []string{"invalid-snapshot"},
 								},
@@ -747,7 +747,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Verifying that RestoreSession has failed")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 						By("Verifying that the table contain corrupted data")
 						res, err = f.ReadProperty(db, sampleTable, property)
@@ -853,7 +853,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Verifying that RestoreSession has failed")
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
 						By("Verifying that the original data has been restored")
 						res, err = f.ReadProperty(db, sampleTable, property)

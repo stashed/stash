@@ -97,7 +97,7 @@ var _ = Describe("Volume", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
@@ -159,7 +159,7 @@ var _ = Describe("Volume", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredPod.ObjectMeta, apis.KindPod)

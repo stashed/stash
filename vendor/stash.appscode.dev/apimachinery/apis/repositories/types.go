@@ -31,13 +31,14 @@ type Snapshot struct {
 }
 
 type SnapshotStatus struct {
-	Tree     string
-	Paths    []string
-	Hostname string
-	Username string
-	UID      int
-	Gid      int
-	Tags     []string
+	Tree       string
+	Paths      []string
+	Hostname   string
+	Username   string
+	UID        int
+	Gid        int
+	Tags       []string
+	Repository string
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

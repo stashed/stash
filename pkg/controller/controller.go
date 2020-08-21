@@ -43,8 +43,6 @@ import (
 	"kmodules.xyz/client-go/tools/queue"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
-	appcatalog_informers "kmodules.xyz/custom-resources/client/informers/externalversions"
-	abListers "kmodules.xyz/custom-resources/client/listers/appcatalog/v1alpha1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
 	oc_listers "kmodules.xyz/openshift/client/listers/apps/v1"
@@ -61,10 +59,9 @@ type StashController struct {
 	appCatalogClient appcatalog_cs.Interface
 	recorder         record.EventRecorder
 
-	kubeInformerFactory       informers.SharedInformerFactory
-	ocInformerFactory         oc_informers.SharedInformerFactory
-	stashInformerFactory      stashinformers.SharedInformerFactory
-	appCatalogInformerFactory appcatalog_informers.SharedInformerFactory
+	kubeInformerFactory  informers.SharedInformerFactory
+	ocInformerFactory    oc_informers.SharedInformerFactory
+	stashInformerFactory stashinformers.SharedInformerFactory
 
 	// Namespace
 	nsInformer cache.SharedIndexInformer
@@ -109,16 +106,6 @@ type StashController struct {
 	rsInformer cache.SharedIndexInformer
 	rsLister   apps_listers.ReplicaSetLister
 
-	// PersistentVolumeClaim
-	pvcQueue    *queue.Worker
-	pvcInformer cache.SharedIndexInformer
-	pvcLister   core_listers.PersistentVolumeClaimLister
-
-	// AppBinding
-	abQueue    *queue.Worker
-	abInformer cache.SharedIndexInformer
-	abLister   abListers.AppBindingLister
-
 	// Job
 	jobQueue    *queue.Worker
 	jobInformer cache.SharedIndexInformer
@@ -128,11 +115,6 @@ type StashController struct {
 	bcQueue    *queue.Worker
 	bcInformer cache.SharedIndexInformer
 	bcLister   stash_listers_v1beta1.BackupConfigurationLister
-
-	// BackupConfiguration
-	backupBatchQueue    *queue.Worker
-	backupBatchInformer cache.SharedIndexInformer
-	backupBatchLister   stash_listers_v1beta1.BackupBatchLister
 
 	// BackupSession
 	backupSessionQueue    *queue.Worker
@@ -156,7 +138,6 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 		api.Recovery{}.CustomResourceDefinition(),
 		api.Repository{}.CustomResourceDefinition(),
 		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
-		api_v1beta1.BackupBatch{}.CustomResourceDefinition(),
 		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
 		api_v1beta1.RestoreSession{}.CustomResourceDefinition(),
 		api_v1beta1.BackupBlueprint{}.CustomResourceDefinition(),
@@ -190,7 +171,6 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 
 	c.kubeInformerFactory.Start(stopCh)
 	c.stashInformerFactory.Start(stopCh)
-	c.appCatalogInformerFactory.Start(stopCh)
 
 	// start ocInformerFactory only if the cluster has DeploymentConfig (for openshift)
 	if c.dcInformer != nil {
@@ -221,13 +201,6 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 		}
 	}
 
-	for _, v := range c.appCatalogInformerFactory.WaitForCacheSync(stopCh) {
-		if !v {
-			runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
-			return
-		}
-	}
-
 	// start workload queue
 	c.dpQueue.Run(stopCh)
 	c.dsQueue.Run(stopCh)
@@ -240,8 +213,6 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 		c.dcQueue.Run(stopCh)
 	}
 
-	c.pvcQueue.Run(stopCh)
-	c.abQueue.Run(stopCh)
 	c.jobQueue.Run(stopCh)
 
 	// start v1alpha1 resources queue
@@ -251,7 +222,6 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 
 	// start v1beta1 resources queue
 	c.bcQueue.Run(stopCh)
-	c.backupBatchQueue.Run(stopCh)
 	c.backupSessionQueue.Run(stopCh)
 	c.restoreSessionQueue.Run(stopCh)
 

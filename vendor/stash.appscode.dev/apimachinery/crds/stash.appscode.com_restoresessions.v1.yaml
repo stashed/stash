@@ -681,9 +681,24 @@ spec:
                 type: object
               rules:
                 description: Rules specifies different restore options for different
-                  hosts
+                  hosts Deprecated. Use rules section inside `target`.
                 items:
                   properties:
+                    exclude:
+                      description: Exclude specifies a list of patterns for the files
+                        to ignore during restore. Stash will only restore the files
+                        that does not match those patterns. Supported only for "Restic"
+                        driver
+                      items:
+                        type: string
+                      type: array
+                    include:
+                      description: Include specifies a list of patterns for the files
+                        to restore. Stash will only restore the files that match those
+                        patterns. Supported only for "Restic" driver
+                      items:
+                        type: string
+                      type: array
                     paths:
                       description: Paths specifies the paths to be restored for the
                         hosts under this rule. Don't specify if you have specified
@@ -2400,6 +2415,11 @@ spec:
                 description: Target indicates the target where the recovered data
                   will be stored
                 properties:
+                  alias:
+                    description: Alias represents the identifier of the backed up
+                      data in the repository. This will be used as `sourceHost` and
+                      `targetHosts` or will be used to generate them.
+                    type: string
                   ref:
                     description: Ref refers to the restore,target
                     properties:
@@ -2418,6 +2438,53 @@ spec:
                       1.
                     format: int32
                     type: integer
+                  rules:
+                    description: Rules specifies different restore options for different
+                      hosts
+                    items:
+                      properties:
+                        exclude:
+                          description: Exclude specifies a list of patterns for the
+                            files to ignore during restore. Stash will only restore
+                            the files that does not match those patterns. Supported
+                            only for "Restic" driver
+                          items:
+                            type: string
+                          type: array
+                        include:
+                          description: Include specifies a list of patterns for the
+                            files to restore. Stash will only restore the files that
+                            match those patterns. Supported only for "Restic" driver
+                          items:
+                            type: string
+                          type: array
+                        paths:
+                          description: Paths specifies the paths to be restored for
+                            the hosts under this rule. Don't specify if you have specified
+                            snapshots field.
+                          items:
+                            type: string
+                          type: array
+                        snapshots:
+                          description: Snapshots specifies the list of snapshots that
+                            will be restored for the host under this rule. Don't specify
+                            if you have specified paths field.
+                          items:
+                            type: string
+                          type: array
+                        sourceHost:
+                          description: SourceHost specifies the name of the host whose
+                            backed up state we are trying to restore By default, it
+                            will indicate the workload itself
+                          type: string
+                        targetHosts:
+                          description: Subjects specifies the list of hosts that are
+                            subject to this rule
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    type: array
                   volumeClaimTemplates:
                     description: volumeClaimTemplates is a list of claims that will
                       be created while restore from VolumeSnapshot
@@ -2791,6 +2858,8 @@ spec:
                   name:
                     type: string
                   params:
+                    description: Params specifies a list of parameter to pass to the
+                      Task. Stash will use this parameters to resolve the task.
                     items:
                       description: Param declares a value to use for the Param called
                         Name.

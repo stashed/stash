@@ -61,6 +61,13 @@ spec:
                 - Restic
                 - VolumeSnapshotter
                 type: string
+              executionOrder:
+                default: Parallel
+                description: ExecutionOrder indicate whether to backup the members
+                  in the sequential order as they appear in the members list. The
+                  default value is "Parallel" which means the members will be backed
+                  up in parallel.
+                type: string
               hooks:
                 description: Actions that Stash should take in response to backup
                   sessions. Cannot be updated.
@@ -2793,6 +2800,20 @@ spec:
                     target:
                       description: Target specify the backup target
                       properties:
+                        alias:
+                          description: Alias represents the identifier of the backed
+                            up data in the repository. This will be used as `hostname`
+                            or will be used to generate the `hostname` for the restic
+                            repository.
+                          type: string
+                        exclude:
+                          description: Exclude specifies a list of patterns for the
+                            files to ignore during backup. Stash will ignore those
+                            files that match the specified patterns. Supported only
+                            for "Restic" driver
+                          items:
+                            type: string
+                          type: array
                         paths:
                           description: Paths specify the file paths to backup
                           items:
@@ -2871,6 +2892,9 @@ spec:
                         name:
                           type: string
                         params:
+                          description: Params specifies a list of parameter to pass
+                            to the Task. Stash will use this parameters to resolve
+                            the task.
                           items:
                             description: Param declares a value to use for the Param
                               called Name.

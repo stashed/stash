@@ -22,7 +22,6 @@ import (
 	"net"
 
 	"github.com/appscode/go/types"
-	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/cert"
 	apps "k8s.io/api/apps/v1"
@@ -186,7 +185,7 @@ func (fi *Invocation) DeploymentForRestServer() apps.Deployment {
 					Containers: []core.Container{
 						{
 							Name:  "rest-server",
-							Image: "restic/rest-server",
+							Image: "appscodeci/rest-server:latest",
 							Command: []string{
 								"sh",
 								"-c",
@@ -276,16 +275,15 @@ func (fi *Invocation) RestServiceAddres() string {
 
 }
 
-func (fi Invocation) CreateBackendSecretForRest() (*core.Secret, error) {
-	// Create Storage Secret
-	cred := fi.SecretForRestBackend(false)
-
-	if missing, _ := BeZero().Match(cred); missing {
-		Skip("Missing Rest credential")
+func (fi *Invocation) CreateRestUser(username string) error {
+	// identify the rest-server pod
+	pod, err := fi.GetPod(metav1.ObjectMeta{
+		Name:      fmt.Sprintf("%s-%s", RestServer, fi.App()),
+		Namespace: fi.namespace,
+	})
+	if err != nil {
+		return err
 	}
-	By(fmt.Sprintf("Creating Storage Secret for Rest: %s/%s", cred.Namespace, cred.Name))
-	createdCred, err := fi.CreateSecret(cred)
-	fi.AppendToCleanupList(&cred)
-
-	return createdCred, err
+	_, _ = fi.ExecOnPod(pod, "create_user", username, TEST_REST_SERVER_PASSWORD)
+	return nil
 }

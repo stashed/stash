@@ -17,8 +17,9 @@ limitations under the License.
 package docker
 
 const (
-	ACRegistry = "appscode"
-	ImageStash = "stash"
+	ACRegistry           = "appscode"
+	ImageStash           = "stash"
+	ImageStashEnterprise = "stash-enterprise"
 )
 
 type Docker struct {

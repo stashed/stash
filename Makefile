@@ -14,6 +14,10 @@
 
 SHELL=/bin/bash -o pipefail
 
+PRODUCT_OWNER_NAME := appscode
+PRODUCT_NAME       := stash-community
+ENFORCE_LICENSE    ?=
+
 GO_PKG   := stash.appscode.dev
 REPO     := $(notdir $(shell pwd))
 BIN      := stash
@@ -51,7 +55,7 @@ NEW_RESTIC_VER   := 0.9.6
 ###
 
 SRC_PKGS := pkg
-SRC_DIRS := $(SRC_PKGS) *.go test hack/gendocs # directories which hold app source (not vendored)
+SRC_DIRS := $(SRC_PKGS) test hack/gendocs # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
 BIN_PLATFORMS    := $(DOCKER_PLATFORMS) windows/amd64 darwin/amd64
@@ -181,6 +185,9 @@ $(OUTBIN): .go/$(OUTBIN).stamp
 	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
 	    $(BUILD_IMAGE)                                          \
 	    /bin/bash -c "                                          \
+	        PRODUCT_OWNER_NAME=$(PRODUCT_OWNER_NAME)            \
+	        PRODUCT_NAME=$(PRODUCT_NAME)                        \
+	        ENFORCE_LICENSE=$(ENFORCE_LICENSE)                  \
 	        ARCH=$(ARCH)                                        \
 	        OS=$(OS)                                            \
 	        VERSION=$(VERSION)                                  \
@@ -353,6 +360,7 @@ $(BUILD_DIRS):
 
 REGISTRY_SECRET ?=
 KUBE_NAMESPACE  ?= kube-system
+LICENSE_FILE    ?=
 
 ifeq ($(strip $(REGISTRY_SECRET)),)
 	IMAGE_PULL_SECRETS =
@@ -362,13 +370,14 @@ endif
 
 .PHONY: install
 install:
-	@cd ../installer; \
-	helm install stash charts/stash --wait \
-		--namespace=$(KUBE_NAMESPACE) \
-		--set operator.registry=$(REGISTRY) \
-		--set operator.tag=$(TAG) \
-		--set imagePullPolicy=IfNotPresent \
-		$(IMAGE_PULL_SECRETS); \
+	@cd ../installer;						\
+	helm install stash charts/stash --wait	\
+		--namespace=$(KUBE_NAMESPACE)		\
+		--set-file license=$(LICENSE_FILE)	\
+		--set operator.registry=$(REGISTRY)	\
+		--set operator.tag=$(TAG)			\
+		--set imagePullPolicy=IfNotPresent	\
+		$(IMAGE_PULL_SECRETS);				\
 	kubectl wait --for=condition=Available apiservice -l 'app.kubernetes.io/name=stash,app.kubernetes.io/instance=stash' --timeout=5m
 
 .PHONY: uninstall

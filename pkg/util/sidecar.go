@@ -113,7 +113,7 @@ func NewBackupSidecarContainer(invoker apis.Invoker, targetInfo apis.TargetInfo,
 		Args: append([]string{
 			"run-backup",
 			"--invoker-name=" + invoker.ObjectMeta.Name,
-			"--invoker-type=" + invoker.ObjectRef.Kind,
+			"--invoker-kind=" + invoker.ObjectRef.Kind,
 			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--secret-dir=" + apis.StashSecretMountDir,
@@ -165,11 +165,7 @@ func NewBackupSidecarContainer(invoker apis.Invoker, targetInfo apis.TargetInfo,
 			SubPath:   srcVol.SubPath,
 		})
 	}
-	// if Repository uses local volume as backend, we have to mount it inside the sidecar
-	if backend.Local != nil {
-		_, mnt := backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
-		sidecar.VolumeMounts = append(sidecar.VolumeMounts, mnt)
-	}
+
 	// pass container runtime settings from invoker to sidecar
 	if targetInfo.RuntimeSettings.Container != nil {
 		sidecar = ofst_util.ApplyContainerRuntimeSettings(sidecar, *targetInfo.RuntimeSettings.Container)

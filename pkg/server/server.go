@@ -123,7 +123,7 @@ func (c *StashConfig) Complete() CompletedConfig {
 
 // New returns a new instance of StashServer from the given config.
 func (c completedConfig) New() (*StashServer, error) {
-	genericServer, err := c.GenericConfig.New("stash-operator", genericapiserver.NewEmptyDelegate()) // completion is done in Complete, no need for a second time
+	genericServer, err := c.GenericConfig.New("stash", genericapiserver.NewEmptyDelegate()) // completion is done in Complete, no need for a second time
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +149,7 @@ func (c completedConfig) New() (*StashServer, error) {
 			ctrl.NewStatefulSetWebhook(),
 			ctrl.NewReplicationControllerWebhook(),
 			ctrl.NewReplicaSetWebhook(),
+			ctrl.NewRestoreSessionMutator(),
 		)
 		if c.ExtraConfig.OcClient != nil {
 			admissionHooks = append(admissionHooks, ctrl.NewDeploymentConfigWebhook())

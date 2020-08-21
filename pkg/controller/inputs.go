@@ -30,7 +30,7 @@ import (
 	"kmodules.xyz/client-go/tools/pushgateway"
 )
 
-func (c *StashController) inputsForBackupConfig(invoker apis.Invoker, targetInfo apis.TargetInfo) (map[string]string, error) {
+func (c *StashController) inputsForBackupInvoker(invoker apis.Invoker, targetInfo apis.TargetInfo) (map[string]string, error) {
 	// get inputs for target
 	inputs := c.inputsForBackupTarget(targetInfo.Target)
 	// append inputs for RetentionPolicy
@@ -42,6 +42,10 @@ func (c *StashController) inputsForBackupConfig(invoker apis.Invoker, targetInfo
 		return nil, err
 	}
 	inputs[apis.Hostname] = host
+
+	// invoker information
+	inputs[apis.InvokerKind] = invoker.TypeMeta.Kind
+	inputs[apis.InvokerName] = invoker.ObjectMeta.Name
 
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!targetInfo.TempDir.DisableCaching)
@@ -61,29 +65,36 @@ func (c *StashController) inputsForBackupConfig(invoker apis.Invoker, targetInfo
 	return inputs, nil
 }
 
-func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession, host string) map[string]string {
+func (c *StashController) inputsForRestoreInvoker(invoker apis.RestoreInvoker, index int) map[string]string {
+	targetInfo := invoker.TargetsInfo[index]
 	// get inputs for target
-	inputs := c.inputsForRestoreTarget(restoreSession.Spec.Target)
+	inputs := c.inputsForRestoreTarget(targetInfo.Target)
 
 	// append inputs from RestoreOptions
-	restoreOptions := util.RestoreOptionsForHost(host, restoreSession.Spec.Rules)
+	restoreOptions := util.RestoreOptionsForHost(targetInfo.Target.Alias, targetInfo.Target.Rules)
 	inputs[apis.Hostname] = restoreOptions.Host
 	inputs[apis.SourceHostname] = restoreOptions.SourceHost
 	inputs[apis.RestorePaths] = strings.Join(restoreOptions.RestorePaths, ",")
 	inputs[apis.RestoreSnapshots] = strings.Join(restoreOptions.Snapshots, ",")
+	inputs[apis.IncludePatterns] = strings.Join(restoreOptions.Include, ",")
+	inputs[apis.ExcludePatterns] = strings.Join(restoreOptions.Exclude, ",")
+
+	// invoker information
+	inputs[apis.InvokerKind] = invoker.TypeMeta.Kind
+	inputs[apis.InvokerName] = invoker.ObjectMeta.Name
 
 	// always enable cache if nothing specified
-	inputs[apis.EnableCache] = strconv.FormatBool(!restoreSession.Spec.TempDir.DisableCaching)
+	inputs[apis.EnableCache] = strconv.FormatBool(!targetInfo.TempDir.DisableCaching)
 
 	// pass replicas field to function. if not set pass default 1.
 	replicas := int32(1)
-	if restoreSession.Spec.Target != nil && restoreSession.Spec.Target.Replicas != nil {
-		replicas = *restoreSession.Spec.Target.Replicas
+	if targetInfo.Target != nil && targetInfo.Target.Replicas != nil {
+		replicas = *targetInfo.Target.Replicas
 	}
 	inputs[apis.TargetAppReplicas] = fmt.Sprintf("%d", replicas)
 
 	// interim data volume input
-	if restoreSession.Spec.InterimVolumeTemplate != nil {
+	if targetInfo.InterimVolumeTemplate != nil {
 		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
 	} else {
 		// if interim volume is not specified then use temp dir to store data temporarily
@@ -91,7 +102,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	}
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics(restoreSession.Name)
+	metricInputs := c.inputForMetrics(invoker.ObjectMeta.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs
@@ -148,6 +159,9 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 		} else {
 			inputs[apis.TargetPaths] = apis.StashDefaultMountPath
 		}
+		if len(target.Exclude) > 0 {
+			inputs[apis.ExcludePatterns] = strings.Join(target.Exclude, ",")
+		}
 
 		// If mount path is provided, then use it. Otherwise, use stash default mount path.
 		if len(target.VolumeMounts) > 0 {
@@ -164,6 +178,9 @@ func (c *StashController) inputsForRestoreTarget(target *api.RestoreTarget) map[
 	if target != nil {
 		if target.Ref.Name != "" {
 			inputs[apis.TargetName] = target.Ref.Name
+		}
+		if target.Ref.Kind != "" {
+			inputs[apis.TargetKind] = target.Ref.Kind
 		}
 		// If mount path is provided, then use it. Otherwise, use stash default mount path.
 		if len(target.VolumeMounts) > 0 {

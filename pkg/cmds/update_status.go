@@ -17,8 +17,6 @@ limitations under the License.
 package cmds
 
 import (
-	"fmt"
-
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
@@ -65,23 +63,32 @@ func NewCmdUpdateStatus() *cobra.Command {
 			opt.Config = config
 			if opt.BackupSession != "" {
 				return opt.UpdateBackupStatusFromFile()
-			}
-			if opt.RestoreSession != "" {
+			} else {
 				return opt.UpdateRestoreStatusFromFile()
 			}
-			return fmt.Errorf("respective BackupSession or RestoreSession is not specified")
 		},
 	}
 
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 
+	cmd.Flags().StringVar(&opt.SetupOpt.Provider, "provider", opt.SetupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
+	cmd.Flags().StringVar(&opt.SetupOpt.Bucket, "bucket", opt.SetupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")
+	cmd.Flags().StringVar(&opt.SetupOpt.Endpoint, "endpoint", opt.SetupOpt.Endpoint, "Endpoint for s3/s3 compatible backend or REST server URL")
+	cmd.Flags().StringVar(&opt.SetupOpt.Region, "region", opt.SetupOpt.Region, "Region for s3/s3 compatible backend")
+	cmd.Flags().StringVar(&opt.SetupOpt.Path, "path", opt.SetupOpt.Path, "Directory inside the bucket where backed up data will be stored")
+	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
+	cmd.Flags().StringVar(&opt.SetupOpt.ScratchDir, "scratch-dir", opt.SetupOpt.ScratchDir, "Temporary directory")
+	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
+	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
+
 	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of Backup/Restore Session")
 	cmd.Flags().StringVar(&opt.Repository, "repository", opt.Repository, "Name of the Repository")
+	cmd.Flags().StringVar(&opt.InvokerKind, "invoker-kind", opt.InvokerKind, "Type of the respective backup/restore invoker")
+	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective backup/restore invoker")
 	cmd.Flags().StringVar(&opt.TargetRef.Kind, "target-kind", "", "Kind of the target")
 	cmd.Flags().StringVar(&opt.TargetRef.Name, "target-name", "", "Name of the target")
 	cmd.Flags().StringVar(&opt.BackupSession, "backupsession", opt.BackupSession, "Name of the Backup Session")
-	cmd.Flags().StringVar(&opt.RestoreSession, "restoresession", opt.RestoreSession, "Name of the Restore Session")
 	cmd.Flags().StringVar(&opt.OutputDir, "output-dir", opt.OutputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
 	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.Metrics.PushgatewayURL, "metrics-pushgateway-url", opt.Metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")

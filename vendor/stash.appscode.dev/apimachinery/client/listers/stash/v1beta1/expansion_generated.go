@@ -50,6 +50,14 @@ type BackupSessionNamespaceListerExpansion interface{}
 // FunctionLister.
 type FunctionListerExpansion interface{}
 
+// RestoreBatchListerExpansion allows custom methods to be added to
+// RestoreBatchLister.
+type RestoreBatchListerExpansion interface{}
+
+// RestoreBatchNamespaceListerExpansion allows custom methods to be added to
+// RestoreBatchNamespaceLister.
+type RestoreBatchNamespaceListerExpansion interface{}
+
 // RestoreSessionListerExpansion allows custom methods to be added to
 // RestoreSessionLister.
 type RestoreSessionListerExpansion interface{}

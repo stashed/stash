@@ -91,7 +91,7 @@ var _ = Describe("Workload Test", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(dmn.ObjectMeta, apis.KindDaemonSet)
@@ -144,7 +144,7 @@ var _ = Describe("Workload Test", func() {
 				By("Verifying that RestoreSession succeeded")
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredDmn.ObjectMeta, apis.KindDaemonSet)

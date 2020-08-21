@@ -24,7 +24,6 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
-	"stash.appscode.dev/apimachinery/pkg/docker"
 
 	"github.com/appscode/go/sets"
 	_ "github.com/go-sql-driver/mysql"
@@ -55,6 +54,7 @@ const (
 	MySQLRestoreTask       = "mysql-restore-8.0.14"
 	MySQLBackupFunction    = "mysql-backup-8.0.14"
 	MySQLRestoreFunction   = "mysql-restore-8.0.14"
+	MySQLAddonImage        = "appscodeci/stash-mysql:8.0.14"
 )
 
 func (fi *Invocation) MySQLCredentials(prefix string) *core.Secret {
@@ -357,7 +357,8 @@ func (fi *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, rep
 	// Generate desired BackupConfiguration definition
 	backupConfig := fi.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
 		bc.Spec.Target = &v1beta1.BackupTarget{
-			Ref: GetTargetRef(appBinding.Name, apis.KindAppBinding),
+			Alias: fi.app,
+			Ref:   GetTargetRef(appBinding.Name, apis.KindAppBinding),
 		}
 		bc.Spec.Task.Name = MySQLBackupTask
 	})
@@ -383,11 +384,12 @@ func (fi *Invocation) SetupDatabaseRestore(appBinding *appCatalog.AppBinding, re
 	By("Creating RestoreSession")
 	restoreSession := fi.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
 		restore.Spec.Target = &v1beta1.RestoreTarget{
-			Ref: GetTargetRef(appBinding.Name, apis.KindAppBinding),
-		}
-		restore.Spec.Rules = []v1beta1.Rule{
-			{
-				Snapshots: []string{"latest"},
+			Alias: fi.app,
+			Ref:   GetTargetRef(appBinding.Name, apis.KindAppBinding),
+			Rules: []v1beta1.Rule{
+				{
+					Snapshots: []string{"latest"},
+				},
 			},
 		}
 		restore.Spec.Task.Name = MySQLRestoreTask
@@ -403,27 +405,21 @@ func (fi *Invocation) SetupDatabaseRestore(appBinding *appCatalog.AppBinding, re
 	fi.AppendToCleanupList(restoreSession)
 
 	By("Waiting for restore process to complete")
-	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+	fi.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession).Should(BeTrue())
 
 	return restoreSession, err
 }
 
 func (f *Framework) EnsureMySQLAddon() error {
-	image := docker.Docker{
-		Image:    "stash-mysql",
-		Registry: f.DockerRegistry,
-		Tag:      "8.0.14",
-	}
-
 	// create MySQL backup Function
-	backupFunc := mysqlBackupFunction(image)
+	backupFunc := mysqlBackupFunction()
 	_, err := f.StashClient.StashV1beta1().Functions().Create(context.TODO(), backupFunc, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
 	// create MySQL restore function
-	restoreFunc := mysqlRestoreFunction(image)
+	restoreFunc := mysqlRestoreFunction()
 	_, err = f.StashClient.StashV1beta1().Functions().Create(context.TODO(), restoreFunc, metav1.CreateOptions{})
 	if err != nil {
 		return err
@@ -494,13 +490,13 @@ func (fi *Invocation) MySQLAddonInstalled() bool {
 	return err == nil
 }
 
-func mysqlBackupFunction(image docker.Docker) *v1beta1.Function {
+func mysqlBackupFunction() *v1beta1.Function {
 	return &v1beta1.Function{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: MySQLBackupFunction,
 		},
 		Spec: v1beta1.FunctionSpec{
-			Image: image.ToContainerImage(),
+			Image: MySQLAddonImage,
 			Args: []string{
 				"backup-mysql",
 				// setup information
@@ -519,6 +515,7 @@ func mysqlBackupFunction(image docker.Docker) *v1beta1.Function {
 				// target information
 				"--appbinding=${TARGET_NAME:=}",
 				"--namespace=${NAMESPACE:=default}",
+				"--backupsession=${BACKUP_SESSION:=}",
 				// cleanup information
 				"--retention-keep-last=${RETENTION_KEEP_LAST:=0}",
 				"--retention-keep-hourly=${RETENTION_KEEP_HOURLY:=0}",
@@ -542,13 +539,13 @@ func mysqlBackupFunction(image docker.Docker) *v1beta1.Function {
 	}
 }
 
-func mysqlRestoreFunction(image docker.Docker) *v1beta1.Function {
+func mysqlRestoreFunction() *v1beta1.Function {
 	return &v1beta1.Function{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: MySQLRestoreFunction,
 		},
 		Spec: v1beta1.FunctionSpec{
-			Image: image.ToContainerImage(),
+			Image: MySQLAddonImage,
 			Args: []string{
 				"restore-mysql",
 				// setup information
@@ -609,6 +606,10 @@ func mysqlBackupTask() *v1beta1.Task {
 							Name:  "outputDir",
 							Value: "/tmp/output",
 						},
+						{
+							Name:  "secretVolume",
+							Value: "secret-volume",
+						},
 					},
 				},
 			},
@@ -652,6 +653,10 @@ func mysqlRestoreTask() *v1beta1.Task {
 						{
 							Name:  "outputDir",
 							Value: "/tmp/output",
+						},
+						{
+							Name:  "secretVolume",
+							Value: "secret-volume",
 						},
 					},
 				},

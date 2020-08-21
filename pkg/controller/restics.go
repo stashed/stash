@@ -166,7 +166,7 @@ func (c *StashController) runResticInjector(key string) error {
 func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
+		Image:    c.StashImage,
 		Tag:      c.StashImageTag,
 	}
 

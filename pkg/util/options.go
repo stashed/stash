@@ -40,12 +40,9 @@ func BackupOptionsForBackupTarget(backupTarget *api.BackupTarget, retentionPolic
 	}
 	if backupTarget != nil {
 		backupOpt.BackupPaths = backupTarget.Paths
+		backupOpt.Exclude = backupTarget.Exclude
 	}
 	return backupOpt
-}
-
-func RestoreOptionForRestoreSession(restoreSession api.RestoreSession, extraOpt ExtraOptions) restic.RestoreOptions {
-	return RestoreOptionsForHost(extraOpt.Host, restoreSession.Spec.Rules)
 }
 
 // return the matching rule
@@ -66,6 +63,8 @@ func RestoreOptionsForHost(hostname string, rules []api.Rule) restic.RestoreOpti
 				SourceHost:   sourceHost,
 				RestorePaths: rule.Paths,
 				Snapshots:    rule.Snapshots,
+				Include:      rule.Include,
+				Exclude:      rule.Exclude,
 			}
 			// if rule has empty targetHost then check further rules to see if any other rule with non-empty targetHost matches
 			if len(rule.TargetHosts) == 0 {
@@ -75,7 +74,7 @@ func RestoreOptionsForHost(hostname string, rules []api.Rule) restic.RestoreOpti
 			}
 		}
 	}
-	// matchedRule is either emtpy or contains restore option for the rules with empty targetHost field.
+	// matchedRule is either empty or contains restore option for the rules with empty targetHost field.
 	return matchedRule
 }
 
