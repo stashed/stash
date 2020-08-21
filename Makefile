@@ -55,7 +55,7 @@ NEW_RESTIC_VER   := 0.9.6
 ###
 
 SRC_PKGS := pkg
-SRC_DIRS := $(SRC_PKGS) test hack/gendocs # directories which hold app source (not vendored)
+SRC_DIRS := $(SRC_PKGS) *.go test hack/gendocs # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
 BIN_PLATFORMS    := $(DOCKER_PLATFORMS) windows/amd64 darwin/amd64
