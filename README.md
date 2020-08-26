@@ -34,21 +34,9 @@
 | Batch Backup & Batch Restore                                                            |     &#10007;      |      &#10003;      | Backup and restore co-related applications (eg, WordPress server and its database) together                                                                         |
 | Point-In-Time Recovery (PITR)                                                           |     &#10007;      |      Planned       | Restore a set of files from a time in the past.                                                                                                                     |
 
-## Supported Versions
-
-Please pick a version of Stash that matches your Kubernetes installation.
-
-| Stash Version                                                                       | Docs                                                          | Kubernetes Version |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------ |
-| [v0.9.0-rc.6](https://github.com/stashed/stash/releases/tag/v0.9.0-rc.6) (uses CRD) | [User Guide](https://stash.run/docs/v0.9.0-rc.6)              | 1.11.x+            |
-| [0.8.3](https://github.com/stashed/stash/releases/tag/0.8.3) (uses CRD)             | [User Guide](https://stash.run/docs/0.8.3)                    | 1.9.x+             |
-| [0.7.0](https://github.com/stashed/stash/releases/tag/0.7.0) (uses CRD)             | [User Guide](https://stash.run/docs/0.7.0)                    | 1.8.x              |
-| [0.6.4](https://github.com/stashed/stash/releases/tag/0.6.4) (uses CRD)             | [User Guide](https://stash.run/docs/0.6.4)                    | 1.7.x              |
-| [0.4.2](https://github.com/stashed/stash/releases/tag/0.4.2) (uses TPR)             | [User Guide](https://github.com/stashed/docs/tree/0.4.2/docs) | 1.5.x - 1.6.x      |
-
 ## Installation
 
-To install Stash, please follow the guide [here](https://stash.run/docs/latest/setup/install).
+To install Stash, please follow the guide [here](https://stash.run/docs/latest/setup/).
 
 ## Using Stash
 
@@ -79,7 +67,7 @@ Want to help improve Stash? Please start [here](https://stash.run/docs/latest/we
 
 We use Slack for public discussions. To chit chat with us or the rest of the community, join us in the [AppsCode Slack team](https://appscode.slack.com/messages/C8NCX6N23/details/) channel `#stash`. To sign up, use our [Slack inviter](https://slack.appscode.com/).
 
-If you have found a bug with Stash or want to request new features, please [file an issue](https://github.com/stashed/stash/issues/new).
+If you have found a bug with Stash or want to request new features, please [file an issue](https://github.com/stashed/project/issues/new).
 
 ## License
 
