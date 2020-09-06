@@ -73,14 +73,13 @@ type CertificateSpec struct {
 	// +optional
 	IPAddresses []string `json:"ipAddresses,omitempty" protobuf:"bytes,8,rep,name=ipAddresses"`
 
-	// URISANs is a list of URI Subject Alternative Names to be set on this
-	// Certificate.
+	// URIs is a list of URI subjectAltNames to be set on the Certificate.
 	// +optional
-	URISANs []string `json:"uriSANs,omitempty" protobuf:"bytes,9,rep,name=uriSANs"`
+	URIs []string `json:"uris,omitempty" protobuf:"bytes,9,rep,name=uris"`
 
-	// EmailSANs is a list of email subjectAltNames to be set on the Certificate.
+	// EmailAddresses is a list of email subjectAltNames to be set on the Certificate.
 	// +optional
-	EmailSANs []string `json:"emailSANs,omitempty" protobuf:"bytes,10,rep,name=emailSANs"`
+	EmailAddresses []string `json:"emailAddresses,omitempty" protobuf:"bytes,10,rep,name=emailAddresses"`
 }
 
 // X509Subject Full X509 name specification

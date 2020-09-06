@@ -63,14 +63,13 @@ message CertificateSpec {
   // +optional
   repeated string ipAddresses = 8;
 
-  // URISANs is a list of URI Subject Alternative Names to be set on this
-  // Certificate.
+  // URIs is a list of URI subjectAltNames to be set on the Certificate.
   // +optional
-  repeated string uriSANs = 9;
+  repeated string uris = 9;
 
-  // EmailSANs is a list of email subjectAltNames to be set on the Certificate.
+  // EmailAddresses is a list of email subjectAltNames to be set on the Certificate.
   // +optional
-  repeated string emailSANs = 10;
+  repeated string emailAddresses = 10;
 }
 
 message Condition {
