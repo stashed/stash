@@ -1,4 +1,4 @@
-# cloud.google.com/go v0.49.0
+# cloud.google.com/go v0.49.0 => cloud.google.com/go v0.49.0
 cloud.google.com/go/compute/metadata
 # github.com/Azure/azure-sdk-for-go v36.1.0+incompatible => github.com/Azure/azure-sdk-for-go v35.0.0+incompatible
 github.com/Azure/azure-sdk-for-go/storage
@@ -86,12 +86,14 @@ github.com/aws/aws-sdk-go/service/s3/s3iface
 github.com/aws/aws-sdk-go/service/s3/s3manager
 github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/service/sts/stsiface
-# github.com/beorn7/perks v1.0.0
+# github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
 # github.com/blang/semver v3.5.1+incompatible
 github.com/blang/semver
 # github.com/cenkalti/backoff v2.1.1+incompatible
 github.com/cenkalti/backoff
+# github.com/cespare/xxhash/v2 v2.1.1
+github.com/cespare/xxhash/v2
 # github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0
 github.com/codegangsta/inject
 # github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
@@ -136,7 +138,7 @@ github.com/go-openapi/spec
 github.com/go-openapi/swag
 # github.com/go-sql-driver/mysql v1.5.0
 github.com/go-sql-driver/mysql
-# github.com/gogo/protobuf v1.3.1
+# github.com/gogo/protobuf v1.3.1 => github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
@@ -145,7 +147,7 @@ github.com/gogo/protobuf/sortkeys
 github.com/golang/glog
 # github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9
 github.com/golang/groupcache/lru
-# github.com/golang/protobuf v1.3.5
+# github.com/golang/protobuf v1.4.2 => github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/jsonpb
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
@@ -167,7 +169,7 @@ github.com/google/gofuzz
 github.com/google/uuid
 # github.com/googleapis/gax-go/v2 v2.0.5
 github.com/googleapis/gax-go/v2
-# github.com/googleapis/gnostic v0.3.1
+# github.com/googleapis/gnostic v0.3.1 => github.com/googleapis/gnostic v0.3.1
 github.com/googleapis/gnostic/OpenAPIv2
 github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
@@ -201,7 +203,7 @@ github.com/inconshreveable/mousetrap
 github.com/jmespath/go-jmespath
 # github.com/jpillora/go-ogle-analytics v0.0.0-20161213085824-14b04e0594ef
 github.com/jpillora/go-ogle-analytics
-# github.com/json-iterator/go v1.1.8
+# github.com/json-iterator/go v1.1.10
 github.com/json-iterator/go
 # github.com/kubernetes-csi/external-snapshotter/v2 v2.1.1-0.20200521091436-82ef6e66e992
 github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1
@@ -266,19 +268,20 @@ github.com/opencontainers/go-digest
 github.com/peterbourgon/diskv
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
-# github.com/prometheus/client_golang v1.2.1 => github.com/prometheus/client_golang v1.0.0
+# github.com/prometheus/client_golang v1.7.1 => github.com/prometheus/client_golang v1.7.1
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promhttp
 github.com/prometheus/client_golang/prometheus/push
 github.com/prometheus/client_golang/prometheus/testutil
+github.com/prometheus/client_golang/prometheus/testutil/promlint
 # github.com/prometheus/client_model v0.2.0
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.7.0
+# github.com/prometheus/common v0.10.0
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 github.com/prometheus/common/model
-# github.com/prometheus/procfs v0.0.6
+# github.com/prometheus/procfs v0.1.3
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
@@ -389,7 +392,7 @@ golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
 # golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 golang.org/x/sync/singleflight
-# golang.org/x/sys v0.0.0-20200509044756-6aff5f38e54f
+# golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
@@ -445,7 +448,7 @@ gomodules.xyz/stow/s3
 gomodules.xyz/stow/swift
 # gomodules.xyz/version v0.1.0
 gomodules.xyz/version
-# google.golang.org/api v0.14.0
+# google.golang.org/api v0.14.0 => google.golang.org/api v0.14.0
 google.golang.org/api/googleapi
 google.golang.org/api/googleapi/transport
 google.golang.org/api/internal
@@ -466,7 +469,7 @@ google.golang.org/appengine/internal/modules
 google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20191220175831-5c49e3ecc1c1
+# google.golang.org/genproto v0.0.0-20191220175831-5c49e3ecc1c1 => google.golang.org/genproto v0.0.0-20191115194625-c23dd37a84c9
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.28.0 => google.golang.org/grpc v1.26.0
 google.golang.org/grpc
@@ -750,7 +753,7 @@ k8s.io/apiserver/plugin/pkg/audit/truncate
 k8s.io/apiserver/plugin/pkg/audit/webhook
 k8s.io/apiserver/plugin/pkg/authenticator/token/webhook
 k8s.io/apiserver/plugin/pkg/authorizer/webhook
-# k8s.io/cli-runtime v0.18.3
+# k8s.io/cli-runtime v0.18.3 => k8s.io/cli-runtime v0.18.3
 k8s.io/cli-runtime/pkg/genericclioptions
 k8s.io/cli-runtime/pkg/kustomize
 k8s.io/cli-runtime/pkg/kustomize/k8sdeps
@@ -988,7 +991,7 @@ k8s.io/client-go/util/homedir
 k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
-# k8s.io/component-base v0.18.3
+# k8s.io/component-base v0.18.3 => k8s.io/component-base v0.18.3
 k8s.io/component-base/cli/flag
 k8s.io/component-base/featuregate
 k8s.io/component-base/metrics
@@ -1005,7 +1008,7 @@ k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/scheme
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
-# k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
+# k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6 => k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
 k8s.io/kube-openapi/pkg/builder
 k8s.io/kube-openapi/pkg/common
 k8s.io/kube-openapi/pkg/handler
@@ -1164,7 +1167,7 @@ sigs.k8s.io/structured-merge-diff/v3/typed
 sigs.k8s.io/structured-merge-diff/v3/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.10.0
+# stash.appscode.dev/apimachinery v0.10.1-0.20200914045248-546ceea96940
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
 stash.appscode.dev/apimachinery/apis/repositories/install

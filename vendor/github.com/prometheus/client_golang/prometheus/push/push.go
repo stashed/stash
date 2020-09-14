@@ -36,6 +36,8 @@ package push
 
 import (
 	"bytes"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -48,7 +50,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-const contentTypeHeader = "Content-Type"
+const (
+	contentTypeHeader = "Content-Type"
+	// base64Suffix is appended to a label name in the request URL path to
+	// mark the following label value as base64 encoded.
+	base64Suffix = "@base64"
+)
+
+var errJobEmpty = errors.New("job name is empty")
 
 // HTTPDoer is an interface for the one method of http.Client that is used by Pusher
 type HTTPDoer interface {
@@ -74,25 +83,22 @@ type Pusher struct {
 }
 
 // New creates a new Pusher to push to the provided URL with the provided job
-// name. You can use just host:port or ip:port as url, in which case “http://”
-// is added automatically. Alternatively, include the schema in the
-// URL. However, do not include the “/metrics/jobs/…” part.
-//
-// Note that until https://github.com/prometheus/pushgateway/issues/97 is
-// resolved, a “/” character in the job name is prohibited.
+// name (which must not be empty). You can use just host:port or ip:port as url,
+// in which case “http://” is added automatically. Alternatively, include the
+// schema in the URL. However, do not include the “/metrics/jobs/…” part.
 func New(url, job string) *Pusher {
 	var (
 		reg = prometheus.NewRegistry()
 		err error
 	)
+	if job == "" {
+		err = errJobEmpty
+	}
 	if !strings.Contains(url, "://") {
 		url = "http://" + url
 	}
 	if strings.HasSuffix(url, "/") {
 		url = url[:len(url)-1]
-	}
-	if strings.Contains(job, "/") {
-		err = fmt.Errorf("job contains '/': %s", job)
 	}
 
 	return &Pusher{
@@ -117,14 +123,14 @@ func New(url, job string) *Pusher {
 // Push returns the first error encountered by any method call (including this
 // one) in the lifetime of the Pusher.
 func (p *Pusher) Push() error {
-	return p.push("PUT")
+	return p.push(http.MethodPut)
 }
 
 // Add works like push, but only previously pushed metrics with the same name
 // (and the same job and other grouping labels) will be replaced. (It uses HTTP
 // method “POST” to push to the Pushgateway.)
 func (p *Pusher) Add() error {
-	return p.push("POST")
+	return p.push(http.MethodPost)
 }
 
 // Gatherer adds a Gatherer to the Pusher, from which metrics will be gathered
@@ -155,17 +161,10 @@ func (p *Pusher) Collector(c prometheus.Collector) *Pusher {
 // will lead to an error.
 //
 // For convenience, this method returns a pointer to the Pusher itself.
-//
-// Note that until https://github.com/prometheus/pushgateway/issues/97 is
-// resolved, this method does not allow a “/” character in the label value.
 func (p *Pusher) Grouping(name, value string) *Pusher {
 	if p.error == nil {
 		if !model.LabelName(name).IsValid() {
 			p.error = fmt.Errorf("grouping label has invalid name: %s", name)
-			return p
-		}
-		if strings.Contains(value, "/") {
-			p.error = fmt.Errorf("value of grouping label %s contains '/': %s", name, value)
 			return p
 		}
 		p.grouping[name] = value
@@ -204,16 +203,40 @@ func (p *Pusher) Format(format expfmt.Format) *Pusher {
 	return p
 }
 
+// Delete sends a “DELETE” request to the Pushgateway configured while creating
+// this Pusher, using the configured job name and any added grouping labels as
+// grouping key. Any added Gatherers and Collectors added to this Pusher are
+// ignored by this method.
+//
+// Delete returns the first error encountered by any method call (including this
+// one) in the lifetime of the Pusher.
+func (p *Pusher) Delete() error {
+	if p.error != nil {
+		return p.error
+	}
+	req, err := http.NewRequest(http.MethodDelete, p.fullURL(), nil)
+	if err != nil {
+		return err
+	}
+	if p.useBasicAuth {
+		req.SetBasicAuth(p.username, p.password)
+	}
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusAccepted {
+		body, _ := ioutil.ReadAll(resp.Body) // Ignore any further error as this is for an error message only.
+		return fmt.Errorf("unexpected status code %d while deleting %s: %s", resp.StatusCode, p.fullURL(), body)
+	}
+	return nil
+}
+
 func (p *Pusher) push(method string) error {
 	if p.error != nil {
 		return p.error
 	}
-	urlComponents := []string{url.QueryEscape(p.job)}
-	for ln, lv := range p.grouping {
-		urlComponents = append(urlComponents, ln, lv)
-	}
-	pushURL := fmt.Sprintf("%s/metrics/job/%s", p.url, strings.Join(urlComponents, "/"))
-
 	mfs, err := p.gatherers.Gather()
 	if err != nil {
 		return err
@@ -237,7 +260,7 @@ func (p *Pusher) push(method string) error {
 		}
 		enc.Encode(mf)
 	}
-	req, err := http.NewRequest(method, pushURL, buf)
+	req, err := http.NewRequest(method, p.fullURL(), buf)
 	if err != nil {
 		return err
 	}
@@ -250,9 +273,48 @@ func (p *Pusher) push(method string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 202 {
+	// Depending on version and configuration of the PGW, StatusOK or StatusAccepted may be returned.
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		body, _ := ioutil.ReadAll(resp.Body) // Ignore any further error as this is for an error message only.
-		return fmt.Errorf("unexpected status code %d while pushing to %s: %s", resp.StatusCode, pushURL, body)
+		return fmt.Errorf("unexpected status code %d while pushing to %s: %s", resp.StatusCode, p.fullURL(), body)
 	}
 	return nil
+}
+
+// fullURL assembles the URL used to push/delete metrics and returns it as a
+// string. The job name and any grouping label values containing a '/' will
+// trigger a base64 encoding of the affected component and proper suffixing of
+// the preceding component. Similarly, an empty grouping label value will be
+// encoded as base64 just with a single `=` padding character (to avoid an empty
+// path component). If the component does not contain a '/' but other special
+// characters, the usual url.QueryEscape is used for compatibility with older
+// versions of the Pushgateway and for better readability.
+func (p *Pusher) fullURL() string {
+	urlComponents := []string{}
+	if encodedJob, base64 := encodeComponent(p.job); base64 {
+		urlComponents = append(urlComponents, "job"+base64Suffix, encodedJob)
+	} else {
+		urlComponents = append(urlComponents, "job", encodedJob)
+	}
+	for ln, lv := range p.grouping {
+		if encodedLV, base64 := encodeComponent(lv); base64 {
+			urlComponents = append(urlComponents, ln+base64Suffix, encodedLV)
+		} else {
+			urlComponents = append(urlComponents, ln, encodedLV)
+		}
+	}
+	return fmt.Sprintf("%s/metrics/%s", p.url, strings.Join(urlComponents, "/"))
+}
+
+// encodeComponent encodes the provided string with base64.RawURLEncoding in
+// case it contains '/' and as "=" in case it is empty. If neither is the case,
+// it uses url.QueryEscape instead. It returns true in the former two cases.
+func encodeComponent(s string) (string, bool) {
+	if s == "" {
+		return "=", true
+	}
+	if strings.Contains(s, "/") {
+		return base64.RawURLEncoding.EncodeToString([]byte(s)), true
+	}
+	return url.QueryEscape(s), false
 }
