@@ -44,6 +44,7 @@ const (
 )
 
 type config struct {
+	LicenseFile             string
 	StashImage              string
 	StashImageTag           string
 	DockerRegistry          string

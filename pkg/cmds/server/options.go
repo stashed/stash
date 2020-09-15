@@ -90,6 +90,7 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	var err error
 
+	cfg.LicenseFile = s.LicenseFile
 	cfg.StashImage = s.StashImage
 	cfg.StashImageTag = s.StashImageTag
 	cfg.DockerRegistry = s.DockerRegistry

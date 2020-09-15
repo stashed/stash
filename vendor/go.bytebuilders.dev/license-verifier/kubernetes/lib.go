@@ -18,23 +18,35 @@ package kubernetes
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"syscall"
 	"time"
 
-	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/info"
+	"go.bytebuilders.dev/license-verifier/kubernetes/apis/licenses/v1alpha1"
+
+	verifier "go.bytebuilders.dev/license-verifier"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apiserver/pkg/server/mux"
 	"k8s.io/client-go/kubernetes"
 	clientscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/klog"
+	"k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/dynamic"
 	"kmodules.xyz/client-go/meta"
@@ -44,6 +56,8 @@ import (
 const (
 	EventSourceLicenseVerifier           = "License Verifier"
 	EventReasonLicenseVerificationFailed = "License Verification Failed"
+
+	licensePath = "/appscode/license"
 )
 
 type LicenseEnforcer struct {
@@ -53,14 +67,9 @@ type LicenseEnforcer struct {
 	licenseFile string
 }
 
-// VerifyLicensePeriodically periodically verifies whether the provided license is valid for the current cluster or not.
-func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <-chan struct{}) error {
-	if info.SkipLicenseVerification() {
-		klog.Infoln("License verification skipped")
-		return nil
-	}
-
-	le := &LicenseEnforcer{
+// NewLicenseEnforcer returns a newly created license enforcer
+func NewLicenseEnforcer(config *rest.Config, licenseFile string) *LicenseEnforcer {
+	return &LicenseEnforcer{
 		licenseFile: licenseFile,
 		config:      config,
 		opts: &verifier.Options{
@@ -68,74 +77,6 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 			ProductName: info.ProductName,
 		},
 	}
-	// Create Kubernetes client
-	err := le.createClients()
-	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
-	}
-	// Read cluster UID (UID of the "kube-system" namespace)
-	err = le.readClusterUID()
-	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
-	}
-
-	// Periodically verify license with 1 hour interval
-	return wait.PollImmediateUntil(1*time.Hour, func() (done bool, err error) {
-		klog.V(8).Infoln("Verifying license.......")
-		// Read license from file
-		err = le.readLicenseFromFile()
-		if err != nil {
-			return false, le.handleLicenseVerificationFailure(err)
-		}
-		// Validate license
-		err = verifier.VerifyLicense(le.opts)
-		if err != nil {
-			return false, le.handleLicenseVerificationFailure(err)
-		}
-		klog.Infoln("Successfully verified license!")
-		// return false so that the loop never ends
-		return false, nil
-	}, stopCh)
-}
-
-// VerifyLicense verifies whether the provided license is valid for the current cluster or not.
-func VerifyLicense(config *rest.Config, licenseFile string) error {
-	if info.SkipLicenseVerification() {
-		klog.Infoln("License verification skipped")
-		return nil
-	}
-
-	klog.V(8).Infoln("Verifying license.......")
-	le := &LicenseEnforcer{
-		licenseFile: licenseFile,
-		config:      config,
-		opts: &verifier.Options{
-			CACert:      []byte(info.LicenseCA),
-			ProductName: info.ProductName,
-		},
-	}
-	// Create Kubernetes client
-	err := le.createClients()
-	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
-	}
-	// Read cluster UID (UID of the "kube-system" namespace)
-	err = le.readClusterUID()
-	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
-	}
-	// Read license from file
-	err = le.readLicenseFromFile()
-	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
-	}
-	// Validate license
-	err = verifier.VerifyLicense(le.opts)
-	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
-	}
-	klog.Infoln("Successfully verified license!")
-	return nil
 }
 
 func (le *LicenseEnforcer) createClients() (err error) {
@@ -216,4 +157,215 @@ func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) er
 		return in
 	}, metav1.PatchOptions{})
 	return err
+}
+
+// Install adds the License info handler
+func (le *LicenseEnforcer) Install(c *mux.PathRecorderMux) {
+	// Create Kubernetes client
+	err := le.createClients()
+	if err != nil {
+		klog.Fatal(err)
+		return
+	}
+	c.Handle(licensePath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Read cluster UID (UID of the "kube-system" namespace)
+		err = le.readClusterUID()
+		if err != nil {
+			klog.Fatal(err)
+			return
+		}
+		// Read license from file
+		err = le.readLicenseFromFile()
+		if err != nil {
+			klog.Fatal(err)
+			return
+		}
+		// Parse license
+
+		block, _ := pem.Decode(le.opts.License)
+		if block == nil {
+			// This probably is a JWT token, should be check for that when ready
+			klog.Fatal("failed to parse certificate PEM")
+			return
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			klog.Fatal("failed to parse certificate", err)
+			return
+		}
+
+		license := &v1alpha1.License{
+			Issuer:    "byte.builders",
+			Clusters:  cert.DNSNames,
+			NotBefore: &metav1.Time{Time: cert.NotBefore},
+			NotAfter:  &metav1.Time{Time: cert.NotAfter},
+			ID:        cert.SerialNumber.String(),
+			Products:  cert.Subject.Organization,
+		}
+		license.TypeMeta = metav1.TypeMeta{
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+			Kind:       meta.GetKind(license),
+		}
+		// ref: https://github.com/appscode/gitea/blob/master/models/stripe_license.go#L117-L126
+		if err = verifier.VerifyLicense(le.opts); err != nil {
+			license.Status = v1alpha1.LicenseExpired
+			license.Reason = err.Error()
+		} else {
+			license.Status = v1alpha1.LicenseActive
+		}
+
+		data, err := json.Marshal(license)
+		if err != nil {
+			klog.Fatalln(err)
+		}
+		_, err = w.Write(data)
+		if err != nil {
+			klog.Fatalln(err)
+		}
+	}))
+}
+
+// VerifyLicensePeriodically periodically verifies whether the provided license is valid for the current cluster or not.
+func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <-chan struct{}) error {
+	if info.SkipLicenseVerification() {
+		klog.Infoln("License verification skipped")
+		return nil
+	}
+
+	le := &LicenseEnforcer{
+		licenseFile: licenseFile,
+		config:      config,
+		opts: &verifier.Options{
+			CACert:      []byte(info.LicenseCA),
+			ProductName: info.ProductName,
+		},
+	}
+	// Create Kubernetes client
+	err := le.createClients()
+	if err != nil {
+		return le.handleLicenseVerificationFailure(err)
+	}
+	// Read cluster UID (UID of the "kube-system" namespace)
+	err = le.readClusterUID()
+	if err != nil {
+		return le.handleLicenseVerificationFailure(err)
+	}
+
+	// Periodically verify license with 1 hour interval
+	return wait.PollImmediateUntil(1*time.Hour, func() (done bool, err error) {
+		klog.V(8).Infoln("Verifying license.......")
+		// Read license from file
+		err = le.readLicenseFromFile()
+		if err != nil {
+			return false, le.handleLicenseVerificationFailure(err)
+		}
+		// Validate license
+		err = verifier.VerifyLicense(le.opts)
+		if err != nil {
+			return false, le.handleLicenseVerificationFailure(err)
+		}
+		klog.Infoln("Successfully verified license!")
+		// return false so that the loop never ends
+		return false, nil
+	}, stopCh)
+}
+
+// CheckLicenseFile verifies whether the provided license is valid for the current cluster or not.
+func CheckLicenseFile(config *rest.Config, licenseFile string) error {
+	if info.SkipLicenseVerification() {
+		klog.Infoln("License verification skipped")
+		return nil
+	}
+
+	klog.V(8).Infoln("Verifying license.......")
+	le := &LicenseEnforcer{
+		licenseFile: licenseFile,
+		config:      config,
+		opts: &verifier.Options{
+			CACert:      []byte(info.LicenseCA),
+			ProductName: info.ProductName,
+		},
+	}
+	// Create Kubernetes client
+	err := le.createClients()
+	if err != nil {
+		return le.handleLicenseVerificationFailure(err)
+	}
+	// Read cluster UID (UID of the "kube-system" namespace)
+	err = le.readClusterUID()
+	if err != nil {
+		return le.handleLicenseVerificationFailure(err)
+	}
+	// Read license from file
+	err = le.readLicenseFromFile()
+	if err != nil {
+		return le.handleLicenseVerificationFailure(err)
+	}
+	// Validate license
+	err = verifier.VerifyLicense(le.opts)
+	if err != nil {
+		return le.handleLicenseVerificationFailure(err)
+	}
+	klog.Infoln("Successfully verified license!")
+	return nil
+}
+
+// CheckLicenseEndpoint verifies whether the provided api server has a valid license is valid for products.
+func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, products []string) error {
+	aggrClient, err := clientset.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	apiSvc, err := aggrClient.ApiregistrationV1beta1().APIServices().Get(context.TODO(), apiServiceName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	rt := http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: apiSvc.Spec.InsecureSkipTLSVerify,
+		},
+	}
+	if len(apiSvc.Spec.CABundle) > 0 {
+		pool := x509.NewCertPool()
+		pool.AppendCertsFromPEM(apiSvc.Spec.CABundle)
+		rt.TLSClientConfig.RootCAs = pool
+	}
+	client := http.Client{
+		Transport: &rt,
+		Timeout:   30 * time.Second,
+	}
+
+	u, err := url.Parse(fmt.Sprintf("https://%s.%s.svc", apiSvc.Spec.Service.Name, apiSvc.Spec.Service.Namespace))
+	if err != nil {
+		return err
+	}
+	u.Path = licensePath
+
+	resp, err := client.Get(u.String())
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	var license v1alpha1.License
+	err = json.Unmarshal(data, &license)
+	if err != nil {
+		return err
+	}
+
+	if license.Status != v1alpha1.LicenseActive {
+		return fmt.Errorf("license %s is not active, status: %s", license.ID, license.Status)
+	}
+
+	if !sets.NewString(license.Products...).HasAny(products...) {
+		return fmt.Errorf("license %s is not valid for products %q", license.ID, strings.Join(products, ","))
+	}
+	return nil
 }
