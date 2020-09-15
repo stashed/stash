@@ -316,7 +316,7 @@ github.com/yudai/golcs
 # go.bytebuilders.dev/license-verifier v0.2.2
 go.bytebuilders.dev/license-verifier
 go.bytebuilders.dev/license-verifier/info
-# go.bytebuilders.dev/license-verifier/kubernetes v0.2.3-0.20200915092602-8974756aacb0
+# go.bytebuilders.dev/license-verifier/kubernetes v0.2.3-0.20200916025544-04b5aab280b6
 go.bytebuilders.dev/license-verifier/kubernetes
 go.bytebuilders.dev/license-verifier/kubernetes/apis/licenses
 go.bytebuilders.dev/license-verifier/kubernetes/apis/licenses/v1alpha1
@@ -1219,7 +1219,7 @@ sigs.k8s.io/structured-merge-diff/v3/typed
 sigs.k8s.io/structured-merge-diff/v3/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.10.1-0.20200914045248-546ceea96940
+# stash.appscode.dev/apimachinery v0.10.1-0.20200915101709-96d42c3e4060
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
 stash.appscode.dev/apimachinery/apis/repositories/install

@@ -129,7 +129,7 @@ func (c completedConfig) New() (*StashServer, error) {
 		return nil, err
 	}
 
-	license.NewLicenseEnforcer(c.GenericConfig.LoopbackClientConfig, c.ExtraConfig.LicenseFile).Install(genericServer.Handler.NonGoRestfulMux)
+	license.NewLicenseEnforcer(c.ExtraConfig.ClientConfig, c.ExtraConfig.LicenseFile).Install(genericServer.Handler.NonGoRestfulMux)
 
 	ctrl, err := c.ExtraConfig.New()
 	if err != nil {

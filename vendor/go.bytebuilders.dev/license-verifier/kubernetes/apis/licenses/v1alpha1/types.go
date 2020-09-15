@@ -39,6 +39,7 @@ type License struct {
 type LicenseStatus string
 
 const (
+	LicenseUnknown  LicenseStatus = "unknown"
 	LicenseActive   LicenseStatus = "active"
 	LicenseExpired  LicenseStatus = "expired"
 	LicenseCanceled LicenseStatus = "canceled"

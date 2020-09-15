@@ -95,6 +95,10 @@ const (
 	PostRestoreHook = "postRestore"
 	PreTaskHook     = "pre-task-hook"
 	PostTaskHook    = "post-task-hook"
+
+	// License related constants
+	ApiServiceName        = "API_SERVICE_NAME"
+	AppsCodeLicenseReader = "appscode:license-reader"
 )
 
 const (

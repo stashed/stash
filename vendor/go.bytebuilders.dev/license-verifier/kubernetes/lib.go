@@ -38,6 +38,7 @@ import (
 	verifier "go.bytebuilders.dev/license-verifier"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/mux"
@@ -168,16 +169,29 @@ func (le *LicenseEnforcer) Install(c *mux.PathRecorderMux) {
 		return
 	}
 	c.Handle(licensePath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("x-content-type-options", "nosniff")
+
+		var license v1alpha1.License
+		license.TypeMeta = metav1.TypeMeta{
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+			Kind:       meta.GetKind(license),
+		}
+
 		// Read cluster UID (UID of the "kube-system" namespace)
 		err = le.readClusterUID()
 		if err != nil {
-			klog.Fatal(err)
+			license.Status = v1alpha1.LicenseUnknown
+			license.Reason = err.Error()
+			utilruntime.Must(json.NewEncoder(w).Encode(license))
 			return
 		}
 		// Read license from file
 		err = le.readLicenseFromFile()
 		if err != nil {
-			klog.Fatal(err)
+			license.Status = v1alpha1.LicenseUnknown
+			license.Reason = err.Error()
+			utilruntime.Must(json.NewEncoder(w).Encode(license))
 			return
 		}
 		// Parse license
@@ -185,26 +199,26 @@ func (le *LicenseEnforcer) Install(c *mux.PathRecorderMux) {
 		block, _ := pem.Decode(le.opts.License)
 		if block == nil {
 			// This probably is a JWT token, should be check for that when ready
-			klog.Fatal("failed to parse certificate PEM")
+			license.Status = v1alpha1.LicenseUnknown
+			license.Reason = "failed to parse certificate PEM"
+			utilruntime.Must(json.NewEncoder(w).Encode(license))
 			return
 		}
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
-			klog.Fatal("failed to parse certificate", err)
+			license.Status = v1alpha1.LicenseUnknown
+			license.Reason = "failed to parse certificate, reason:" + err.Error()
+			utilruntime.Must(json.NewEncoder(w).Encode(license))
 			return
 		}
 
-		license := &v1alpha1.License{
+		license = v1alpha1.License{
 			Issuer:    "byte.builders",
 			Clusters:  cert.DNSNames,
 			NotBefore: &metav1.Time{Time: cert.NotBefore},
 			NotAfter:  &metav1.Time{Time: cert.NotAfter},
 			ID:        cert.SerialNumber.String(),
 			Products:  cert.Subject.Organization,
-		}
-		license.TypeMeta = metav1.TypeMeta{
-			APIVersion: v1alpha1.SchemeGroupVersion.String(),
-			Kind:       meta.GetKind(license),
 		}
 		// ref: https://github.com/appscode/gitea/blob/master/models/stripe_license.go#L117-L126
 		if err = verifier.VerifyLicense(le.opts); err != nil {
@@ -214,14 +228,7 @@ func (le *LicenseEnforcer) Install(c *mux.PathRecorderMux) {
 			license.Status = v1alpha1.LicenseActive
 		}
 
-		data, err := json.Marshal(license)
-		if err != nil {
-			klog.Fatalln(err)
-		}
-		_, err = w.Write(data)
-		if err != nil {
-			klog.Fatalln(err)
-		}
+		utilruntime.Must(json.NewEncoder(w).Encode(license))
 	}))
 }
 

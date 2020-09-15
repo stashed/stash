@@ -45,6 +45,7 @@ const (
 
 type config struct {
 	LicenseFile             string
+	ApiServiceName          string
 	StashImage              string
 	StashImageTag           string
 	DockerRegistry          string
