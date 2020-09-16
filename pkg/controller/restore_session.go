@@ -486,6 +486,11 @@ func (c *StashController) ensureRestoreJob(invoker apis.RestoreInvoker, index in
 	if err != nil {
 		return err
 	}
+	// Give the ServiceAccount permission to send request to the license handler
+	err = stash_rbac.EnsureLicenseReaderClusterRoleBinding(c.kubeClient, invoker.OwnerRef, invoker.ObjectMeta.Namespace, serviceAccountName, invoker.Labels)
+	if err != nil {
+		return err
+	}
 
 	// if the Stash is using a private registry, then ensure the image pull secrets
 	var imagePullSecrets []core.LocalObjectReference
@@ -662,6 +667,8 @@ func (c *StashController) resolveRestoreTask(invoker apis.RestoreInvoker, reposi
 	implicitInputs[apis.StashDockerRegistry] = c.DockerRegistry
 	implicitInputs[apis.StashDockerImage] = c.StashImage
 	implicitInputs[apis.StashImageTag] = c.StashImageTag
+	// license related inputs
+	implicitInputs[apis.LicenseApiService] = c.LicenseApiService
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
