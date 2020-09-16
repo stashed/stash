@@ -3,32 +3,17 @@ module stash.appscode.dev/stash
 go 1.12
 
 require (
-	cloud.google.com/go v0.56.0 // indirect
 	github.com/Azure/azure-sdk-for-go v43.0.0+incompatible // indirect
-	github.com/Azure/go-autorest/autorest v0.10.2 // indirect
-	github.com/Azure/go-autorest/autorest/adal v0.8.3 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.3.1-0.20191028180845-3492b2aff503 // indirect
 	github.com/appscode/go v0.0.0-20200323182826-54e98e09185a
 	github.com/aws/aws-sdk-go v1.31.9 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
-	github.com/go-openapi/spec v0.19.7 // indirect
-	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7 // indirect
-	github.com/googleapis/gnostic v0.4.0 // indirect
-	github.com/gophercloud/gophercloud v0.11.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20191106031601-ce3c9ade29de // indirect
-	github.com/grpc-ecosystem/grpc-gateway v1.14.6 // indirect
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kr/pretty v0.2.0 // indirect
 	github.com/kubernetes-csi/external-snapshotter/v2 v2.1.1-0.20200521091436-82ef6e66e992
-	github.com/mailru/easyjson v0.7.1 // indirect
-	github.com/mattn/go-colorable v0.1.6 // indirect
-	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -42,19 +27,11 @@ require (
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/license-verifier/kubernetes v0.3.0
 	go.opencensus.io v0.22.2 // indirect
-	go.uber.org/atomic v1.6.0 // indirect
-	go.uber.org/zap v1.13.0 // indirect
-	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
-	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1 // indirect
-	golang.org/x/tools v0.0.0-20200603131246-cc40288be839 // indirect
 	gomodules.xyz/cert v1.0.3
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/stow v0.2.3
 	google.golang.org/api v0.26.0 // indirect
-	google.golang.org/appengine v1.6.6 // indirect
-	google.golang.org/genproto v0.0.0-20200603110839-e855014d5736 // indirect
 	gopkg.in/ini.v1 v1.51.0
-	gopkg.in/yaml.v2 v2.3.0 // indirect
 	k8s.io/api v0.18.3
 	k8s.io/apiextensions-apiserver v0.18.3
 	k8s.io/apimachinery v0.18.8
@@ -70,7 +47,7 @@ require (
 	kmodules.xyz/openshift v0.0.0-20200522123204-ce4abf5433c8
 	kmodules.xyz/prober v0.0.0-20200521101241-adf06150535c
 	kmodules.xyz/webhook-runtime v0.0.0-20200522123600-ca70a7e28ed0
-	stash.appscode.dev/apimachinery v0.10.1-0.20200916061451-7512ea4a1155
+	stash.appscode.dev/apimachinery v0.10.1-0.20200916073701-0189ba363808
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
