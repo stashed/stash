@@ -18,7 +18,6 @@ package kubernetes
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
@@ -329,18 +328,15 @@ func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, products [
 		return err
 	}
 
-	rt := http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: apiSvc.Spec.InsecureSkipTLSVerify,
-		},
+	c2 := *config
+	c2.CAData = apiSvc.Spec.CABundle
+	c2.Insecure = apiSvc.Spec.InsecureSkipTLSVerify
+	rt, err := rest.TransportFor(&c2)
+	if err != nil {
+		return err
 	}
-	if len(apiSvc.Spec.CABundle) > 0 {
-		pool := x509.NewCertPool()
-		pool.AppendCertsFromPEM(apiSvc.Spec.CABundle)
-		rt.TLSClientConfig.RootCAs = pool
-	}
-	client := http.Client{
-		Transport: &rt,
+	hc := http.Client{
+		Transport: rt,
 		Timeout:   30 * time.Second,
 	}
 
@@ -350,7 +346,7 @@ func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, products [
 	}
 	u.Path = licensePath
 
-	resp, err := client.Get(u.String())
+	resp, err := hc.Get(u.String())
 	if err != nil {
 		return err
 	}
@@ -368,7 +364,7 @@ func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, products [
 	}
 
 	if license.Status != v1alpha1.LicenseActive {
-		return fmt.Errorf("license %s is not active, status: %s", license.ID, license.Status)
+		return fmt.Errorf("license %s is not active, status: %s, reason: %s", license.ID, license.Status, license.Reason)
 	}
 
 	if !sets.NewString(license.Products...).HasAny(products...) {

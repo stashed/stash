@@ -40,7 +40,7 @@ require (
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier/kubernetes v0.2.3-0.20200916025544-04b5aab280b6
+	go.bytebuilders.dev/license-verifier/kubernetes v0.3.0
 	go.opencensus.io v0.22.2 // indirect
 	go.uber.org/atomic v1.6.0 // indirect
 	go.uber.org/zap v1.13.0 // indirect
