@@ -97,8 +97,8 @@ const (
 	PostTaskHook    = "post-task-hook"
 
 	// License related constants
-	ApiServiceName        = "API_SERVICE_NAME"
-	AppsCodeLicenseReader = "appscode:license-reader"
+	LicenseApiService = "LICENSE_APISERVICE"
+	LicenseReader     = "appscode:license-reader"
 )
 
 const (

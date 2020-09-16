@@ -333,7 +333,7 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 	implicitInputs[apis.StashDockerImage] = c.StashImage
 	implicitInputs[apis.StashImageTag] = c.StashImageTag
 	// license related inputs
-	implicitInputs[apis.ApiServiceName] = c.ApiServiceName
+	implicitInputs[apis.LicenseApiService] = c.LicenseApiService
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,

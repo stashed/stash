@@ -293,7 +293,7 @@ func EnsureRepoReaderRolebindingDeleted(kubeClient kubernetes.Interface, stashCl
 
 func EnsureLicenseReaderClusterRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Name:   fmt.Sprintf("%s:%s", apis.AppsCodeLicenseReader, sa),
+		Name:   meta_util.NameWithSuffix(apis.LicenseReader, sa),
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), kc, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
@@ -302,7 +302,7 @@ func EnsureLicenseReaderClusterRoleBinding(kc kubernetes.Interface, owner *metav
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     apis.KindClusterRole,
-			Name:     apis.AppsCodeLicenseReader,
+			Name:     apis.LicenseReader,
 		}
 		in.Subjects = []rbac.Subject{
 			{

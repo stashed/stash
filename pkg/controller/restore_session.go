@@ -668,7 +668,7 @@ func (c *StashController) resolveRestoreTask(invoker apis.RestoreInvoker, reposi
 	implicitInputs[apis.StashDockerImage] = c.StashImage
 	implicitInputs[apis.StashImageTag] = c.StashImageTag
 	// license related inputs
-	implicitInputs[apis.ApiServiceName] = c.ApiServiceName
+	implicitInputs[apis.LicenseApiService] = c.LicenseApiService
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,

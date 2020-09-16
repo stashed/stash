@@ -36,7 +36,7 @@ import (
 
 type ExtraOptions struct {
 	LicenseFile             string
-	ApiServiceName          string
+	LicenseApiService       string
 	StashImage              string
 	StashImageTag           string
 	DockerRegistry          string
@@ -75,7 +75,7 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.DockerRegistry, "docker-registry", s.DockerRegistry, "Docker image registry for sidecar, init-container, check-job, recovery-job and kubectl-job")
 	fs.StringSliceVar(&s.ImagePullSecrets, "image-pull-secrets", s.ImagePullSecrets, "List of image pull secrets for pulling image from private registries")
 	fs.StringVar(&s.LicenseFile, "license-file", s.LicenseFile, "Path to license file")
-	fs.StringVar(&s.ApiServiceName, "apiservice", s.ApiServiceName, "API Service to use by the addon to identify the service and certificate for license verification request")
+	fs.StringVar(&s.LicenseApiService, "license-apiservice", s.LicenseApiService, "Name of the ApiService to use by the addons to identify the respective service and certificate for license verification request")
 
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
@@ -93,7 +93,7 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	var err error
 
 	cfg.LicenseFile = s.LicenseFile
-	cfg.ApiServiceName = s.ApiServiceName
+	cfg.LicenseApiService = s.LicenseApiService
 	cfg.StashImage = s.StashImage
 	cfg.StashImageTag = s.StashImageTag
 	cfg.DockerRegistry = s.DockerRegistry
