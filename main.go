@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/stash/pkg/cmds"
 
 	"github.com/appscode/go/log"
+	_ "go.bytebuilders.dev/license-verifier/info"
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"kmodules.xyz/client-go/logs"

@@ -26,7 +26,7 @@ import (
 	"stash.appscode.dev/stash/pkg/server"
 
 	"github.com/spf13/pflag"
-	licenseEnforcer "go.bytebuilders.dev/license-verifier/kubernetes"
+	license "go.bytebuilders.dev/license-verifier/kubernetes"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
@@ -137,7 +137,7 @@ func (o StashOptions) Run(stopCh <-chan struct{}) error {
 
 	// Start periodic license verification
 	//nolint:errcheck
-	go licenseEnforcer.VerifyLicensePeriodically(config.ExtraConfig.ClientConfig, o.ExtraOptions.LicenseFile, stopCh)
+	go license.VerifyLicensePeriodically(config.ExtraConfig.ClientConfig, o.ExtraOptions.LicenseFile, stopCh)
 
 	return s.Run(stopCh)
 }
