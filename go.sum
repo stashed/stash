@@ -981,6 +981,8 @@ kmodules.xyz/client-go v0.0.0-20200525195850-2fd180961371/go.mod h1:sY/eoe4ktxZE
 kmodules.xyz/client-go v0.0.0-20200818143024-600fef263e03/go.mod h1:sY/eoe4ktxZEoHpr5NpAQ5s22VSwTE8psJtKVeVgLRY=
 kmodules.xyz/client-go v0.0.0-20200915091229-7df16c29f4e8 h1:C6+M9aTLhPCmsJ8dmhPvkr7Qe2MN+iiY3kZvbonhS9E=
 kmodules.xyz/client-go v0.0.0-20200915091229-7df16c29f4e8/go.mod h1:sY/eoe4ktxZEoHpr5NpAQ5s22VSwTE8psJtKVeVgLRY=
+kmodules.xyz/client-go v0.0.0-20200917200341-3f5fe7b6c182 h1:G/R4rl6XIgKMbiId5F6unK43nj2wlbYeWReVNWVgegk=
+kmodules.xyz/client-go v0.0.0-20200917200341-3f5fe7b6c182/go.mod h1:sY/eoe4ktxZEoHpr5NpAQ5s22VSwTE8psJtKVeVgLRY=
 kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72 h1:0sM6nE7aJon/PSdqZTj0bKJlPyzobXkG0wVYKpjcJJE=
 kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20200521005638-2433a187de95/go.mod h1:jpu8xFsDKd6kAWUAKk8oTu/GQGBWqhrcaDeOJdaCJnk=
