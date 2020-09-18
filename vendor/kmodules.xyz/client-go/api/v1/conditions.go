@@ -28,7 +28,7 @@ const (
 	ConditionInitialized = "Initialized"
 	ConditionReady       = "Ready"
 	ConditionAvailable   = "Available"
-	ConditionFailure     = "Failure"
+	ConditionFailed      = "Failed"
 
 	ConditionRequestApproved = "Approved"
 	ConditionRequestDenied   = "Denied"
