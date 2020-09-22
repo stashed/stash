@@ -27,6 +27,19 @@ import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
 // Package-wide variables from generator "generated".
 option go_package = "v1";
 
+// CertificatePrivateKey contains configuration options for private keys
+// used by the Certificate controller.
+// This allows control of how private keys are rotated.
+message CertificatePrivateKey {
+  // The private key cryptography standards (PKCS) encoding for this
+  // certificate's private key to be encoded in.
+  // If provided, allowed values are "pkcs1" and "pkcs8" standing for PKCS#1
+  // and PKCS#8, respectively.
+  // Defaults to PKCS#1 if not specified.
+  // +optional
+  optional string encoding = 1;
+}
+
 message CertificateSpec {
   // Alias represents the identifier of the certificate.
   optional string alias = 1;
@@ -36,40 +49,37 @@ message CertificateSpec {
   // +optional
   optional string secretName = 2;
 
-  // KeyEncoding is the private key cryptography standards (PKCS)
-  // for this certificate's private key to be encoded in.
-  // If provided, allowed values are "pkcs1" and "pkcs8".
-  // If KeyEncoding is not specified, then PKCS#1 will be used by default.
-  // +optional
-  optional string keyEncoding = 3;
-
   // Full X509 name specification (https://golang.org/pkg/crypto/x509/pkix/#Name).
   // +optional
-  optional X509Subject subject = 4;
+  optional X509Subject subject = 3;
 
   // Certificate default Duration
   // +optional
-  optional k8s.io.apimachinery.pkg.apis.meta.v1.Duration duration = 5;
+  optional k8s.io.apimachinery.pkg.apis.meta.v1.Duration duration = 4;
 
   // Certificate renew before expiration duration
   // +optional
-  optional k8s.io.apimachinery.pkg.apis.meta.v1.Duration renewBefore = 6;
+  optional k8s.io.apimachinery.pkg.apis.meta.v1.Duration renewBefore = 5;
 
   // DNSNames is a list of subject alt names to be used on the Certificate.
   // +optional
-  repeated string dnsNames = 7;
+  repeated string dnsNames = 6;
 
   // IPAddresses is a list of IP addresses to be used on the Certificate
   // +optional
-  repeated string ipAddresses = 8;
+  repeated string ipAddresses = 7;
 
   // URIs is a list of URI subjectAltNames to be set on the Certificate.
   // +optional
-  repeated string uris = 9;
+  repeated string uris = 8;
 
   // EmailAddresses is a list of email subjectAltNames to be set on the Certificate.
   // +optional
-  repeated string emailAddresses = 10;
+  repeated string emailAddresses = 9;
+
+  // Options to control private keys used for the Certificate.
+  // +optional
+  optional CertificatePrivateKey privateKey = 10;
 }
 
 message Condition {

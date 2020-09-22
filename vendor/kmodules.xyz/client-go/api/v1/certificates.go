@@ -46,40 +46,37 @@ type CertificateSpec struct {
 	// +optional
 	SecretName string `json:"secretName,omitempty" protobuf:"bytes,2,opt,name=secretName"`
 
-	// KeyEncoding is the private key cryptography standards (PKCS)
-	// for this certificate's private key to be encoded in.
-	// If provided, allowed values are "pkcs1" and "pkcs8".
-	// If KeyEncoding is not specified, then PKCS#1 will be used by default.
-	// +optional
-	KeyEncoding string `json:"keyEncoding,omitempty" protobuf:"bytes,3,opt,name=keyEncoding"`
-
 	// Full X509 name specification (https://golang.org/pkg/crypto/x509/pkix/#Name).
 	// +optional
-	Subject *X509Subject `json:"subject,omitempty" protobuf:"bytes,4,opt,name=subject"`
+	Subject *X509Subject `json:"subject,omitempty" protobuf:"bytes,3,opt,name=subject"`
 
 	// Certificate default Duration
 	// +optional
-	Duration *metav1.Duration `json:"duration,omitempty" protobuf:"bytes,5,opt,name=duration"`
+	Duration *metav1.Duration `json:"duration,omitempty" protobuf:"bytes,4,opt,name=duration"`
 
 	// Certificate renew before expiration duration
 	// +optional
-	RenewBefore *metav1.Duration `json:"renewBefore,omitempty" protobuf:"bytes,6,opt,name=renewBefore"`
+	RenewBefore *metav1.Duration `json:"renewBefore,omitempty" protobuf:"bytes,5,opt,name=renewBefore"`
 
 	// DNSNames is a list of subject alt names to be used on the Certificate.
 	// +optional
-	DNSNames []string `json:"dnsNames,omitempty" protobuf:"bytes,7,rep,name=dnsNames"`
+	DNSNames []string `json:"dnsNames,omitempty" protobuf:"bytes,6,rep,name=dnsNames"`
 
 	// IPAddresses is a list of IP addresses to be used on the Certificate
 	// +optional
-	IPAddresses []string `json:"ipAddresses,omitempty" protobuf:"bytes,8,rep,name=ipAddresses"`
+	IPAddresses []string `json:"ipAddresses,omitempty" protobuf:"bytes,7,rep,name=ipAddresses"`
 
 	// URIs is a list of URI subjectAltNames to be set on the Certificate.
 	// +optional
-	URIs []string `json:"uris,omitempty" protobuf:"bytes,9,rep,name=uris"`
+	URIs []string `json:"uris,omitempty" protobuf:"bytes,8,rep,name=uris"`
 
 	// EmailAddresses is a list of email subjectAltNames to be set on the Certificate.
 	// +optional
-	EmailAddresses []string `json:"emailAddresses,omitempty" protobuf:"bytes,10,rep,name=emailAddresses"`
+	EmailAddresses []string `json:"emailAddresses,omitempty" protobuf:"bytes,9,rep,name=emailAddresses"`
+
+	// Options to control private keys used for the Certificate.
+	// +optional
+	PrivateKey *CertificatePrivateKey `json:"privateKey,omitempty" protobuf:"bytes,10,opt,name=privateKey"`
 }
 
 // X509Subject Full X509 name specification
@@ -108,6 +105,35 @@ type X509Subject struct {
 	// Serial number to be used on the CertificateSpec.
 	// +optional
 	SerialNumber string `json:"serialNumber,omitempty" protobuf:"bytes,8,opt,name=serialNumber"`
+}
+
+// +kubebuilder:validation:Enum=PKCS1;PKCS8
+type PrivateKeyEncoding string
+
+const (
+	// PKCS1 key encoding will produce PEM files that include the type of
+	// private key as part of the PEM header, e.g. "BEGIN RSA PRIVATE KEY".
+	// If the keyAlgorithm is set to 'ECDSA', this will produce private keys
+	// that use the "BEGIN EC PRIVATE KEY" header.
+	PKCS1 PrivateKeyEncoding = "PKCS1"
+
+	// PKCS8 key encoding will produce PEM files with the "BEGIN PRIVATE KEY"
+	// header. It encodes the keyAlgorithm of the private key as part of the
+	// DER encoded PEM block.
+	PKCS8 PrivateKeyEncoding = "PKCS8"
+)
+
+// CertificatePrivateKey contains configuration options for private keys
+// used by the Certificate controller.
+// This allows control of how private keys are rotated.
+type CertificatePrivateKey struct {
+	// The private key cryptography standards (PKCS) encoding for this
+	// certificate's private key to be encoded in.
+	// If provided, allowed values are "pkcs1" and "pkcs8" standing for PKCS#1
+	// and PKCS#8, respectively.
+	// Defaults to PKCS#1 if not specified.
+	// +optional
+	Encoding PrivateKeyEncoding `json:"encoding,omitempty" protobuf:"bytes,1,opt,name=encoding,casttype=PrivateKeyEncoding"`
 }
 
 // HasCertificate returns "true" if the desired certificate provided in "aliaS" is present in the certificate list.
