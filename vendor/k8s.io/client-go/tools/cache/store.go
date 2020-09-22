@@ -264,3 +264,19 @@ func NewIndexer(keyFunc KeyFunc, indexers Indexers) Indexer {
 		keyFunc:      keyFunc,
 	}
 }
+
+// NewLiteStore returns a Store implemented simply with a map and a lock.
+func NewLiteStore(keyFunc KeyFunc) Store {
+	return &cache{
+		cacheStorage: NewLiteThreadSafeStore(Indexers{}, Indices{}),
+		keyFunc:      keyFunc,
+	}
+}
+
+// NewLiteIndexer returns an Indexer implemented simply with a map and a lock.
+func NewLiteIndexer(keyFunc KeyFunc, indexers Indexers) Indexer {
+	return &cache{
+		cacheStorage: NewLiteThreadSafeStore(indexers, Indices{}),
+		keyFunc:      keyFunc,
+	}
+}

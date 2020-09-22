@@ -9,10 +9,11 @@ var root = newMIME("application/octet-stream", "", func([]byte) bool { return tr
 	sevenZ, zip, pdf, ole, ps, psd, ogg, png, jpg, jp2, jpx, jpm, gif, webp,
 	exe, elf, ar, tar, xar, bz2, fits, tiff, bmp, ico, mp3, flac, midi, ape,
 	musePack, amr, wav, aiff, au, mpeg, quickTime, mqv, mp4, webM, threeGP,
-	threeG2, avi, flv, mkv, asf, aac, voc, aMp4, m4a, m4v, utf32le, utf32be, utf16le,
-	utf16be, gzip, class, swf, crx, ttf, woff, woff2, otf, eot, wasm, shx, dbf,
-	dcm, rar, djvu, mobi, lit, bpg, sqlite3, dwg, nes, macho, qcp, icns, heic,
-	heicSeq, heif, heifSeq, mrc, mdb, accdb, zstd, cab, utf8, rpm, xz, lzip,
+	threeG2, avi, flv, mkv, asf, aac, voc, aMp4, m4a, m4v, rmvb, utf32le, utf32be,
+	utf16le, utf16be, gzip, class, swf, crx, ttf, woff, woff2, otf, eot, wasm,
+	shx, dbf, dcm, rar, djvu, mobi, lit, bpg, sqlite3, dwg, nes, macho, qcp,
+	icns, heic, heicSeq, heif, heifSeq, mrc, mdb, accdb, zstd, cab, utf8,
+	rpm, xz, lzip, torrent,
 )
 
 // The list of nodes appended to the root node.
@@ -138,6 +139,7 @@ var (
 	mkv = newMIME("video/x-matroska", ".mkv", matchers.Mkv)
 	asf = newMIME("video/x-ms-asf", ".asf", matchers.Asf).
 		alias("video/asf", "video/x-ms-wmv")
+	rmvb  = newMIME("application/vnd.rn-realmedia-vbr", ".rmvb", matchers.Rmvb)
 	class = newMIME("application/x-java-applet; charset=binary", ".class", matchers.Class)
 	swf   = newMIME("application/x-shockwave-flash", ".swf", matchers.Swf)
 	crx   = newMIME("application/x-chrome-extension", ".crx", matchers.Crx)
@@ -188,14 +190,15 @@ var (
 	sqlite3 = newMIME("application/x-sqlite3", ".sqlite", matchers.Sqlite)
 	dwg     = newMIME("image/vnd.dwg", ".dwg", matchers.Dwg).
 		alias("image/x-dwg", "application/acad", "application/x-acad", "application/autocad_dwg", "application/dwg", "application/x-dwg", "application/x-autocad", "drawing/dwg")
-	warc  = newMIME("application/warc", ".warc", matchers.Warc)
-	nes   = newMIME("application/vnd.nintendo.snes.rom", ".nes", matchers.Nes)
-	macho = newMIME("application/x-mach-binary", ".macho", matchers.MachO)
-	qcp   = newMIME("audio/qcelp", ".qcp", matchers.Qcp)
-	mrc   = newMIME("application/marc", ".mrc", matchers.Marc)
-	mdb   = newMIME("application/x-msaccess", ".mdb", matchers.MsAccessMdb)
-	accdb = newMIME("application/x-msaccess", ".accdb", matchers.MsAccessAce)
-	zstd  = newMIME("application/zstd", ".zst", matchers.Zstd)
-	cab   = newMIME("application/vnd.ms-cab-compressed", ".cab", matchers.Cab)
-	lzip  = newMIME("application/lzip", ".lz", matchers.Lzip)
+	warc    = newMIME("application/warc", ".warc", matchers.Warc)
+	nes     = newMIME("application/vnd.nintendo.snes.rom", ".nes", matchers.Nes)
+	macho   = newMIME("application/x-mach-binary", ".macho", matchers.MachO)
+	qcp     = newMIME("audio/qcelp", ".qcp", matchers.Qcp)
+	mrc     = newMIME("application/marc", ".mrc", matchers.Marc)
+	mdb     = newMIME("application/x-msaccess", ".mdb", matchers.MsAccessMdb)
+	accdb   = newMIME("application/x-msaccess", ".accdb", matchers.MsAccessAce)
+	zstd    = newMIME("application/zstd", ".zst", matchers.Zstd)
+	cab     = newMIME("application/vnd.ms-cab-compressed", ".cab", matchers.Cab)
+	lzip    = newMIME("application/lzip", ".lz", matchers.Lzip)
+	torrent = newMIME("application/x-bittorrent", ".torrent", matchers.Torrent)
 )
