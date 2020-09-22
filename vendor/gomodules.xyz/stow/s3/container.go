@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"gomodules.xyz/stow"
 )
@@ -285,7 +286,7 @@ func parseMetadata(md map[string]*string) (map[string]interface{}, error) {
 func (c *container) HasWriteAccess() error {
 	// TODO: Use https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETpolicy.html ?
 	r := bytes.NewReader([]byte("CheckBucketAccess"))
-	item, err := c.Put(".can_write", r, r.Size(), nil)
+	item, err := c.Put(".trash/"+uuid.New().String(), r, r.Size(), nil)
 	if err != nil {
 		return err
 	}

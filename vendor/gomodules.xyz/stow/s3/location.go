@@ -106,6 +106,12 @@ func (l *location) Containers(prefix, cursor string, count int) ([]stow.Containe
 			bucketRegion, err = s3manager.GetBucketRegionWithClient(ctx, l.client, *bucket.Name)
 			cancel()
 			if err != nil {
+				if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
+					// sometimes buckets will still show up int eh ListBuckets results after
+					// being deleted, but will 404 when determining the region. Use this as a
+					// strong signal that the bucket has been deleted.
+					continue
+				}
 				return nil, "", errors.Wrapf(err, "Containers, getting bucket region for: %s", *bucket.Name)
 			}
 			if regionSet && region != "" && bucketRegion != region {

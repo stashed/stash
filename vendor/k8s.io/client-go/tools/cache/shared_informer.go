@@ -205,6 +205,25 @@ func NewSharedIndexInformer(lw ListerWatcher, exampleObject runtime.Object, defa
 	return sharedIndexInformer
 }
 
+func NewSharedLiteInformer(lw ListerWatcher, exampleObject runtime.Object, defaultEventHandlerResyncPeriod time.Duration) SharedInformer {
+	return NewSharedLiteIndexInformer(lw, exampleObject, defaultEventHandlerResyncPeriod, Indexers{})
+}
+
+func NewSharedLiteIndexInformer(lw ListerWatcher, exampleObject runtime.Object, defaultEventHandlerResyncPeriod time.Duration, indexers Indexers) SharedIndexInformer {
+	realClock := &clock.RealClock{}
+	sharedIndexInformer := &sharedIndexInformer{
+		processor:                       &sharedProcessor{clock: realClock},
+		indexer:                         NewLiteIndexer(DeletionHandlingMetaNamespaceKeyFunc, indexers),
+		listerWatcher:                   lw,
+		objectType:                      exampleObject,
+		resyncCheckPeriod:               defaultEventHandlerResyncPeriod,
+		defaultEventHandlerResyncPeriod: defaultEventHandlerResyncPeriod,
+		cacheMutationDetector:           NewCacheMutationDetector(fmt.Sprintf("%T", exampleObject)),
+		clock:                           realClock,
+	}
+	return sharedIndexInformer
+}
+
 // InformerSynced is a function that can be used to determine if an informer has synced.  This is useful for determining if caches have synced.
 type InformerSynced func() bool
 

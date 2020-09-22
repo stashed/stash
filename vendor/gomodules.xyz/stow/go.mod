@@ -10,6 +10,7 @@ require (
 	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
 	github.com/google/readahead v0.0.0-20161222183148-eaceba169032 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/ncw/swift v1.0.49
 	github.com/pkg/errors v0.8.1

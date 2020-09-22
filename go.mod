@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.31.9 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
+	github.com/go-openapi/spec v0.19.8 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -30,24 +31,24 @@ require (
 	go.opencensus.io v0.22.2 // indirect
 	gomodules.xyz/cert v1.0.3
 	gomodules.xyz/envsubst v0.1.0
-	gomodules.xyz/stow v0.2.3
+	gomodules.xyz/stow v0.2.4
 	google.golang.org/api v0.26.0 // indirect
 	gopkg.in/ini.v1 v1.51.0
-	k8s.io/api v0.18.3
-	k8s.io/apiextensions-apiserver v0.18.3
-	k8s.io/apimachinery v0.18.3
-	k8s.io/apiserver v0.18.3
+	k8s.io/api v0.18.9
+	k8s.io/apiextensions-apiserver v0.18.9
+	k8s.io/apimachinery v0.18.9
+	k8s.io/apiserver v0.18.9
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/kube-aggregator v0.18.3
-	k8s.io/kubernetes v1.18.3
-	kmodules.xyz/client-go v0.0.0-20200922032108-ef86d97ea367
+	k8s.io/kube-aggregator v0.18.9
+	k8s.io/kubernetes v1.18.9
+	kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63
 	kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72
-	kmodules.xyz/custom-resources v0.0.0-20200604135349-9e9f5c4fdba9
-	kmodules.xyz/objectstore-api v0.0.0-20200521103120-92080446e04d
-	kmodules.xyz/offshoot-api v0.0.0-20200521035628-e135bf07b226
-	kmodules.xyz/openshift v0.0.0-20200522123204-ce4abf5433c8
-	kmodules.xyz/prober v0.0.0-20200521101241-adf06150535c
-	kmodules.xyz/webhook-runtime v0.0.0-20200522123600-ca70a7e28ed0
+	kmodules.xyz/custom-resources v0.0.0-20200922210108-70f2815a43bb
+	kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41
+	kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab
+	kmodules.xyz/openshift v0.0.0-20200922211657-1ece16d36c18
+	kmodules.xyz/prober v0.0.0-20200922212142-743a6514664e
+	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
 	stash.appscode.dev/apimachinery v0.11.0
 )
 
@@ -89,6 +90,8 @@ replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.3.1
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.5
 
+replace github.com/prometheus-operator/prometheus-operator => github.com/prometheus-operator/prometheus-operator v0.42.0
+
 replace github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring => github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.42.0
 
 replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.7.1
@@ -101,18 +104,20 @@ replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20191115
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
-replace k8s.io/api => github.com/kmodules/api v0.18.4-0.20200524125823-c8bc107809b9
+replace k8s.io/api => github.com/kmodules/api v0.18.10-0.20200922195318-d60fe725dea0
 
-replace k8s.io/apimachinery => github.com/kmodules/apimachinery v0.19.0-alpha.0.0.20200520235721-10b58e57a423
+replace k8s.io/apimachinery => github.com/kmodules/apimachinery v0.19.0-alpha.0.0.20200922195535-0c9a1b86beec
 
-replace k8s.io/apiserver => github.com/kmodules/apiserver v0.18.4-0.20200521000930-14c5f6df9625
+replace k8s.io/apiserver => github.com/kmodules/apiserver v0.18.10-0.20200922195747-1bd1cc8f00d1
 
-replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.18.3
+replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.18.9
 
-replace k8s.io/client-go => k8s.io/client-go v0.18.3
+replace k8s.io/client-go => github.com/kmodules/k8s-client-go v0.18.10-0.20200922201634-73fedf3d677e
 
-replace k8s.io/component-base => k8s.io/component-base v0.18.3
+replace k8s.io/component-base => k8s.io/component-base v0.18.9
 
 replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
 
-replace k8s.io/kubernetes => github.com/kmodules/kubernetes v1.19.0-alpha.0.0.20200521033432-49d3646051ad
+replace k8s.io/kubernetes => github.com/kmodules/kubernetes v1.19.0-alpha.0.0.20200922200158-8b13196d8dc4
+
+replace k8s.io/utils => k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
