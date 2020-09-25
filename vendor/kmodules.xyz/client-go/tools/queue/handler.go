@@ -17,13 +17,17 @@ limitations under the License.
 package queue
 
 import (
+	"fmt"
+	"reflect"
 	"time"
 
 	meta_util "kmodules.xyz/client-go/meta"
 
+	"github.com/fatih/structs"
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -85,6 +89,19 @@ func NewReconcilableHandler(queue workqueue.RateLimitingInterface) cache.Resourc
 		},
 		enqueueUpdate: func(old, nu interface{}) bool {
 			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil || !meta_util.MustAlreadyReconciled(nu)
+		},
+		enqueueDelete: true,
+	}
+}
+
+func NewChangeHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+	return &QueueingEventHandler{
+		queue:      queue,
+		enqueueAdd: nil,
+		enqueueUpdate: func(old, nu interface{}) bool {
+			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil ||
+				!meta_util.MustAlreadyReconciled(nu) ||
+				!statusEqual(old, nu)
 		},
 		enqueueDelete: true,
 	}
@@ -193,4 +210,30 @@ func (w filteredEventHandler) OnDelete(obj interface{}) {
 	if w.matches(obj) {
 		w.inner.OnDelete(obj)
 	}
+}
+
+func statusEqual(old, new interface{}) bool {
+	oldStatus, oldExists := extractStatusFromObject(old)
+	newStatus, newExists := extractStatusFromObject(new)
+	if oldExists && newExists {
+		return reflect.DeepEqual(oldStatus, newStatus)
+	} else {
+		return !oldExists && !newExists
+	}
+}
+
+func extractStatusFromObject(o interface{}) (interface{}, bool) {
+	switch obj := o.(type) {
+	case *unstructured.Unstructured:
+		v, ok, _ := unstructured.NestedFieldNoCopy(obj.Object, "status")
+		return v, ok
+	case metav1.Object:
+		st := structs.New(obj)
+		field, ok := st.FieldOk("Status")
+		if !ok {
+			return nil, ok
+		}
+		return field.Value(), true
+	}
+	panic(fmt.Errorf("unknown object %v", reflect.TypeOf(o)))
 }
