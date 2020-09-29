@@ -872,7 +872,7 @@ func (metricOpt *MetricsOptions) sendMetrics(registry *prometheus.Registry, jobN
 	// if Pushgateway URL is provided, then push the metrics to Pushgateway
 	if metricOpt.PushgatewayURL != "" {
 		pusher := push.New(metricOpt.PushgatewayURL, jobName)
-		err := pusher.Gatherer(registry).Add()
+		err := pusher.Gatherer(registry).Push()
 		if err != nil {
 			return err
 		}

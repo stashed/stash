@@ -149,15 +149,7 @@ func (r *schemaLoader) load(refURL *url.URL) (interface{}, url.URL, bool, error)
 	toFetch := *refURL
 	toFetch.Fragment = ""
 
-	var err error
-	path := toFetch.String()
-	if path == rootBase {
-		path, err = absPath(rootBase)
-		if err != nil {
-			return nil, url.URL{}, false, err
-		}
-	}
-	normalized := normalizeAbsPath(path)
+	normalized := normalizeAbsPath(toFetch.String())
 
 	data, fromCache := r.cache.Get(normalized)
 	if !fromCache {
