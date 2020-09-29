@@ -835,11 +835,12 @@ func (c *StashController) setRestorePhaseRunning(invoker apis.RestoreInvoker) er
 }
 
 func (c *StashController) setRestorePhaseSucceeded(invoker apis.RestoreInvoker) error {
+	var err error
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
 	sessionDuration := time.Since(invoker.ObjectMeta.CreationTimestamp.Time).String()
 
 	// update restore invoker status
-	_, err := invoker.UpdateRestoreInvokerStatus(apis.RestoreInvokerStatus{
+	invoker.Status, err = invoker.UpdateRestoreInvokerStatus(apis.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestoreSucceeded,
 		SessionDuration: sessionDuration,
 	})
@@ -882,11 +883,12 @@ func (c *StashController) setRestorePhaseSucceeded(invoker apis.RestoreInvoker) 
 }
 
 func (c *StashController) setRestorePhaseFailed(invoker apis.RestoreInvoker, restoreErr error) error {
+	var err error
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
 	sessionDuration := time.Since(invoker.ObjectMeta.CreationTimestamp.Time).String()
 
 	// update restore invoker status
-	_, err := invoker.UpdateRestoreInvokerStatus(apis.RestoreInvokerStatus{
+	invoker.Status, err = invoker.UpdateRestoreInvokerStatus(apis.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestoreFailed,
 		SessionDuration: sessionDuration,
 	})
@@ -930,11 +932,12 @@ func (c *StashController) setRestorePhaseFailed(invoker apis.RestoreInvoker, res
 }
 
 func (c *StashController) setRestorePhaseUnknown(invoker apis.RestoreInvoker, restoreErr error) error {
+	var err error
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
 	sessionDuration := time.Since(invoker.ObjectMeta.CreationTimestamp.Time).String()
 
 	// update restore invoker status
-	_, err := invoker.UpdateRestoreInvokerStatus(apis.RestoreInvokerStatus{
+	invoker.Status, err = invoker.UpdateRestoreInvokerStatus(apis.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestorePhaseUnknown,
 		SessionDuration: sessionDuration,
 	})
