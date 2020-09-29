@@ -217,9 +217,8 @@ func statusEqual(old, new interface{}) bool {
 	newStatus, newExists := extractStatusFromObject(new)
 	if oldExists && newExists {
 		return reflect.DeepEqual(oldStatus, newStatus)
-	} else {
-		return !oldExists && !newExists
 	}
+	return !oldExists && !newExists
 }
 
 func extractStatusFromObject(o interface{}) (interface{}, bool) {

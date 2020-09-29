@@ -47,7 +47,7 @@ func schema_kmodulesxyz_client_go_api_v1_CertificatePrivateKey(ref common.Refere
 				Properties: map[string]spec.Schema{
 					"encoding": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The private key cryptography standards (PKCS) encoding for this certificate's private key to be encoded in. If provided, allowed values are \"pkcs1\" and \"pkcs8\" standing for PKCS#1 and PKCS#8, respectively. Defaults to PKCS#1 if not specified.",
+							Description: "The private key cryptography standards (PKCS) encoding for this certificate's private key to be encoded in. If provided, allowed values are \"pkcs1\" and \"pkcs8\" standing for PKCS#1 and PKCS#8, respectively. Defaults to PKCS#1 if not specified. See here for the difference between the formats: https://stackoverflow.com/a/48960291",
 							Type:        []string{"string"},
 							Format:      "",
 						},

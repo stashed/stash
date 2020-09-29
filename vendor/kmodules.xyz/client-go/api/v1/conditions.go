@@ -75,6 +75,22 @@ type Condition struct {
 	Message string `json:"message" protobuf:"bytes,6,opt,name=message"`
 }
 
+func NewCondition(reason string, message string, generation int64, conditionStatus ...bool) Condition {
+	cs := ConditionTrue
+	if len(conditionStatus) > 0 && !conditionStatus[0] {
+		cs = ConditionFalse
+	}
+
+	return Condition{
+		Type:               reason,
+		Reason:             reason,
+		Message:            message,
+		Status:             cs,
+		LastTransitionTime: metav1.Now(),
+		ObservedGeneration: generation,
+	}
+}
+
 // HasCondition returns "true" if the desired condition provided in "condType" is present in the condition list.
 // Otherwise, it returns "false".
 func HasCondition(conditions []Condition, condType string) bool {

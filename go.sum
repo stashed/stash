@@ -58,6 +58,8 @@ github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kd
 github.com/appscode/go v0.0.0-20191119085241-0887d8ec2ecc/go.mod h1:OawnOmAL4ZX3YaPdN+8HTNwBveT1jMsqP74moa9XUbE=
 github.com/appscode/go v0.0.0-20200323182826-54e98e09185a h1:cZ80NKoLRaW1PVCWXAJE+YFkBAmLZ8BnrJmH0ClY1Gs=
 github.com/appscode/go v0.0.0-20200323182826-54e98e09185a/go.mod h1:lIcm8Z6VPuvcw/a3EeOWcG6R3I13iHMLYbtVP7TKufY=
+github.com/appscode/go v0.0.0-20200928211031-cc0c23082d91 h1:a5T6J190+3yXrGoq7qjng7EnseLj/IMoRhmV48+Y1iU=
+github.com/appscode/go v0.0.0-20200928211031-cc0c23082d91/go.mod h1:oWiTjcudxE2UxyEDtsgJl3d84JD75S7j3UsrLKC7U68=
 github.com/appscode/osm v0.14.0 h1:gCzb5mIUgZfst/vXRKjLrJ5xFzNkaFxNE1xYhmgHi0M=
 github.com/appscode/osm v0.14.0/go.mod h1:3bxEjMJSVhSNBXVrdrCy8EwMudOWKK6UgHzAOdZY7LQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e h1:QEF07wC0T1rKkctt1RINW/+RMTVmiwxETico2l3gxJA=
@@ -867,6 +869,8 @@ gomodules.xyz/envsubst v0.1.0/go.mod h1:2o5f7bd13XIITbE2ZKieE05YkqB2KDoZkqKccGeb
 gomodules.xyz/jsonpatch/v2 v2.0.1/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
 gomodules.xyz/jsonpatch/v2 v2.1.0 h1:Phva6wqu+xR//Njw6iorylFFgn/z547tw5Ne3HZPQ+k=
 gomodules.xyz/jsonpatch/v2 v2.1.0/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
+gomodules.xyz/password-generator v0.2.3 h1:ZU751qRdzvvKziAYyCLY6j0TIn7xJP/fjaacfC0dAo0=
+gomodules.xyz/password-generator v0.2.3/go.mod h1:TvwYYTx9+P1pPwKQKfZgB/wr2Id9MqAQ3B5auY7reNg=
 gomodules.xyz/sets v0.0.0-20200817084356-ae6e5e14ce3d h1:iikjtYw6tLPrD2dXkzDVMygYLaqzGRxQTDFZI23MXes=
 gomodules.xyz/sets v0.0.0-20200817084356-ae6e5e14ce3d/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
 gomodules.xyz/stow v0.2.3 h1:019jXAX2+QsY5qCytwqpRRG+wZ7HaESZzsQ1vuhTV00=
@@ -987,6 +991,8 @@ kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63 h1:luKlEul8LMhyyftoZN3
 kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63/go.mod h1:JZN34jqk6ZlR+QOnBPpnUVBab4rmfamqxfSvLaulBMY=
 kmodules.xyz/client-go v0.0.0-20200924114038-ef01fa7ccbed h1:xF+qTlIfCZ8R2ingWKcOg9ohrr8WNP+LO5IlBisPTvE=
 kmodules.xyz/client-go v0.0.0-20200924114038-ef01fa7ccbed/go.mod h1:JZN34jqk6ZlR+QOnBPpnUVBab4rmfamqxfSvLaulBMY=
+kmodules.xyz/client-go v0.0.0-20200929030759-cce6a3c623c1 h1:wig8NVgxE5ynY6dsGduWpkF8utYHU1RjepncNbaStNw=
+kmodules.xyz/client-go v0.0.0-20200929030759-cce6a3c623c1/go.mod h1:pnRh7gtJ6ErPJQBkQeRlpD95KRtxhD4eGrYagZEU8RM=
 kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72 h1:0sM6nE7aJon/PSdqZTj0bKJlPyzobXkG0wVYKpjcJJE=
 kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20200922204806-c1426cd7fcf4/go.mod h1:WrO3fryNyFCgqqyWnwI89lnzWA7kN072Ehya7ELGfzE=
