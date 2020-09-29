@@ -989,8 +989,6 @@ kmodules.xyz/client-go v0.0.0-20200521065424-173e32c78a20/go.mod h1:sY/eoe4ktxZE
 kmodules.xyz/client-go v0.0.0-20200818143024-600fef263e03/go.mod h1:sY/eoe4ktxZEoHpr5NpAQ5s22VSwTE8psJtKVeVgLRY=
 kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63 h1:luKlEul8LMhyyftoZN34+vboL9MWAeQpSAUZxaLZBGg=
 kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63/go.mod h1:JZN34jqk6ZlR+QOnBPpnUVBab4rmfamqxfSvLaulBMY=
-kmodules.xyz/client-go v0.0.0-20200924114038-ef01fa7ccbed h1:xF+qTlIfCZ8R2ingWKcOg9ohrr8WNP+LO5IlBisPTvE=
-kmodules.xyz/client-go v0.0.0-20200924114038-ef01fa7ccbed/go.mod h1:JZN34jqk6ZlR+QOnBPpnUVBab4rmfamqxfSvLaulBMY=
 kmodules.xyz/client-go v0.0.0-20200929030759-cce6a3c623c1 h1:wig8NVgxE5ynY6dsGduWpkF8utYHU1RjepncNbaStNw=
 kmodules.xyz/client-go v0.0.0-20200929030759-cce6a3c623c1/go.mod h1:pnRh7gtJ6ErPJQBkQeRlpD95KRtxhD4eGrYagZEU8RM=
 kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72 h1:0sM6nE7aJon/PSdqZTj0bKJlPyzobXkG0wVYKpjcJJE=
@@ -1031,6 +1029,6 @@ sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
 sigs.k8s.io/yaml v1.2.0 h1:kr/MCeFWJWTwyaHoR9c8EjH9OumOmoF9YGiZd7lFm/Q=
 sigs.k8s.io/yaml v1.2.0/go.mod h1:yfXDCHCao9+ENCvLSE62v9VSji2MKu5jeNfTrofGhJc=
 sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4/go.mod h1:ketZ/q3QxT9HOBeFhu6RdvsftgpsbFHBF5Cas6cDKZ0=
-stash.appscode.dev/apimachinery v0.11.1-0.20200928173325-6ed3a17b3541 h1:nZEuGjrOMfoacYEM+buHyTb+F3iwpfH6lSbhB7I+Z18=
-stash.appscode.dev/apimachinery v0.11.1-0.20200928173325-6ed3a17b3541/go.mod h1:txBRRww/eMQ1Z3BVvr7YzwvT9jC+txgN26L4Soj99kk=
+stash.appscode.dev/apimachinery v0.11.2 h1:ZbkbWWfAR0SOhhZHRnLcbsbsKh/7hBkqnjIFWXkvyeg=
+stash.appscode.dev/apimachinery v0.11.2/go.mod h1:9rK2Iz8tgbmyE0eiYS7plYbGxFsa80PCf0jvDNTroOY=
 vbom.ml/util v0.0.0-20160121211510-db5cfe13f5cc/go.mod h1:so/NYdZXCz+E3ZpW0uAoCj6uzU2+8OWDFv/HxUSs7kI=
