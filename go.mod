@@ -9,7 +9,6 @@ require (
 	github.com/aws/aws-sdk-go v1.31.9 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
-	github.com/go-openapi/spec v0.19.8 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -49,7 +48,7 @@ require (
 	kmodules.xyz/openshift v0.0.0-20200922211657-1ece16d36c18
 	kmodules.xyz/prober v0.0.0-20200922212142-743a6514664e
 	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
-	stash.appscode.dev/apimachinery v0.11.0
+	stash.appscode.dev/apimachinery v0.11.1-0.20200928173325-6ed3a17b3541
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

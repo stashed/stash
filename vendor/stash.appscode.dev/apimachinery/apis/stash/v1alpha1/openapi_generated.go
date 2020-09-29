@@ -332,6 +332,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/runtime.Unknown":                                     schema_k8sio_apimachinery_pkg_runtime_Unknown(ref),
 		"k8s.io/apimachinery/pkg/util/intstr.IntOrString":                             schema_apimachinery_pkg_util_intstr_IntOrString(ref),
 		"k8s.io/apimachinery/pkg/version.Info":                                        schema_k8sio_apimachinery_pkg_version_Info(ref),
+		"kmodules.xyz/client-go/api/v1.CertificatePrivateKey":                         schema_kmodulesxyz_client_go_api_v1_CertificatePrivateKey(ref),
 		"kmodules.xyz/client-go/api/v1.CertificateSpec":                               schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref),
 		"kmodules.xyz/client-go/api/v1.Condition":                                     schema_kmodulesxyz_client_go_api_v1_Condition(ref),
 		"kmodules.xyz/client-go/api/v1.TLSConfig":                                     schema_kmodulesxyz_client_go_api_v1_TLSConfig(ref),
@@ -15587,6 +15588,26 @@ func schema_k8sio_apimachinery_pkg_version_Info(ref common.ReferenceCallback) co
 	}
 }
 
+func schema_kmodulesxyz_client_go_api_v1_CertificatePrivateKey(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CertificatePrivateKey contains configuration options for private keys used by the Certificate controller. This allows control of how private keys are rotated.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"encoding": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The private key cryptography standards (PKCS) encoding for this certificate's private key to be encoded in. If provided, allowed values are \"pkcs1\" and \"pkcs8\" standing for PKCS#1 and PKCS#8, respectively. Defaults to PKCS#1 if not specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -15603,13 +15624,6 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 					"secretName": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies the k8s secret name that holds the certificates. Default to <resource-name>-<cert-alias>-cert.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"keyEncoding": {
-						SchemaProps: spec.SchemaProps{
-							Description: "KeyEncoding is the private key cryptography standards (PKCS) for this certificate's private key to be encoded in. If provided, allowed values are \"pkcs1\" and \"pkcs8\". If KeyEncoding is not specified, then PKCS#1 will be used by default.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -15688,12 +15702,18 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 							},
 						},
 					},
+					"privateKey": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options to control private keys used for the Certificate.",
+							Ref:         ref("kmodules.xyz/client-go/api/v1.CertificatePrivateKey"),
+						},
+					},
 				},
 				Required: []string{"alias"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.X509Subject"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.CertificatePrivateKey", "kmodules.xyz/client-go/api/v1.X509Subject"},
 	}
 }
 
