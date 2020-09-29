@@ -132,6 +132,7 @@ type CertificatePrivateKey struct {
 	// If provided, allowed values are "pkcs1" and "pkcs8" standing for PKCS#1
 	// and PKCS#8, respectively.
 	// Defaults to PKCS#1 if not specified.
+	// See here for the difference between the formats: https://stackoverflow.com/a/48960291
 	// +optional
 	Encoding PrivateKeyEncoding `json:"encoding,omitempty" protobuf:"bytes,1,opt,name=encoding,casttype=PrivateKeyEncoding"`
 }

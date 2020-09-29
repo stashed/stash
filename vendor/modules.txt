@@ -22,7 +22,7 @@ github.com/NYTimes/gziphandler
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
-# github.com/appscode/go v0.0.0-20200323182826-54e98e09185a
+# github.com/appscode/go v0.0.0-20200928211031-cc0c23082d91
 github.com/appscode/go/analytics
 github.com/appscode/go/arrays
 github.com/appscode/go/context
@@ -463,6 +463,8 @@ gomodules.xyz/envsubst/parse
 gomodules.xyz/envsubst/path
 # gomodules.xyz/jsonpatch/v2 v2.1.0
 gomodules.xyz/jsonpatch/v2
+# gomodules.xyz/password-generator v0.2.3
+gomodules.xyz/password-generator
 # gomodules.xyz/sets v0.0.0-20200817084356-ae6e5e14ce3d
 gomodules.xyz/sets
 # gomodules.xyz/stow v0.2.4
@@ -818,7 +820,7 @@ k8s.io/cli-runtime/pkg/kustomize/k8sdeps/transformer/patch
 k8s.io/cli-runtime/pkg/kustomize/k8sdeps/validator
 k8s.io/cli-runtime/pkg/printers
 k8s.io/cli-runtime/pkg/resource
-# k8s.io/client-go v12.0.0+incompatible => github.com/kmodules/k8s-client-go v0.18.10-0.20200922201634-73fedf3d677e
+# k8s.io/client-go v0.18.9 => github.com/kmodules/k8s-client-go v0.18.10-0.20200922201634-73fedf3d677e
 k8s.io/client-go/discovery
 k8s.io/client-go/discovery/cached/disk
 k8s.io/client-go/discovery/cached/memory
@@ -1109,7 +1111,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20200924114038-ef01fa7ccbed
+# kmodules.xyz/client-go v0.0.0-20200929030759-cce6a3c623c1
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/api/v1

@@ -3,7 +3,7 @@ module kmodules.xyz/client-go
 go 1.12
 
 require (
-	github.com/appscode/go v0.0.0-20200323182826-54e98e09185a
+	github.com/appscode/go v0.0.0-20200928211031-cc0c23082d91
 	github.com/davecgh/go-spew v1.1.1
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/fatih/structs v1.1.0
