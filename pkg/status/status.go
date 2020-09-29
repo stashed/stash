@@ -335,6 +335,7 @@ func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, back
 						in.SnapshotCount = repoStats.SnapshotCount
 						in.SnapshotsRemovedOnLastCleanup = repoStats.SnapshotsRemovedOnLastCleanup
 						in.TotalSize = repoStats.Size
+						in.LastBackupTime = &backupSession.CreationTimestamp
 						return in
 					}, metav1.UpdateOptions{})
 					return err
