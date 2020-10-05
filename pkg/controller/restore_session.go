@@ -635,7 +635,7 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 			in.Spec.Template = *jobTemplate
-			in.Spec.BackoffLimit = types.Int32P(1)
+			in.Spec.BackoffLimit = types.Int32P(0)
 			return in
 		},
 		metav1.PatchOptions{},
@@ -803,7 +803,7 @@ func (c *StashController) ensureVolumeRestorerJob(invoker apis.RestoreInvoker, i
 			in.Spec.Template = *jobTemplate
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-			in.Spec.BackoffLimit = types.Int32P(1)
+			in.Spec.BackoffLimit = types.Int32P(0)
 			return in
 		},
 		metav1.PatchOptions{},
