@@ -156,3 +156,14 @@ func IsConditionTrue(conditions []Condition, condType string) bool {
 	}
 	return false
 }
+
+// IsConditionFalse returns "true" if the desired condition is in false state.
+// It returns "false" if the desired condition is not in "false" state or is not in the condition list.
+func IsConditionFalse(conditions []Condition, condType string) bool {
+	for i := range conditions {
+		if conditions[i].Type == condType && conditions[i].Status == ConditionFalse {
+			return true
+		}
+	}
+	return false
+}
