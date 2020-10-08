@@ -1141,7 +1141,7 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/custom-resources v0.0.0-20200922210108-70f2815a43bb
+# kmodules.xyz/custom-resources v0.0.0-20201008012351-6d8090f759d4
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned
