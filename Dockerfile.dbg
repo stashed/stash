@@ -33,6 +33,8 @@ RUN set -x                                                                      
 
 FROM {ARG_FROM}
 
+LABEL org.opencontainers.image.source https://github.com/stashed/stash
+
 COPY --from=0 restic /bin/restic
 COPY --from=0 restic_{NEW_RESTIC_VER} /bin/restic_{NEW_RESTIC_VER}
 COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
