@@ -27,6 +27,7 @@ import (
 	"kmodules.xyz/client-go/apiextensions"
 	"kmodules.xyz/custom-resources/crds"
 
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -51,17 +52,12 @@ func (a AppBinding) URL() (string, error) {
 	return "", errors.New("connection url is missing")
 }
 
-const (
-	KeyUsername = "username"
-	KeyPassword = "password"
-)
-
 func (a AppBinding) URLTemplate() (string, error) {
 	rawurl, err := a.URL()
 	if err != nil {
 		return "", err
 	}
-	auth := fmt.Sprintf("{{%s}}:{{%s}}@", KeyUsername, KeyPassword)
+	auth := fmt.Sprintf("{{%s}}:{{%s}}@", core.BasicAuthUsernameKey, core.BasicAuthPasswordKey)
 
 	i := strings.Index(rawurl, "://")
 	if i < 0 {
