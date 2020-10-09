@@ -187,3 +187,16 @@ func GetStringValueForKeys(m map[string]string, key string, alts ...string) (str
 	}
 	return "", kutil.ErrNotFound
 }
+
+func GetBytesForKeys(m map[string][]byte, key string, alts ...string) ([]byte, error) {
+	if m == nil {
+		return nil, kutil.ErrNotFound
+	}
+	keys := append([]string{key}, alts...)
+	for _, k := range keys {
+		if v, ok := m[k]; ok {
+			return v, nil
+		}
+	}
+	return nil, kutil.ErrNotFound
+}
