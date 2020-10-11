@@ -85,9 +85,9 @@ jobs:
 
       - name: Create Kubernetes ${{ matrix.k8s }} cluster
         id: kind
-        uses: engineerd/setup-kind@v0.3.0
+        uses: engineerd/setup-kind@v0.4.0
         with:
-          version: v0.8.1
+          version: v0.9.0
           config: hack/kubernetes/kind.yaml
           image: kindest/node:${{ matrix.k8s }}
 
