@@ -23,6 +23,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
+	core "k8s.io/api/core/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
@@ -30,7 +31,7 @@ func SetRestoreTargetFoundConditionToTrue(invoker apis.RestoreInvoker, index int
 	target := invoker.TargetsInfo[index].Target
 	return invoker.SetCondition(&target.Ref, kmapi.Condition{
 		Type:   apis.RestoreTargetFound,
-		Status: kmapi.ConditionTrue,
+		Status: core.ConditionTrue,
 		Reason: apis.TargetAvailable,
 		Message: fmt.Sprintf("Restore target %s %s/%s found.",
 			target.Ref.APIVersion,
@@ -44,7 +45,7 @@ func SetRestoreTargetFoundConditionToFalse(invoker apis.RestoreInvoker, index in
 	target := invoker.TargetsInfo[index].Target
 	return invoker.SetCondition(&target.Ref, kmapi.Condition{
 		Type:   apis.RestoreTargetFound,
-		Status: kmapi.ConditionFalse,
+		Status: core.ConditionFalse,
 		Reason: apis.TargetNotAvailable,
 		Message: fmt.Sprintf("Restore target %s %s/%s does not exist.",
 			target.Ref.APIVersion,
@@ -58,7 +59,7 @@ func SetRestoreTargetFoundConditionToUnknown(invoker apis.RestoreInvoker, index 
 	target := invoker.TargetsInfo[index].Target
 	return invoker.SetCondition(&target.Ref, kmapi.Condition{
 		Type:   apis.RestoreTargetFound,
-		Status: kmapi.ConditionUnknown,
+		Status: core.ConditionUnknown,
 		Reason: apis.UnableToCheckTargetAvailability,
 		Message: fmt.Sprintf("Failed to check whether restore target %s %s/%s exist or not. Reason: %v",
 			target.Ref.APIVersion,
@@ -72,7 +73,7 @@ func SetRestoreTargetFoundConditionToUnknown(invoker apis.RestoreInvoker, index 
 func SetRestoreJobCreatedConditionToTrue(invoker apis.RestoreInvoker, tref *api_v1beta1.TargetRef) error {
 	return invoker.SetCondition(tref, kmapi.Condition{
 		Type:    apis.RestoreJobCreated,
-		Status:  kmapi.ConditionTrue,
+		Status:  core.ConditionTrue,
 		Reason:  apis.RestoreJobCreationSucceeded,
 		Message: "Successfully created restore job.",
 	})
@@ -81,7 +82,7 @@ func SetRestoreJobCreatedConditionToTrue(invoker apis.RestoreInvoker, tref *api_
 func SetRestoreJobCreatedConditionToFalse(invoker apis.RestoreInvoker, tref *api_v1beta1.TargetRef, err error) error {
 	return invoker.SetCondition(tref, kmapi.Condition{
 		Type:    apis.RestoreJobCreated,
-		Status:  kmapi.ConditionFalse,
+		Status:  core.ConditionFalse,
 		Reason:  apis.RestoreJobCreationFailed,
 		Message: fmt.Sprintf("Failed to create restore job. Reason: %v", err.Error()),
 	})
@@ -90,7 +91,7 @@ func SetRestoreJobCreatedConditionToFalse(invoker apis.RestoreInvoker, tref *api
 func SetInitContainerInjectedConditionToTrue(invoker apis.RestoreInvoker, tref api_v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:    apis.StashInitContainerInjected,
-		Status:  kmapi.ConditionTrue,
+		Status:  core.ConditionTrue,
 		Reason:  apis.InitContainerInjectionSucceeded,
 		Message: "Successfully injected stash init-container.",
 	})
@@ -99,7 +100,7 @@ func SetInitContainerInjectedConditionToTrue(invoker apis.RestoreInvoker, tref a
 func SetInitContainerInjectedConditionToFalse(invoker apis.RestoreInvoker, tref api_v1beta1.TargetRef, err error) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:    apis.StashInitContainerInjected,
-		Status:  kmapi.ConditionFalse,
+		Status:  core.ConditionFalse,
 		Reason:  apis.InitContainerInjectionFailed,
 		Message: fmt.Sprintf("Failed to inject Stash init-container. Reason: %v", err.Error()),
 	})

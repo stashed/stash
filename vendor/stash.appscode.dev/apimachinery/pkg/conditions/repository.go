@@ -26,6 +26,7 @@ import (
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	stash_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
@@ -38,7 +39,7 @@ func SetBackendRepositoryInitializedConditionToFalse(stashClient cs.Interface, b
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.BackendRepositoryInitialized,
-				Status:  kmapi.ConditionFalse,
+				Status:  core.ConditionFalse,
 				Reason:  apis.FailedToInitializeBackendRepository,
 				Message: fmt.Sprintf("Failed to initialize backend repository. Reason: %v", err.Error()),
 			},
@@ -57,7 +58,7 @@ func SetBackendRepositoryInitializedConditionToTrue(stashClient cs.Interface, ba
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.BackendRepositoryInitialized,
-				Status:  kmapi.ConditionTrue,
+				Status:  core.ConditionTrue,
 				Reason:  apis.BackendRepositoryFound,
 				Message: "Repository exist in the backend.",
 			},
@@ -73,7 +74,7 @@ func SetRepositoryFoundConditionToUnknown(invoker interface{}, err error) error 
 	case apis.Invoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.RepositoryFound,
-			Status: kmapi.ConditionUnknown,
+			Status: core.ConditionUnknown,
 			Reason: apis.UnableToCheckRepositoryAvailability,
 			Message: fmt.Sprintf("Failed to check whether the Repository %s/%s exist or not. Reason: %v",
 				in.ObjectMeta.Namespace,
@@ -84,7 +85,7 @@ func SetRepositoryFoundConditionToUnknown(invoker interface{}, err error) error 
 	case apis.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.RepositoryFound,
-			Status: kmapi.ConditionUnknown,
+			Status: core.ConditionUnknown,
 			Reason: apis.UnableToCheckRepositoryAvailability,
 			Message: fmt.Sprintf("Failed to check whether the Repository %s/%s exist or not. Reason: %v",
 				in.ObjectMeta.Namespace,
@@ -102,7 +103,7 @@ func SetRepositoryFoundConditionToFalse(invoker interface{}) error {
 	case apis.Invoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.RepositoryFound,
-			Status: kmapi.ConditionFalse,
+			Status: core.ConditionFalse,
 			Reason: apis.RepositoryNotAvailable,
 			Message: fmt.Sprintf("Repository %s/%s does not exist.",
 				in.ObjectMeta.Namespace,
@@ -112,7 +113,7 @@ func SetRepositoryFoundConditionToFalse(invoker interface{}) error {
 	case apis.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.RepositoryFound,
-			Status: kmapi.ConditionFalse,
+			Status: core.ConditionFalse,
 			Reason: apis.RepositoryNotAvailable,
 			Message: fmt.Sprintf("Repository %s/%s does not exist.",
 				in.ObjectMeta.Namespace,
@@ -129,7 +130,7 @@ func SetRepositoryFoundConditionToTrue(invoker interface{}) error {
 	case apis.Invoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.RepositoryFound,
-			Status: kmapi.ConditionTrue,
+			Status: core.ConditionTrue,
 			Reason: apis.RepositoryAvailable,
 			Message: fmt.Sprintf("Repository %s/%s exist.",
 				in.ObjectMeta.Namespace,
@@ -139,7 +140,7 @@ func SetRepositoryFoundConditionToTrue(invoker interface{}) error {
 	case apis.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.RepositoryFound,
-			Status: kmapi.ConditionTrue,
+			Status: core.ConditionTrue,
 			Reason: apis.RepositoryAvailable,
 			Message: fmt.Sprintf("Repository %s/%s exist.",
 				in.ObjectMeta.Namespace,
@@ -156,7 +157,7 @@ func SetBackendSecretFoundConditionToUnknown(invoker interface{}, secretName str
 	case apis.Invoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.BackendSecretFound,
-			Status: kmapi.ConditionUnknown,
+			Status: core.ConditionUnknown,
 			Reason: apis.UnableToCheckBackendSecretAvailability,
 			Message: fmt.Sprintf("Failed to check whether the backend Secret %s/%s exist or not. Reason: %v",
 				in.ObjectMeta.Namespace,
@@ -167,7 +168,7 @@ func SetBackendSecretFoundConditionToUnknown(invoker interface{}, secretName str
 	case apis.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.BackendSecretFound,
-			Status: kmapi.ConditionUnknown,
+			Status: core.ConditionUnknown,
 			Reason: apis.UnableToCheckBackendSecretAvailability,
 			Message: fmt.Sprintf("Failed to check whether the backend Secret %s/%s exist or not. Reason: %v",
 				in.ObjectMeta.Namespace,
@@ -185,7 +186,7 @@ func SetBackendSecretFoundConditionToFalse(invoker interface{}, secretName strin
 	case apis.Invoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.BackendSecretFound,
-			Status: kmapi.ConditionFalse,
+			Status: core.ConditionFalse,
 			Reason: apis.BackendSecretNotAvailable,
 			Message: fmt.Sprintf("Backend Secret %s/%s does not exist.",
 				in.ObjectMeta.Namespace,
@@ -195,7 +196,7 @@ func SetBackendSecretFoundConditionToFalse(invoker interface{}, secretName strin
 	case apis.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.BackendSecretFound,
-			Status: kmapi.ConditionFalse,
+			Status: core.ConditionFalse,
 			Reason: apis.BackendSecretNotAvailable,
 			Message: fmt.Sprintf("Backend Secret %s/%s does not exist.",
 				in.ObjectMeta.Namespace,
@@ -212,7 +213,7 @@ func SetBackendSecretFoundConditionToTrue(invoker interface{}, secretName string
 	case apis.Invoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.BackendSecretFound,
-			Status: kmapi.ConditionTrue,
+			Status: core.ConditionTrue,
 			Reason: apis.BackendSecretAvailable,
 			Message: fmt.Sprintf("Backend Secret %s/%s exist.",
 				in.ObjectMeta.Namespace,
@@ -222,7 +223,7 @@ func SetBackendSecretFoundConditionToTrue(invoker interface{}, secretName string
 	case apis.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   apis.BackendSecretFound,
-			Status: kmapi.ConditionTrue,
+			Status: core.ConditionTrue,
 			Reason: apis.BackendSecretAvailable,
 			Message: fmt.Sprintf("Backend Secret %s/%s exist.",
 				in.ObjectMeta.Namespace,
@@ -242,7 +243,7 @@ func SetRetentionPolicyAppliedConditionToFalse(stashClient cs.Interface, backupS
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.RetentionPolicyApplied,
-				Status:  kmapi.ConditionFalse,
+				Status:  core.ConditionFalse,
 				Reason:  apis.FailedToApplyRetentionPolicy,
 				Message: fmt.Sprintf("Failed to apply retention policy. Reason: %v", err.Error()),
 			},
@@ -261,7 +262,7 @@ func SetRetentionPolicyAppliedConditionToTrue(stashClient cs.Interface, backupSe
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.RetentionPolicyApplied,
-				Status:  kmapi.ConditionTrue,
+				Status:  core.ConditionTrue,
 				Reason:  apis.SuccessfullyAppliedRetentionPolicy,
 				Message: "Successfully applied retention policy.",
 			},
@@ -280,7 +281,7 @@ func SetRepositoryIntegrityVerifiedConditionToFalse(stashClient cs.Interface, ba
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.RepositoryIntegrityVerified,
-				Status:  kmapi.ConditionFalse,
+				Status:  core.ConditionFalse,
 				Reason:  apis.FailedToVerifyRepositoryIntegrity,
 				Message: fmt.Sprintf("Repository integrity verification failed. Reason: %v", err.Error()),
 			},
@@ -299,7 +300,7 @@ func SetRepositoryIntegrityVerifiedConditionToTrue(stashClient cs.Interface, bac
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.RepositoryIntegrityVerified,
-				Status:  kmapi.ConditionTrue,
+				Status:  core.ConditionTrue,
 				Reason:  apis.SuccessfullyVerifiedRepositoryIntegrity,
 				Message: "Repository integrity verification succeeded.",
 			},
@@ -318,7 +319,7 @@ func SetRepositoryMetricsPushedConditionToFalse(stashClient cs.Interface, backup
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.RepositoryMetricsPushed,
-				Status:  kmapi.ConditionFalse,
+				Status:  core.ConditionFalse,
 				Reason:  apis.FailedToPushRepositoryMetrics,
 				Message: fmt.Sprintf("Failed to push repository metrics. Reason: %v", err.Error()),
 			},
@@ -337,7 +338,7 @@ func SetRepositoryMetricsPushedConditionToTrue(stashClient cs.Interface, backupS
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.RepositoryMetricsPushed,
-				Status:  kmapi.ConditionTrue,
+				Status:  core.ConditionTrue,
 				Reason:  apis.SuccessfullyPushedRepositoryMetrics,
 				Message: "Successfully pushed repository metrics.",
 			},

@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,18 +35,6 @@ const (
 	ConditionRequestDenied   = "Denied"
 )
 
-type ConditionStatus string
-
-// These are valid condition statuses. "ConditionTrue" means a resource is in the condition.
-// "ConditionFalse" means a resource is not in the condition. "ConditionUnknown" means kubernetes
-// can't decide if a resource is in the condition or not. In the future, we could add other
-// intermediate conditions, e.g. ConditionDegraded.
-const (
-	ConditionTrue    ConditionStatus = "True"
-	ConditionFalse   ConditionStatus = "False"
-	ConditionUnknown ConditionStatus = "Unknown"
-)
-
 type Condition struct {
 	// Type of condition in CamelCase or in foo.example.com/CamelCase.
 	// Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
@@ -54,7 +43,7 @@ type Condition struct {
 	Type string `json:"type" protobuf:"bytes,1,opt,name=type"`
 	// Status of the condition, one of True, False, Unknown.
 	// +required
-	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status"`
+	Status core.ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status"`
 	// If set, this represents the .metadata.generation that the condition was set based upon.
 	// For instance, if .metadata.generation is currently 12, but the .status.condition[x].observedGeneration is 9, the condition is out of date
 	// with respect to the current state of the instance.
@@ -76,9 +65,9 @@ type Condition struct {
 }
 
 func NewCondition(reason string, message string, generation int64, conditionStatus ...bool) Condition {
-	cs := ConditionTrue
+	cs := core.ConditionTrue
 	if len(conditionStatus) > 0 && !conditionStatus[0] {
-		cs = ConditionFalse
+		cs = core.ConditionFalse
 	}
 
 	return Condition{
@@ -150,7 +139,7 @@ func RemoveCondition(conditions []Condition, condType string) []Condition {
 // It returns "false" if the desired condition is not in "true" state or is not in the condition list.
 func IsConditionTrue(conditions []Condition, condType string) bool {
 	for i := range conditions {
-		if conditions[i].Type == condType && conditions[i].Status == ConditionTrue {
+		if conditions[i].Type == condType && conditions[i].Status == core.ConditionTrue {
 			return true
 		}
 	}
@@ -161,7 +150,7 @@ func IsConditionTrue(conditions []Condition, condType string) bool {
 // It returns "false" if the desired condition is not in "false" state or is not in the condition list.
 func IsConditionFalse(conditions []Condition, condType string) bool {
 	for i := range conditions {
-		if conditions[i].Type == condType && conditions[i].Status == ConditionFalse {
+		if conditions[i].Type == condType && conditions[i].Status == core.ConditionFalse {
 			return true
 		}
 	}
