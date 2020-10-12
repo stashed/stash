@@ -25,6 +25,7 @@ import (
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	stash_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
@@ -37,7 +38,7 @@ func SetGlobalPreBackupHookSucceededConditionToFalse(stashClient cs.Interface, b
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.GlobalPreBackupHookSucceeded,
-				Status:  kmapi.ConditionFalse,
+				Status:  core.ConditionFalse,
 				Reason:  apis.GlobalPreBackupHookExecutionFailed,
 				Message: fmt.Sprintf("Failed to execute global PreBackup Hook. Reason: %v.", hookErr),
 			},
@@ -56,7 +57,7 @@ func SetGlobalPreBackupHookSucceededConditionToTrue(stashClient cs.Interface, ba
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.GlobalPreBackupHookSucceeded,
-				Status:  kmapi.ConditionTrue,
+				Status:  core.ConditionTrue,
 				Reason:  apis.GlobalPreBackupHookExecutedSuccessfully,
 				Message: "Global PreBackup hook has been executed successfully",
 			},
@@ -75,7 +76,7 @@ func SetGlobalPostBackupHookSucceededConditionToFalse(stashClient cs.Interface, 
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.GlobalPostBackupHookSucceeded,
-				Status:  kmapi.ConditionFalse,
+				Status:  core.ConditionFalse,
 				Reason:  apis.GlobalPostBackupHookExecutionFailed,
 				Message: fmt.Sprintf("Failed to execute global PostBackup Hook. Reason: %v.", hookErr),
 			},
@@ -94,7 +95,7 @@ func SetGlobalPostBackupHookSucceededConditionToTrue(stashClient cs.Interface, b
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 			in.Conditions = kmapi.SetCondition(in.Conditions, kmapi.Condition{
 				Type:    apis.GlobalPostBackupHookSucceeded,
-				Status:  kmapi.ConditionTrue,
+				Status:  core.ConditionTrue,
 				Reason:  apis.GlobalPostBackupHookExecutedSuccessfully,
 				Message: "Global PostBackup hook has been executed successfully",
 			},
@@ -108,7 +109,7 @@ func SetGlobalPostBackupHookSucceededConditionToTrue(stashClient cs.Interface, b
 func SetGlobalPreRestoreHookSucceededConditionToFalse(invoker apis.RestoreInvoker, hookErr error) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:    apis.GlobalPreRestoreHookSucceeded,
-		Status:  kmapi.ConditionFalse,
+		Status:  core.ConditionFalse,
 		Reason:  apis.GlobalPreRestoreHookExecutionFailed,
 		Message: fmt.Sprintf("Failed to execute global PreRestore Hook. Reason: %v.", hookErr),
 	})
@@ -117,7 +118,7 @@ func SetGlobalPreRestoreHookSucceededConditionToFalse(invoker apis.RestoreInvoke
 func SetGlobalPreRestoreHookSucceededConditionToTrue(invoker apis.RestoreInvoker) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:    apis.GlobalPreRestoreHookSucceeded,
-		Status:  kmapi.ConditionTrue,
+		Status:  core.ConditionTrue,
 		Reason:  apis.GlobalPreRestoreHookExecutedSuccessfully,
 		Message: "Global PreRestore hook has been executed successfully",
 	})
@@ -126,7 +127,7 @@ func SetGlobalPreRestoreHookSucceededConditionToTrue(invoker apis.RestoreInvoker
 func SetGlobalPostRestoreHookSucceededConditionToFalse(invoker apis.RestoreInvoker, hookErr error) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:    apis.GlobalPostRestoreHookSucceeded,
-		Status:  kmapi.ConditionFalse,
+		Status:  core.ConditionFalse,
 		Reason:  apis.GlobalPostRestoreHookExecutionFailed,
 		Message: fmt.Sprintf("Failed to execute global PostRestore Hook. Reason: %v.", hookErr),
 	})
@@ -135,7 +136,7 @@ func SetGlobalPostRestoreHookSucceededConditionToFalse(invoker apis.RestoreInvok
 func SetGlobalPostRestoreHookSucceededConditionToTrue(invoker apis.RestoreInvoker) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:    apis.GlobalPostRestoreHookSucceeded,
-		Status:  kmapi.ConditionTrue,
+		Status:  core.ConditionTrue,
 		Reason:  apis.GlobalPostRestoreHookExecutedSuccessfully,
 		Message: "Global PostRestore hook has been executed successfully",
 	})

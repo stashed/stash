@@ -23,13 +23,14 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
+	core "k8s.io/api/core/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
 func SetBackupTargetFoundConditionToUnknown(invoker apis.Invoker, tref api_v1beta1.TargetRef, err error) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:   apis.BackupTargetFound,
-		Status: kmapi.ConditionUnknown,
+		Status: core.ConditionUnknown,
 		Reason: apis.UnableToCheckTargetAvailability,
 		Message: fmt.Sprintf("Failed to check whether backup target %s %s/%s exist or not. Reason: %v",
 			tref.APIVersion,
@@ -44,7 +45,7 @@ func SetBackupTargetFoundConditionToFalse(invoker apis.Invoker, tref api_v1beta1
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		// Set the "BackupTargetFound" condition to "False"
 		Type:   apis.BackupTargetFound,
-		Status: kmapi.ConditionFalse,
+		Status: core.ConditionFalse,
 		Reason: apis.TargetNotAvailable,
 		Message: fmt.Sprintf("Backup target %s %s/%s does not exist.",
 			tref.APIVersion,
@@ -57,7 +58,7 @@ func SetBackupTargetFoundConditionToFalse(invoker apis.Invoker, tref api_v1beta1
 func SetBackupTargetFoundConditionToTrue(invoker apis.Invoker, tref api_v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:   apis.BackupTargetFound,
-		Status: kmapi.ConditionTrue,
+		Status: core.ConditionTrue,
 		Reason: apis.TargetAvailable,
 		Message: fmt.Sprintf("Backup target %s %s/%s found.",
 			tref.APIVersion,
@@ -70,7 +71,7 @@ func SetBackupTargetFoundConditionToTrue(invoker apis.Invoker, tref api_v1beta1.
 func SetCronJobCreatedConditionToFalse(invoker apis.Invoker, err error) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:    apis.CronJobCreated,
-		Status:  kmapi.ConditionFalse,
+		Status:  core.ConditionFalse,
 		Reason:  apis.CronJobCreationFailed,
 		Message: fmt.Sprintf("Failed to create backup triggering CronJob. Reason: %v", err.Error()),
 	})
@@ -79,7 +80,7 @@ func SetCronJobCreatedConditionToFalse(invoker apis.Invoker, err error) error {
 func SetCronJobCreatedConditionToTrue(invoker apis.Invoker) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:    apis.CronJobCreated,
-		Status:  kmapi.ConditionTrue,
+		Status:  core.ConditionTrue,
 		Reason:  apis.CronJobCreationSucceeded,
 		Message: "Successfully created backup triggering CronJob.",
 	})
@@ -88,7 +89,7 @@ func SetCronJobCreatedConditionToTrue(invoker apis.Invoker) error {
 func SetSidecarInjectedConditionToTrue(invoker apis.Invoker, tref api_v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:   apis.StashSidecarInjected,
-		Status: kmapi.ConditionTrue,
+		Status: core.ConditionTrue,
 		Reason: apis.SidecarInjectionSucceeded,
 		Message: fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s",
 			tref.APIVersion,
@@ -101,7 +102,7 @@ func SetSidecarInjectedConditionToTrue(invoker apis.Invoker, tref api_v1beta1.Ta
 func SetSidecarInjectedConditionToFalse(invoker apis.Invoker, tref api_v1beta1.TargetRef, err error) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:   apis.StashSidecarInjected,
-		Status: kmapi.ConditionFalse,
+		Status: core.ConditionFalse,
 		Reason: apis.SidecarInjectionFailed,
 		Message: fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v",
 			tref.APIVersion,
