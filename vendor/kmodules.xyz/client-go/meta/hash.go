@@ -23,7 +23,6 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/appscode/go/encoding/json/types"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/structs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -106,7 +105,7 @@ func MustAlreadyReconciled(o interface{}) bool {
 }
 
 func AlreadyReconciled(o interface{}) (bool, error) {
-	var generation, observedGeneration *types.IntHash
+	var generation, observedGeneration int64
 	var err error
 
 	switch obj := o.(type) {
@@ -120,36 +119,36 @@ func AlreadyReconciled(o interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return observedGeneration.MatchGeneration(generation), nil
+	return observedGeneration == generation, nil
 }
 
-func extractGenerationFromUnstructured(obj *unstructured.Unstructured) (*types.IntHash, *types.IntHash, error) {
-	generation := types.IntHashForGeneration(obj.GetGeneration())
-
+func extractGenerationFromUnstructured(obj *unstructured.Unstructured) (int64, int64, error) {
 	val, found, err := unstructured.NestedFieldNoCopy(obj.Object, "status", "observedGeneration")
 	if err != nil {
-		return nil, nil, err
+		return -1, -1, err
 	} else if !found {
-		return nil, nil, fmt.Errorf("status.observedGeneration is missing")
+		return obj.GetGeneration(), -1, nil
 	}
-	observedGeneration, err := types.ParseIntHash(val)
-
-	return generation, observedGeneration, err
+	observedGeneration, ok := val.(int64)
+	if !ok {
+		return -1, -1, fmt.Errorf("%s %s/%s status.observedGeneration %+v is not int64", obj.GroupVersionKind(), obj.GetNamespace(), obj.GetName(), val)
+	}
+	return obj.GetGeneration(), observedGeneration, nil
 }
 
-func extractGenerationFromObject(obj metav1.Object) (*types.IntHash, *types.IntHash, error) {
-	generation := types.IntHashForGeneration(obj.GetGeneration())
-
+func extractGenerationFromObject(obj metav1.Object) (int64, int64, error) {
 	st := structs.New(obj)
 	fieldStatus, found := st.FieldOk("Status")
 	if !found {
-		return nil, nil, fmt.Errorf("status is missing")
+		return obj.GetGeneration(), -1, nil
 	}
 	fieldObsGen, found := fieldStatus.FieldOk("ObservedGeneration")
 	if !found {
-		return nil, nil, fmt.Errorf("status.observedGeneration is missing")
+		return obj.GetGeneration(), -1, nil
 	}
-	observedGeneration, err := types.ParseIntHash(fieldObsGen.Value())
-
-	return generation, observedGeneration, err
+	observedGeneration, ok := fieldObsGen.Value().(int64)
+	if !ok {
+		return -1, -1, fmt.Errorf("%s %s/%s status.observedGeneration %+v is not int64", reflect.TypeOf(obj).String(), obj.GetNamespace(), obj.GetName(), fieldObsGen.Value())
+	}
+	return obj.GetGeneration(), observedGeneration, nil
 }
