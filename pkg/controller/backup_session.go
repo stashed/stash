@@ -381,7 +381,7 @@ func (c *StashController) ensureBackupJob(invoker apis.Invoker, targetInfo apis.
 			in.Spec.Template.Spec = podSpec
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-			in.Spec.BackoffLimit = types.Int32P(1)
+			in.Spec.BackoffLimit = types.Int32P(0)
 			return in
 		},
 		metav1.PatchOptions{},
@@ -466,7 +466,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(invoker apis.Invoker, targe
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			in.Spec.BackoffLimit = types.Int32P(1)
+			in.Spec.BackoffLimit = types.Int32P(0)
 			return in
 		},
 		metav1.PatchOptions{},
