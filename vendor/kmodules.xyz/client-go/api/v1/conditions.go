@@ -117,10 +117,11 @@ func SetCondition(conditions []Condition, newCondition Condition) []Condition {
 	// The desired conditions is not in the condition list or is not in its desired state.
 	// Update it if present in the condition list, or append the new condition if it does not present.
 	newCondition.LastTransitionTime = metav1.Now()
-	if idx != -1 {
-		conditions[idx] = newCondition
-	} else {
+	if idx == -1 {
 		conditions = append(conditions, newCondition)
+	} else if newCondition.ObservedGeneration >= curCond.ObservedGeneration {
+		// only update if the new condition is based on observed generation at least as updated as the current condition
+		conditions[idx] = newCondition
 	}
 	return conditions
 }
