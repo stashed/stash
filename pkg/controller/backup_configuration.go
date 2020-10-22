@@ -387,9 +387,11 @@ func (c *StashController) EnsureBackupTriggeringCronJob(invoker apis.Invoker) er
 
 			in.Spec.Schedule = invoker.Schedule
 			in.Spec.Suspend = types.BoolP(invoker.Paused) // this ensure that the CronJob is suspended when the backup invoker is paused.
-			in.Spec.JobTemplate.Labels = invoker.Labels
+			in.Spec.JobTemplate.Labels = core_util.UpsertMap(in.Labels, invoker.Labels)
 			// ensure that job gets deleted on completion
 			in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
+			// pass offshoot labels to the CronJob's pod
+			in.Spec.JobTemplate.Spec.Template.Labels = core_util.UpsertMap(in.Spec.JobTemplate.Spec.Template.Labels, invoker.Labels)
 
 			container := core.Container{
 				Name:            apis.StashContainer,
