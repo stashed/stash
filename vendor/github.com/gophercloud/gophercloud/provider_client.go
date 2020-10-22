@@ -94,9 +94,10 @@ type ProviderClient struct {
 // reauthlock represents a set of attributes used to help in the reauthentication process.
 type reauthlock struct {
 	sync.RWMutex
-	reauthing    bool
-	reauthingErr error
-	done         *sync.Cond
+	// This channel is non-nil during reauthentication. It can be used to ask the
+	// goroutine doing Reauthenticate() for its result. Look at the implementation
+	// of Reauthenticate() for details.
+	ongoing chan<- (chan<- error)
 }
 
 // AuthenticatedHeaders returns a map of HTTP headers that are common for all
@@ -106,11 +107,15 @@ func (client *ProviderClient) AuthenticatedHeaders() (m map[string]string) {
 		return
 	}
 	if client.reauthmut != nil {
+		// If a Reauthenticate is in progress, wait for it to complete.
 		client.reauthmut.Lock()
-		for client.reauthmut.reauthing {
-			client.reauthmut.done.Wait()
-		}
+		ongoing := client.reauthmut.ongoing
 		client.reauthmut.Unlock()
+		if ongoing != nil {
+			responseChannel := make(chan error)
+			ongoing <- responseChannel
+			_ = <-responseChannel
+		}
 	}
 	t := client.Token()
 	if t == "" {
@@ -223,7 +228,7 @@ func (client *ProviderClient) SetThrowaway(v bool) {
 // this case, the reauthentication can be skipped if another thread has already
 // reauthenticated in the meantime. If no previous token is known, an empty
 // string should be passed instead to force unconditional reauthentication.
-func (client *ProviderClient) Reauthenticate(previousToken string) (err error) {
+func (client *ProviderClient) Reauthenticate(previousToken string) error {
 	if client.ReauthFunc == nil {
 		return nil
 	}
@@ -232,33 +237,50 @@ func (client *ProviderClient) Reauthenticate(previousToken string) (err error) {
 		return client.ReauthFunc()
 	}
 
+	messages := make(chan (chan<- error))
+
+	// Check if a Reauthenticate is in progress, or start one if not.
 	client.reauthmut.Lock()
-	if client.reauthmut.reauthing {
-		for !client.reauthmut.reauthing {
-			client.reauthmut.done.Wait()
-		}
-		err = client.reauthmut.reauthingErr
-		client.reauthmut.Unlock()
-		return err
+	ongoing := client.reauthmut.ongoing
+	if ongoing == nil {
+		client.reauthmut.ongoing = messages
 	}
 	client.reauthmut.Unlock()
 
-	client.reauthmut.Lock()
-	client.reauthmut.reauthing = true
-	client.reauthmut.done = sync.NewCond(client.reauthmut)
-	client.reauthmut.reauthingErr = nil
-	client.reauthmut.Unlock()
+	// If Reauthenticate is running elsewhere, wait for its result.
+	if ongoing != nil {
+		responseChannel := make(chan error)
+		ongoing <- responseChannel
+		return <-responseChannel
+	}
 
+	// Perform the actual reauthentication.
+	var err error
 	if previousToken == "" || client.TokenID == previousToken {
 		err = client.ReauthFunc()
+	} else {
+		err = nil
 	}
 
+	// Mark Reauthenticate as finished.
 	client.reauthmut.Lock()
-	client.reauthmut.reauthing = false
-	client.reauthmut.reauthingErr = err
-	client.reauthmut.done.Broadcast()
+	client.reauthmut.ongoing = nil
 	client.reauthmut.Unlock()
-	return
+
+	// Report result to all other interested goroutines.
+	//
+	// This happens in a separate goroutine because another goroutine might have
+	// acquired a copy of `client.reauthmut.ongoing` before we cleared it, but not
+	// have come around to sending its request. By answering in a goroutine, we
+	// can have that goroutine linger until all responseChannels have been sent.
+	// When GC has collected all sendings ends of the channel, our receiving end
+	// will be closed and the goroutine will end.
+	go func() {
+		for responseChannel := range messages {
+			responseChannel <- err
+		}
+	}()
+	return err
 }
 
 // RequestOpts customizes the behavior of the provider.Request() method.
@@ -283,6 +305,18 @@ type RequestOpts struct {
 	// ErrorContext specifies the resource error type to return if an error is encountered.
 	// This lets resources override default error messages based on the response status code.
 	ErrorContext error
+	// KeepResponseBody specifies whether to keep the HTTP response body. Usually used, when the HTTP
+	// response body is considered for further use. Valid when JSONResponse is nil.
+	KeepResponseBody bool
+}
+
+// requestState contains temporary state for a single ProviderClient.Request() call.
+type requestState struct {
+	// This flag indicates if we have reauthenticated during this request because of a 401 response.
+	// It ensures that we don't reauthenticate multiple times for a single request. If we
+	// reauthenticate, but keep getting 401 responses with the fresh token, reauthenticating some more
+	// will just get us into an infinite loop.
+	hasReauthenticated bool
 }
 
 var applicationJSON = "application/json"
@@ -290,6 +324,12 @@ var applicationJSON = "application/json"
 // Request performs an HTTP request using the ProviderClient's current HTTPClient. An authentication
 // header will automatically be provided.
 func (client *ProviderClient) Request(method, url string, options *RequestOpts) (*http.Response, error) {
+	return client.doRequest(method, url, options, &requestState{
+		hasReauthenticated: false,
+	})
+}
+
+func (client *ProviderClient) doRequest(method, url string, options *RequestOpts, state *requestState) (*http.Response, error) {
 	var body io.Reader
 	var contentType *string
 
@@ -307,6 +347,11 @@ func (client *ProviderClient) Request(method, url string, options *RequestOpts) 
 
 		body = bytes.NewReader(rendered)
 		contentType = &applicationJSON
+	}
+
+	// Return an error, when "KeepResponseBody" is true and "JSONResponse" is not nil
+	if options.KeepResponseBody && options.JSONResponse != nil {
+		return nil, errors.New("cannot use KeepResponseBody when JSONResponse is not nil")
 	}
 
 	if options.RawBody != nil {
@@ -347,9 +392,6 @@ func (client *ProviderClient) Request(method, url string, options *RequestOpts) 
 		req.Header.Set(k, v)
 	}
 
-	// Set connection parameter to close the connection immediately when we've got the response
-	req.Close = true
-
 	prereqtok := req.Header.Get("X-Auth-Token")
 
 	// Issue the request.
@@ -377,11 +419,12 @@ func (client *ProviderClient) Request(method, url string, options *RequestOpts) 
 		body, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 		respErr := ErrUnexpectedResponseCode{
-			URL:      url,
-			Method:   method,
-			Expected: options.OkCodes,
-			Actual:   resp.StatusCode,
-			Body:     body,
+			URL:            url,
+			Method:         method,
+			Expected:       options.OkCodes,
+			Actual:         resp.StatusCode,
+			Body:           body,
+			ResponseHeader: resp.Header,
 		}
 
 		errType := options.ErrorContext
@@ -392,7 +435,7 @@ func (client *ProviderClient) Request(method, url string, options *RequestOpts) 
 				err = error400er.Error400(respErr)
 			}
 		case http.StatusUnauthorized:
-			if client.ReauthFunc != nil {
+			if client.ReauthFunc != nil && !state.hasReauthenticated {
 				err = client.Reauthenticate(prereqtok)
 				if err != nil {
 					e := &ErrUnableToReauthenticate{}
@@ -404,7 +447,8 @@ func (client *ProviderClient) Request(method, url string, options *RequestOpts) 
 						seeker.Seek(0, 0)
 					}
 				}
-				resp, err = client.Request(method, url, options)
+				state.hasReauthenticated = true
+				resp, err = client.doRequest(method, url, options, state)
 				if err != nil {
 					switch err.(type) {
 					case *ErrUnexpectedResponseCode:
@@ -475,7 +519,22 @@ func (client *ProviderClient) Request(method, url string, options *RequestOpts) 
 	// Parse the response body as JSON, if requested to do so.
 	if options.JSONResponse != nil {
 		defer resp.Body.Close()
+		// Don't decode JSON when there is no content
+		if resp.StatusCode == http.StatusNoContent {
+			// read till EOF, otherwise the connection will be closed and cannot be reused
+			_, err = io.Copy(ioutil.Discard, resp.Body)
+			return resp, err
+		}
 		if err := json.NewDecoder(resp.Body).Decode(options.JSONResponse); err != nil {
+			return nil, err
+		}
+	}
+
+	// Close unused body to allow the HTTP connection to be reused
+	if !options.KeepResponseBody && options.JSONResponse == nil {
+		defer resp.Body.Close()
+		// read till EOF, otherwise the connection will be closed and cannot be reused
+		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
 			return nil, err
 		}
 	}
@@ -484,16 +543,16 @@ func (client *ProviderClient) Request(method, url string, options *RequestOpts) 
 }
 
 func defaultOkCodes(method string) []int {
-	switch {
-	case method == "GET":
+	switch method {
+	case "GET", "HEAD":
 		return []int{200}
-	case method == "POST":
+	case "POST":
 		return []int{201, 202}
-	case method == "PUT":
+	case "PUT":
 		return []int{201, 202}
-	case method == "PATCH":
+	case "PATCH":
 		return []int{200, 202, 204}
-	case method == "DELETE":
+	case "DELETE":
 		return []int{202, 204}
 	}
 
