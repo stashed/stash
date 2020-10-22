@@ -38,7 +38,6 @@ func AuthOptionsFromEnv() (gophercloud.AuthOptions, error) {
 	username := os.Getenv("OS_USERNAME")
 	userID := os.Getenv("OS_USERID")
 	password := os.Getenv("OS_PASSWORD")
-	passcode := os.Getenv("OS_PASSCODE")
 	tenantID := os.Getenv("OS_TENANT_ID")
 	tenantName := os.Getenv("OS_TENANT_NAME")
 	domainID := os.Getenv("OS_DOMAIN_ID")
@@ -74,9 +73,8 @@ func AuthOptionsFromEnv() (gophercloud.AuthOptions, error) {
 		}
 	}
 
-	if password == "" && passcode == "" && applicationCredentialID == "" && applicationCredentialName == "" {
+	if password == "" && applicationCredentialID == "" && applicationCredentialName == "" {
 		err := gophercloud.ErrMissingEnvironmentVariable{
-			// silently ignore TOTP passcode warning, since it is not a common auth method
 			EnvironmentVariable: "OS_PASSWORD",
 		}
 		return nilOptions, err
@@ -114,7 +112,6 @@ func AuthOptionsFromEnv() (gophercloud.AuthOptions, error) {
 		UserID:                      userID,
 		Username:                    username,
 		Password:                    password,
-		Passcode:                    passcode,
 		TenantID:                    tenantID,
 		TenantName:                  tenantName,
 		DomainID:                    domainID,
