@@ -536,10 +536,11 @@ func (c *StashController) setTargetPhaseRunning(invoker apis.Invoker, index int,
 	// For Restic driver, set preBackupAction and postBackupAction
 	var preBackupActions, postBackupActions []string
 	if invoker.Driver == api_v1beta1.ResticSnapshotter {
-		// if it is the first target, then assign pre-backup actions to it.
+		// assign preBackupAction to the first target
 		if index == 0 {
 			preBackupActions = []string{apis.InitializeBackendRepository}
 		}
+		// assign postBackupAction to the last target
 		if index == len(invoker.TargetsInfo)-1 {
 			postBackupActions = []string{apis.ApplyRetentionPolicy, apis.VerifyRepositoryIntegrity, apis.SendRepositoryMetrics}
 		}
