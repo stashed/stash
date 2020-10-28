@@ -364,6 +364,11 @@ func (in *PodSpec) DeepCopyInto(out *PodSpec) {
 		*out = new(corev1.Lifecycle)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.DNSConfig != nil {
+		in, out := &in.DNSConfig, &out.DNSConfig
+		*out = new(corev1.PodDNSConfig)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

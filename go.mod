@@ -66,11 +66,11 @@ require (
 	k8s.io/kube-aggregator v0.18.9
 	k8s.io/kubernetes v1.18.9
 	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66 // indirect
-	kmodules.xyz/client-go v0.0.0-20201021051118-03dac1aea508
+	kmodules.xyz/client-go v0.0.0-20201027113349-01a6d453d836
 	kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72
 	kmodules.xyz/custom-resources v0.0.0-20201008012351-6d8090f759d4
 	kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41
-	kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab
+	kmodules.xyz/offshoot-api v0.0.0-20201027212804-f5e6dc573558
 	kmodules.xyz/openshift v0.0.0-20200922211657-1ece16d36c18
 	kmodules.xyz/prober v0.0.0-20200922212142-743a6514664e
 	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
