@@ -393,6 +393,21 @@ message PodSpec {
   // Cannot be updated.
   // +optional
   optional k8s.io.api.core.v1.Lifecycle lifecycle = 16;
+
+  // Set DNS policy for the pod.
+  // Defaults to "ClusterFirst".
+  // Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
+  // DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy.
+  // To have DNS options set along with hostNetwork, you have to specify DNS policy
+  // explicitly to 'ClusterFirstWithHostNet'.
+  // +optional
+  optional string dnsPolicy = 17;
+
+  // Specifies the DNS parameters of a pod.
+  // Parameters specified here will be merged to the generated DNS
+  // configuration based on DNSPolicy.
+  // +optional
+  optional k8s.io.api.core.v1.PodDNSConfig dnsConfig = 18;
 }
 
 // PodTemplateSpec describes the data a pod should have when created from a template

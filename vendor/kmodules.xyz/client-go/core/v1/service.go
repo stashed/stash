@@ -106,23 +106,29 @@ func MergeServicePorts(cur, desired []core.ServicePort) []core.ServicePort {
 	}
 
 	// ports
-	curPorts := make(map[int32]core.ServicePort)
+	curPorts := make(map[string]core.ServicePort)
 	for _, p := range cur {
-		curPorts[p.Port] = p
+		curPorts[p.Name] = p
 	}
 	for i, dp := range desired {
-		cp, ok := curPorts[dp.Port]
+		cp, ok := curPorts[dp.Name]
 
 		// svc port not found
 		if !ok {
 			continue
 		}
 
+		if dp.Port == 0 {
+			dp.Port = cp.Port
+		}
 		if dp.NodePort == 0 {
 			dp.NodePort = cp.NodePort // avoid reassigning port
 		}
 		if dp.Protocol == "" {
 			dp.Protocol = cp.Protocol
+		}
+		if dp.AppProtocol == nil {
+			dp.AppProtocol = cp.AppProtocol
 		}
 		desired[i] = dp
 	}
