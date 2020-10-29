@@ -486,21 +486,25 @@ func (c *StashController) ensureTargetPhases(backupSession *api_v1beta1.BackupSe
 					in.Targets[i].Phase = api_v1beta1.TargetBackupPending
 					continue
 				}
+				// if any host failed, then overall target phase should be failed.
+				anyHostFailed := false
+				for _, hostStats := range target.Stats {
+					if hostStats.Phase == api_v1beta1.HostBackupFailed {
+						anyHostFailed = true
+						break
+					}
+				}
+				if anyHostFailed {
+					in.Targets[i].Phase = api_v1beta1.TargetBackupFailed
+					continue
+				}
+				// if some host hasn't completed their backup yet, phase should be running
 				if target.TotalHosts != nil && *target.TotalHosts != int32(len(target.Stats)) {
 					in.Targets[i].Phase = api_v1beta1.TargetBackupRunning
 					continue
 				}
-				allHostSucceeded := true
-				for _, hostStats := range target.Stats {
-					if hostStats.Phase == api_v1beta1.HostBackupFailed {
-						allHostSucceeded = false
-					}
-				}
-				if allHostSucceeded {
-					in.Targets[i].Phase = api_v1beta1.TargetBackupSucceeded
-				} else {
-					in.Targets[i].Phase = api_v1beta1.TargetBackupFailed
-				}
+				// all host completed their backup and none of them failed. so, phase should be Succeeded.
+				in.Targets[i].Phase = api_v1beta1.TargetBackupSucceeded
 			}
 			return in
 		},

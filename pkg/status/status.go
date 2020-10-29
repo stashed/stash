@@ -123,7 +123,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	// If the target has been assigned some post-backup actions, execute them
 	// Only execute the postBackupActions if the backup of current host/hosts has succeeded
 	if backupSucceeded(backupOutput) {
-		err = o.executePostBackupActions(invoker, backupSession, targetInfo.Target.Ref)
+		err = o.executePostBackupActions(invoker, backupSession, targetInfo.Target.Ref, len(backupOutput.BackupTargetStatus.Stats))
 		if err != nil {
 			return err
 		}
@@ -236,7 +236,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	return nil
 }
 
-func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef) error {
+func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef, numCurHosts int) error {
 	var repoStats restic.RepositoryStats
 	for _, targetStatus := range backupSession.Status.Targets {
 		if apis.TargetMatched(targetStatus.Ref, curTarget) {
@@ -244,13 +244,13 @@ func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, back
 			if len(targetStatus.PostBackupActions) > 0 {
 				// For StatefulSet and DaemonSet, only the last host will run these PostBackupActions
 				if curTarget.Kind == apis.KindStatefulSet || curTarget.Kind == apis.KindDaemonSet {
-					if len(targetStatus.Stats) != (int(*targetStatus.TotalHosts) - 1) {
+					if len(targetStatus.Stats) != (int(*targetStatus.TotalHosts) - numCurHosts) {
 						log.Infof("Skipping running PostBackupActions. Reason: Only the last host will execute the post backup actions for %s", curTarget.Kind)
 						return nil
 					}
 				}
 				// wait until all other targets/hosts has completed their backup.
-				err := o.waitUntilOtherHostsCompleted(backupSession, curTarget)
+				err := o.waitUntilOtherHostsCompleted(backupSession, curTarget, numCurHosts)
 				if err != nil {
 					return fmt.Errorf("failed to execute PostBackupActions. Reason: %v ", err.Error())
 				}
@@ -346,7 +346,7 @@ func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, back
 	return nil
 }
 
-func (o UpdateStatusOptions) waitUntilOtherHostsCompleted(backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef) error {
+func (o UpdateStatusOptions) waitUntilOtherHostsCompleted(backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef, numCurHosts int) error {
 	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (done bool, err error) {
 		log.Infof("Waiting for all other targets/hosts to complete their backup.....")
 		newBackupSession, err := o.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
@@ -356,8 +356,8 @@ func (o UpdateStatusOptions) waitUntilOtherHostsCompleted(backupSession *v1beta1
 		for _, target := range newBackupSession.Status.Targets {
 			if apis.TargetMatched(target.Ref, curTarget) {
 				// If all the other hosts complete their backup process, they should add their entry into target.Stats field.
-				// So, the target.Stats should have one less entry than the totalHosts because the current host hasn't added its entry yet.
-				if len(target.Stats) != (int(*target.TotalHosts) - 1) {
+				// So, the target.Stats should have (target.TotalHosts - numCurHosts) entry.
+				if len(target.Stats) != (int(*target.TotalHosts) - numCurHosts) {
 					return false, nil
 				}
 			} else {
