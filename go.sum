@@ -778,6 +778,7 @@ golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553/go.mod h1:z5CRVTTTmAJ677TzLL
 golang.org/x/net v0.0.0-20200202094626-16171245cfb2/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200226121028-0de0cce0169b/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e/go.mod h1:qpuaurCH72eLCgpAm/N6yyVIVM9cpaDIP3A8BGJEC5A=
+golang.org/x/net v0.0.0-20200602114024-627f9648deb9/go.mod h1:qpuaurCH72eLCgpAm/N6yyVIVM9cpaDIP3A8BGJEC5A=
 golang.org/x/net v0.0.0-20200625001655-4c5254603344 h1:vGXIOMxbNfDTk/aXCmfdLgkrSV+Z2tcbze+pEc3v5W4=
 golang.org/x/net v0.0.0-20200625001655-4c5254603344/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
@@ -1010,8 +1011,6 @@ kmodules.xyz/client-go v0.0.0-20200521065424-173e32c78a20/go.mod h1:sY/eoe4ktxZE
 kmodules.xyz/client-go v0.0.0-20200818143024-600fef263e03/go.mod h1:sY/eoe4ktxZEoHpr5NpAQ5s22VSwTE8psJtKVeVgLRY=
 kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63 h1:luKlEul8LMhyyftoZN34+vboL9MWAeQpSAUZxaLZBGg=
 kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63/go.mod h1:JZN34jqk6ZlR+QOnBPpnUVBab4rmfamqxfSvLaulBMY=
-kmodules.xyz/client-go v0.0.0-20201021051118-03dac1aea508 h1:LjidyEzvw1rSlwRQLWNfElleLJ6vr9Uu5tn5H6JO+QA=
-kmodules.xyz/client-go v0.0.0-20201021051118-03dac1aea508/go.mod h1:pnRh7gtJ6ErPJQBkQeRlpD95KRtxhD4eGrYagZEU8RM=
 kmodules.xyz/client-go v0.0.0-20201027113349-01a6d453d836 h1:oRtOV4teHgELaRJx+mjkpjlO03S9xl1g020RUoU4FDI=
 kmodules.xyz/client-go v0.0.0-20201027113349-01a6d453d836/go.mod h1:pnRh7gtJ6ErPJQBkQeRlpD95KRtxhD4eGrYagZEU8RM=
 kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72 h1:0sM6nE7aJon/PSdqZTj0bKJlPyzobXkG0wVYKpjcJJE=
@@ -1021,8 +1020,6 @@ kmodules.xyz/custom-resources v0.0.0-20201008012351-6d8090f759d4 h1:eftT0CrrAYK1
 kmodules.xyz/custom-resources v0.0.0-20201008012351-6d8090f759d4/go.mod h1:+YU32jSWaGGE4etTr/iCF88tLAeDNq1lhptVymjUbjg=
 kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41 h1:BsCSSPoY0uRGylfPTUzzQ28h2axuXremPGPzwpmxvYI=
 kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41/go.mod h1:XAWxC/b1ICoufU6XDV0AOHNQY+y+4/B3Z5uyLnW1B6s=
-kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab h1:d/4AFAN0TfKgwhjbQYzwXXHT/5/vTP7SAAvS4uJX+wQ=
-kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab/go.mod h1:Wy3/mWK2lWQOviKVpBtiCEYtLaYIaSiym8leZNKBUd4=
 kmodules.xyz/offshoot-api v0.0.0-20201027212804-f5e6dc573558 h1:/gk1vlGimdRj3fYS2NUsoV4UKQxW/I2ORXssnz2sBNI=
 kmodules.xyz/offshoot-api v0.0.0-20201027212804-f5e6dc573558/go.mod h1:+tGJRjfzEFm01qWQZcmTkFhB5dWA1jKHXnlUS6O4ZkQ=
 kmodules.xyz/openshift v0.0.0-20200922211657-1ece16d36c18 h1:D1tzbwyrIPJBSmL3W/t2vT2aU3DVEYKf357a392REaY=
@@ -1054,6 +1051,6 @@ sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
 sigs.k8s.io/yaml v1.2.0 h1:kr/MCeFWJWTwyaHoR9c8EjH9OumOmoF9YGiZd7lFm/Q=
 sigs.k8s.io/yaml v1.2.0/go.mod h1:yfXDCHCao9+ENCvLSE62v9VSji2MKu5jeNfTrofGhJc=
 sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4/go.mod h1:ketZ/q3QxT9HOBeFhu6RdvsftgpsbFHBF5Cas6cDKZ0=
-stash.appscode.dev/apimachinery v0.11.3 h1:QtDA1w1Piu350toPE++99NvKM1y+zqv44A9sr7LBRCw=
-stash.appscode.dev/apimachinery v0.11.3/go.mod h1:j6XQeyMu0BoUwI9+n3wuts0RpZzU8HNYaGOrCuD3I6U=
+stash.appscode.dev/apimachinery v0.11.4 h1:o+pykfApSyv17hKE651znHhK2A0uNDLDSxTxD5ltUSU=
+stash.appscode.dev/apimachinery v0.11.4/go.mod h1:AyJyyOJVup+KU0JJtNYV+xfDC1wNLgYHE/DCQLMftrg=
 vbom.ml/util v0.0.0-20160121211510-db5cfe13f5cc/go.mod h1:so/NYdZXCz+E3ZpW0uAoCj6uzU2+8OWDFv/HxUSs7kI=
