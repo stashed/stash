@@ -142,12 +142,10 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		return err
 	}
 
-	//overallBackupSucceeded := true
+	// create status against the BackupSession for each hosts
 	for _, hostStats := range backupOutput.BackupTargetStatus.Stats {
-		// create event to the BackupSession
 		var eventType, eventReason, eventMessage string
 		if hostStats.Error != "" {
-			//overallBackupSucceeded = false
 			eventType = core.EventTypeWarning
 			eventReason = eventer.EventReasonHostBackupFailed
 			eventMessage = fmt.Sprintf("backup failed for host %q of %q/%q. Reason: %s", hostStats.Hostname, o.TargetRef.Kind, o.TargetRef.Name, hostStats.Error)
@@ -203,12 +201,8 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	if err != nil {
 		return err
 	}
-	// create event for each hosts
+	// create event against the RestoreSession for each hosts
 	for _, hostStats := range restoreOutput.RestoreTargetStatus.Stats {
-		if err != nil {
-			return err
-		}
-		// create event to the RestoreSession
 		var eventType, eventReason, eventMessage string
 		if hostStats.Error != "" {
 			eventType = core.EventTypeWarning

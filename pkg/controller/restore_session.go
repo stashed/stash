@@ -1130,27 +1130,36 @@ func (c *StashController) ensureRestoreTargetPhases(invoker apis.RestoreInvoker)
 			targetStats[i].Phase = api_v1beta1.TargetRestorePending
 			continue
 		}
-		if target.TotalHosts != nil && *target.TotalHosts != int32(len(target.Stats)) {
-			targetStats[i].Phase = api_v1beta1.TargetRestoreRunning
-			continue
-		}
+		// check if any host failed to restore or it's phase 'Unknown'
 		anyHostFailed := false
 		anyHostPhaseUnknown := false
 		for _, hostStats := range target.Stats {
 			if hostStats.Phase == api_v1beta1.HostRestoreFailed {
 				anyHostFailed = true
+				break
 			}
 			if hostStats.Phase == api_v1beta1.HostRestoreUnknown {
 				anyHostPhaseUnknown = true
+				break
 			}
 		}
+		// if any host fail to restore, the overall target phase should be "Failed"
 		if anyHostFailed {
 			targetStats[i].Phase = api_v1beta1.TargetRestoreFailed
-		} else if anyHostPhaseUnknown {
-			targetStats[i].Phase = api_v1beta1.TargetRestorePhaseUnknown
-		} else {
-			targetStats[i].Phase = api_v1beta1.TargetRestoreSucceeded
+			continue
 		}
+		// if any host's restore phase is 'Unknown', the overall target phase should be "Unknown"
+		if anyHostPhaseUnknown {
+			targetStats[i].Phase = api_v1beta1.TargetRestorePhaseUnknown
+			continue
+		}
+		// if some host hasn't completed their restore yet, phase should be "Running"
+		if target.TotalHosts != nil && *target.TotalHosts != int32(len(target.Stats)) {
+			targetStats[i].Phase = api_v1beta1.TargetRestoreRunning
+			continue
+		}
+		// all host completed their restore process and none of them failed. so, phase should be "Succeeded".
+		targetStats[i].Phase = api_v1beta1.TargetRestoreSucceeded
 	}
 	return invoker.UpdateRestoreInvokerStatus(apis.RestoreInvokerStatus{TargetStatus: targetStats})
 }
