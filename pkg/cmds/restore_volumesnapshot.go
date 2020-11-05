@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -53,7 +54,6 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 			namespace: meta.Namespace(),
 			metrics: restic.MetricsOptions{
 				Enabled: true,
-				JobName: "stash-volumesnapshot-restorer",
 			},
 		}
 	)
@@ -76,6 +76,8 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			opt.metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name)
 
 			for _, targetInfo := range inv.TargetsInfo {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {

@@ -120,7 +120,6 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",
 				fmt.Sprintf("--metrics-pushgateway-url=%s", pushgateway.URL()),
-				"--prom-job-name=${PROMETHEUS_JOB_NAME:=}",
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
