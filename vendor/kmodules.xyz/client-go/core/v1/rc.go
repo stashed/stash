@@ -19,9 +19,9 @@ package v1
 import (
 	"context"
 
-	. "github.com/appscode/go/types"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -104,7 +104,7 @@ func TryUpdateRC(ctx context.Context, c kubernetes.Interface, meta metav1.Object
 func WaitUntilRCReady(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
-			return Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 
 		return false, nil

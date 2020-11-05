@@ -25,9 +25,9 @@ import (
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -66,7 +66,7 @@ var _ = Describe("Pause Backup", func() {
 			// Setup workload Backup
 			backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, func(bc *v1beta1.BackupConfiguration) {
 				bc.Spec.Schedule = AtEveryMinutes
-				bc.Spec.BackupHistoryLimit = types.Int32P(20)
+				bc.Spec.BackupHistoryLimit = pointer.Int32P(20)
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -138,7 +138,7 @@ var _ = Describe("Pause Backup", func() {
 			// Setup PVC Backup
 			backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
 				bc.Spec.Schedule = AtEveryMinutes
-				bc.Spec.BackupHistoryLimit = types.Int32P(20)
+				bc.Spec.BackupHistoryLimit = pointer.Int32P(20)
 			})
 			Expect(err).NotTo(HaveOccurred())
 

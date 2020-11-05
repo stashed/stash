@@ -24,9 +24,9 @@ import (
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
-	"github.com/appscode/go/log"
 	shell "github.com/codeskyblue/go-sh"
 	"github.com/pkg/errors"
+	"gomodules.xyz/x/log"
 )
 
 const (

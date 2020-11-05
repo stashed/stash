@@ -22,12 +22,13 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	core "k8s.io/api/core/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
-func SetBackupTargetFoundConditionToUnknown(invoker apis.Invoker, tref api_v1beta1.TargetRef, err error) error {
+func SetBackupTargetFoundConditionToUnknown(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef, err error) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:   apis.BackupTargetFound,
 		Status: core.ConditionUnknown,
@@ -41,7 +42,7 @@ func SetBackupTargetFoundConditionToUnknown(invoker apis.Invoker, tref api_v1bet
 	})
 }
 
-func SetBackupTargetFoundConditionToFalse(invoker apis.Invoker, tref api_v1beta1.TargetRef) error {
+func SetBackupTargetFoundConditionToFalse(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		// Set the "BackupTargetFound" condition to "False"
 		Type:   apis.BackupTargetFound,
@@ -55,7 +56,7 @@ func SetBackupTargetFoundConditionToFalse(invoker apis.Invoker, tref api_v1beta1
 	})
 }
 
-func SetBackupTargetFoundConditionToTrue(invoker apis.Invoker, tref api_v1beta1.TargetRef) error {
+func SetBackupTargetFoundConditionToTrue(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:   apis.BackupTargetFound,
 		Status: core.ConditionTrue,
@@ -68,7 +69,7 @@ func SetBackupTargetFoundConditionToTrue(invoker apis.Invoker, tref api_v1beta1.
 	})
 }
 
-func SetCronJobCreatedConditionToFalse(invoker apis.Invoker, err error) error {
+func SetCronJobCreatedConditionToFalse(invoker invoker.BackupInvoker, err error) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:    apis.CronJobCreated,
 		Status:  core.ConditionFalse,
@@ -77,7 +78,7 @@ func SetCronJobCreatedConditionToFalse(invoker apis.Invoker, err error) error {
 	})
 }
 
-func SetCronJobCreatedConditionToTrue(invoker apis.Invoker) error {
+func SetCronJobCreatedConditionToTrue(invoker invoker.BackupInvoker) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:    apis.CronJobCreated,
 		Status:  core.ConditionTrue,
@@ -86,7 +87,7 @@ func SetCronJobCreatedConditionToTrue(invoker apis.Invoker) error {
 	})
 }
 
-func SetSidecarInjectedConditionToTrue(invoker apis.Invoker, tref api_v1beta1.TargetRef) error {
+func SetSidecarInjectedConditionToTrue(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:   apis.StashSidecarInjected,
 		Status: core.ConditionTrue,
@@ -99,7 +100,7 @@ func SetSidecarInjectedConditionToTrue(invoker apis.Invoker, tref api_v1beta1.Ta
 	})
 }
 
-func SetSidecarInjectedConditionToFalse(invoker apis.Invoker, tref api_v1beta1.TargetRef, err error) error {
+func SetSidecarInjectedConditionToFalse(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef, err error) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		Type:   apis.StashSidecarInjected,
 		Status: core.ConditionFalse,

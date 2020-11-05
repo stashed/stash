@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/appscode/go/log"
 	"github.com/pkg/errors"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )

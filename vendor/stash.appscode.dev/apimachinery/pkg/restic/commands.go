@@ -30,8 +30,8 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
-	"github.com/appscode/go/log"
 	"github.com/armon/circbuf"
+	"gomodules.xyz/x/log"
 	storage "kmodules.xyz/objectstore-api/api/v1"
 )
 

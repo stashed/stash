@@ -106,15 +106,20 @@ func UpdateRecoveryStatus(
 	ctx context.Context,
 	c cs.StashV1alpha1Interface,
 	meta metav1.ObjectMeta,
-	transform func(*api.RecoveryStatus) *api.RecoveryStatus,
+	transform func(*api.RecoveryStatus) (types.UID, *api.RecoveryStatus),
 	opts metav1.UpdateOptions,
 ) (result *api.Recovery, err error) {
 	apply := func(x *api.Recovery) *api.Recovery {
+		uid, updatedStatus := transform(x.Status.DeepCopy())
+		// Ignore status update when uid does not match
+		if uid != "" && uid != x.UID {
+			return x
+		}
 		out := &api.Recovery{
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
-			Status:     *transform(x.Status.DeepCopy()),
+			Status:     *updatedStatus,
 		}
 		return out
 	}
@@ -152,7 +157,7 @@ func UpdateRecoveryStatus(
 }
 
 func SetRecoveryStats(ctx context.Context, c cs.StashV1alpha1Interface, recovery metav1.ObjectMeta, path string, d time.Duration, phase api.RecoveryPhase, opts metav1.UpdateOptions) (*api.Recovery, error) {
-	return UpdateRecoveryStatus(ctx, c, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+	return UpdateRecoveryStatus(ctx, c, recovery, func(in *api.RecoveryStatus) (types.UID, *api.RecoveryStatus) {
 		found := false
 		for _, stats := range in.Stats {
 			if stats.Path == path {
@@ -168,6 +173,6 @@ func SetRecoveryStats(ctx context.Context, c cs.StashV1alpha1Interface, recovery
 				Phase:    phase,
 			})
 		}
-		return in
+		return "", in
 	}, opts)
 }

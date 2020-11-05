@@ -26,6 +26,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -454,12 +455,12 @@ func newRestoreHostMetrics(labels prometheus.Labels) *RestoreMetrics {
 }
 
 // SendBackupSessionMetrics send backup session related metrics to the Pushgateway
-func (metricOpt *MetricsOptions) SendBackupSessionMetrics(invoker apis.Invoker, status api_v1beta1.BackupSessionStatus) error {
+func (metricOpt *MetricsOptions) SendBackupSessionMetrics(inv invoker.BackupInvoker, status api_v1beta1.BackupSessionStatus) error {
 	// create metric registry
 	registry := prometheus.NewRegistry()
 
 	// generate metrics labels
-	labels, err := backupInvokerLabels(invoker, metricOpt.Labels)
+	labels, err := backupInvokerLabels(inv, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
@@ -501,17 +502,17 @@ func (metricOpt *MetricsOptions) SendBackupSessionMetrics(invoker apis.Invoker, 
 }
 
 // SendBackupSessionMetrics send backup session metrics to the Pushgateway
-func (metricOpt *MetricsOptions) SendBackupTargetMetrics(config *rest.Config, invoker apis.Invoker, targetRef api_v1beta1.TargetRef, status api_v1beta1.BackupSessionStatus) error {
+func (metricOpt *MetricsOptions) SendBackupTargetMetrics(config *rest.Config, i invoker.BackupInvoker, targetRef api_v1beta1.TargetRef, status api_v1beta1.BackupSessionStatus) error {
 	// create metric registry
 	registry := prometheus.NewRegistry()
 
 	// generate backup session related labels
-	labels, err := backupInvokerLabels(invoker, metricOpt.Labels)
+	labels, err := backupInvokerLabels(i, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, invoker.ObjectMeta.Namespace)
+	targetLabels, err := targetLabels(config, targetRef, i.ObjectMeta.Namespace)
 	if err != nil {
 		return err
 	}
@@ -522,7 +523,7 @@ func (metricOpt *MetricsOptions) SendBackupTargetMetrics(config *rest.Config, in
 
 	// only send the metric for the target specified by targetRef
 	for _, targetStatus := range status.Targets {
-		if apis.TargetMatched(targetStatus.Ref, targetRef) {
+		if invoker.TargetMatched(targetStatus.Ref, targetRef) {
 			if targetStatus.Phase == api_v1beta1.TargetBackupSucceeded {
 				// mark target backup as succeeded
 				metrics.BackupTargetMetrics.TargetBackupSucceeded.Set(1)
@@ -555,7 +556,7 @@ func (metricOpt *MetricsOptions) SendBackupTargetMetrics(config *rest.Config, in
 }
 
 // SendBackupSessionMetrics send backup metrics for individual hosts to the Pushgateway
-func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, invoker apis.Invoker, targetRef api_v1beta1.TargetRef, backupOutput *BackupOutput) error {
+func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, i invoker.BackupInvoker, targetRef api_v1beta1.TargetRef, backupOutput *BackupOutput) error {
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup output. Backup output shouldn't be nil")
 	}
@@ -564,12 +565,12 @@ func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, invo
 	registry := prometheus.NewRegistry()
 
 	// generate backup session related labels
-	labels, err := backupInvokerLabels(invoker, metricOpt.Labels)
+	labels, err := backupInvokerLabels(i, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, invoker.ObjectMeta.Namespace)
+	targetLabels, err := targetLabels(config, targetRef, i.ObjectMeta.Namespace)
 	if err != nil {
 		return err
 	}
@@ -616,17 +617,17 @@ func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, invo
 }
 
 // SendRepositoryMetrics send backup session related metrics to the Pushgateway
-func (metricOpt *MetricsOptions) SendRepositoryMetrics(config *rest.Config, invoker apis.Invoker, repoStats RepositoryStats) error {
+func (metricOpt *MetricsOptions) SendRepositoryMetrics(config *rest.Config, i invoker.BackupInvoker, repoStats RepositoryStats) error {
 	// create metric registry
 	registry := prometheus.NewRegistry()
 
 	// generate backup invoker labels
-	labels, err := backupInvokerLabels(invoker, metricOpt.Labels)
+	labels, err := backupInvokerLabels(i, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
 
-	repoMetricLabels, err := repoMetricLabels(config, invoker, metricOpt.Labels)
+	repoMetricLabels, err := repoMetricLabels(config, i, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
@@ -649,31 +650,31 @@ func (metricOpt *MetricsOptions) SendRepositoryMetrics(config *rest.Config, invo
 }
 
 // SendRestoreSessionMetrics send restore session related metrics to the Pushgateway
-func (metricOpt *MetricsOptions) SendRestoreSessionMetrics(invoker apis.RestoreInvoker) error {
+func (metricOpt *MetricsOptions) SendRestoreSessionMetrics(inv invoker.RestoreInvoker) error {
 	// create metric registry
 	registry := prometheus.NewRegistry()
 
 	// generate metrics labels
-	labels, err := restoreInvokerLabels(invoker, metricOpt.Labels)
+	labels, err := restoreInvokerLabels(inv, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
 	// create metrics
 	metrics := newRestoreSessionMetrics(labels)
 
-	if invoker.Status.Phase == api_v1beta1.RestoreSucceeded {
+	if inv.Status.Phase == api_v1beta1.RestoreSucceeded {
 		// mark the entire restore session as succeeded
 		metrics.RestoreSessionMetrics.SessionSuccess.Set(1)
 
 		// set total time taken to complete the restore session
-		duration, err := time.ParseDuration(invoker.Status.SessionDuration)
+		duration, err := time.ParseDuration(inv.Status.SessionDuration)
 		if err != nil {
 			return err
 		}
 		metrics.RestoreSessionMetrics.SessionDuration.Set(duration.Seconds())
 
 		// set total number of target that was restored in this restore session
-		metrics.RestoreSessionMetrics.TargetCount.Set(float64(len(invoker.Status.TargetStatus)))
+		metrics.RestoreSessionMetrics.TargetCount.Set(float64(len(inv.Status.TargetStatus)))
 
 		// register metrics to the registry
 		registry.MustRegister(
@@ -692,17 +693,17 @@ func (metricOpt *MetricsOptions) SendRestoreSessionMetrics(invoker apis.RestoreI
 }
 
 // SendRestoreTargetMetrics send restore target related metrics to the Pushgateway
-func (metricOpt *MetricsOptions) SendRestoreTargetMetrics(config *rest.Config, invoker apis.RestoreInvoker, targetRef api_v1beta1.TargetRef) error {
+func (metricOpt *MetricsOptions) SendRestoreTargetMetrics(config *rest.Config, i invoker.RestoreInvoker, targetRef api_v1beta1.TargetRef) error {
 	// create metric registry
 	registry := prometheus.NewRegistry()
 
 	// generate metrics labels
-	labels, err := restoreInvokerLabels(invoker, metricOpt.Labels)
+	labels, err := restoreInvokerLabels(i, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, invoker.ObjectMeta.Namespace)
+	targetLabels, err := targetLabels(config, targetRef, i.ObjectMeta.Namespace)
 	if err != nil {
 		return err
 	}
@@ -712,8 +713,8 @@ func (metricOpt *MetricsOptions) SendRestoreTargetMetrics(config *rest.Config, i
 	metrics := newRestoreTargetMetrics(labels)
 
 	// only send the metric of the target specified by targetRef
-	for _, targetStatus := range invoker.Status.TargetStatus {
-		if apis.TargetMatched(targetStatus.Ref, targetRef) {
+	for _, targetStatus := range i.Status.TargetStatus {
+		if invoker.TargetMatched(targetStatus.Ref, targetRef) {
 			if targetStatus.Phase == api_v1beta1.TargetRestoreSucceeded {
 				// mark entire restore target as succeeded
 				metrics.RestoreTargetMetrics.TargetRestoreSucceeded.Set(1)
@@ -742,7 +743,7 @@ func (metricOpt *MetricsOptions) SendRestoreTargetMetrics(config *rest.Config, i
 }
 
 // SendRestoreHostMetrics send restore metrics for individual hosts to the Pushgateway
-func (metricOpt *MetricsOptions) SendRestoreHostMetrics(config *rest.Config, invoker apis.RestoreInvoker, targetRef api_v1beta1.TargetRef, restoreOutput *RestoreOutput) error {
+func (metricOpt *MetricsOptions) SendRestoreHostMetrics(config *rest.Config, i invoker.RestoreInvoker, targetRef api_v1beta1.TargetRef, restoreOutput *RestoreOutput) error {
 	if restoreOutput == nil {
 		return fmt.Errorf("invalid restore output. Restore output shouldn't be nil")
 	}
@@ -751,12 +752,12 @@ func (metricOpt *MetricsOptions) SendRestoreHostMetrics(config *rest.Config, inv
 	registry := prometheus.NewRegistry()
 
 	// generate restore session related labels
-	labels, err := restoreInvokerLabels(invoker, metricOpt.Labels)
+	labels, err := restoreInvokerLabels(i, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, invoker.ObjectMeta.Namespace)
+	targetLabels, err := targetLabels(config, targetRef, i.ObjectMeta.Namespace)
 	if err != nil {
 		return err
 	}
@@ -889,48 +890,48 @@ func (metricOpt *MetricsOptions) sendMetrics(registry *prometheus.Registry, jobN
 }
 
 // nolint:unparam
-func backupInvokerLabels(invoker apis.Invoker, userProvidedLabels []string) (prometheus.Labels, error) {
+func backupInvokerLabels(inv invoker.BackupInvoker, userProvidedLabels []string) (prometheus.Labels, error) {
 	// add user provided labels
 	promLabels := parseUserProvidedLabels(userProvidedLabels)
 
 	// add invoker information
-	promLabels[MetricLabelInvokerKind] = invoker.TypeMeta.Kind
-	promLabels[MetricLabelInvokerName] = invoker.ObjectMeta.Name
-	promLabels[MetricsLabelNamespace] = invoker.ObjectMeta.Namespace
+	promLabels[MetricLabelInvokerKind] = inv.TypeMeta.Kind
+	promLabels[MetricLabelInvokerName] = inv.ObjectMeta.Name
+	promLabels[MetricsLabelNamespace] = inv.ObjectMeta.Namespace
 
 	// insert target information as metrics label
-	if invoker.Driver == api_v1beta1.VolumeSnapshotter {
+	if inv.Driver == api_v1beta1.VolumeSnapshotter {
 		promLabels = upsertLabel(promLabels, volumeSnapshotterLabels())
 	} else {
 		promLabels[MetricsLabelDriver] = string(api_v1beta1.ResticSnapshotter)
-		promLabels[MetricsLabelRepository] = invoker.Repository
+		promLabels[MetricsLabelRepository] = inv.Repository
 	}
 
 	return promLabels, nil
 }
 
 // nolint:unparam
-func restoreInvokerLabels(invoker apis.RestoreInvoker, userProvidedLabels []string) (prometheus.Labels, error) {
+func restoreInvokerLabels(inv invoker.RestoreInvoker, userProvidedLabels []string) (prometheus.Labels, error) {
 	// add user provided labels
 	promLabels := parseUserProvidedLabels(userProvidedLabels)
 
 	// add invoker information
-	promLabels[MetricLabelInvokerKind] = invoker.TypeMeta.Kind
-	promLabels[MetricLabelInvokerName] = invoker.ObjectMeta.Name
-	promLabels[MetricsLabelNamespace] = invoker.ObjectMeta.Namespace
+	promLabels[MetricLabelInvokerKind] = inv.TypeMeta.Kind
+	promLabels[MetricLabelInvokerName] = inv.ObjectMeta.Name
+	promLabels[MetricsLabelNamespace] = inv.ObjectMeta.Namespace
 
 	// insert target information as metrics label
-	if invoker.Driver == api_v1beta1.VolumeSnapshotter {
+	if inv.Driver == api_v1beta1.VolumeSnapshotter {
 		promLabels = upsertLabel(promLabels, volumeSnapshotterLabels())
 	} else {
 		promLabels[MetricsLabelDriver] = string(api_v1beta1.ResticSnapshotter)
-		promLabels[MetricsLabelRepository] = invoker.Repository
+		promLabels[MetricsLabelRepository] = inv.Repository
 	}
 
 	return promLabels, nil
 }
 
-func repoMetricLabels(clientConfig *rest.Config, invoker apis.Invoker, userProvidedLabels []string) (prometheus.Labels, error) {
+func repoMetricLabels(clientConfig *rest.Config, i invoker.BackupInvoker, userProvidedLabels []string) (prometheus.Labels, error) {
 	// add user provided labels
 	promLabels := parseUserProvidedLabels(userProvidedLabels)
 
@@ -939,7 +940,7 @@ func repoMetricLabels(clientConfig *rest.Config, invoker apis.Invoker, userProvi
 	if err != nil {
 		return nil, err
 	}
-	repository, err := stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
+	repository, err := stashClient.StashV1alpha1().Repositories(i.ObjectMeta.Namespace).Get(context.TODO(), i.Repository, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

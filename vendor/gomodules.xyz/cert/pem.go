@@ -62,6 +62,19 @@ func EncodePrivateKeyPEM(key *rsa.PrivateKey) []byte {
 	return pem.EncodeToMemory(&block)
 }
 
+// EncodePKCS8PrivateKeyPEM returns PEM-encoded PKCS#8 private key data
+func EncodePKCS8PrivateKeyPEM(key *rsa.PrivateKey) ([]byte, error) {
+	byt, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+	block := pem.Block{
+		Type:  PrivateKeyBlockType,
+		Bytes: byt,
+	}
+	return pem.EncodeToMemory(&block), nil
+}
+
 // EncodeCertPEM returns PEM-endcoded certificate data
 func EncodeCertPEM(cert *x509.Certificate) []byte {
 	block := pem.Block{

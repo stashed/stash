@@ -25,9 +25,9 @@ import (
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,11 +72,11 @@ var _ = Describe("Runtime Settings", func() {
 					bc.Spec.RuntimeSettings = ofst.RuntimeSettings{
 						Container: &ofst.ContainerRuntimeSettings{
 							Nice: &ofst.NiceSettings{
-								Adjustment: types.Int32P(5),
+								Adjustment: pointer.Int32P(5),
 							},
 							IONice: &ofst.IONiceSettings{
-								Class:     types.Int32P(2),
-								ClassData: types.Int32P(4),
+								Class:     pointer.Int32P(2),
+								ClassData: pointer.Int32P(4),
 							},
 						},
 					}
@@ -106,11 +106,11 @@ var _ = Describe("Runtime Settings", func() {
 					restore.Spec.RuntimeSettings = ofst.RuntimeSettings{
 						Container: &ofst.ContainerRuntimeSettings{
 							Nice: &ofst.NiceSettings{
-								Adjustment: types.Int32P(5),
+								Adjustment: pointer.Int32P(5),
 							},
 							IONice: &ofst.IONiceSettings{
-								Class:     types.Int32P(2),
-								ClassData: types.Int32P(4),
+								Class:     pointer.Int32P(2),
+								ClassData: pointer.Int32P(4),
 							},
 						},
 					}
@@ -153,7 +153,7 @@ var _ = Describe("Runtime Settings", func() {
 					bc.Spec.RuntimeSettings = ofst.RuntimeSettings{
 						Pod: &ofst.PodRuntimeSettings{
 							SecurityContext: &core.PodSecurityContext{
-								FSGroup: types.Int64P(framework.TestFSGroup),
+								FSGroup: pointer.Int64P(framework.TestFSGroup),
 							},
 						},
 					}
@@ -192,7 +192,7 @@ var _ = Describe("Runtime Settings", func() {
 					restore.Spec.RuntimeSettings = ofst.RuntimeSettings{
 						Pod: &ofst.PodRuntimeSettings{
 							SecurityContext: &core.PodSecurityContext{
-								FSGroup: types.Int64P(framework.TestFSGroup),
+								FSGroup: pointer.Int64P(framework.TestFSGroup),
 							},
 						},
 					}
@@ -242,7 +242,7 @@ var _ = Describe("Runtime Settings", func() {
 					bc.Spec.RuntimeSettings = ofst.RuntimeSettings{
 						Pod: &ofst.PodRuntimeSettings{
 							SecurityContext: &core.PodSecurityContext{
-								FSGroup: types.Int64P(framework.TestFSGroup),
+								FSGroup: pointer.Int64P(framework.TestFSGroup),
 							},
 						},
 					}
@@ -285,7 +285,7 @@ var _ = Describe("Runtime Settings", func() {
 					restore.Spec.RuntimeSettings = ofst.RuntimeSettings{
 						Pod: &ofst.PodRuntimeSettings{
 							SecurityContext: &core.PodSecurityContext{
-								FSGroup: types.Int64P(framework.TestFSGroup),
+								FSGroup: pointer.Int64P(framework.TestFSGroup),
 							},
 						},
 					}
@@ -345,7 +345,7 @@ var _ = Describe("Runtime Settings", func() {
 								},
 							},
 							SecurityContext: &core.SecurityContext{
-								RunAsUser: types.Int64P(framework.TestUserID),
+								RunAsUser: pointer.Int64P(framework.TestUserID),
 							},
 						},
 					}
@@ -394,7 +394,7 @@ var _ = Describe("Runtime Settings", func() {
 								},
 							},
 							SecurityContext: &core.SecurityContext{
-								RunAsUser: types.Int64P(framework.TestUserID),
+								RunAsUser: pointer.Int64P(framework.TestUserID),
 							},
 						},
 					}
@@ -453,7 +453,7 @@ var _ = Describe("Runtime Settings", func() {
 								},
 							},
 							SecurityContext: &core.SecurityContext{
-								RunAsUser: types.Int64P(framework.TestUserID),
+								RunAsUser: pointer.Int64P(framework.TestUserID),
 							},
 						},
 					}
@@ -506,7 +506,7 @@ var _ = Describe("Runtime Settings", func() {
 								},
 							},
 							SecurityContext: &core.SecurityContext{
-								RunAsUser: types.Int64P(framework.TestUserID),
+								RunAsUser: pointer.Int64P(framework.TestUserID),
 							},
 						},
 					}

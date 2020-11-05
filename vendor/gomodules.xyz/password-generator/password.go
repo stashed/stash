@@ -30,7 +30,7 @@ var (
 	len_unreserved     = len(unreserved)
 	reserved           = []byte(`!#$&'()*+,/:;=?@[]`)
 	len_reserved       = len(reserved)
-	simple_symbols     = []byte(`!$&'()*+,-.:;=@_~`) // ref: https://github.com/golang/go/blob/release-branch.go1.15/src/net/url/url.go#L1158-L1186 ,  missing: Unreserved | Reserved - #/?[]
+	simple_symbols     = []byte(`!$&()*,-.;=_~`) // ref: https://github.com/golang/go/blob/release-branch.go1.15/src/net/url/url.go#L1158-L1186 ,  missing: Unreserved | Reserved - #/?[]':+@
 	len_simple_symbols = len(simple_symbols)
 	symbols            = []byte(`!"#$%&'()*+,-./:;<=>?@^[\]_{|}~` + "`")
 	len_symbols        = len(symbols)

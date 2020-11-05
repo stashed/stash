@@ -22,8 +22,9 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/pkg/docker"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 
-	"github.com/appscode/go/types"
+	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/analytics"
 	"kmodules.xyz/client-go/tools/cli"
@@ -78,8 +79,8 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 		},
 		Resources: r.Spec.Resources,
 		SecurityContext: &core.SecurityContext{
-			RunAsUser:  types.Int64P(0),
-			RunAsGroup: types.Int64P(0),
+			RunAsUser:  pointer.Int64P(0),
+			RunAsGroup: pointer.Int64P(0),
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
@@ -106,14 +107,14 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 	return sidecar
 }
 
-func NewBackupSidecarContainer(invoker apis.Invoker, targetInfo apis.TargetInfo, backend *store.Backend, image docker.Docker) core.Container {
+func NewBackupSidecarContainer(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, backend *store.Backend, image docker.Docker) core.Container {
 	sidecar := core.Container{
 		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"run-backup",
-			"--invoker-name=" + invoker.ObjectMeta.Name,
-			"--invoker-kind=" + invoker.ObjectRef.Kind,
+			"--invoker-name=" + inv.ObjectMeta.Name,
+			"--invoker-kind=" + inv.ObjectRef.Kind,
 			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--secret-dir=" + apis.StashSecretMountDir,

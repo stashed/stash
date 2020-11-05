@@ -26,15 +26,16 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/pkg/volumesnapshot"
 
-	"github.com/appscode/go/log"
 	vs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/x/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,14 +99,14 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			}
 
 			// get backup Invoker
-			invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
+			inv, err := invoker.ExtractBackupInvokerInfo(opt.stashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range invoker.TargetsInfo {
+			for _, targetInfo := range inv.TargetsInfo {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-					backupOutput, err := opt.createVolumeSnapshot(backupSession.ObjectMeta, invoker, targetInfo)
+					backupOutput, err := opt.createVolumeSnapshot(backupSession.ObjectMeta, inv, targetInfo)
 					if err != nil {
 						return err
 					}
@@ -121,7 +122,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 					statOpt.TargetRef.Name = opt.targetName
 					statOpt.TargetRef.Kind = opt.targetKind
 
-					return statOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
+					return statOpt.UpdatePostBackupStatus(backupOutput, inv, targetInfo)
 
 				}
 			}
@@ -138,7 +139,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 	return cmd
 }
 
-func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invoker apis.Invoker, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
+func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) (*restic.BackupOutput, error) {
 	// Start clock to measure total session duration
 	startTime := time.Now()
 
@@ -171,7 +172,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invoker apis
 	for _, pvcName := range pvcNames {
 		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
 		parts := strings.Split(bsMeta.Name, "-")
-		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, invoker.ObjectMeta.Namespace, pvcName, parts[len(parts)-1])
+		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, inv.ObjectMeta.Namespace, pvcName, parts[len(parts)-1])
 		snapshot, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Create(context.TODO(), &volumeSnapshot, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
@@ -203,7 +204,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invoker apis
 		}
 
 	}
-	err = volumesnapshot.CleanupSnapshots(invoker.RetentionPolicy, backupOutput.BackupTargetStatus.Stats, bsMeta.Namespace, opt.snapshotClient)
+	err = volumesnapshot.CleanupSnapshots(inv.RetentionPolicy, backupOutput.BackupTargetStatus.Stats, bsMeta.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
 	}

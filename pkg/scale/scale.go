@@ -25,8 +25,8 @@ import (
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/backup"
 
-	"github.com/appscode/go/log"
-	"github.com/appscode/go/types"
+	"gomodules.xyz/pointer"
+	"gomodules.xyz/x/log"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -217,7 +217,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 		}
 
 		_, _, err = apps_util.PatchDeployment(context.TODO(), k8sClient, obj, func(dp *apps.Deployment) *apps.Deployment {
-			dp.Spec.Replicas = types.Int32P(int32(replica))
+			dp.Spec.Replicas = pointer.Int32P(int32(replica))
 			delete(dp.Annotations, apis.AnnotationOldReplica)
 			return dp
 		}, metav1.PatchOptions{})
@@ -236,7 +236,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 		}
 
 		_, _, err = core_util.PatchRC(context.TODO(), k8sClient, obj, func(rc *core.ReplicationController) *core.ReplicationController {
-			rc.Spec.Replicas = types.Int32P(int32(replica))
+			rc.Spec.Replicas = pointer.Int32P(int32(replica))
 			delete(rc.Annotations, apis.AnnotationOldReplica)
 			return rc
 		}, metav1.PatchOptions{})
@@ -255,7 +255,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 		}
 
 		_, _, err = apps_util.PatchReplicaSet(context.TODO(), k8sClient, obj, func(rs *apps.ReplicaSet) *apps.ReplicaSet {
-			rs.Spec.Replicas = types.Int32P(int32(replica))
+			rs.Spec.Replicas = pointer.Int32P(int32(replica))
 			delete(rs.Annotations, apis.AnnotationOldReplica)
 			return rs
 		}, metav1.PatchOptions{})

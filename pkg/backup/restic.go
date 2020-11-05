@@ -21,8 +21,8 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
 	"github.com/golang/glog"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"

@@ -21,8 +21,8 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 
-	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/x/flags"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )

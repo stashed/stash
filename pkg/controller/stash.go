@@ -27,7 +27,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/types"
+	"gomodules.xyz/pointer"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -146,7 +146,7 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 	var targetRef api_v1beta1.TargetRef
 	var rep *int32
 	if target == nil {
-		return types.Int32P(1), nil
+		return pointer.Int32P(1), nil
 	}
 
 	// target interface can be BackupTarget or RestoreTarget. We need to extract TargetRef from it.
@@ -156,13 +156,13 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 			rep = t.Replicas
 		}
 		if t == nil {
-			return types.Int32P(1), nil
+			return pointer.Int32P(1), nil
 		}
 		targetRef = t.Ref
 
 	case *api_v1beta1.RestoreTarget:
 		if t == nil {
-			return types.Int32P(1), nil
+			return pointer.Int32P(1), nil
 		}
 		targetRef = t.Ref
 
@@ -171,16 +171,16 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 		if driver == api_v1beta1.VolumeSnapshotter {
 			replica := int32(1)
 			if t.Replicas != nil {
-				replica = types.Int32(t.Replicas)
+				replica = pointer.Int32(t.Replicas)
 			}
-			return types.Int32P(replica * int32(len(t.VolumeClaimTemplates))), nil
+			return pointer.Int32P(replica * int32(len(t.VolumeClaimTemplates))), nil
 		}
 
 		// if volumeClaimTemplates is specified when using Restic driver, restore is done through job.
 		// stash creates restore job for each replica. hence, number of total host is the number of replicas.
 		if len(t.VolumeClaimTemplates) != 0 || t.Replicas != nil {
 			if t.Replicas == nil {
-				return types.Int32P(1), nil
+				return pointer.Int32P(1), nil
 			} else {
 				return t.Replicas, nil
 			}
@@ -202,9 +202,9 @@ func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1
 			return nil, err
 		}
 		if replica != nil {
-			return types.Int32P(*replica * int32(len(ss.Spec.VolumeClaimTemplates))), err
+			return pointer.Int32P(*replica * int32(len(ss.Spec.VolumeClaimTemplates))), err
 		}
-		return types.Int32P(types.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
+		return pointer.Int32P(pointer.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
 	case apis.KindDeployment:
 		deployment, err := c.kubeClient.AppsV1().Deployments(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
@@ -234,7 +234,7 @@ func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1
 		return countPVC(rc.Spec.Template.Spec.Volumes), err
 
 	default:
-		return types.Int32P(1), nil
+		return pointer.Int32P(1), nil
 	}
 }
 
@@ -256,7 +256,7 @@ func (c *StashController) getTotalHostForRestic(targetRef api_v1beta1.TargetRef,
 		return &dmn.Status.DesiredNumberScheduled, nil
 	// for all other workloads, only one replica will take backup/restore. so number of total host will be 1
 	default:
-		return types.Int32P(1), nil
+		return pointer.Int32P(1), nil
 	}
 }
 

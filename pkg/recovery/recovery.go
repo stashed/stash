@@ -29,10 +29,11 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
 	"github.com/cenkalti/backoff"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/reference"
 )
@@ -79,10 +80,14 @@ func (c *Controller) Run() {
 
 	if err = recovery.IsValid(); err != nil {
 		log.Errorf("Failed to validate recovery %s, reason: %s", recovery.Name, err)
-		_, err = stash_util.UpdateRecoveryStatus(context.TODO(), c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
-			in.Phase = api.RecoveryFailed
-			return in
-		}, metav1.UpdateOptions{})
+		_, err = stash_util.UpdateRecoveryStatus(
+			context.TODO(),
+			c.stashClient,
+			recovery.ObjectMeta,
+			func(in *api.RecoveryStatus) (types.UID, *api.RecoveryStatus) {
+				in.Phase = api.RecoveryFailed
+				return recovery.UID, in
+			}, metav1.UpdateOptions{})
 		if err != nil {
 			log.Errorln(err)
 		}
@@ -104,10 +109,14 @@ func (c *Controller) Run() {
 
 	if err = c.RecoverOrErr(recovery); err != nil {
 		log.Errorf("Failed to complete recovery %s, reason: %s", recovery.Name, err)
-		_, err = stash_util.UpdateRecoveryStatus(context.TODO(), c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
-			in.Phase = api.RecoveryFailed
-			return in
-		}, metav1.UpdateOptions{})
+		_, err = stash_util.UpdateRecoveryStatus(
+			context.TODO(),
+			c.stashClient,
+			recovery.ObjectMeta,
+			func(in *api.RecoveryStatus) (types.UID, *api.RecoveryStatus) {
+				in.Phase = api.RecoveryFailed
+				return recovery.UID, in
+			}, metav1.UpdateOptions{})
 		if err != nil {
 			log.Errorln(err)
 		}
@@ -128,11 +137,15 @@ func (c *Controller) Run() {
 	}
 
 	log.Infof("Recovery %s succeeded\n", recovery.Name)
-	_, err = stash_util.UpdateRecoveryStatus(context.TODO(), c.stashClient, recovery.ObjectMeta, func(in *api.RecoveryStatus) *api.RecoveryStatus {
-		in.Phase = api.RecoverySucceeded
-		// TODO: status.Stats
-		return in
-	}, metav1.UpdateOptions{})
+	_, err = stash_util.UpdateRecoveryStatus(
+		context.TODO(),
+		c.stashClient,
+		recovery.ObjectMeta,
+		func(in *api.RecoveryStatus) (types.UID, *api.RecoveryStatus) {
+			in.Phase = api.RecoverySucceeded
+			// TODO: status.Stats
+			return recovery.UID, in
+		}, metav1.UpdateOptions{})
 	if err != nil {
 		log.Errorln(err)
 	}

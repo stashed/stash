@@ -25,8 +25,9 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/docker"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 
-	"github.com/appscode/go/types"
+	"gomodules.xyz/pointer"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -217,15 +218,15 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api_v1alpha1.Recovery, i
 }
 
 // NewPVCRestorerJob return a job definition to restore pvc.
-func NewPVCRestorerJob(invoker apis.RestoreInvoker, index int, repository *api_v1alpha1.Repository, image docker.Docker) (*core.PodTemplateSpec, error) {
-	targetInfo := invoker.TargetsInfo[index]
+func NewPVCRestorerJob(inv invoker.RestoreInvoker, index int, repository *api_v1alpha1.Repository, image docker.Docker) (*core.PodTemplateSpec, error) {
+	targetInfo := inv.TargetsInfo[index]
 	container := core.Container{
 		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore",
-			"--invoker-kind=" + invoker.TypeMeta.Kind,
-			"--invoker-name=" + invoker.ObjectMeta.Name,
+			"--invoker-kind=" + inv.TypeMeta.Kind,
+			"--invoker-name=" + inv.ObjectMeta.Name,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--restore-model=job",
@@ -285,8 +286,8 @@ func NewPVCRestorerJob(invoker apis.RestoreInvoker, index int, repository *api_v
 	// If a user specify securityContext either in pod level or container level in RuntimeSetting,
 	// don't overwrite that. In this case, user must take the responsibility of possible file ownership modification.
 	securityContext := &core.SecurityContext{
-		RunAsUser:  types.Int64P(0),
-		RunAsGroup: types.Int64P(0),
+		RunAsUser:  pointer.Int64P(0),
+		RunAsGroup: pointer.Int64P(0),
 	}
 	if targetInfo.RuntimeSettings.Container != nil {
 		container.SecurityContext = UpsertSecurityContext(securityContext, targetInfo.RuntimeSettings.Container.SecurityContext)
@@ -359,16 +360,16 @@ func NewVolumeSnapshotterJob(bs *api_v1beta1.BackupSession, backupTarget *api_v1
 	return jobTemplate, nil
 }
 
-func NewVolumeRestorerJob(invoker apis.RestoreInvoker, index int, image docker.Docker) (*core.PodTemplateSpec, error) {
-	targetInfo := invoker.TargetsInfo[index]
+func NewVolumeRestorerJob(inv invoker.RestoreInvoker, index int, image docker.Docker) (*core.PodTemplateSpec, error) {
+	targetInfo := inv.TargetsInfo[index]
 
 	container := core.Container{
 		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore-vs",
-			"--invoker-kind=" + invoker.TypeMeta.Kind,
-			"--invoker-name=" + invoker.ObjectMeta.Name,
+			"--invoker-kind=" + inv.TypeMeta.Kind,
+			"--invoker-name=" + inv.ObjectMeta.Name,
 			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--metrics-enabled=true",

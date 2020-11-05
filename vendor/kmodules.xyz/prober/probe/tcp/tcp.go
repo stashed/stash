@@ -23,7 +23,7 @@ import (
 
 	api "kmodules.xyz/prober/api"
 
-	"github.com/appscode/go/log"
+	"gomodules.xyz/x/log"
 )
 
 // New creates Prober.

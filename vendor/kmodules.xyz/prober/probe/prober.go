@@ -32,7 +32,7 @@ import (
 	httpprobe "kmodules.xyz/prober/probe/http"
 	tcpprobe "kmodules.xyz/prober/probe/tcp"
 
-	"github.com/appscode/go/log"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -24,9 +24,9 @@ import (
 
 	"stash.appscode.dev/stash/pkg/cmds/server"
 
-	"github.com/appscode/go/flags"
-	"github.com/appscode/go/log"
-	logs "github.com/appscode/go/log/golog"
+	"gomodules.xyz/x/flags"
+	"gomodules.xyz/x/log"
+	logs "gomodules.xyz/x/log/golog"
 	"k8s.io/client-go/util/homedir"
 )
 

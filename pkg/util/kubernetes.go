@@ -27,9 +27,9 @@ import (
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	"github.com/appscode/go/log"
-	"github.com/appscode/go/types"
 	snapshot_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
+	"gomodules.xyz/pointer"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -393,7 +393,7 @@ func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, 
 func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 		return false, nil
 	})
@@ -411,7 +411,7 @@ func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.Object
 func WaitUntilReplicaSetReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 		return false, nil
 	})
@@ -420,7 +420,7 @@ func WaitUntilReplicaSetReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 
 		return false, nil
@@ -430,7 +430,7 @@ func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := kubeClient.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
 		return false, nil
 	})

@@ -19,15 +19,15 @@ package cmds
 import (
 	"path/filepath"
 
-	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/flags"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/x/flags"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
@@ -64,12 +64,12 @@ func NewCmdRestorePVC() *cobra.Command {
 			opt.k8sClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
 
-			invoker, err := apis.ExtractRestoreInvokerInfo(opt.k8sClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+			inv, err := invoker.ExtractRestoreInvokerInfo(opt.k8sClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range invoker.TargetsInfo {
+			for _, targetInfo := range inv.TargetsInfo {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
 
 					opt.restoreOpt.Host, err = util.GetHostName(targetInfo.Target)

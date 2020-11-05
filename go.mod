@@ -5,10 +5,8 @@ go 1.12
 require (
 	github.com/Azure/azure-sdk-for-go v43.0.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest/to v0.3.1-0.20191028180845-3492b2aff503 // indirect
-	github.com/appscode/go v0.0.0-20200928211031-cc0c23082d91
-	github.com/aws/aws-sdk-go v1.31.9 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
+	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -22,16 +20,17 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b // indirect
 	github.com/smartystreets/assertions v1.0.1 // indirect
-	github.com/spf13/afero v1.2.2
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.3.0
-	go.bytebuilders.dev/license-verifier/kubernetes v0.3.0
-	go.opencensus.io v0.22.2 // indirect
-	gomodules.xyz/cert v1.0.3
+	go.bytebuilders.dev/license-verifier v0.4.1
+	go.bytebuilders.dev/license-verifier/kubernetes v0.4.1
+	gomodules.xyz/blobfs v0.1.4
+	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/envsubst v0.1.0
+	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
+	gomodules.xyz/runtime v0.0.0-20201104200926-d838b09dda8b
 	gomodules.xyz/stow v0.2.4
-	google.golang.org/api v0.26.0 // indirect
+	gomodules.xyz/x v0.0.0-20201105065653-91c568df6331
 	gopkg.in/ini.v1 v1.51.0
 	k8s.io/api v0.18.9
 	k8s.io/apiextensions-apiserver v0.18.9
@@ -40,15 +39,15 @@ require (
 	k8s.io/client-go v0.18.9
 	k8s.io/kube-aggregator v0.18.9
 	k8s.io/kubernetes v1.18.9
-	kmodules.xyz/client-go v0.0.0-20201027113349-01a6d453d836
-	kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72
-	kmodules.xyz/custom-resources v0.0.0-20201008012351-6d8090f759d4
-	kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41
-	kmodules.xyz/offshoot-api v0.0.0-20201027212804-f5e6dc573558
-	kmodules.xyz/openshift v0.0.0-20200922211657-1ece16d36c18
-	kmodules.xyz/prober v0.0.0-20200922212142-743a6514664e
-	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
-	stash.appscode.dev/apimachinery v0.11.5
+	kmodules.xyz/client-go v0.0.0-20201105071625-0b277310b9b8
+	kmodules.xyz/constants v0.0.0-20200923054614-6b87dbbae4d6
+	kmodules.xyz/custom-resources v0.0.0-20201105075444-3c6af51b4f79
+	kmodules.xyz/objectstore-api v0.0.0-20201105133858-cbb2af88d50a
+	kmodules.xyz/offshoot-api v0.0.0-20201105074700-8675f5f686f2
+	kmodules.xyz/openshift v0.0.0-20201105073146-0da509a7d39f
+	kmodules.xyz/prober v0.0.0-20201105074402-a243b3a27fd8
+	kmodules.xyz/webhook-runtime v0.0.0-20201105073856-2dc7382b88c6
+	stash.appscode.dev/apimachinery v0.11.6-0.20201105125158-b51d7c6a387c
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

@@ -26,8 +26,8 @@ import (
 	stash_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1"
 	stash_listers_v1beta1 "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 
-	"github.com/appscode/go/log"
 	"github.com/golang/glog"
+	"gomodules.xyz/x/log"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"

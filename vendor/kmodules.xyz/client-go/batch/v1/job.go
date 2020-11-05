@@ -19,9 +19,9 @@ package v1
 import (
 	"context"
 
-	"github.com/appscode/go/types"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	"gomodules.xyz/pointer"
 	batch "k8s.io/api/batch/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -111,7 +111,7 @@ func WaitUntilJobCompletion(ctx context.Context, c kubernetes.Interface, meta me
 			return false, nil
 		}
 
-		if job.Status.Succeeded > 0 || job.Status.Failed > types.Int32(job.Spec.BackoffLimit) {
+		if job.Status.Succeeded > 0 || job.Status.Failed > pointer.Int32(job.Spec.BackoffLimit) {
 			return true, nil
 		}
 		return false, nil

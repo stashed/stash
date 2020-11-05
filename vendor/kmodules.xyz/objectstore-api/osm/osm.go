@@ -31,8 +31,6 @@ import (
 	osconst "kmodules.xyz/constants/openstack"
 	api "kmodules.xyz/objectstore-api/api/v1"
 
-	stringz "github.com/appscode/go/strings"
-	"github.com/appscode/go/types"
 	otx "github.com/appscode/osm/context"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -40,17 +38,19 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	_s3 "github.com/aws/aws-sdk-go/service/s3"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"gomodules.xyz/pointer"
 	"gomodules.xyz/stow"
 	"gomodules.xyz/stow/azure"
 	gcs "gomodules.xyz/stow/google"
 	"gomodules.xyz/stow/local"
 	"gomodules.xyz/stow/s3"
 	"gomodules.xyz/stow/swift"
+	stringz "gomodules.xyz/x/strings"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -228,12 +228,12 @@ func NewOSMContext(client kubernetes.Interface, spec api.Backend, namespace stri
 			}
 			svc := _s3.New(sess)
 			out, err := svc.GetBucketLocation(&_s3.GetBucketLocationInput{
-				Bucket: types.StringP(spec.S3.Bucket),
+				Bucket: pointer.StringP(spec.S3.Bucket),
 			})
 			if err != nil {
 				return nil, err
 			}
-			nc.Config[s3.ConfigRegion] = stringz.Val(types.String(out.LocationConstraint), "us-east-1")
+			nc.Config[s3.ConfigRegion] = stringz.Val(pointer.String(out.LocationConstraint), "us-east-1")
 		} else {
 			nc.Config[s3.ConfigEndpoint] = spec.S3.Endpoint
 			u, err := url.Parse(spec.S3.Endpoint)

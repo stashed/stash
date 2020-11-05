@@ -24,8 +24,8 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/x/crypto/rand"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

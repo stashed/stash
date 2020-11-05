@@ -28,9 +28,9 @@ import (
 	"stash.appscode.dev/stash/pkg/scale"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
-	v "github.com/appscode/go/version"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/x/log"
+	v "gomodules.xyz/x/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"

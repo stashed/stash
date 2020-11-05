@@ -22,9 +22,9 @@ import (
 
 	core_util "kmodules.xyz/client-go/core/v1"
 
-	. "github.com/appscode/go/types"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	"gomodules.xyz/pointer"
 	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,7 +115,7 @@ func IsDeploymentReady(obj *apps.Deployment) bool {
 func DeploymentsAreReady(items []*apps.Deployment) (bool, string) {
 	for _, sts := range items {
 		if !IsDeploymentReady(sts) {
-			return false, fmt.Sprintf("All desired replicas are not ready. For Deployment: %s/%s desired replicas: %d, ready replicas: %d.", sts.Namespace, sts.Name, Int32(sts.Spec.Replicas), sts.Status.ReadyReplicas)
+			return false, fmt.Sprintf("All desired replicas are not ready. For Deployment: %s/%s desired replicas: %d, ready replicas: %d.", sts.Namespace, sts.Name, pointer.Int32(sts.Spec.Replicas), sts.Status.ReadyReplicas)
 		}
 	}
 	return true, "All desired replicas are ready."

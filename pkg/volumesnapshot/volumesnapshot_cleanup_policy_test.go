@@ -25,10 +25,10 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	"github.com/appscode/go/strings"
-	type_util "github.com/appscode/go/types"
 	crdv1 "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
 	vsfake "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned/fake"
+	"gomodules.xyz/pointer"
+	"gomodules.xyz/x/strings"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -196,14 +196,14 @@ func newSnapshot(snapMeta snapInfo) (*crdv1.VolumeSnapshot, error) {
 			CreationTimestamp: metav1.Time{Time: creationTimestamp},
 		},
 		Spec: crdv1.VolumeSnapshotSpec{
-			VolumeSnapshotClassName: type_util.StringP("standard"),
+			VolumeSnapshotClassName: pointer.StringP("standard"),
 			Source: crdv1.VolumeSnapshotSource{
 				PersistentVolumeClaimName: &snapMeta.pvcName,
 				VolumeSnapshotContentName: &snapshotContentName,
 			},
 		},
 		Status: &crdv1.VolumeSnapshotStatus{
-			ReadyToUse: type_util.TrueP(),
+			ReadyToUse: pointer.TrueP(),
 			Error:      nil,
 		},
 	}, nil

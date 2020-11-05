@@ -24,17 +24,18 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	apiAlpha "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/util"
 
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/pushgateway"
 )
 
-func (c *StashController) inputsForBackupInvoker(invoker apis.Invoker, targetInfo apis.TargetInfo) (map[string]string, error) {
+func (c *StashController) inputsForBackupInvoker(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) (map[string]string, error) {
 	// get inputs for target
 	inputs := c.inputsForBackupTarget(targetInfo.Target)
 	// append inputs for RetentionPolicy
-	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(invoker.RetentionPolicy))
+	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(inv.RetentionPolicy))
 
 	// get host name for target
 	host, err := util.GetHostName(targetInfo.Target)
@@ -44,8 +45,8 @@ func (c *StashController) inputsForBackupInvoker(invoker apis.Invoker, targetInf
 	inputs[apis.Hostname] = host
 
 	// invoker information
-	inputs[apis.InvokerKind] = invoker.TypeMeta.Kind
-	inputs[apis.InvokerName] = invoker.ObjectMeta.Name
+	inputs[apis.InvokerKind] = inv.TypeMeta.Kind
+	inputs[apis.InvokerName] = inv.ObjectMeta.Name
 
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!targetInfo.TempDir.DisableCaching)
@@ -59,14 +60,14 @@ func (c *StashController) inputsForBackupInvoker(invoker apis.Invoker, targetInf
 	}
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics(invoker.ObjectMeta.Name)
+	metricInputs := c.inputForMetrics(inv.ObjectMeta.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil
 }
 
-func (c *StashController) inputsForRestoreInvoker(invoker apis.RestoreInvoker, index int) map[string]string {
-	targetInfo := invoker.TargetsInfo[index]
+func (c *StashController) inputsForRestoreInvoker(inv invoker.RestoreInvoker, index int) map[string]string {
+	targetInfo := inv.TargetsInfo[index]
 	// get inputs for target
 	inputs := c.inputsForRestoreTarget(targetInfo.Target)
 
@@ -80,8 +81,8 @@ func (c *StashController) inputsForRestoreInvoker(invoker apis.RestoreInvoker, i
 	inputs[apis.ExcludePatterns] = strings.Join(restoreOptions.Exclude, ",")
 
 	// invoker information
-	inputs[apis.InvokerKind] = invoker.TypeMeta.Kind
-	inputs[apis.InvokerName] = invoker.ObjectMeta.Name
+	inputs[apis.InvokerKind] = inv.TypeMeta.Kind
+	inputs[apis.InvokerName] = inv.ObjectMeta.Name
 
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!targetInfo.TempDir.DisableCaching)
@@ -102,7 +103,7 @@ func (c *StashController) inputsForRestoreInvoker(invoker apis.RestoreInvoker, i
 	}
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics(invoker.ObjectMeta.Name)
+	metricInputs := c.inputForMetrics(inv.ObjectMeta.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs

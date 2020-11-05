@@ -25,12 +25,13 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
+	"gomodules.xyz/x/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
@@ -67,13 +68,13 @@ type Options struct {
 	RestoreModel string
 }
 
-func (opt *Options) Restore(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) (*restic.RestoreOutput, error) {
+func (opt *Options) Restore(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
 
 	if targetInfo.Target == nil {
 		return nil, fmt.Errorf("no restore target has specified")
 	}
 
-	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
+	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -101,14 +102,14 @@ func (opt *Options) Restore(invoker apis.RestoreInvoker, targetInfo apis.Restore
 
 	// if we are restoring using job then there no need to lock the repository
 	if opt.RestoreModel == RestoreModelJob {
-		return opt.runRestore(invoker, targetInfo)
+		return opt.runRestore(inv, targetInfo)
 	} else {
 		// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock
-		return nil, opt.electRestoreLeader(invoker, targetInfo)
+		return nil, opt.electRestoreLeader(inv, targetInfo)
 	}
 }
 
-func (opt *Options) electRestoreLeader(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) error {
+func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
 
 	log.Infoln("Attempting to elect restore leader")
 
@@ -119,7 +120,7 @@ func (opt *Options) electRestoreLeader(invoker apis.RestoreInvoker, targetInfo a
 
 	resLock, err := resourcelock.New(
 		resourcelock.ConfigMapsResourceLock,
-		invoker.ObjectMeta.Namespace,
+		inv.ObjectMeta.Namespace,
 		util.GetRestoreConfigmapLockName(targetInfo.Target.Ref),
 		opt.KubeClient.CoreV1(),
 		opt.KubeClient.CoordinationV1(),
@@ -144,9 +145,9 @@ func (opt *Options) electRestoreLeader(invoker apis.RestoreInvoker, targetInfo a
 			OnStartedLeading: func(ctx context.Context) {
 				log.Infoln("Got leadership, preparing for restore")
 				// run restore process
-				restoreOutput, restoreErr := opt.runRestore(invoker, targetInfo)
+				restoreOutput, restoreErr := opt.runRestore(inv, targetInfo)
 				if restoreErr != nil {
-					e2 := opt.HandleRestoreFailure(invoker, targetInfo, restoreErr)
+					e2 := opt.HandleRestoreFailure(inv, targetInfo, restoreErr)
 					if e2 != nil {
 						restoreErr = errors.NewAggregate([]error{restoreErr, e2})
 					}
@@ -156,7 +157,7 @@ func (opt *Options) electRestoreLeader(invoker apis.RestoreInvoker, targetInfo a
 					log.Fatalf("failed to complete restore. Reason: %v", restoreErr)
 				}
 				if restoreOutput != nil {
-					err = opt.HandleRestoreSuccess(restoreOutput, invoker, targetInfo)
+					err = opt.HandleRestoreSuccess(restoreOutput, inv, targetInfo)
 					if err != nil {
 						cancel()
 						log.Fatalf("failed to complete restore. Reason: %v", err)
@@ -173,14 +174,14 @@ func (opt *Options) electRestoreLeader(invoker apis.RestoreInvoker, targetInfo a
 	return nil
 }
 
-func (opt *Options) runRestore(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) (*restic.RestoreOutput, error) {
+func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
 
 	// if already restored for this host then don't process further
-	if opt.isRestoredForThisHost(invoker, targetInfo, opt.Host) {
+	if opt.isRestoredForThisHost(inv, targetInfo, opt.Host) {
 		log.Infof("Skipping restore for %s %s/%s. Reason: restore already completed for host %q.",
-			invoker.TypeMeta.Kind,
-			invoker.ObjectMeta.Namespace,
-			invoker.ObjectMeta.Name,
+			inv.TypeMeta.Kind,
+			inv.ObjectMeta.Namespace,
+			inv.ObjectMeta.Name,
 			opt.Host,
 		)
 		return nil, nil
@@ -218,12 +219,12 @@ func (opt *Options) runRestore(invoker apis.RestoreInvoker, targetInfo apis.Rest
 	return output, nil
 }
 
-func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput, invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) error {
+func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
 	// write log
 	log.Infof("Restore completed successfully for %s %s/%s",
-		invoker.TypeMeta.Kind,
-		invoker.ObjectMeta.Namespace,
-		invoker.ObjectMeta.Name,
+		inv.TypeMeta.Kind,
+		inv.ObjectMeta.Namespace,
+		inv.ObjectMeta.Name,
 	)
 
 	statusOpt := status.UpdateStatusOptions{
@@ -231,18 +232,18 @@ func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput, invo
 		KubeClient:  c.KubeClient,
 		StashClient: c.StashClient,
 		Namespace:   c.Namespace,
-		Repository:  invoker.Repository,
+		Repository:  inv.Repository,
 		Metrics:     c.Metrics,
 	}
-	return statusOpt.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
+	return statusOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
 }
 
-func (c *Options) HandleRestoreFailure(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo, restoreErr error) error {
+func (c *Options) HandleRestoreFailure(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, restoreErr error) error {
 	// write log
 	log.Errorf("Failed to complete restore process for %s %s/%s. Reason: %v",
-		invoker.TypeMeta.Kind,
-		invoker.ObjectMeta.Namespace,
-		invoker.ObjectMeta.Name,
+		inv.TypeMeta.Kind,
+		inv.ObjectMeta.Namespace,
+		inv.ObjectMeta.Name,
 		restoreErr,
 	)
 
@@ -264,20 +265,20 @@ func (c *Options) HandleRestoreFailure(invoker apis.RestoreInvoker, targetInfo a
 		KubeClient:  c.KubeClient,
 		StashClient: c.StashClient,
 		Namespace:   c.Namespace,
-		Repository:  invoker.Repository,
+		Repository:  inv.Repository,
 		Metrics:     c.Metrics,
 	}
-	return statusOpt.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
+	return statusOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
 }
 
-func (opt *Options) isRestoredForThisHost(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo, host string) bool {
+func (opt *Options) isRestoredForThisHost(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, host string) bool {
 
 	// if overall invoker Phase is "Succeeded" then restore has been complete for this host
-	if invoker.Status.Phase == api_v1beta1.RestoreSucceeded {
+	if inv.Status.Phase == api_v1beta1.RestoreSucceeded {
 		return true
 	}
-	for _, member := range invoker.Status.TargetStatus {
-		if apis.TargetMatched(member.Ref, targetInfo.Target.Ref) {
+	for _, member := range inv.Status.TargetStatus {
+		if invoker.TargetMatched(member.Ref, targetInfo.Target.Ref) {
 			// if restore invoker has entry for this host in status field and it is succeeded, then restore has been completed for this host
 			for _, hostStat := range member.Stats {
 				if hostStat.Hostname == host && hostStat.Phase == api_v1beta1.HostRestoreSucceeded {
