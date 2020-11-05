@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -83,6 +84,7 @@ func NewCmdRunHook() *cobra.Command {
 			opt.kubeClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.appClient = appcatalog_cs.NewForConfigOrDie(config)
+			opt.metricOpts.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(opt.invokerKind), opt.namespace, opt.invokerName)
 
 			err = opt.executeHook()
 			if err != nil {
@@ -111,7 +113,6 @@ func NewCmdRunHook() *cobra.Command {
 	cmd.Flags().BoolVar(&opt.metricOpts.Enabled, "metrics-enabled", opt.metricOpts.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metricOpts.PushgatewayURL, "metrics-pushgateway-url", opt.metricOpts.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
 	cmd.Flags().StringSliceVar(&opt.metricOpts.Labels, "metrics-labels", opt.metricOpts.Labels, "Labels to apply in exported metrics")
-	cmd.Flags().StringVar(&opt.metricOpts.JobName, "prom-job-name", StashDefaultMetricJob, "Metrics job name")
 	cmd.Flags().StringVar(&opt.outputDir, "output-dir", opt.outputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
 	return cmd
 }

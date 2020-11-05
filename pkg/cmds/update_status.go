@@ -17,6 +17,9 @@ limitations under the License.
 package cmds
 
 import (
+	"fmt"
+	"strings"
+
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
@@ -25,10 +28,6 @@ import (
 	"gomodules.xyz/x/flags"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-)
-
-const (
-	StashDefaultMetricJob = "stash-prom-metrics"
 )
 
 func NewCmdUpdateStatus() *cobra.Command {
@@ -61,6 +60,8 @@ func NewCmdUpdateStatus() *cobra.Command {
 			}
 
 			opt.Config = config
+			opt.Metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(opt.InvokerKind), opt.Namespace, opt.InvokerName)
+
 			if opt.BackupSession != "" {
 				return opt.UpdateBackupStatusFromFile()
 			} else {
@@ -93,7 +94,6 @@ func NewCmdUpdateStatus() *cobra.Command {
 	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.Metrics.PushgatewayURL, "metrics-pushgateway-url", opt.Metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
 	cmd.Flags().StringSliceVar(&opt.Metrics.Labels, "metrics-labels", opt.Metrics.Labels, "Labels to apply in exported metrics")
-	cmd.Flags().StringVar(&opt.Metrics.JobName, "prom-job-name", StashDefaultMetricJob, "Metrics job name")
 
 	return cmd
 }

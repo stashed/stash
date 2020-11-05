@@ -17,6 +17,8 @@ limitations under the License.
 package cmds
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -70,7 +72,7 @@ func NewCmdRunBackup() *cobra.Command {
 				stashinformers.WithTweakListOptions(nil),
 			)
 			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
-			opt.Metrics.JobName = opt.InvokerName
+			opt.Metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(opt.InvokerKind), opt.Namespace, opt.InvokerName)
 
 			inv, err := invoker.ExtractBackupInvokerInfo(opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 			if err != nil {

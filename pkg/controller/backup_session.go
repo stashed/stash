@@ -639,7 +639,7 @@ func (c *StashController) setBackupSessionSucceeded(inv invoker.BackupInvoker, b
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        apis.PromJobStashBackup,
+		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name),
 	}
 
 	// send backup session related metrics
@@ -691,7 +691,7 @@ func (c *StashController) setBackupSessionFailed(inv invoker.BackupInvoker, back
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        apis.PromJobStashBackup,
+		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name),
 	}
 
 	// send backup session related metrics

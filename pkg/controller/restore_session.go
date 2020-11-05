@@ -870,7 +870,7 @@ func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) e
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        apis.PromJobStashRestore,
+		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name),
 	}
 	// send target specific metrics
 	for _, target := range inv.Status.TargetStatus {
@@ -918,7 +918,7 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        apis.PromJobStashRestore,
+		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name),
 	}
 	// send target specific metrics
 	for _, target := range inv.Status.TargetStatus {
@@ -967,7 +967,7 @@ func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, res
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        apis.PromJobStashRestore,
+		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name),
 	}
 	// send target specific metrics
 	for _, target := range inv.Status.TargetStatus {

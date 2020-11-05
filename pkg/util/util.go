@@ -486,7 +486,6 @@ func HookExecutorContainer(name string, shiblings []core.Container, invokerKind,
 			"--output-dir=${outputDir:=}",
 			"--metrics-enabled=true",
 			fmt.Sprintf("--metrics-pushgateway-url=%s", pushgateway.URL()),
-			"--prom-job-name=${PROMETHEUS_JOB_NAME:=}",
 		},
 		Env: []core.EnvVar{
 			{
