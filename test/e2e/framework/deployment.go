@@ -22,10 +22,10 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 
-	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
+	"gomodules.xyz/x/crypto/rand"
 	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +57,7 @@ func (fi *Invocation) Deployment(name, pvcName, volName string) apps.Deployment 
 			Labels:    labels,
 		},
 		Spec: apps.DeploymentSpec{
-			Replicas: types.Int32P(1),
+			Replicas: pointer.Int32P(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},

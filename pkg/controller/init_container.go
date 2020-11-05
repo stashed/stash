@@ -24,12 +24,13 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
-	stringz "github.com/appscode/go/strings"
+	"gomodules.xyz/x/log"
+	stringz "gomodules.xyz/x/strings"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -37,7 +38,7 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo, caller string) error {
+func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, caller string) error {
 	// if RBAC is enabled then ensure ServiceAccount and respective ClusterRole and RoleBinding
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 
@@ -47,7 +48,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, invoker a
 		if err != nil {
 			return err
 		}
-		err = stash_rbac.EnsureRestoreInitContainerRBAC(c.kubeClient, owner, invoker.ObjectMeta.Namespace, sa, invoker.Labels)
+		err = stash_rbac.EnsureRestoreInitContainerRBAC(c.kubeClient, owner, inv.ObjectMeta.Namespace, sa, inv.Labels)
 		if err != nil {
 			return err
 		}
@@ -56,16 +57,16 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, invoker a
 	// if the Stash is using a private registry, then ensure the image pull secrets
 	if c.ImagePullSecrets != nil {
 		var imagePullSecrets []core.LocalObjectReference
-		imagePullSecrets, err := c.ensureImagePullSecrets(invoker.ObjectMeta, invoker.OwnerRef)
+		imagePullSecrets, err := c.ensureImagePullSecrets(inv.ObjectMeta, inv.OwnerRef)
 		if err != nil {
 			return err
 		}
 		w.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 	}
 
-	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
+	repository, err := c.stashClient.StashV1alpha1().Repositories(inv.ObjectMeta.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("unable to get Repository %s/%s: Reason: %v", invoker.ObjectMeta.Namespace, invoker.Repository, err)
+		log.Errorf("unable to get Repository %s/%s: Reason: %v", inv.ObjectMeta.Namespace, inv.Repository, err)
 		return err
 	}
 
@@ -85,7 +86,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, invoker a
 	}
 
 	// mark pods with restore Invoker spec hash. used to force restart pods for rc/rs
-	w.Spec.Template.Annotations[api_v1beta1.AppliedRestoreInvokerSpecHash] = invoker.Hash
+	w.Spec.Template.Annotations[api_v1beta1.AppliedRestoreInvokerSpecHash] = inv.Hash
 
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
@@ -94,7 +95,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, invoker a
 	}
 
 	// insert restore init container
-	initContainers := []core.Container{util.NewRestoreInitContainer(invoker, targetInfo, repository, image)}
+	initContainers := []core.Container{util.NewRestoreInitContainer(inv, targetInfo, repository, image)}
 	for i := range w.Spec.Template.Spec.InitContainers {
 		initContainers = core_util.UpsertContainer(initContainers, w.Spec.Template.Spec.InitContainers[i])
 	}
@@ -111,8 +112,8 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, invoker a
 	if w.Annotations == nil {
 		w.Annotations = make(map[string]string)
 	}
-	w.Annotations[api_v1beta1.KeyLastAppliedRestoreInvoker] = string(invoker.ObjectJson)
-	w.Annotations[api_v1beta1.KeyLastAppliedRestoreInvokerKind] = invoker.TypeMeta.Kind
+	w.Annotations[api_v1beta1.KeyLastAppliedRestoreInvoker] = string(inv.ObjectJson)
+	w.Annotations[api_v1beta1.KeyLastAppliedRestoreInvokerKind] = inv.TypeMeta.Kind
 
 	return nil
 }
@@ -141,11 +142,11 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) {
 	}
 }
 
-func (c *StashController) handleInitContainerInjectionFailure(w *wapi.Workload, invoker apis.RestoreInvoker, ref api_v1beta1.TargetRef, err error) error {
+func (c *StashController) handleInitContainerInjectionFailure(w *wapi.Workload, inv invoker.RestoreInvoker, ref api_v1beta1.TargetRef, err error) error {
 	log.Warningf("Failed to inject stash init-container into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
 
 	// Set "StashInitContainerInjected" condition to "False"
-	cerr := conditions.SetInitContainerInjectedConditionToFalse(invoker, ref, err)
+	cerr := conditions.SetInitContainerInjectedConditionToFalse(inv, ref, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -159,11 +160,11 @@ func (c *StashController) handleInitContainerInjectionFailure(w *wapi.Workload, 
 	return errors.NewAggregate([]error{err2, cerr})
 }
 
-func (c *StashController) handleInitContainerInjectionSuccess(w *wapi.Workload, invoker apis.RestoreInvoker, ref api_v1beta1.TargetRef) error {
+func (c *StashController) handleInitContainerInjectionSuccess(w *wapi.Workload, inv invoker.RestoreInvoker, ref api_v1beta1.TargetRef) error {
 	log.Infof("Successfully injected stash init-container into %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// Set "StashInitContainerInjected" condition to "True"
-	cerr := conditions.SetInitContainerInjectedConditionToTrue(invoker, ref)
+	cerr := conditions.SetInitContainerInjectedConditionToTrue(inv, ref)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(

@@ -25,9 +25,9 @@ import (
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,7 +97,7 @@ var _ = Describe("Clone", func() {
 								AccessModes: []core.PersistentVolumeAccessMode{
 									core.ReadWriteOnce,
 								},
-								StorageClassName: types.StringP(f.StorageClass),
+								StorageClassName: pointer.StringP(f.StorageClass),
 								Resources: core.ResourceRequirements{
 									Requests: core.ResourceList{
 										core.ResourceStorage: resource.MustParse("10Mi"),
@@ -169,7 +169,7 @@ var _ = Describe("Clone", func() {
 				By("Restoring the backed up data into PVC")
 				restoredPVCNamePrefix := fmt.Sprintf("%s-%s-%s", framework.RestoredVolume, framework.RestoredStatefulSet, f.App())
 				restoreSession, err := f.SetupRestoreProcess(metav1.ObjectMeta{}, repo, apis.KindPersistentVolumeClaim, restoredPVCNamePrefix, func(restore *v1beta1.RestoreSession) {
-					restore.Spec.Target.Replicas = types.Int32P(3)
+					restore.Spec.Target.Replicas = pointer.Int32P(3)
 					restore.Spec.Target.VolumeClaimTemplates = []ofst.PersistentVolumeClaim{
 						{
 							PartialObjectMeta: ofst.PartialObjectMeta{
@@ -180,7 +180,7 @@ var _ = Describe("Clone", func() {
 								AccessModes: []core.PersistentVolumeAccessMode{
 									core.ReadWriteOnce,
 								},
-								StorageClassName: types.StringP(f.StorageClass),
+								StorageClassName: pointer.StringP(f.StorageClass),
 								Resources: core.ResourceRequirements{
 									Requests: core.ResourceList{
 										core.ResourceStorage: resource.MustParse("10Mi"),

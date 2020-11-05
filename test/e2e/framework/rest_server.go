@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/cert"
+	"gomodules.xyz/pointer"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -129,7 +129,7 @@ func (fi *Invocation) PVCForRestServer() core.PersistentVolumeClaim {
 					core.ResourceName(core.ResourceStorage): resource.MustParse("2Gi"),
 				},
 			},
-			StorageClassName: types.StringP(StandardStorageClass),
+			StorageClassName: pointer.StringP(StandardStorageClass),
 		},
 	}
 }

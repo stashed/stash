@@ -26,16 +26,17 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
-	stringz "github.com/appscode/go/strings"
-	errors2 "github.com/appscode/go/util/errors"
+	"gomodules.xyz/x/log"
+	stringz "gomodules.xyz/x/strings"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd/api"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -152,7 +153,7 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 	}
 }
 
-func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Invoker, targetInfo apis.TargetInfo, caller string) error {
+func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, caller string) error {
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	owner, err := ownerWorkload(w)
 	if err != nil {
@@ -161,7 +162,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 
 	// Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != apis.CallerWebhook {
-		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, invoker.ObjectMeta.Namespace, sa, invoker.Labels)
+		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, inv.ObjectMeta.Namespace, sa, inv.Labels)
 		if err != nil {
 			return err
 		}
@@ -170,16 +171,16 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 	// if the Stash is using a private registry, then ensure the image pull secrets
 	if c.ImagePullSecrets != nil {
 		var imagePullSecrets []core.LocalObjectReference
-		imagePullSecrets, err = c.ensureImagePullSecrets(invoker.ObjectMeta, invoker.OwnerRef)
+		imagePullSecrets, err = c.ensureImagePullSecrets(inv.ObjectMeta, inv.OwnerRef)
 		if err != nil {
 			return err
 		}
 		w.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 	}
 
-	repository, err := c.stashClient.StashV1alpha1().Repositories(invoker.ObjectMeta.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
+	repository, err := c.stashClient.StashV1alpha1().Repositories(inv.ObjectMeta.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("unable to get repository %s/%s: Reason: %v", invoker.ObjectMeta.Namespace, invoker.Repository, err)
+		log.Errorf("unable to get repository %s/%s: Reason: %v", inv.ObjectMeta.Namespace, inv.Repository, err)
 		return err
 	}
 
@@ -197,7 +198,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 		w.Spec.Template.Annotations = map[string]string{}
 	}
 	// mark pods with BackupConfiguration spec hash. used to force restart pods for rc/rs
-	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupInvokerSpecHash] = invoker.Hash
+	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupInvokerSpecHash] = inv.Hash
 
 	if targetInfo.Target == nil {
 		return fmt.Errorf("target is nil")
@@ -210,7 +211,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 	}
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.Containers,
-		util.NewBackupSidecarContainer(invoker, targetInfo, &repository.Spec.Backend, image),
+		util.NewBackupSidecarContainer(inv, targetInfo, &repository.Spec.Backend, image),
 	)
 
 	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, targetInfo.TempDir)
@@ -220,8 +221,8 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, invoker apis.Inv
 	if w.Annotations == nil {
 		w.Annotations = make(map[string]string)
 	}
-	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvoker] = string(invoker.ObjectJson)
-	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvokerKind] = invoker.ObjectRef.Kind
+	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvoker] = string(inv.ObjectJson)
+	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvokerKind] = inv.ObjectRef.Kind
 
 	return nil
 }
@@ -326,11 +327,11 @@ func isPodOwnedByWorkload(w *wapi.Workload, pod core.Pod) bool {
 	return false
 }
 
-func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, invoker apis.Invoker, tref api_v1beta1.TargetRef, err error) error {
+func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, inv invoker.BackupInvoker, tref api_v1beta1.TargetRef, err error) error {
 	log.Warningf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
 
 	// Failed to inject stash sidecar. So, set "StashSidecarInjected" condition to "False".
-	cerr := conditions.SetSidecarInjectedConditionToFalse(invoker, tref, err)
+	cerr := conditions.SetSidecarInjectedConditionToFalse(inv, tref, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -341,14 +342,14 @@ func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, invoke
 		eventer.EventReasonSidecarInjectionFailed,
 		fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err),
 	)
-	return errors2.NewAggregate([]error{err2, cerr})
+	return utilerrors.NewAggregate([]error{err2, cerr})
 }
 
-func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload, invoker apis.Invoker, tref api_v1beta1.TargetRef) error {
+func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload, inv invoker.BackupInvoker, tref api_v1beta1.TargetRef) error {
 	log.Infof("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// Set "StashSidecarInjected" condition to "True"
-	cerr := conditions.SetSidecarInjectedConditionToTrue(invoker, tref)
+	cerr := conditions.SetSidecarInjectedConditionToTrue(inv, tref)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -359,7 +360,7 @@ func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload, invoke
 		eventer.EventReasonSidecarInjectionSucceeded,
 		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name),
 	)
-	return errors2.NewAggregate([]error{err2, cerr})
+	return utilerrors.NewAggregate([]error{err2, cerr})
 }
 
 func (c *StashController) handleSidecarDeletionSuccess(w *wapi.Workload) error {

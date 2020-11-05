@@ -21,7 +21,7 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
-	"github.com/appscode/go/encoding/json/types"
+	"gomodules.xyz/x/encoding/json/types"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

@@ -23,9 +23,9 @@ import (
 
 	"kmodules.xyz/client-go/tools/analytics"
 
-	"github.com/appscode/go/log/golog"
 	ga "github.com/jpillora/go-ogle-analytics"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/x/log/golog"
 )
 
 const (

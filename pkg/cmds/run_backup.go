@@ -19,10 +19,10 @@ package cmds
 import (
 	"time"
 
-	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/backup"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -72,12 +72,12 @@ func NewCmdRunBackup() *cobra.Command {
 			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
 			opt.Metrics.JobName = opt.InvokerName
 
-			invoker, err := apis.ExtractBackupInvokerInfo(opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
+			inv, err := invoker.ExtractBackupInvokerInfo(opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range invoker.TargetsInfo {
+			for _, targetInfo := range inv.TargetsInfo {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.BackupTargetKind, opt.BackupTargetName) {
 
 					opt.Host, err = util.GetHostName(targetInfo.Target)
@@ -86,9 +86,9 @@ func NewCmdRunBackup() *cobra.Command {
 					}
 
 					// run backup
-					err = opt.RunBackup(targetInfo, invoker.ObjectRef)
+					err = opt.RunBackup(targetInfo, inv.ObjectRef)
 					if err != nil {
-						return opt.HandleBackupSetupFailure(invoker.ObjectRef, err)
+						return opt.HandleBackupSetupFailure(inv.ObjectRef, err)
 					}
 				}
 			}

@@ -105,15 +105,20 @@ func UpdateBackupConfigurationStatus(
 	ctx context.Context,
 	c cs.StashV1beta1Interface,
 	meta metav1.ObjectMeta,
-	transform func(*api.BackupConfigurationStatus) *api.BackupConfigurationStatus,
+	transform func(*api.BackupConfigurationStatus) (types.UID, *api.BackupConfigurationStatus),
 	opts metav1.UpdateOptions,
 ) (result *api.BackupConfiguration, err error) {
 	apply := func(x *api.BackupConfiguration) *api.BackupConfiguration {
+		uid, updatedStatus := transform(x.Status.DeepCopy())
+		// Ignore status update when uid does not match
+		if uid != "" && uid != x.UID {
+			return x
+		}
 		out := &api.BackupConfiguration{
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
-			Status:     *transform(x.Status.DeepCopy()),
+			Status:     *updatedStatus,
 		}
 		return out
 	}

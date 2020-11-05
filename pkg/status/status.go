@@ -29,14 +29,16 @@ import (
 	stash_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 	stash_util_v1beta1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/eventer"
 
-	"github.com/appscode/go/log"
-	"github.com/appscode/go/util/errors"
-	"github.com/appscode/go/wait"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -73,15 +75,15 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 		return err
 	}
 	// get backup Invoker
-	invoker, err := apis.ExtractBackupInvokerInfo(o.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
+	inv, err := invoker.ExtractBackupInvokerInfo(o.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
 	if err != nil {
 		return err
 	}
-	for _, targetInfo := range invoker.TargetsInfo {
+	for _, targetInfo := range inv.TargetsInfo {
 		if targetInfo.Target != nil &&
 			targetInfo.Target.Ref.Kind == o.TargetRef.Kind &&
 			targetInfo.Target.Ref.Name == o.TargetRef.Name {
-			return o.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
+			return o.UpdatePostBackupStatus(backupOutput, inv, targetInfo)
 		}
 	}
 	return nil
@@ -95,21 +97,21 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 		return err
 	}
 
-	invoker, err := apis.ExtractRestoreInvokerInfo(o.KubeClient, o.StashClient, o.InvokerKind, o.InvokerName, o.Namespace)
+	inv, err := invoker.ExtractRestoreInvokerInfo(o.KubeClient, o.StashClient, o.InvokerKind, o.InvokerName, o.Namespace)
 	if err != nil {
 		return err
 	}
-	for _, targetInfo := range invoker.TargetsInfo {
+	for _, targetInfo := range inv.TargetsInfo {
 		if targetInfo.Target != nil &&
 			targetInfo.Target.Ref.Kind == o.TargetRef.Kind &&
 			targetInfo.Target.Ref.Name == o.TargetRef.Name {
-			return o.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
+			return o.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
 		}
 	}
 	return nil
 }
 
-func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput, invoker apis.Invoker, targetInfo apis.TargetInfo) error {
+func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput, inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) error {
 	log.Infof("Updating post backup status.......")
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
@@ -123,21 +125,25 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	// If the target has been assigned some post-backup actions, execute them
 	// Only execute the postBackupActions if the backup of current host/hosts has succeeded
 	if backupSucceeded(backupOutput) {
-		err = o.executePostBackupActions(invoker, backupSession, targetInfo.Target.Ref, len(backupOutput.BackupTargetStatus.Stats))
+		err = o.executePostBackupActions(inv, backupSession, targetInfo.Target.Ref, len(backupOutput.BackupTargetStatus.Stats))
 		if err != nil {
 			return err
 		}
 	}
 
 	// add or update entry for each host in BackupSession status + create event
-	backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatus(context.TODO(), o.StashClient.StashV1beta1(), backupSession.ObjectMeta, func(in *v1beta1.BackupSessionStatus) *v1beta1.BackupSessionStatus {
-		for i := range in.Targets {
-			if apis.TargetMatched(in.Targets[i].Ref, targetInfo.Target.Ref) {
-				in.Targets[i].Stats = stash_util_v1beta1.UpsertHost(in.Targets[i].Stats, backupOutput.BackupTargetStatus.Stats...)
+	backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatus(
+		context.TODO(),
+		o.StashClient.StashV1beta1(),
+		backupSession.ObjectMeta,
+		func(in *v1beta1.BackupSessionStatus) (types.UID, *v1beta1.BackupSessionStatus) {
+			for i := range in.Targets {
+				if invoker.TargetMatched(in.Targets[i].Ref, targetInfo.Target.Ref) {
+					in.Targets[i].Stats = stash_util_v1beta1.UpsertHost(in.Targets[i].Stats, backupOutput.BackupTargetStatus.Stats...)
+				}
 			}
-		}
-		return in
-	}, metav1.UpdateOptions{})
+			return backupSession.UID, in
+		}, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -164,9 +170,9 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		)
 		if err != nil {
 			log.Errorf("failed to create event for %s %s/%s. Reason: %v",
-				invoker.TypeMeta.Kind,
-				invoker.ObjectMeta.Namespace,
-				invoker.ObjectMeta.Name,
+				inv.TypeMeta.Kind,
+				inv.ObjectMeta.Namespace,
+				inv.ObjectMeta.Name,
 				err,
 			)
 		}
@@ -174,12 +180,12 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 
 	// if metrics enabled then send backup host specific metrics to the Prometheus pushgateway
 	if o.Metrics.Enabled && targetInfo.Target != nil {
-		return o.Metrics.SendBackupHostMetrics(o.Config, invoker, targetInfo.Target.Ref, backupOutput)
+		return o.Metrics.SendBackupHostMetrics(o.Config, inv, targetInfo.Target.Ref, backupOutput)
 	}
 	return nil
 }
 
-func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.RestoreOutput, invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) error {
+func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.RestoreOutput, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
 	if restoreOutput == nil {
 		return fmt.Errorf("invalid restore output. Restore output must not be nil")
 	}
@@ -187,10 +193,10 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	var err error
 	log.Infof("Updating hosts status for restore target %s %s/%s.",
 		targetInfo.Target.Ref.Kind,
-		invoker.ObjectMeta.Namespace,
+		inv.ObjectMeta.Namespace,
 		targetInfo.Target.Ref.Name,
 	)
-	invoker.Status, err = invoker.UpdateRestoreInvokerStatus(apis.RestoreInvokerStatus{
+	inv.Status, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
 		TargetStatus: []v1beta1.RestoreMemberStatus{
 			{
 				Ref:   targetInfo.Target.Ref,
@@ -213,27 +219,27 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 			eventReason = eventer.EventReasonHostRestoreSucceeded
 			eventMessage = fmt.Sprintf("restore succeeded for host %q", hostStats.Hostname)
 		}
-		err = invoker.CreateEvent(eventType, eventer.EventSourceStatusUpdater, eventReason, eventMessage)
+		err = inv.CreateEvent(eventType, eventer.EventSourceStatusUpdater, eventReason, eventMessage)
 		if err != nil {
 			log.Errorf("failed to create event for %s %s/%s. Reason: %v",
-				invoker.TypeMeta.Kind,
-				invoker.ObjectMeta.Namespace,
-				invoker.ObjectMeta.Name,
+				inv.TypeMeta.Kind,
+				inv.ObjectMeta.Namespace,
+				inv.ObjectMeta.Name,
 				err,
 			)
 		}
 	}
 	// if metrics enabled then send metrics to the Prometheus pushgateway
 	if o.Metrics.Enabled && targetInfo.Target != nil {
-		return o.Metrics.SendRestoreHostMetrics(o.Config, invoker, targetInfo.Target.Ref, restoreOutput)
+		return o.Metrics.SendRestoreHostMetrics(o.Config, inv, targetInfo.Target.Ref, restoreOutput)
 	}
 	return nil
 }
 
-func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef, numCurHosts int) error {
+func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker, backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef, numCurHosts int) error {
 	var repoStats restic.RepositoryStats
 	for _, targetStatus := range backupSession.Status.Targets {
-		if apis.TargetMatched(targetStatus.Ref, curTarget) {
+		if invoker.TargetMatched(targetStatus.Ref, curTarget) {
 			// check if it has any post-backup action assigned to it
 			if len(targetStatus.PostBackupActions) > 0 {
 				// For StatefulSet and DaemonSet, only the last host will run these PostBackupActions
@@ -258,13 +264,13 @@ func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, back
 							w, err := restic.NewResticWrapper(o.SetupOpt)
 							if err != nil {
 								_, condErr := conditions.SetRetentionPolicyAppliedConditionToFalse(o.StashClient, backupSession, err)
-								return errors.NewAggregate([]error{err, condErr})
+								return utilerrors.NewAggregate([]error{err, condErr})
 							}
-							res, err := w.ApplyRetentionPolicies(invoker.RetentionPolicy)
+							res, err := w.ApplyRetentionPolicies(inv.RetentionPolicy)
 							if err != nil {
 								log.Warningf("Failed to apply retention policy. Reason: %s", err.Error())
 								_, condErr := conditions.SetRetentionPolicyAppliedConditionToFalse(o.StashClient, backupSession, err)
-								return errors.NewAggregate([]error{err, condErr})
+								return utilerrors.NewAggregate([]error{err, condErr})
 							}
 							if res != nil {
 								repoStats.SnapshotCount = res.SnapshotCount
@@ -281,13 +287,13 @@ func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, back
 							w, err := restic.NewResticWrapper(o.SetupOpt)
 							if err != nil {
 								_, condErr := conditions.SetRepositoryIntegrityVerifiedConditionToFalse(o.StashClient, backupSession, err)
-								return errors.NewAggregate([]error{err, condErr})
+								return utilerrors.NewAggregate([]error{err, condErr})
 							}
 							res, err := w.VerifyRepositoryIntegrity()
 							if err != nil {
 								log.Warningf("Failed to verify Repository integrity. Reason: %s", err.Error())
 								_, condErr := conditions.SetRepositoryIntegrityVerifiedConditionToFalse(o.StashClient, backupSession, err)
-								return errors.NewAggregate([]error{err, condErr})
+								return utilerrors.NewAggregate([]error{err, condErr})
 							}
 							if res != nil {
 								repoStats.Integrity = res.Integrity
@@ -302,11 +308,11 @@ func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, back
 						// if metrics enabled then send metrics to the Prometheus pushgateway
 						if o.Metrics.Enabled && !kmapi.HasCondition(backupSession.Status.Conditions, apis.RepositoryMetricsPushed) {
 							log.Infoln("Pushing repository metrics...........")
-							err := o.Metrics.SendRepositoryMetrics(o.Config, invoker, repoStats)
+							err := o.Metrics.SendRepositoryMetrics(o.Config, inv, repoStats)
 							if err != nil {
 								log.Warningf("Failed to send Repository metrics. Reason: %s", err.Error())
 								_, condErr := conditions.SetRepositoryMetricsPushedConditionToFalse(o.StashClient, backupSession, err)
-								return errors.NewAggregate([]error{err, condErr})
+								return utilerrors.NewAggregate([]error{err, condErr})
 							}
 							_, err = conditions.SetRepositoryMetricsPushedConditionToTrue(o.StashClient, backupSession)
 							if err != nil {
@@ -320,18 +326,22 @@ func (o UpdateStatusOptions) executePostBackupActions(invoker apis.Invoker, back
 				// now, update the repository status
 				if repoStats.Integrity != nil {
 					log.Infoln("Updating repository status......")
-					repo, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(context.TODO(), invoker.Repository, metav1.GetOptions{})
+					repo, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
 					if err != nil {
 						return err
 					}
-					_, err = stash_util.UpdateRepositoryStatus(context.TODO(), o.StashClient.StashV1alpha1(), repo.ObjectMeta, func(in *v1alpha1.RepositoryStatus) *v1alpha1.RepositoryStatus {
-						in.Integrity = repoStats.Integrity
-						in.SnapshotCount = repoStats.SnapshotCount
-						in.SnapshotsRemovedOnLastCleanup = repoStats.SnapshotsRemovedOnLastCleanup
-						in.TotalSize = repoStats.Size
-						in.LastBackupTime = &backupSession.CreationTimestamp
-						return in
-					}, metav1.UpdateOptions{})
+					_, err = stash_util.UpdateRepositoryStatus(
+						context.TODO(),
+						o.StashClient.StashV1alpha1(),
+						repo.ObjectMeta,
+						func(in *v1alpha1.RepositoryStatus) (types.UID, *v1alpha1.RepositoryStatus) {
+							in.Integrity = repoStats.Integrity
+							in.SnapshotCount = repoStats.SnapshotCount
+							in.SnapshotsRemovedOnLastCleanup = repoStats.SnapshotsRemovedOnLastCleanup
+							in.TotalSize = repoStats.Size
+							in.LastBackupTime = &backupSession.CreationTimestamp
+							return repo.UID, in
+						}, metav1.UpdateOptions{})
 					return err
 				}
 			}
@@ -348,7 +358,7 @@ func (o UpdateStatusOptions) waitUntilOtherHostsCompleted(backupSession *v1beta1
 			return false, err
 		}
 		for _, target := range newBackupSession.Status.Targets {
-			if apis.TargetMatched(target.Ref, curTarget) {
+			if invoker.TargetMatched(target.Ref, curTarget) {
 				// If all the other hosts complete their backup process, they should add their entry into target.Stats field.
 				// So, the target.Stats should have (target.TotalHosts - numCurHosts) entry.
 				if len(target.Stats) != (int(*target.TotalHosts) - numCurHosts) {

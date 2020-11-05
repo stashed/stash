@@ -24,10 +24,10 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/cert"
+	"gomodules.xyz/pointer"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -137,7 +137,7 @@ func (f *Framework) PVCForMinioServer() core.PersistentVolumeClaim {
 					core.ResourceStorage: resource.MustParse("1Gi"),
 				},
 			},
-			StorageClassName: types.StringP(StandardStorageClass),
+			StorageClassName: pointer.StringP(StandardStorageClass),
 		},
 	}
 }

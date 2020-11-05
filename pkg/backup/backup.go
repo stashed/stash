@@ -34,15 +34,16 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/robfig/cron/v3"
+	"gomodules.xyz/x/log"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
@@ -335,14 +336,14 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 				context.TODO(),
 				c.stashClient.StashV1alpha1(),
 				repository.ObjectMeta,
-				func(in *api.RepositoryStatus) *api.RepositoryStatus {
+				func(in *api.RepositoryStatus) (types.UID, *api.RepositoryStatus) {
 					in.BackupCount++
 					in.LastBackupTime = &startTime
 					if in.FirstBackupTime == nil {
 						in.FirstBackupTime = &startTime
 					}
 					in.LastBackupDuration = endTime.Sub(startTime.Time).String()
-					return in
+					return repository.UID, in
 				},
 				metav1.UpdateOptions{},
 			)

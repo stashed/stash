@@ -25,15 +25,16 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
-	"github.com/appscode/go/types"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/pointer"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	storage_api_v1 "k8s.io/api/storage/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -71,14 +72,14 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
 
-			invoker, err := apis.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+			inv, err := invoker.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range invoker.TargetsInfo {
+			for _, targetInfo := range inv.TargetsInfo {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-					restoreOutput, err := opt.restoreVolumeSnapshot(invoker, targetInfo)
+					restoreOutput, err := opt.restoreVolumeSnapshot(inv, targetInfo)
 					if err != nil {
 						return err
 					}
@@ -89,7 +90,7 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 						Namespace:   opt.namespace,
 						Metrics:     opt.metrics,
 					}
-					return statOpt.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
+					return statOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
 				}
 			}
 			return nil
@@ -106,18 +107,18 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 	return cmd
 }
 
-func (opt *VSoption) restoreVolumeSnapshot(invoker apis.RestoreInvoker, targetInfo apis.RestoreTargetInfo) (*restic.RestoreOutput, error) {
+func (opt *VSoption) restoreVolumeSnapshot(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
 	// start clock to measure the time takes to restore the volumes
 	startTime := time.Now()
 
 	// If preRestore hook is specified, then execute those hooks first
-	if invoker.Hooks != nil && invoker.Hooks.PreRestore != nil {
+	if inv.Hooks != nil && inv.Hooks.PreRestore != nil {
 		log.Infoln("Executing preRestore hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, invoker.Hooks.PreRestore, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, inv.Hooks.PreRestore, podName, opt.namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +192,7 @@ func (opt *VSoption) restoreVolumeSnapshot(invoker apis.RestoreInvoker, targetIn
 	for i := range createdPVCs {
 		// find out the storage class that has been used in this PVC. We need to know it's binding mode to decide whether we should wait
 		// for it to be bound with the respective PV.
-		storageClass, err := opt.kubeClient.StorageV1().StorageClasses().Get(context.TODO(), types.String(createdPVCs[i].Spec.StorageClassName), metav1.GetOptions{})
+		storageClass, err := opt.kubeClient.StorageV1().StorageClasses().Get(context.TODO(), pointer.String(createdPVCs[i].Spec.StorageClassName), metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) { // storage class not found. so, restore won't be completed.
 				restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, api_v1beta1.HostRestoreStats{
@@ -237,13 +238,13 @@ func (opt *VSoption) restoreVolumeSnapshot(invoker apis.RestoreInvoker, targetIn
 		})
 	}
 	// If postRestore hook is specified, then execute those hooks after restore
-	if invoker.Hooks != nil && invoker.Hooks.PostRestore != nil {
+	if inv.Hooks != nil && inv.Hooks.PostRestore != nil {
 		log.Infoln("Executing postRestore hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, invoker.Hooks.PostRestore, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, inv.Hooks.PostRestore, podName, opt.namespace)
 		if err != nil {
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual restore process may be succeeded." +
 				"Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")

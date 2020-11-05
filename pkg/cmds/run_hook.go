@@ -25,6 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
@@ -121,12 +122,12 @@ func (opt *hookOptions) executeHook() error {
 
 	if opt.backupSessionName != "" {
 		// For backup hooks, BackupSession name will be provided. We will read the hooks from the underlying backup invoker.
-		invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+		inv, err := invoker.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 		if err != nil {
 			return err
 		}
 		// We need to extract the hook only for the current target
-		for _, targetInfo := range invoker.TargetsInfo {
+		for _, targetInfo := range inv.TargetsInfo {
 			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
 				hook = targetInfo.Hooks
 				executorPodName, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
@@ -138,11 +139,11 @@ func (opt *hookOptions) executeHook() error {
 		}
 	} else {
 		// backupSessionName flag name was not provided, it means it is restore hook.
-		invoker, err := apis.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+		inv, err := invoker.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 		if err != nil {
 			return err
 		}
-		for _, targetInfo := range invoker.TargetsInfo {
+		for _, targetInfo := range inv.TargetsInfo {
 			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
 				hook = targetInfo.Hooks
 				executorPodName, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
@@ -229,13 +230,13 @@ func (opt *hookOptions) handlePreTaskHookFailure(hookErr error) error {
 		}
 		statusOpt.BackupSession = opt.backupSessionName
 		// Extract invoker information
-		invoker, err := apis.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+		inv, err := invoker.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 		if err != nil {
 			return err
 		}
-		for _, targetInfo := range invoker.TargetsInfo {
+		for _, targetInfo := range inv.TargetsInfo {
 			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-				err := statusOpt.UpdatePostBackupStatus(backupOutput, invoker, targetInfo)
+				err := statusOpt.UpdatePostBackupStatus(backupOutput, inv, targetInfo)
 				if err != nil {
 					hookErr = errors.NewAggregate([]error{hookErr, err})
 				}
@@ -255,14 +256,14 @@ func (opt *hookOptions) handlePreTaskHookFailure(hookErr error) error {
 				},
 			},
 		}
-		invoker, err := apis.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+		inv, err := invoker.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 		if err != nil {
 			return err
 		}
 
-		for _, targetInfo := range invoker.TargetsInfo {
+		for _, targetInfo := range inv.TargetsInfo {
 			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-				err = statusOpt.UpdatePostRestoreStatus(restoreOutput, invoker, targetInfo)
+				err = statusOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
 				if err != nil {
 					hookErr = errors.NewAggregate([]error{hookErr, err})
 				}

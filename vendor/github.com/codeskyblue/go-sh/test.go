@@ -14,7 +14,7 @@ func filetest(name string, modemask os.FileMode) (match bool, err error) {
 	return
 }
 
-func (s *Session) pwd() string {
+func (s *Session) Getwd() string {
 	dir := string(s.dir)
 	if dir == "" {
 		dir, _ = os.Getwd()
@@ -26,7 +26,7 @@ func (s *Session) abspath(name string) string {
 	if filepath.IsAbs(name) {
 		return name
 	}
-	return filepath.Join(s.pwd(), name)
+	return filepath.Join(s.Getwd(), name)
 }
 
 func init() {

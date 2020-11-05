@@ -21,7 +21,7 @@ import (
 	api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 
-	go_str "github.com/appscode/go/strings"
+	go_str "gomodules.xyz/x/strings"
 )
 
 // options that don't come from repository, backup-config, backup-session, restore-session

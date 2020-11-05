@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/appscode/go/log"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	core_informers "k8s.io/client-go/informers/core/v1"

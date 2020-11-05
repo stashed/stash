@@ -23,10 +23,10 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
+	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +48,7 @@ func (fi *Invocation) ReplicationController(name, pvcName, volName string) core.
 			Labels:    labels,
 		},
 		Spec: core.ReplicationControllerSpec{
-			Replicas: types.Int32P(1),
+			Replicas: pointer.Int32P(1),
 			Template: &podTemplate,
 		},
 	}

@@ -23,11 +23,11 @@ import (
 	"os"
 	"path/filepath"
 
-	yc "github.com/appscode/go/encoding/yaml"
-	"github.com/appscode/go/log"
-	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"gomodules.xyz/stow"
+	yc "gomodules.xyz/x/encoding/yaml"
+	"gomodules.xyz/x/log"
+	"sigs.k8s.io/yaml"
 )
 
 type Context struct {

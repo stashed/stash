@@ -21,6 +21,7 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/util"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -62,19 +63,19 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 	// this means BackupConfiguration has been newly created/updated.
 	// in this case, we have to add/update sidecar container accordingly.
 	if newbc != nil && !util.BackupConfigurationEqual(oldbc, newbc) {
-		invoker, err := apis.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupConfiguration, newbc.Name, newbc.Namespace)
+		inv, err := invoker.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupConfiguration, newbc.Name, newbc.Namespace)
 		if err != nil {
 			return true, err
 		}
-		for _, targetInfo := range invoker.TargetsInfo {
+		for _, targetInfo := range inv.TargetsInfo {
 			if targetInfo.Target != nil &&
 				targetInfo.Target.Ref.Kind == w.Kind &&
 				targetInfo.Target.Ref.Name == w.Name {
-				err = c.ensureBackupSidecar(w, invoker, targetInfo, caller)
+				err = c.ensureBackupSidecar(w, inv, targetInfo, caller)
 				if err != nil {
-					return false, c.handleSidecarInjectionFailure(w, invoker, targetInfo.Target.Ref, err)
+					return false, c.handleSidecarInjectionFailure(w, inv, targetInfo.Target.Ref, err)
 				}
-				return true, c.handleSidecarInjectionSuccess(w, invoker, targetInfo.Target.Ref)
+				return true, c.handleSidecarInjectionSuccess(w, inv, targetInfo.Target.Ref)
 			}
 		}
 

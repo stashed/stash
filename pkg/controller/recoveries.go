@@ -29,14 +29,15 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
 	"github.com/golang/glog"
+	"gomodules.xyz/x/log"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
@@ -183,9 +184,9 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 			context.TODO(),
 			c.stashClient.StashV1alpha1(),
 			rec.ObjectMeta,
-			func(in *api.RecoveryStatus) *api.RecoveryStatus {
+			func(in *api.RecoveryStatus) (types.UID, *api.RecoveryStatus) {
 				in.Phase = api.RecoveryFailed
-				return in
+				return rec.UID, in
 			},
 			metav1.UpdateOptions{},
 		)
@@ -222,9 +223,9 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		context.TODO(),
 		c.stashClient.StashV1alpha1(),
 		rec.ObjectMeta,
-		func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		func(in *api.RecoveryStatus) (types.UID, *api.RecoveryStatus) {
 			in.Phase = api.RecoveryRunning
-			return in
+			return rec.UID, in
 		},
 		metav1.UpdateOptions{},
 	)

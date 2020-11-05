@@ -25,6 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 
 	"github.com/golang/glog"
@@ -49,7 +50,7 @@ func ExecutePreBackupActions(opt ActionOptions) error {
 		return err
 	}
 	for _, targetStatus := range backupSession.Status.Targets {
-		if apis.TargetMatched(targetStatus.Ref, opt.TargetRef) {
+		if invoker.TargetMatched(targetStatus.Ref, opt.TargetRef) {
 			// check if it has any pre-backup action assigned to it
 			if len(targetStatus.PreBackupActions) > 0 {
 				// execute the pre-backup actions

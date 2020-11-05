@@ -23,7 +23,7 @@ import (
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	"github.com/appscode/go/types"
+	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/util/errors"
 )
 
@@ -231,5 +231,5 @@ func (w *ResticWrapper) VerifyRepositoryIntegrity() (*RepositoryStats, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &RepositoryStats{Integrity: types.BoolP(integrity), Size: repoSize}, nil
+	return &RepositoryStats{Integrity: pointer.BoolP(integrity), Size: repoSize}, nil
 }

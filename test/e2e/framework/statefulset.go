@@ -22,9 +22,9 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -84,7 +84,7 @@ func (fi *Invocation) StatefulSet(name, volName string, replica int32) apps.Stat
 						AccessModes: []core.PersistentVolumeAccessMode{
 							core.ReadWriteOnce,
 						},
-						StorageClassName: types.StringP(fi.StorageClass),
+						StorageClassName: pointer.StringP(fi.StorageClass),
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: resource.MustParse("1Gi"),
@@ -184,7 +184,7 @@ func (fi *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.State
 			Namespace: fi.namespace,
 		},
 		Spec: apps.StatefulSetSpec{
-			Replicas: types.Int32P(1),
+			Replicas: pointer.Int32P(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -240,7 +240,7 @@ func (fi *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.State
 						AccessModes: []core.PersistentVolumeAccessMode{
 							core.ReadWriteOnce,
 						},
-						StorageClassName: types.StringP(fi.StorageClass),
+						StorageClassName: pointer.StringP(fi.StorageClass),
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: resource.MustParse("1Gi"),

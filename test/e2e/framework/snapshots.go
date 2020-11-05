@@ -21,7 +21,7 @@ import (
 
 	snap_v1alpha1 "stash.appscode.dev/apimachinery/apis/repositories/v1alpha1"
 
-	"github.com/appscode/go/types"
+	"gomodules.xyz/pointer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,7 +30,7 @@ func (fi *Invocation) ListSnapshots(selector string) (*snap_v1alpha1.SnapshotLis
 		context.TODO(),
 		metav1.ListOptions{
 			LabelSelector:  selector,
-			TimeoutSeconds: types.Int64P(600),
+			TimeoutSeconds: pointer.Int64P(600),
 		})
 }
 

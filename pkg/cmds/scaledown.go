@@ -19,8 +19,8 @@ package cmds
 import (
 	"stash.appscode.dev/stash/pkg/scale"
 
-	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/x/log"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"

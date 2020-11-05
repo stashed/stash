@@ -1,4 +1,6 @@
+
 [![PkgGoDev](https://pkg.go.dev/badge/gomodules.xyz/password-generator)](https://pkg.go.dev/gomodules.xyz/password-generator)
+![CI](https://github.com/gomodules/password-generator/workflows/CI/badge.svg)
 
 # password-generator
 

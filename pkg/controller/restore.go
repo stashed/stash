@@ -17,8 +17,8 @@ limitations under the License.
 package controller
 
 import (
-	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/util"
 
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -51,7 +51,7 @@ func (c *StashController) applyRestoreSessionLogic(w *wapi.Workload, caller stri
 	// this means RestoreSession has been newly created/updated.
 	// in this case, we have to add/update init-container container accordingly.
 	if newrs != nil && !util.RestoreSessionEqual(oldrs, newrs) {
-		invoker, err := apis.ExtractRestoreInvokerInfo(
+		inv, err := invoker.ExtractRestoreInvokerInfo(
 			c.kubeClient,
 			c.stashClient,
 			api_v1beta1.ResourceKindRestoreSession,
@@ -61,15 +61,15 @@ func (c *StashController) applyRestoreSessionLogic(w *wapi.Workload, caller stri
 		if err != nil {
 			return true, err
 		}
-		for _, targetInfo := range invoker.TargetsInfo {
+		for _, targetInfo := range inv.TargetsInfo {
 			if targetInfo.Target != nil &&
 				targetInfo.Target.Ref.Kind == w.Kind &&
 				targetInfo.Target.Ref.Name == w.Name {
-				err = c.ensureRestoreInitContainer(w, invoker, targetInfo, caller)
+				err = c.ensureRestoreInitContainer(w, inv, targetInfo, caller)
 				if err != nil {
-					return false, c.handleInitContainerInjectionFailure(w, invoker, targetInfo.Target.Ref, err)
+					return false, c.handleInitContainerInjectionFailure(w, inv, targetInfo.Target.Ref, err)
 				}
-				return true, c.handleInitContainerInjectionSuccess(w, invoker, targetInfo.Target.Ref)
+				return true, c.handleInitContainerInjectionSuccess(w, inv, targetInfo.Target.Ref)
 			}
 		}
 

@@ -19,15 +19,15 @@ package cmds
 import (
 	"time"
 
-	"stash.appscode.dev/apimachinery/apis"
 	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/restore"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
+	"gomodules.xyz/x/log"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -63,16 +63,16 @@ func NewCmdRestore() *cobra.Command {
 			opt.StashClient = cs.NewForConfigOrDie(config)
 			opt.Metrics.JobName = opt.InvokerName
 
-			invoker, err := apis.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
+			inv, err := invoker.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range invoker.TargetsInfo {
+			for _, targetInfo := range inv.TargetsInfo {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.TargetKind, opt.TargetName) {
 
 					// Ensure restore order
-					if invoker.ExecutionOrder == v1beta1_api.Sequential {
+					if inv.ExecutionOrder == v1beta1_api.Sequential {
 						err = waitUntilAllPreviousTargetsExecuted(opt, targetInfo.Target.Ref)
 						if err != nil {
 							return err
@@ -85,14 +85,14 @@ func NewCmdRestore() *cobra.Command {
 					}
 
 					// run restore
-					restoreOutput, restoreErr := opt.Restore(invoker, targetInfo)
+					restoreOutput, restoreErr := opt.Restore(inv, targetInfo)
 					if restoreErr != nil {
-						err = opt.HandleRestoreFailure(invoker, targetInfo, restoreErr)
+						err = opt.HandleRestoreFailure(inv, targetInfo, restoreErr)
 						return errors.NewAggregate([]error{restoreErr, err})
 
 					}
 					if restoreOutput != nil {
-						return opt.HandleRestoreSuccess(restoreOutput, invoker, targetInfo)
+						return opt.HandleRestoreSuccess(restoreOutput, inv, targetInfo)
 					}
 				}
 			}
@@ -121,10 +121,10 @@ func NewCmdRestore() *cobra.Command {
 func waitUntilAllPreviousTargetsExecuted(opt *restore.Options, tref v1beta1_api.TargetRef) error {
 	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (bool, error) {
 		log.Infof("Waiting for all previous targets to complete their restore process...")
-		invoker, err := apis.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
+		inv, err := invoker.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 		if err != nil {
 			return false, err
 		}
-		return invoker.NextInOrder(tref, invoker.Status.TargetStatus), nil
+		return inv.NextInOrder(tref, inv.Status.TargetStatus), nil
 	})
 }

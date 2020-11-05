@@ -19,8 +19,8 @@ package matcher
 import (
 	"fmt"
 
-	"github.com/appscode/go/strings"
 	"github.com/onsi/gomega/types"
+	"gomodules.xyz/x/strings"
 )
 
 func BeSameAs(sample []string) types.GomegaMatcher {
