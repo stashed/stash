@@ -200,11 +200,11 @@ func ExpandSpec(spec *Swagger, options *ExpandOptions) error {
 	return nil
 }
 
-const rootBase = "root"
 // baseForRoot loads in the cache the root document and produces a fake "root" base path entry
 // for further $ref resolution
 func baseForRoot(root interface{}, cache ResolutionCache) string {
 	// cache the root document to resolve $ref's
+	const rootBase = "root"
 	if root != nil {
 		base, _ := absPath(rootBase)
 		normalizedBase := normalizeAbsPath(base)
@@ -452,12 +452,11 @@ func expandPathItem(pathItem *PathItem, resolver *schemaLoader, basePath string)
 		return err
 	}
 	if pathItem.Ref.String() != "" {
-		transitiveResolver, err := resolver.transitiveResolver(basePath, pathItem.Ref)
-		if transitiveResolver.shouldStopOnError(err) {
+		var err error
+		resolver, err = resolver.transitiveResolver(basePath, pathItem.Ref)
+		if resolver.shouldStopOnError(err) {
 			return err
 		}
-		basePath = transitiveResolver.updateBasePath(resolver, basePath)
-		resolver = transitiveResolver
 	}
 	pathItem.Ref = Ref{}
 
