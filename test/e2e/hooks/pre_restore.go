@@ -202,7 +202,8 @@ var _ = Describe("PreRestore Hook", func() {
 					err = app_util.WaitUntilStatefulSetReady(context.TODO(), f.KubeClient, statefulset.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
-					restoredData := f.RestoredData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					restoredData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
 					By("Verifying that no data has been restored")
 					Expect(restoredData).Should(BeSameAs(emptyData))
 				})
@@ -279,7 +280,8 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 						By("Verifying that the restored data is same as the sample data")
-						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
+						restoredData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
 						Expect(restoredData).Should(BeSameAs(sampleData))
 					})
 				})

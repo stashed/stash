@@ -24,7 +24,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/license-verifier v0.4.1
 	go.bytebuilders.dev/license-verifier/kubernetes v0.4.1
-	gomodules.xyz/blobfs v0.1.4
+	gomodules.xyz/blobfs v0.1.5
 	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
