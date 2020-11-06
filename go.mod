@@ -80,6 +80,26 @@ replace github.com/Azure/go-autorest/logger => github.com/Azure/go-autorest/logg
 
 replace github.com/Azure/go-autorest/tracing => github.com/Azure/go-autorest/tracing v0.5.0
 
+replace github.com/go-openapi/analysis => github.com/go-openapi/analysis v0.19.5
+
+replace github.com/go-openapi/errors => github.com/go-openapi/errors v0.19.2
+
+replace github.com/go-openapi/jsonpointer => github.com/go-openapi/jsonpointer v0.19.3
+
+replace github.com/go-openapi/jsonreference => github.com/go-openapi/jsonreference v0.19.3
+
+replace github.com/go-openapi/loads => github.com/go-openapi/loads v0.19.4
+
+replace github.com/go-openapi/runtime => github.com/go-openapi/runtime v0.19.4
+
+replace github.com/go-openapi/spec => github.com/go-openapi/spec v0.19.3
+
+replace github.com/go-openapi/strfmt => github.com/go-openapi/strfmt v0.19.3
+
+replace github.com/go-openapi/swag => github.com/go-openapi/swag v0.19.5
+
+replace github.com/go-openapi/validate => github.com/go-openapi/validate v0.19.5
+
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.1
 
 replace github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
