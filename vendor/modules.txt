@@ -357,6 +357,7 @@ go.uber.org/zap/zapcore
 # gocloud.dev v0.20.0
 gocloud.dev/blob
 gocloud.dev/blob/driver
+gocloud.dev/blob/memblob
 gocloud.dev/gcerrors
 gocloud.dev/internal/gcerr
 gocloud.dev/internal/oc
@@ -447,7 +448,7 @@ golang.org/x/tools/internal/packagesinternal
 # golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
-# gomodules.xyz/blobfs v0.1.4
+# gomodules.xyz/blobfs v0.1.5
 gomodules.xyz/blobfs
 # gomodules.xyz/cert v1.2.0
 gomodules.xyz/cert

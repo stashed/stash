@@ -210,7 +210,8 @@ var _ = Describe("PostRestore Hook", func() {
 					err = app_util.WaitUntilStatefulSetReady(context.TODO(), f.KubeClient, statefulset.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
-					restoredData := f.RestoredData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					restoredData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
 					By("Verifying that the corrupted file has been removed")
 					Expect(restoredData).Should(BeSameAs(emptyData))
 				})
@@ -367,7 +368,8 @@ var _ = Describe("PostRestore Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
-						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
+						restoredData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
 						By("Verifying that the original data has been restored and corrupted file has been removed")
 						Expect(restoredData).Should(BeSameAs(sampleData))
 					})
@@ -445,7 +447,8 @@ var _ = Describe("PostRestore Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
-						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
+						restoredData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
 						By("Verifying that the corrupted file has been removed")
 						Expect(restoredData).Should(BeSameAs(emptyData))
 					})
