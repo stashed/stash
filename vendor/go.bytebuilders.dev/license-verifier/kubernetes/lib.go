@@ -57,7 +57,8 @@ const (
 	EventSourceLicenseVerifier           = "License Verifier"
 	EventReasonLicenseVerificationFailed = "License Verification Failed"
 
-	licensePath = "/appscode/license"
+	licensePath          = "/appscode/license"
+	licenseCheckInterval = 1 * time.Hour
 )
 
 type LicenseEnforcer struct {
@@ -261,7 +262,7 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 	}
 
 	// Periodically verify license with 1 hour interval
-	return wait.PollImmediateUntil(1*time.Hour, func() (done bool, err error) {
+	fn := func() (done bool, err error) {
 		klog.V(8).Infoln("Verifying license.......")
 		// Read license from file
 		err = le.readLicenseFromFile()
@@ -276,7 +277,21 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 		klog.Infoln("Successfully verified license!")
 		// return false so that the loop never ends
 		return false, nil
-	}, stopCh)
+	}
+
+	if !info.EnforceLicenseImmediately() {
+		licenseMissing := licenseFile == ""
+		if _, err := os.Stat(licenseFile); os.IsNotExist(err) {
+			licenseMissing = true
+		}
+		if licenseMissing {
+			klog.Warningf("license file is missing. You have %v to acquire a valid license", licenseCheckInterval)
+
+			return wait.PollUntil(licenseCheckInterval, fn, stopCh)
+		}
+	}
+
+	return wait.PollImmediateUntil(licenseCheckInterval, fn, stopCh)
 }
 
 // CheckLicenseFile verifies whether the provided license is valid for the current cluster or not.
