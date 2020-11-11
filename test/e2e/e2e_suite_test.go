@@ -36,7 +36,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
@@ -82,12 +81,6 @@ var _ = BeforeSuite(func() {
 	By("Deploy TLS secured Minio Server")
 	_, err = root.CreateMinioServer(true, []net.IP{net.ParseIP(framework.LocalHostIP)})
 	Expect(err).NotTo(HaveOccurred())
-
-	By("Ensure MySQL Addon")
-	err = root.EnsureMySQLAddon()
-	if !errors.IsAlreadyExists(err) {
-		Expect(err).NotTo(HaveOccurred())
-	}
 })
 
 var _ = AfterSuite(func() {
@@ -98,12 +91,6 @@ var _ = AfterSuite(func() {
 	By("Deleting Minio server")
 	err := root.DeleteMinioServer()
 	Expect(err).NotTo(HaveOccurred())
-
-	By("Deleting MySQL Addon")
-	err = root.EnsureMySQLAddonDeleted()
-	if !errors.IsNotFound(err) {
-		Expect(err).NotTo(HaveOccurred())
-	}
 
 	By("Deleting namespace: " + root.Namespace())
 	err = root.DeleteNamespace(root.Namespace())

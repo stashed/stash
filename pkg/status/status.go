@@ -122,13 +122,12 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		return err
 	}
 
+	var statusErr error
 	// If the target has been assigned some post-backup actions, execute them
 	// Only execute the postBackupActions if the backup of current host/hosts has succeeded
+	// We should update the the target status even if the post-backup actions failed
 	if backupSucceeded(backupOutput) {
-		err = o.executePostBackupActions(inv, backupSession, targetInfo.Target.Ref, len(backupOutput.BackupTargetStatus.Stats))
-		if err != nil {
-			return err
-		}
+		statusErr = o.executePostBackupActions(inv, backupSession, targetInfo.Target.Ref, len(backupOutput.BackupTargetStatus.Stats))
 	}
 
 	// add or update entry for each host in BackupSession status + create event
@@ -145,7 +144,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			return backupSession.UID, in
 		}, metav1.UpdateOptions{})
 	if err != nil {
-		return err
+		statusErr = utilerrors.NewAggregate([]error{statusErr, err})
 	}
 
 	// create status against the BackupSession for each hosts
@@ -180,9 +179,12 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 
 	// if metrics enabled then send backup host specific metrics to the Prometheus pushgateway
 	if o.Metrics.Enabled && targetInfo.Target != nil {
-		return o.Metrics.SendBackupHostMetrics(o.Config, inv, targetInfo.Target.Ref, backupOutput)
+		err = o.Metrics.SendBackupHostMetrics(o.Config, inv, targetInfo.Target.Ref, backupOutput)
+		if err != nil {
+			statusErr = utilerrors.NewAggregate([]error{statusErr, err})
+		}
 	}
-	return nil
+	return statusErr
 }
 
 func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.RestoreOutput, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {

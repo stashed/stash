@@ -18,9 +18,7 @@ package misc
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -30,7 +28,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	pfutil "kmodules.xyz/client-go/tools/portforward"
 )
 
 var _ = Describe("Backward Compatibility Test", func() {
@@ -302,104 +299,6 @@ var _ = Describe("Backward Compatibility Test", func() {
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")
 				Expect(restoredData).Should(BeSameAs(sampleData))
-			})
-		})
-
-		Context("Database", func() {
-			It("should generate hostname automatically", func() {
-				// Deploy MySQL database and respective service,secret,PVC and AppBinding.
-				By("Deploying MySQL Server")
-				dpl, appBinding, err := f.DeployMySQLDatabase()
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Port forwarding MySQL pod")
-				pod, err := f.GetPod(dpl.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-				tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
-				defer tunnel.Close()
-				err = tunnel.ForwardPort()
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Connecting with MySQL Server")
-				connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
-				db, err := sql.Open("mysql", connstr)
-				Expect(err).NotTo(HaveOccurred())
-				defer db.Close()
-				db.SetConnMaxLifetime(time.Second * 10)
-				err = f.EventuallyConnectWithMySQLServer(db)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating Sample Table")
-				err = f.CreateTable(db, sampleTable)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that the sample table has been created")
-				tables, err := f.ListTables(db)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(tables.Has(sampleTable)).Should(BeTrue())
-
-				By("Insert sample data")
-				property := "price"
-				originalValue := 123456
-				err = f.InsertRow(db, sampleTable, property, originalValue)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verify that sample data has been inserted")
-				res, err := f.ReadProperty(db, sampleTable, property)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(res).Should(BeEquivalentTo(originalValue))
-
-				// Setup a Minio Repository
-				repo, err := f.SetupMinioRepository()
-				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
-
-				// Setup Database Backup
-				backupConfig, err := f.SetupDatabaseBackup(appBinding, repo, func(bc *v1beta1.BackupConfiguration) {
-					bc.Spec.Target.Alias = ""
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
-					Name: backupConfig.Name,
-					Kind: v1beta1.ResourceKindBackupConfiguration,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-
-				// Simulate disaster
-				// Update data of the sample table
-				By("Updating data to simulate disaster")
-				err = f.UpdateProperty(db, sampleTable, property, 0)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that the data has been updated")
-				res, err = f.ReadProperty(db, sampleTable, property)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(res).ShouldNot(BeEquivalentTo(originalValue))
-
-				// Restore the backed up data
-				// Cleanup corrupted data in preRestore hook
-				By("Restoring the backed up data")
-				restoreSession, err := f.SetupDatabaseRestore(appBinding, repo, func(restore *v1beta1.RestoreSession) {
-					restore.Spec.Target.Alias = ""
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that RestoreSession has succeeded")
-				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
-
-				By("Verifying that the original data has been restored")
-				res, err = f.ReadProperty(db, sampleTable, property)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(res).Should(BeEquivalentTo(originalValue))
 			})
 		})
 	})

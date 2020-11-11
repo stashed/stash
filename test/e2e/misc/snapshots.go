@@ -474,7 +474,7 @@ var _ = Describe("Snapshot Tests", func() {
 				// Create Repositories
 				for i := range resources {
 					repo, err := f.SetupRestRepository(true, resources[i].workloadMeta.Name, framework.TEST_REST_SERVER_PASSWORD, func(repo *v1alpha1.Repository) {
-						repo.Spec.Backend.Rest.URL = fmt.Sprintf("http://%s:8000/%s", f.RestServiceAddres(), resources[i].workloadMeta.Name)
+						repo.Spec.Backend.Rest.URL = fmt.Sprintf("https://%s:8000/%s", f.RestServiceAddres(), resources[i].workloadMeta.Name)
 					})
 					Expect(err).NotTo(HaveOccurred())
 					resources[i].repository = repo

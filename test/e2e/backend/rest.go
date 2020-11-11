@@ -47,134 +47,14 @@ var _ = Describe("Rest Backend", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	Context("General Backup/Restore with tls secured", func() {
+	Context("Without TLS", func() {
 		BeforeEach(func() {
-			By("Creating Rest Server")
-			_, err := f.CreateRestServer(true, []net.IP{net.ParseIP("127.0.0.1")})
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should backup/restore in/from Rest backend", func() {
-			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Generate Sample Data
-			sampleData, err := f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Setup a Rest Repository
-			repo, err := f.SetupRestRepository(true, framework.TEST_REST_SERVER_USERNAME, framework.TEST_REST_SERVER_PASSWORD)
-			Expect(err).NotTo(HaveOccurred())
-			//
-			// Setup workload Backup
-			backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Take an Instant Backup of the Sample Data
-			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
-				Name: backupConfig.Name,
-				Kind: v1beta1.ResourceKindBackupConfiguration,
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-			//
-			// Simulate disaster scenario. Delete the data from source PVC
-			By("Deleting sample data from source Deployment")
-			err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Restore the backed up data
-			By("Restoring the backed up data in the original Deployment")
-			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that RestoreSession succeeded")
-			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
-
-			// Get restored data
-			restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
-
-			// Verify that restored data is same as the original data
-			By("Verifying restored data is same as the original data")
-			Expect(restoredData).Should(BeSameAs(sampleData))
-		})
-	})
-
-	Context("Backup/Restore big file with tls secured", func() {
-		BeforeEach(func() {
-			By("Creating Rest Server")
-			_, err := f.CreateRestServer(true, []net.IP{net.ParseIP("127.0.0.1")})
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should backup/restore big file", func() {
-			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Generate Sample Data
-			sampleData, err := f.GenerateBigSampleFile(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Setup a Rest Repository
-			repo, err := f.SetupRestRepository(true, framework.TEST_REST_SERVER_USERNAME, framework.TEST_REST_SERVER_PASSWORD)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Setup workload Backup
-			backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Take an Instant Backup of the Sample Data
-			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
-				Name: backupConfig.Name,
-				Kind: v1beta1.ResourceKindBackupConfiguration,
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-
-			// Simulate disaster scenario. Delete the data from source PVC
-			By("Deleting sample data from source Deployment")
-			err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Restore the backed up data
-			By("Restoring the backed up data in the original Deployment")
-			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that RestoreSession succeeded")
-			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
-
-			// Get restored data
-			restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
-
-			// Verify that restored data is same as the original data
-			By("Verifying restored data is same as the original data")
-			Expect(restoredData).Should(BeSameAs(sampleData))
-		})
-	})
-
-	Context("General Backup/Restore without tls secured", func() {
-		BeforeEach(func() {
-			By("Creating Rest Server")
+			By("Creating REST Server")
 			_, err := f.CreateRestServer(false, []net.IP{net.ParseIP("127.0.0.1")})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should backup/restore in/from Rest backend", func() {
+		It("should backup and restore sample data", func() {
 			// Deploy a Deployment
 			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
@@ -203,6 +83,118 @@ var _ = Describe("Rest Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 			//
+			// Simulate disaster scenario. Delete the data from source PVC
+			By("Deleting sample data from source Deployment")
+			err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Restore the backed up data
+			By("Restoring the backed up data in the original Deployment")
+			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Verifying that RestoreSession succeeded")
+			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
+
+			// Get restored data
+			restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
+
+			// Verify that restored data is same as the original data
+			By("Verifying restored data is same as the original data")
+			Expect(restoredData).Should(BeSameAs(sampleData))
+		})
+	})
+
+	Context("With TLS", func() {
+		BeforeEach(func() {
+			By("Creating REST Server")
+			_, err := f.CreateRestServer(true, []net.IP{net.ParseIP("127.0.0.1")})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should backup and restore sample data", func() {
+			// Deploy a Deployment
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Generate Sample Data
+			sampleData, err := f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Setup a Rest Repository
+			repo, err := f.SetupRestRepository(true, framework.TEST_REST_SERVER_USERNAME, framework.TEST_REST_SERVER_PASSWORD)
+			Expect(err).NotTo(HaveOccurred())
+			//
+			// Setup workload Backup
+			backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Take an Instant Backup of the Sample Data
+			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+				Name: backupConfig.Name,
+				Kind: v1beta1.ResourceKindBackupConfiguration,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Verifying that BackupSession has succeeded")
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+			//
+			// Simulate disaster scenario. Delete the data from source PVC
+			By("Deleting sample data from source Deployment")
+			err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Restore the backed up data
+			By("Restoring the backed up data in the original Deployment")
+			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Verifying that RestoreSession succeeded")
+			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
+
+			// Get restored data
+			restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
+
+			// Verify that restored data is same as the original data
+			By("Verifying restored data is same as the original data")
+			Expect(restoredData).Should(BeSameAs(sampleData))
+		})
+
+		It("should backup and restore big file", func() {
+			// Deploy a Deployment
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Generate Sample Data
+			sampleData, err := f.GenerateBigSampleFile(deployment.ObjectMeta, apis.KindDeployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Setup a Rest Repository
+			repo, err := f.SetupRestRepository(true, framework.TEST_REST_SERVER_USERNAME, framework.TEST_REST_SERVER_PASSWORD)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Setup workload Backup
+			backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Take an Instant Backup of the Sample Data
+			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+				Name: backupConfig.Name,
+				Kind: v1beta1.ResourceKindBackupConfiguration,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Verifying that BackupSession has succeeded")
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
 			// Simulate disaster scenario. Delete the data from source PVC
 			By("Deleting sample data from source Deployment")
 			err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, apis.KindDeployment)

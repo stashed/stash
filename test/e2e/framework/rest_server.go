@@ -57,17 +57,13 @@ func (fi *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
 	//creating deployment for Rest server
 	deploy := fi.DeploymentForRestServer()
 
-	if !tls { // if tls not enabled then don't mount secret for cacerts
+	// if tls not enabled then don't mount secret for cacerts and don't pass tls related environment variables
+	if !tls {
+		// remove secret volume and volumeMounts
 		deploy.Spec.Template.Spec.Containers = fi.RemoveRestSecretVolumeMount(deploy.Spec.Template.Spec.Containers)
-		deploy.Spec.Template.Spec.Containers[0].Command = []string{
-			"sh",
-			"-c",
-			`/entrypoint.sh &
-			pid=$(echo $!)
-			echo -n "changeit" | htpasswd -ics $PASSWORD_FILE myuser
-			wait $pid`,
-		}
 		deploy.Spec.Template.Spec.Volumes = fi.RemoveRestSecretVolume(deploy.Spec.Template.Spec.Volumes)
+		// remove tls related environment variables
+		deploy.Spec.Template.Spec.Containers[0].Env = nil
 	}
 	rdeploy, err := fi.CreateDeploymentForRestServer(deploy)
 	if err != nil {
@@ -185,14 +181,17 @@ func (fi *Invocation) DeploymentForRestServer() apps.Deployment {
 					Containers: []core.Container{
 						{
 							Name:  "rest-server",
-							Image: "appscodeci/rest-server:latest",
+							Image: "restic/rest-server:latest",
+							Env: []core.EnvVar{
+								{
+									Name:  "OPTIONS",
+									Value: "--tls --tls-cert /tls/public.crt --tls-key /tls/private.key",
+								},
+							},
 							Command: []string{
 								"sh",
 								"-c",
-								`/entrypoint.sh --tls-cert /tls/public.crt --tls-key /tls/private.key &
-								 pid=$(echo $!)
-								 echo -n "changeit" | htpasswd -ics $PASSWORD_FILE myuser
-								 wait $pid`,
+								`pid=$(echo $!) && echo -n "changeit" | htpasswd -ics $PASSWORD_FILE myuser && wait $pid && /entrypoint.sh`,
 							},
 							Ports: []core.ContainerPort{
 								{

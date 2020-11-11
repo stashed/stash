@@ -220,7 +220,11 @@ func (fi *Invocation) NewAzureRepository(secretName string, maxConnection int64)
 	}
 }
 
-func (fi *Invocation) NewRestRepository(secretName string) *v1alpha1.Repository {
+func (fi *Invocation) NewRestRepository(tls bool, secretName string) *v1alpha1.Repository {
+	scheme := "http"
+	if tls {
+		scheme = "https"
+	}
 	return &v1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("rest-%s", fi.app)),
@@ -229,7 +233,7 @@ func (fi *Invocation) NewRestRepository(secretName string) *v1alpha1.Repository 
 		Spec: v1alpha1.RepositorySpec{
 			Backend: store.Backend{
 				Rest: &store.RestServerSpec{
-					URL: fmt.Sprintf("https://%s:8000/myuser", fi.RestServiceAddres()),
+					URL: fmt.Sprintf("%s://%s:8000/myuser", scheme, fi.RestServiceAddres()),
 				},
 				StorageSecretName: secretName,
 			},
@@ -438,7 +442,7 @@ func (fi *Invocation) SetupRestRepository(tls bool, username, password string, t
 	}
 
 	// Generate Repository Definition
-	repo := fi.NewRestRepository(cred.Name)
+	repo := fi.NewRestRepository(tls, cred.Name)
 
 	// transformFuncs provides a array of functions that made test specific change on the Repository
 	// apply these test specific changes
