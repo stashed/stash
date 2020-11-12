@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 package framework
 
 import (
@@ -27,6 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/x/crypto/rand"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func (f *Framework) EventuallyBackupSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -102,7 +102,7 @@ func (fi *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta, invokerRef
 	return fi.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Create(context.TODO(), backupSession, metav1.CreateOptions{})
 }
 
-func (fi *Invocation) EventuallyBackupCount(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
+func (fi *Invocation) EventuallySuccessfulBackupCount(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
 	return Eventually(func() int64 {
 		count, err := fi.GetSuccessfulBackupSessionCount(invokerMeta, invokerKind)
 		if err != nil {
@@ -112,17 +112,40 @@ func (fi *Invocation) EventuallyBackupCount(invokerMeta metav1.ObjectMeta, invok
 	}, WaitTimeOut, PullInterval)
 }
 
+func (fi *Invocation) EventuallySkippedBackupCount(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
+	return Eventually(func() int64 {
+		count, err := fi.GetSkippedBackupSessionCount(invokerMeta, invokerKind)
+		if err != nil {
+			return 0
+		}
+		return count
+	}, WaitTimeOut, PullInterval)
+}
+
 func (fi *Invocation) GetSuccessfulBackupSessionCount(invokerMeta metav1.ObjectMeta, invokerKind string) (int64, error) {
-	backupSessions, err := fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(context.TODO(), metav1.ListOptions{})
+	backupSessions, err := fi.GetBackupSessionsForInvoker(invokerMeta, invokerKind)
 	if err != nil {
 		return 0, err
 	}
 
 	count := int64(0)
 	for _, bs := range backupSessions.Items {
-		if bs.Spec.Invoker.Kind == invokerKind &&
-			bs.Spec.Invoker.Name == invokerMeta.Name &&
-			bs.Status.Phase == v1beta1.BackupSessionSucceeded {
+		if bs.Status.Phase == v1beta1.BackupSessionSucceeded {
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (fi *Invocation) GetSkippedBackupSessionCount(invokerMeta metav1.ObjectMeta, invokerKind string) (int64, error) {
+	backupSessions, err := fi.GetBackupSessionsForInvoker(invokerMeta, invokerKind)
+	if err != nil {
+		return 0, err
+	}
+
+	count := int64(0)
+	for _, bs := range backupSessions.Items {
+		if bs.Status.Phase == v1beta1.BackupSessionSkipped {
 			count++
 		}
 	}
@@ -131,17 +154,34 @@ func (fi *Invocation) GetSuccessfulBackupSessionCount(invokerMeta metav1.ObjectM
 
 func (fi *Invocation) EventuallyRunningBackupCompleted(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
 	return Eventually(func() bool {
-		backupSessions, err := fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(context.TODO(), metav1.ListOptions{})
+		backupSessions, err := fi.GetBackupSessionsForInvoker(invokerMeta, invokerKind)
 		if err != nil {
 			return false
 		}
 		for _, bs := range backupSessions.Items {
-			if bs.Spec.Invoker.Kind == invokerKind &&
-				bs.Spec.Invoker.Name == invokerMeta.Name &&
-				bs.Status.Phase == v1beta1.BackupSessionRunning {
+			if bs.Status.Phase == v1beta1.BackupSessionRunning {
 				return false
 			}
 		}
 		return true
 	}, WaitTimeOut, PullInterval)
+}
+
+func (fi *Invocation) EventuallyBackupSessionCount(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
+	return Eventually(func() int {
+		bsList, err := fi.GetBackupSessionsForInvoker(invokerMeta, invokerKind)
+		if err != nil {
+			return 0
+		}
+		return len(bsList.Items)
+	}, WaitTimeOut, PullInterval)
+}
+
+func (fi *Invocation) GetBackupSessionsForInvoker(invokerMeta metav1.ObjectMeta, invokerKind string) (*v1beta1.BackupSessionList, error) {
+	return fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			apis.LabelInvokerName: invokerMeta.Name,
+			apis.LabelInvokerType: invokerKind,
+		}).String(),
+	})
 }

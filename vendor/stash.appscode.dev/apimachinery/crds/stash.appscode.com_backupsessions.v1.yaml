@@ -124,6 +124,7 @@ spec:
                   backup, Phase will be "Failed".
                 enum:
                 - Pending
+                - Skipped
                 - Running
                 - Succeeded
                 - Failed

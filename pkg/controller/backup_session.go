@@ -45,6 +45,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -118,9 +119,10 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 }
 
 func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *api_v1beta1.BackupSession) error {
-	// ================= Don't Process Completed BackupSession  ===========================
+	// ================= Don't Process Completed/Skipped BackupSession  ===========================
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
-		backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded {
+		backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
+		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.",
 			backupSession.Namespace,
 			backupSession.Name,
@@ -144,6 +146,24 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 
 	// check whether backup session is completed or running and set it's phase accordingly
 	phase, err := c.getBackupSessionPhase(backupSession)
+
+	// if current BackupSession phase is "Pending" and there is already another BackupSession in `Running` state for this invoker,
+	// then we should skip the current session
+	if phase == api_v1beta1.BackupSessionPending {
+		// check if there is another BackupSession in running state.
+		runningBS, err := c.getRunningBackupSessionForInvoker(inv)
+		if err != nil {
+			return err
+		}
+		if runningBS != nil {
+			log.Infof("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
+				runningBS.Name,
+				runningBS.Status.Phase,
+			)
+			return c.setBackupSessionSkipped(inv, backupSession, runningBS)
+		}
+	}
+
 	var condErr error
 
 	// ==================== Execute Global PostBackup Hooks ===========================
@@ -712,6 +732,37 @@ func (c *StashController) setBackupSessionFailed(inv invoker.BackupInvoker, back
 	return errors.NewAggregate([]error{backupErr, err})
 }
 
+func (c *StashController) setBackupSessionSkipped(inv invoker.BackupInvoker, currentBS, runningBS *api_v1beta1.BackupSession) error {
+
+	// set BackupSession phase to "Skipped"
+	_, statusErr := stash_util.UpdateBackupSessionStatus(
+		context.TODO(),
+		c.stashClient.StashV1beta1(),
+		currentBS.ObjectMeta,
+		func(in *api_v1beta1.BackupSessionStatus) (types.UID, *api_v1beta1.BackupSessionStatus) {
+			in.Phase = api_v1beta1.BackupSessionSkipped
+			return currentBS.UID, in
+		},
+		metav1.UpdateOptions{},
+	)
+
+	// write failure event to BackupSession
+	_, _ = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceBackupSessionController,
+		currentBS,
+		core.EventTypeWarning,
+		eventer.EventReasonBackupSessionSkipped,
+		fmt.Sprintf("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
+			runningBS.Name,
+			runningBS.Status.Phase,
+		))
+
+	// cleanup old BackupSessions
+	err := c.cleanupBackupHistory(currentBS.Spec.Invoker, currentBS.Namespace, inv.BackupHistoryLimit)
+	return errors.NewAggregate([]error{statusErr, err})
+}
+
 func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.BackupSession) (api_v1beta1.BackupSessionPhase, error) {
 	// BackupSession phase is empty or "Pending" then return it. controller will process accordingly
 	if backupSession.Status.Phase == "" ||
@@ -819,9 +870,12 @@ func (c *StashController) cleanupBackupHistory(backupInvokerRef api_v1beta1.Back
 
 	// delete the BackupSession that does not fit within the history limit
 	for i := int(historyLimit); i < len(bsList); i++ {
-		err = c.stashClient.StashV1beta1().BackupSessions(namespace).Delete(context.TODO(), bsList[i].Name, meta.DeleteInBackground())
-		if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
-			return err
+		// delete only the BackupSessions that has completed its backup
+		if backupCompleted(bsList[i].Status.Phase) {
+			err = c.stashClient.StashV1beta1().BackupSessions(namespace).Delete(context.TODO(), bsList[i].Name, meta.DeleteInBackground())
+			if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
+				return err
+			}
 		}
 	}
 	return nil
@@ -852,7 +906,9 @@ func backupExecutor(inv invoker.BackupInvoker, tref api_v1beta1.TargetRef) strin
 }
 
 func backupCompleted(phase api_v1beta1.BackupSessionPhase) bool {
-	return phase == api_v1beta1.BackupSessionFailed || phase == api_v1beta1.BackupSessionSucceeded
+	return phase == api_v1beta1.BackupSessionFailed ||
+		phase == api_v1beta1.BackupSessionSucceeded ||
+		phase == api_v1beta1.BackupSessionSkipped
 }
 
 func globalPostBackupHookExecuted(inv invoker.BackupInvoker, backupSession *api_v1beta1.BackupSession) bool {
@@ -900,4 +956,20 @@ func postBackupActionsSucceeded(conditions []kmapi.Condition) (bool, string) {
 	}
 
 	return true, ""
+}
+
+func (c *StashController) getRunningBackupSessionForInvoker(inv invoker.BackupInvoker) (*api_v1beta1.BackupSession, error) {
+	backupSessions, err := c.backupSessionLister.List(labels.SelectorFromSet(map[string]string{
+		apis.LabelInvokerName: inv.ObjectMeta.Name,
+		apis.LabelInvokerType: inv.TypeMeta.Kind,
+	}))
+	if err != nil {
+		return nil, err
+	}
+	for i := range backupSessions {
+		if backupSessions[i].Status.Phase == api_v1beta1.BackupSessionRunning {
+			return backupSessions[i], nil
+		}
+	}
+	return nil, nil
 }

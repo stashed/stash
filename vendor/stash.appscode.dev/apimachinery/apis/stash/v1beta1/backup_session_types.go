@@ -51,11 +51,12 @@ type BackupSessionSpec struct {
 	Invoker BackupInvokerRef `json:"invoker,omitempty" protobuf:"bytes,1,opt,name=invoker"`
 }
 
-// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed;Unknown
+// +kubebuilder:validation:Enum=Pending;Skipped;Running;Succeeded;Failed;Unknown
 type BackupSessionPhase string
 
 const (
 	BackupSessionPending   BackupSessionPhase = "Pending"
+	BackupSessionSkipped   BackupSessionPhase = "Skipped"
 	BackupSessionRunning   BackupSessionPhase = "Running"
 	BackupSessionSucceeded BackupSessionPhase = "Succeeded"
 	BackupSessionFailed    BackupSessionPhase = "Failed"
