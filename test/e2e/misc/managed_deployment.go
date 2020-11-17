@@ -18,9 +18,7 @@ package misc
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -33,12 +31,6 @@ import (
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	pfutil "kmodules.xyz/client-go/tools/portforward"
-	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
-)
-
-const (
-	sampleTable = "stashDemo"
 )
 
 var _ = Describe("Managed Deployment", func() {
@@ -253,171 +245,6 @@ var _ = Describe("Managed Deployment", func() {
 			// Verify that restored data is same as the original data
 			By("Verifying restored data is same as the original data")
 			Expect(restoredData).Should(BeSameAs(sampleData))
-		})
-	})
-
-	Context("Database", func() {
-		Context("MySQL", func() {
-			It("should wait for the AppBinding", func() {
-
-				// Setup a Minio Repository
-				repo, err := f.SetupMinioRepository()
-				Expect(err).NotTo(HaveOccurred())
-
-				// Prepare MySQL resources
-				cred, pvc, svc, dpl, err := f.PrepareMySQLResources(framework.PrefixSource)
-				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(dpl, svc, pvc, cred)
-
-				appBinding := f.MySQLAppBinding(cred, svc, framework.PrefixSource)
-				f.AppendToCleanupList(appBinding)
-
-				By("Creating BackupConfiguration")
-				backupConfig := f.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
-					bc.Spec.Task = v1beta1.TaskRef{
-						Name: framework.MySQLBackupTask,
-					}
-					bc.Spec.Target = &v1beta1.BackupTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: appcatalog.SchemeGroupVersion.String(),
-							Kind:       apis.KindAppBinding,
-							Name:       appBinding.Name,
-						},
-					}
-				})
-				backupConfig, err = f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(context.TODO(), backupConfig, metav1.CreateOptions{})
-				f.AppendToCleanupList(backupConfig)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking that BackupTargetFound condition is 'False'")
-				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
-
-				// Create MySQL database
-				err = f.CreateMySQL(dpl)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Port forwarding MySQL pod")
-				pod, err := f.GetPod(dpl.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-				tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
-				defer tunnel.Close()
-				err = tunnel.ForwardPort()
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Connecting with MySQL Server")
-				connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
-				db, err := sql.Open("mysql", connstr)
-				Expect(err).NotTo(HaveOccurred())
-				defer db.Close()
-				db.SetConnMaxLifetime(time.Second * 10)
-				err = f.EventuallyConnectWithMySQLServer(db)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating Sample Table")
-				err = f.CreateTable(db, sampleTable)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that the sample table has been created")
-				tables, err := f.ListTables(db)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(tables.Has(sampleTable)).Should(BeTrue())
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating AppBinding")
-				appBinding, err = f.CreateAppBinding(appBinding)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking that BackupTargetFound condition is 'True'")
-				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
-
-				By("Checking that CronJobCreated condition is 'True'")
-				f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.CronJobCreated).Should(BeEquivalentTo(core.ConditionTrue))
-
-				// Take an Instant Backup of the Sample Data
-				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
-					Name: backupConfig.Name,
-					Kind: v1beta1.ResourceKindBackupConfiguration,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that BackupSession has succeeded")
-				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-
-				// Prepare restored MySQL resources
-				rcred, rpvc, rsvc, rdpl, err := f.PrepareMySQLResources(framework.PrefixRestore)
-				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(rdpl, rsvc, rpvc, rcred)
-
-				rappBinding := f.MySQLAppBinding(rcred, rsvc, framework.PrefixRestore)
-				f.AppendToCleanupList(rappBinding)
-
-				By("Creating RestoreSession")
-				restoreSession := f.GetRestoreSession(repo.Name, func(rs *v1beta1.RestoreSession) {
-					rs.Spec.Task = v1beta1.TaskRef{
-						Name: framework.MySQLRestoreTask,
-					}
-					rs.Spec.Target = &v1beta1.RestoreTarget{
-						Ref: v1beta1.TargetRef{
-							APIVersion: appcatalog.SchemeGroupVersion.String(),
-							Kind:       apis.KindAppBinding,
-							Name:       rappBinding.Name,
-						},
-					}
-				})
-				restoreSession, err = f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(context.TODO(), restoreSession, metav1.CreateOptions{})
-				f.AppendToCleanupList(restoreSession)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking that RestoreTargetFound condition is 'False'")
-				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
-
-				// Create MySQL database
-				err = f.CreateMySQL(rdpl)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating AppBinding")
-				rappBinding, err = f.CreateAppBinding(rappBinding)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking that RestoreTargetFound condition is 'True'")
-				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
-
-				By("Checking that RestoreJobCreated condition is 'True'")
-				f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreJobCreated).Should(BeEquivalentTo(core.ConditionTrue))
-
-				By("Waiting for restore process to complete")
-				f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession).Should(BeTrue())
-
-				By("Verifying that RestoreSession succeeded")
-				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
-
-				By("Port forwarding MySQL pod")
-				pod, err = f.GetPod(rdpl.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-				rtunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
-				defer rtunnel.Close()
-				err = rtunnel.ForwardPort()
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Connecting with MySQL Server")
-				connstr = fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, rtunnel.Local)
-				rdb, err := sql.Open("mysql", connstr)
-				Expect(err).NotTo(HaveOccurred())
-				defer rdb.Close()
-				rdb.SetConnMaxLifetime(time.Second * 10)
-				err = f.EventuallyConnectWithMySQLServer(rdb)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Verifying that the sample table has been restored")
-				tables, err = f.ListTables(rdb)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(tables.Has(sampleTable)).Should(BeTrue())
-				Expect(err).NotTo(HaveOccurred())
-			})
 		})
 	})
 })
