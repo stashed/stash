@@ -71,7 +71,7 @@ var _ = Describe("Pause Backup", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for initial scheduled backup")
-			f.EventuallyBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", 1))
+			f.EventuallySuccessfulBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", 1))
 
 			By("Pausing scheduled backup")
 			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(context.TODO(), f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
@@ -112,7 +112,7 @@ var _ = Describe("Pause Backup", func() {
 			f.EventuallyCronJobResumed(backupConfig.ObjectMeta).Should(BeTrue())
 
 			By("Waiting for scheduled backup after resuming")
-			f.EventuallyBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", initialBackupCount+1))
+			f.EventuallySuccessfulBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", initialBackupCount+1))
 		})
 	})
 
@@ -143,7 +143,7 @@ var _ = Describe("Pause Backup", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for initial scheduled backup")
-			f.EventuallyBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", 1))
+			f.EventuallySuccessfulBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", 1))
 
 			By("Pausing scheduled backup")
 			backupConfig, _, err = v1beta1_util.PatchBackupConfiguration(context.TODO(), f.StashClient.StashV1beta1(), backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
@@ -184,7 +184,7 @@ var _ = Describe("Pause Backup", func() {
 			f.EventuallyCronJobResumed(backupConfig.ObjectMeta).Should(BeTrue())
 
 			By("Waiting for scheduled backup after resuming")
-			f.EventuallyBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", initialBackupCount+1))
+			f.EventuallySuccessfulBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", initialBackupCount+1))
 		})
 	})
 })

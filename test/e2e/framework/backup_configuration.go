@@ -49,7 +49,7 @@ func (fi *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...
 			// hence, set the schedule to a large interval so that no backup schedule appear before completing running backup
 			// we will use manual triggering for taking backup. this will help us to avoid waiting for fixed interval before each backup
 			// and the problem mentioned above
-			Schedule: "59 * * * *",
+			Schedule: "0 0 * 12 *",
 			RetentionPolicy: v1alpha1.RetentionPolicy{
 				Name:     "keep-last-5",
 				KeepLast: 5,
