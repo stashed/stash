@@ -44,9 +44,11 @@ message AddKeyTransform {
 
   // The binary value (possibly non-string) to add to the Secret under the specified key. If both
   // value and stringValue are specified, then value is ignored and stringValue is stored.
+  // +optional
   optional bytes value = 2;
 
   // The string (non-binary) value to add to the Secret under the specified key.
+  // +optional
   optional string stringValue = 3;
 }
 
