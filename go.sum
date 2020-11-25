@@ -1157,6 +1157,8 @@ kmodules.xyz/constants v0.0.0-20200923054614-6b87dbbae4d6/go.mod h1:DbiFk1bJ1KEO
 kmodules.xyz/crd-schema-fuzz v0.0.0-20200922204806-c1426cd7fcf4/go.mod h1:WrO3fryNyFCgqqyWnwI89lnzWA7kN072Ehya7ELGfzE=
 kmodules.xyz/custom-resources v0.0.0-20201105075444-3c6af51b4f79 h1:BKPPUY/w0ac4R6g172zrejs+MLae2CHGqHCFpzrbRLc=
 kmodules.xyz/custom-resources v0.0.0-20201105075444-3c6af51b4f79/go.mod h1:/r3/eJ3LIfwGyBEVaobqUZRZGh7GJv5RJojj/bdD14Q=
+kmodules.xyz/custom-resources v0.0.0-20201124062543-bd8d35c21b0c h1:OIAnTI2yik4i1DSe23kO+89RMw/Eu6WUG/IQ++ivYNo=
+kmodules.xyz/custom-resources v0.0.0-20201124062543-bd8d35c21b0c/go.mod h1:/r3/eJ3LIfwGyBEVaobqUZRZGh7GJv5RJojj/bdD14Q=
 kmodules.xyz/objectstore-api v0.0.0-20201105133858-cbb2af88d50a h1:FJ8Fwn+BCalLuzkhjmyDf7Fuh19LBIEf/Fx/+xaYDB0=
 kmodules.xyz/objectstore-api v0.0.0-20201105133858-cbb2af88d50a/go.mod h1:87wP8pKn5ICyQcbK+w+4Jlx5JQy/+mkDGj7T/Qnfrpk=
 kmodules.xyz/offshoot-api v0.0.0-20201105074700-8675f5f686f2 h1:JVuNeHhVq/iRRM2yRF7nuYUdq1necfAPGpA5JjUcBuk=

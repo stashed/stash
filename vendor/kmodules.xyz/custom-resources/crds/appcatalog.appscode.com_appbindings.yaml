@@ -163,8 +163,6 @@ spec:
                         type: string
                     required:
                     - key
-                    - stringValue
-                    - value
                     type: object
                   addKeysFrom:
                     description: AddKeysFrom represents a transform that merges all
