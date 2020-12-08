@@ -1152,6 +1152,8 @@ k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89 h1:d4vVOjXm687F1iLSP2q3lyPPuyvTU
 k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89/go.mod h1:sZAwmy6armz5eXlNoLmJcl4F1QuKu7sr+mFQ0byX7Ew=
 kmodules.xyz/client-go v0.0.0-20201105071625-0b277310b9b8 h1:zs2+yI/Ola5HjdtfP29XD76Bx5BO4WchC2uN9lkhxQM=
 kmodules.xyz/client-go v0.0.0-20201105071625-0b277310b9b8/go.mod h1:WXDwZBmvrcLgGcuO9iZpI9jcfPuDFfWbxA4EnhAFtGw=
+kmodules.xyz/client-go v0.0.0-20201208053851-a1d7be95e006 h1:gNrNTwi0jViRqdszsb0W5CQF+ANNVFlvh/LO0A3R7dM=
+kmodules.xyz/client-go v0.0.0-20201208053851-a1d7be95e006/go.mod h1:WXDwZBmvrcLgGcuO9iZpI9jcfPuDFfWbxA4EnhAFtGw=
 kmodules.xyz/constants v0.0.0-20200923054614-6b87dbbae4d6 h1:9b61GdwFN3IC9tPmBvgXdo2kBlQKvyFUy5y4Q0fwB5E=
 kmodules.xyz/constants v0.0.0-20200923054614-6b87dbbae4d6/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20200922204806-c1426cd7fcf4/go.mod h1:WrO3fryNyFCgqqyWnwI89lnzWA7kN072Ehya7ELGfzE=
