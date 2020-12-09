@@ -118,7 +118,7 @@ func NewRestoreInitContainer(inv invoker.RestoreInvoker, targetInfo invoker.Rest
 	}
 
 	// In order to preserve file ownership, restore process need to be run as root user.
-	// Stash image uses non-root user "stash"(1005). We have to use securityContext to run stash as root user.
+	// Stash image uses non-root user 65535. We have to use securityContext to run stash as root user.
 	// If a user specify securityContext either in pod level or container level in RuntimeSetting,
 	// don't overwrite that. In this case, user must take the responsibility of possible file ownership modification.
 	securityContext := &core.SecurityContext{
