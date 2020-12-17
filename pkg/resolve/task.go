@@ -29,6 +29,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/envsubst"
+	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -169,6 +170,15 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 		RestartPolicy:  core.RestartPolicyNever, // TODO: use OnFailure ?
 	}
 
+	// The "update-status" Function uses the same image as the Stash operator which runs as user 65535.
+	// However, the backup container runs as root user if no securityContext is provided. As a result
+	// the "update-status" container can't access the cache created by the backup container.
+	// Hence, we need to run all the containers of backup job with same user. Here, we are adding a default
+	// securityContext at pod level to overcome the issue.
+	// This securityContext will be overwritten by the user provided securityContext in the backup invokers.
+	podSpec.SecurityContext = &core.PodSecurityContext{
+		RunAsUser: pointer.Int64P(65535),
+	}
 	// apply RuntimeSettings to PodSpec
 	if o.RuntimeSettings.Pod != nil {
 		podSpec = ofst_util.ApplyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
