@@ -99,8 +99,12 @@ func NewChangeHandler(queue workqueue.RateLimitingInterface) cache.ResourceEvent
 		queue:      queue,
 		enqueueAdd: nil,
 		enqueueUpdate: func(old, nu interface{}) bool {
-			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil ||
+			oldObj := old.(metav1.Object)
+			nuObj := nu.(metav1.Object)
+			return nuObj.GetDeletionTimestamp() != nil ||
 				!meta_util.MustAlreadyReconciled(nu) ||
+				!reflect.DeepEqual(oldObj.GetLabels(), nuObj.GetLabels()) ||
+				!reflect.DeepEqual(oldObj.GetAnnotations(), nuObj.GetAnnotations()) ||
 				!statusEqual(old, nu)
 		},
 		enqueueDelete: true,
