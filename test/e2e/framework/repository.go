@@ -31,7 +31,7 @@ import (
 	"gomodules.xyz/x/crypto/rand"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	pfutil "kmodules.xyz/client-go/tools/portforward"
+	"kmodules.xyz/client-go/tools/portforward"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	"kmodules.xyz/objectstore-api/osm"
 )
@@ -126,8 +126,14 @@ func (f *Framework) BrowseMinioRepository(repo *v1alpha1.Repository) ([]stow.Ite
 	if err != nil {
 		return nil, err
 	}
-
-	tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, f.namespace, pod.Name, 443)
+	tunnel := portforward.NewTunnel(portforward.TunnelOptions{
+		Client:    f.KubeClient.CoreV1().RESTClient(),
+		Config:    f.ClientConfig,
+		Resource:  "pods",
+		Name:      pod.Name,
+		Namespace: f.namespace,
+		Remote:    443,
+	})
 	defer tunnel.Close()
 
 	err = tunnel.ForwardPort()
