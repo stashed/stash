@@ -111,6 +111,20 @@ func NewChangeHandler(queue workqueue.RateLimitingInterface) cache.ResourceEvent
 	}
 }
 
+func NewSpecStatusChangeHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+	return &QueueingEventHandler{
+		queue:      queue,
+		enqueueAdd: nil,
+		enqueueUpdate: func(old, nu interface{}) bool {
+			nuObj := nu.(metav1.Object)
+			return nuObj.GetDeletionTimestamp() != nil ||
+				!meta_util.MustAlreadyReconciled(nu) ||
+				!statusEqual(old, nu)
+		},
+		enqueueDelete: true,
+	}
+}
+
 func Enqueue(queue workqueue.RateLimitingInterface, obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
