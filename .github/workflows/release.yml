@@ -17,15 +17,15 @@ jobs:
         run: |
           make version
 
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
-        with:
-          buildx-version: latest
-          qemu-version: latest
+      - name: Set up QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@v1
 
       - name: Available platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
+        run: echo ${{steps.qemu.outputs.platforms}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
       - name: Publish to GitHub Container Registry
         env:
