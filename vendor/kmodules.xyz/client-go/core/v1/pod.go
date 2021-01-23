@@ -100,6 +100,23 @@ func TryUpdatePod(ctx context.Context, c kubernetes.Interface, meta metav1.Objec
 	return
 }
 
+// IsPodReady returns true if a pod is ready considering readiness gates; false otherwise.
+func IsPodReady(pod *core.Pod) bool {
+	conditions := []core.PodConditionType{
+		core.PodReady,
+	}
+	for _, gate := range pod.Spec.ReadinessGates {
+		conditions = append(conditions, gate.ConditionType)
+	}
+
+	for _, condition := range conditions {
+		if !IsPodConditionTrue(pod.Status.Conditions, condition) {
+			return false
+		}
+	}
+	return true
+}
+
 // ref: https://github.com/coreos/prometheus-operator/blob/c79166fcff3dae7bb8bc1e6bddc81837c2d97c04/pkg/k8sutil/k8sutil.go#L64
 // PodRunningAndReady returns whether a pod is running and each container has
 // passed it's ready state.
@@ -108,11 +125,8 @@ func PodRunningAndReady(pod core.Pod) (bool, error) {
 	case core.PodFailed, core.PodSucceeded:
 		return false, errors.New("pod completed")
 	case core.PodRunning:
-		for _, cond := range pod.Status.Conditions {
-			if cond.Type != core.PodReady {
-				continue
-			}
-			return cond.Status == core.ConditionTrue, nil
+		if IsPodReady(&pod) {
+			return true, nil
 		}
 		return false, errors.New("pod ready condition not found")
 	}

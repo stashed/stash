@@ -20,6 +20,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"gomodules.xyz/sets"
 )
@@ -35,14 +37,9 @@ func VerifyLicense(opts *Options) error {
 	if opts == nil {
 		return fmt.Errorf("missing license")
 	}
-	block, _ := pem.Decode(opts.License)
-	if block == nil {
-		// This probably is a JWT token, should be check for that when ready
-		return errors.New("failed to parse certificate PEM")
-	}
-	cert, err := x509.ParseCertificate(block.Bytes)
+	cert, err := parseCertificate(opts.License)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse certificate")
+		return err
 	}
 
 	// First, create the set of root certificates. For this example we only
@@ -61,6 +58,18 @@ func VerifyLicense(opts *Options) error {
 			x509.ExtKeyUsageClientAuth,
 		},
 	}
+
+	// wildcard certificate
+	if strings.HasPrefix(cert.Subject.CommonName, "*.") {
+		caCert, err := parseCertificate(opts.CACert)
+		if err != nil {
+			return err
+		}
+		if len(caCert.Subject.Organization) > 0 {
+			crtopts.DNSName = "*." + caCert.Subject.Organization[0]
+		}
+	}
+
 	if _, err := cert.Verify(crtopts); err != nil {
 		return errors.Wrap(err, "failed to verify certificate")
 	}
@@ -68,4 +77,13 @@ func VerifyLicense(opts *Options) error {
 		return fmt.Errorf("license was not issued for %s", opts.ProductName)
 	}
 	return nil
+}
+
+func parseCertificate(data []byte) (*x509.Certificate, error) {
+	block, _ := pem.Decode(data)
+	if block == nil {
+		// This probably is a JWT token, should be check for that when ready
+		return nil, errors.New("failed to parse certificate PEM")
+	}
+	return x509.ParseCertificate(block.Bytes)
 }
