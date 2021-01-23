@@ -108,7 +108,7 @@ github.com/emicklei/go-restful/log
 github.com/evanphx/json-patch
 # github.com/fatih/structs v1.1.0
 github.com/fatih/structs
-# github.com/gabriel-vasile/mimetype v1.1.1
+# github.com/gabriel-vasile/mimetype v1.1.2
 github.com/gabriel-vasile/mimetype
 github.com/gabriel-vasile/mimetype/internal/json
 github.com/gabriel-vasile/mimetype/internal/matchers
@@ -293,10 +293,10 @@ github.com/yudai/gojsondiff
 github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 github.com/yudai/golcs
-# go.bytebuilders.dev/license-verifier v0.5.1
+# go.bytebuilders.dev/license-verifier v0.6.1
 go.bytebuilders.dev/license-verifier
 go.bytebuilders.dev/license-verifier/info
-# go.bytebuilders.dev/license-verifier/kubernetes v0.5.1
+# go.bytebuilders.dev/license-verifier/kubernetes v0.6.1
 go.bytebuilders.dev/license-verifier/kubernetes
 go.bytebuilders.dev/license-verifier/kubernetes/apis/licenses
 go.bytebuilders.dev/license-verifier/kubernetes/apis/licenses/v1alpha1
@@ -1128,7 +1128,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20210108092221-c3812eb92bd0
+# kmodules.xyz/client-go v0.0.0-20210118094617-273ba20ad7ca
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/api/v1

@@ -379,8 +379,8 @@ github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 h1:BHyfKlQyqbsFN5p3Ifn
 github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82/go.mod h1:lgjkn3NuSvDfVJdfcVVdX+jpBxNmX4rDAzaS45IcYoM=
 github.com/yudai/pp v2.0.1+incompatible h1:Q4//iY4pNF6yPLZIigmvcl7k/bPgrcTPIFIcmawg5bI=
 github.com/yudai/pp v2.0.1+incompatible/go.mod h1:PuxR/8QJ7cyCkFp/aUDS+JY727OFEZkTdatxwunjIkc=
-go.bytebuilders.dev/license-verifier v0.5.1 h1:GfYRI8rhGO98FmanlzPoOzDfthoY8ATNY3xDdRKs5jQ=
-go.bytebuilders.dev/license-verifier v0.5.1/go.mod h1:SNXpEKh3gg2ljHzh6Dxa7qMZS6hM6L9eQ+U0vaGyfFQ=
+go.bytebuilders.dev/license-verifier v0.6.1 h1:HhtVt+K4TBlOwUNhE4HJWBm5S7nsAizOLuirLmIz2ZA=
+go.bytebuilders.dev/license-verifier v0.6.1/go.mod h1:SNXpEKh3gg2ljHzh6Dxa7qMZS6hM6L9eQ+U0vaGyfFQ=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738/go.mod h1:dnLIgRNXwCJa5e+c6mIZCrds/GIG4ncV9HhK5PX7jPg=
