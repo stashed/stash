@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"go.bytebuilders.dev/license-verifier/kubernetes/apis/licenses"
+	"go.bytebuilders.dev/license-verifier/apis/licenses"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

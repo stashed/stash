@@ -28,12 +28,18 @@ type License struct {
 
 	Issuer    string        `json:"issuer,omitempty"` // byte.builders
 	Products  []string      `json:"products,omitempty"`
-	Clusters  []string      `json:"clusters,omitempty"`  // cluster_id ?
+	Clusters  []string      `json:"clusters,omitempty"` // cluster_id ?
+	User      *User         `json:"user,omitempty"`
 	NotBefore *metav1.Time  `json:"notBefore,omitempty"` // start of subscription start
 	NotAfter  *metav1.Time  `json:"notAfter,omitempty"`  // if set, use this
 	ID        string        `json:"id,omitempty"`        // license ID
 	Status    LicenseStatus `json:"status"`
 	Reason    string        `json:"reason"`
+}
+
+type User struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 type LicenseStatus string

@@ -21,25 +21,29 @@ import (
 	"encoding/pem"
 	"fmt"
 	"strings"
+	"unicode"
+
+	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 
 	"github.com/pkg/errors"
 	"gomodules.xyz/sets"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Options struct {
-	ClusterUID  string
-	ProductName string
-	CACert      []byte
-	License     []byte
+	ClusterUID  string `json:"clusterUID"`
+	ProductName string `json:"productName"`
+	CACert      []byte `json:"caCert,omitempty"`
+	License     []byte `json:"license"`
 }
 
-func VerifyLicense(opts *Options) error {
+func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 	if opts == nil {
-		return fmt.Errorf("missing license")
+		return BadLicense(fmt.Errorf("missing license"))
 	}
 	cert, err := parseCertificate(opts.License)
 	if err != nil {
-		return err
+		return BadLicense(err)
 	}
 
 	// First, create the set of root certificates. For this example we only
@@ -48,7 +52,7 @@ func VerifyLicense(opts *Options) error {
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM(opts.CACert)
 	if !ok {
-		return errors.New("failed to parse root certificate")
+		return BadLicense(errors.New("failed to parse root certificate"))
 	}
 
 	crtopts := x509.VerifyOptions{
@@ -63,20 +67,77 @@ func VerifyLicense(opts *Options) error {
 	if strings.HasPrefix(cert.Subject.CommonName, "*.") {
 		caCert, err := parseCertificate(opts.CACert)
 		if err != nil {
-			return err
+			return BadLicense(err)
 		}
 		if len(caCert.Subject.Organization) > 0 {
 			crtopts.DNSName = "*." + caCert.Subject.Organization[0]
 		}
 	}
 
+	license := v1alpha1.License{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+			Kind:       "License",
+		},
+		Issuer:    "byte.builders",
+		Clusters:  cert.DNSNames,
+		NotBefore: &metav1.Time{Time: cert.NotBefore},
+		NotAfter:  &metav1.Time{Time: cert.NotAfter},
+		ID:        cert.SerialNumber.String(),
+		Products:  cert.Subject.Organization,
+	}
+
+	var user *v1alpha1.User
+	for _, e := range cert.EmailAddresses {
+		parts := strings.FieldsFunc(e, func(r rune) bool {
+			return r == '<' || r == '>'
+		})
+		if len(parts) == 0 {
+			continue
+		}
+
+		if len(parts) == 1 {
+			email := strings.TrimSpace(parts[0])
+			if user == nil {
+				user = &v1alpha1.User{
+					Name:  "",
+					Email: email,
+				}
+			} else if user.Email != email {
+				return BadLicense(fmt.Errorf("license issued to multiple emails %s", strings.Join(cert.EmailAddresses, ";")))
+			}
+		} else { // == 2
+			email := strings.TrimSpace(parts[1])
+			if user == nil {
+				user = &v1alpha1.User{
+					Name:  strings.TrimSpace(parts[0]),
+					Email: email,
+				}
+			} else if user.Email != email {
+				return BadLicense(fmt.Errorf("license issued to multiple emails %s", strings.Join(cert.EmailAddresses, ";")))
+			}
+		}
+	}
+	license.User = user
+
+	// ref: https://github.com/appscode/gitea/blob/master/models/stripe_license.go#L117-L126
 	if _, err := cert.Verify(crtopts); err != nil {
-		return errors.Wrap(err, "failed to verify certificate")
+		e2 := errors.Wrap(err, "failed to verify certificate")
+		license.Status = v1alpha1.LicenseExpired
+		license.Reason = e2.Error()
+		return license, e2
 	}
-	if !sets.NewString(cert.Subject.Organization...).Has(opts.ProductName) {
-		return fmt.Errorf("license was not issued for %s", opts.ProductName)
+	products := strings.FieldsFunc(opts.ProductName, func(r rune) bool {
+		return unicode.IsSpace(r) || r == ',' || r == ';'
+	})
+	if !sets.NewString(cert.Subject.Organization...).HasAny(products...) {
+		e2 := fmt.Errorf("license was not issued for %s", opts.ProductName)
+		license.Status = v1alpha1.LicenseExpired
+		license.Reason = e2.Error()
+		return license, e2
 	}
-	return nil
+	license.Status = v1alpha1.LicenseActive
+	return license, nil
 }
 
 func parseCertificate(data []byte) (*x509.Certificate, error) {
@@ -86,4 +147,19 @@ func parseCertificate(data []byte) (*x509.Certificate, error) {
 		return nil, errors.New("failed to parse certificate PEM")
 	}
 	return x509.ParseCertificate(block.Bytes)
+}
+
+func BadLicense(err error) (v1alpha1.License, error) {
+	if err == nil {
+		// This should never happen
+		panic(err)
+	}
+	return v1alpha1.License{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+			Kind:       "License",
+		},
+		Status: v1alpha1.LicenseUnknown,
+		Reason: err.Error(),
+	}, err
 }
