@@ -14,9 +14,9 @@
 
 SHELL=/bin/bash -o pipefail
 
-GO_PKG   := go.bytebuilders.dev/license-verifier
+GO_PKG   := go.bytebuilders.dev
 REPO     := $(notdir $(shell pwd))
-BIN      := kubernetes
+BIN      := license-verifier
 COMPRESS ?= no
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -51,7 +51,7 @@ endif
 ### These variables should not need tweaking.
 ###
 
-SRC_PKGS := # directories which hold app source excluding tests (not vendored)
+SRC_PKGS := apis # directories which hold app source excluding tests (not vendored)
 SRC_DIRS := $(SRC_PKGS) *.go # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
