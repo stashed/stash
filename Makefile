@@ -15,7 +15,7 @@
 SHELL=/bin/bash -o pipefail
 
 PRODUCT_OWNER_NAME := appscode
-PRODUCT_NAME       := stash-community
+PRODUCT_NAME       := stash-community,kubedb-ext-stash
 ENFORCE_LICENSE    ?=
 
 GO_PKG   := stash.appscode.dev
