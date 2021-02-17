@@ -191,6 +191,13 @@ message ObjectReference {
   optional string name = 2;
 }
 
+// Param declares a value to use for the Param called Name.
+message Param {
+  optional string name = 1;
+
+  optional string value = 2;
+}
+
 // RemoveKeyTransform specifies that one of the credentials keys returned
 // from the broker should not be included in the credentials Secret.
 message RemoveKeyTransform {
@@ -267,5 +274,26 @@ message ServiceReference {
   // sent in any request to this service.
   // +optional
   optional string query = 5;
+}
+
+message StashTask {
+  optional StashTaskSpec stash = 1;
+}
+
+// StashTaskSpec is the spec for app
+message StashTaskSpec {
+  // Backup task definition
+  optional TaskRef backupTask = 1;
+
+  // Restore task definition
+  optional TaskRef restoreTask = 2;
+}
+
+message TaskRef {
+  optional string name = 1;
+
+  // Params specifies a list of parameter to pass to the Task. Stash will use this parameters to resolve the task.
+  // +optional
+  repeated Param params = 2;
 }
 
