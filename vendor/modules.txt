@@ -1128,7 +1128,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20210213000708-f480974ce46d
+# kmodules.xyz/client-go v0.0.0-20210218100652-8f345ddfe801
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/api/v1
@@ -1158,17 +1158,17 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/custom-resources v0.0.0-20210216191337-d890c51255a5
+# kmodules.xyz/custom-resources v0.0.0-20210222235834-b3f8dc56b6a3
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned
 kmodules.xyz/custom-resources/client/clientset/versioned/scheme
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/crds
-# kmodules.xyz/objectstore-api v0.0.0-20201105133858-cbb2af88d50a
+# kmodules.xyz/objectstore-api v0.0.0-20210218144135-bfabb80e0362
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
-# kmodules.xyz/offshoot-api v0.0.0-20201105074700-8675f5f686f2
+# kmodules.xyz/offshoot-api v0.0.0-20210218144050-e1d794cb382a
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util
 # kmodules.xyz/openshift v0.0.0-20201105073146-0da509a7d39f
@@ -1188,7 +1188,7 @@ kmodules.xyz/openshift/client/informers/externalversions/security
 kmodules.xyz/openshift/client/informers/externalversions/security/v1
 kmodules.xyz/openshift/client/listers/apps/v1
 kmodules.xyz/openshift/client/listers/security/v1
-# kmodules.xyz/prober v0.0.0-20201105074402-a243b3a27fd8
+# kmodules.xyz/prober v0.0.0-20210218144026-43e923722d81
 kmodules.xyz/prober/api
 kmodules.xyz/prober/api/v1
 kmodules.xyz/prober/probe

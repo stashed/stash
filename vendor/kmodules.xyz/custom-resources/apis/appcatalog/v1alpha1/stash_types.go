@@ -20,11 +20,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// StashTask defines a Stash backup and restore task definitions.
+// StashAddon defines a Stash backup and restore task definitions.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type StashTask struct {
+type StashAddon struct {
 	metav1.TypeMeta `json:",inline,omitempty"`
-	Stash           StashTaskSpec `json:"stash,omitempty" protobuf:"bytes,1,opt,name=stash"`
+	Stash           StashAddonSpec `json:"stash,omitempty" protobuf:"bytes,1,opt,name=stash"`
+}
+
+// StashAddonSpec is the spec for app
+type StashAddonSpec struct {
+	Addon StashTaskSpec `json:"addon,omitempty" protobuf:"bytes,1,opt,name=addon"`
 }
 
 // StashTaskSpec is the spec for app

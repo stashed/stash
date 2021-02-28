@@ -331,7 +331,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.RenameKeyTransform":   schema_custom_resources_apis_appcatalog_v1alpha1_RenameKeyTransform(ref),
 		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.SecretTransform":      schema_custom_resources_apis_appcatalog_v1alpha1_SecretTransform(ref),
 		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.ServiceReference":     schema_custom_resources_apis_appcatalog_v1alpha1_ServiceReference(ref),
-		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashTask":            schema_custom_resources_apis_appcatalog_v1alpha1_StashTask(ref),
+		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashAddon":           schema_custom_resources_apis_appcatalog_v1alpha1_StashAddon(ref),
+		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashAddonSpec":       schema_custom_resources_apis_appcatalog_v1alpha1_StashAddonSpec(ref),
 		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashTaskSpec":        schema_custom_resources_apis_appcatalog_v1alpha1_StashTaskSpec(ref),
 		"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.TaskRef":              schema_custom_resources_apis_appcatalog_v1alpha1_TaskRef(ref),
 	}
@@ -15393,7 +15394,7 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_ServiceReference(ref commo
 	}
 }
 
-func schema_custom_resources_apis_appcatalog_v1alpha1_StashTask(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_custom_resources_apis_appcatalog_v1alpha1_StashAddon(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -15414,6 +15415,26 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_StashTask(ref common.Refer
 						},
 					},
 					"stash": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashAddonSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashAddonSpec"},
+	}
+}
+
+func schema_custom_resources_apis_appcatalog_v1alpha1_StashAddonSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "StashAddonSpec is the spec for app",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"addon": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashTaskSpec"),
 						},
