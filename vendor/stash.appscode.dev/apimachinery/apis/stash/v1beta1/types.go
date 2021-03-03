@@ -39,7 +39,10 @@ type Param struct {
 }
 
 type TaskRef struct {
-	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// Name specifies the name of the Task to use for backup/restore purpose. If your database has been deployed with KubeDB,
+	// then keep this field empty. Stash will read the Task info from the respective AppBinding.
+	// +optional
+	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 	// Params specifies a list of parameter to pass to the Task. Stash will use this parameters to resolve the task.
 	// +optional
 	Params []Param `json:"params,omitempty" protobuf:"bytes,2,rep,name=params"`

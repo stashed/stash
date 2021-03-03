@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -190,7 +191,12 @@ func extractCheckInfo(out []byte) bool {
 // save valuable information into backupOutput
 func extractCleanupInfo(out []byte) (int64, int64, error) {
 	var fg []ForgetGroup
-	err := json.Unmarshal(out, &fg)
+	// The output can have some warning message along with a array of json. Here, we are going to extract the json part.
+	// The json part start with "[{" and ends with "}]". We are going to use use regular expression to take the first section
+	// that start with "[{" and end with "}]".
+	regex := regexp.MustCompile(`\[{.*}]`)
+	jsonPart := regex.Find(out)
+	err := json.Unmarshal(jsonPart, &fg)
 	if err != nil {
 		return 0, 0, err
 	}

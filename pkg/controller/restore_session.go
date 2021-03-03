@@ -32,6 +32,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
+	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
@@ -52,6 +53,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
+	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
@@ -512,15 +514,21 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		return err
 	}
 
+	// read the addon information
+	addon, err := api_util.ExtractAddonInfo(c.appCatalogClient, targetInfo.Task, targetInfo.Target.Ref, inv.ObjectMeta.Namespace)
+	if err != nil {
+		return err
+	}
+
 	// Now, there could be two restore scenario for restoring through job.
 	// 1. Restore process follows Function-Task model. In this case, we have to resolve respective Functions and Task to get desired job definition.
 	// 2. Restore process does not follow Function-Task model. In this case, we have to generate simple volume restorer job definition.
 
 	var jobTemplate *core.PodTemplateSpec
 
-	if targetInfo.Task.Name != "" {
+	if addon.RestoreTask.Name != "" {
 		// Restore process follows Function-Task model. So, resolve Function and Task to get desired job definition.
-		jobTemplate, err = c.resolveRestoreTask(inv, repository, index)
+		jobTemplate, err = c.resolveRestoreTask(inv, repository, index, addon)
 		if err != nil {
 			return err
 		}
@@ -584,8 +592,8 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		var restoreJobTemplate *core.PodTemplateSpec
 
 		// if restore process follows Function-Task model, then resolve the Functions and Task  for this host
-		if targetInfo.Task.Name != "" {
-			restoreJobTemplate, err = c.resolveRestoreTask(inv, repository, index)
+		if addon.RestoreTask.Name != "" {
+			restoreJobTemplate, err = c.resolveRestoreTask(inv, repository, index, addon)
 
 			if err != nil {
 				return err
@@ -645,15 +653,10 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 }
 
 // resolveRestoreTask resolves Functions and Tasks then returns a job definition to restore the target.
-func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, repository *api_v1alpha1.Repository, index int) (*core.PodTemplateSpec, error) {
+func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, repository *api_v1alpha1.Repository, index int, addon *appcat.StashTaskSpec) (*core.PodTemplateSpec, error) {
 
 	targetInfo := inv.TargetsInfo[index]
 	// resolve task template
-	explicitInputs := make(map[string]string)
-	for _, param := range targetInfo.Task.Params {
-		explicitInputs[param.Name] = param.Value
-	}
-
 	repoInputs, err := c.inputsForRepository(repository)
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve implicit inputs for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
@@ -674,7 +677,7 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
 		TaskName:        targetInfo.Task.Name,
-		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs),
+		Inputs:          core_util.UpsertMap(explicitInputs(addon.RestoreTask.Params), implicitInputs),
 		RuntimeSettings: targetInfo.RuntimeSettings,
 		TempDir:         targetInfo.TempDir,
 	}
