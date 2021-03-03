@@ -872,6 +872,9 @@ message TaskList {
 }
 
 message TaskRef {
+  // Name specifies the name of the Task to use for backup/restore purpose. If your database has been deployed with KubeDB,
+  // then keep this field empty. Stash will read the Task info from the respective AppBinding.
+  // +optional
   optional string name = 1;
 
   // Params specifies a list of parameter to pass to the Task. Stash will use this parameters to resolve the task.

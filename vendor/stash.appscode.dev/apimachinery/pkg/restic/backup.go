@@ -128,7 +128,7 @@ func (w *ResticWrapper) runBackup(backupOption BackupOptions) (api_v1beta1.HostB
 
 	//fmt.Println("shell: ",w)
 	// Backup from stdin
-	if backupOption.StdinPipeCommand.Name != "" {
+	if len(backupOption.StdinPipeCommands) != 0 {
 		out, err := w.backupFromStdin(backupOption)
 		if err != nil {
 			return hostStats, err

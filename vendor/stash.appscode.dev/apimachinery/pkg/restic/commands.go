@@ -142,10 +142,12 @@ func (w *ResticWrapper) backup(params backupParams) ([]byte, error) {
 func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 	log.Infoln("Backing up stdin data")
 
-	// first add StdinPipeCommand, then add restic command
+	// first add StdinPipeCommands, then add restic command
 	var commands []Command
-	if options.StdinPipeCommand.Name != "" {
-		commands = append(commands, options.StdinPipeCommand)
+	if len(options.StdinPipeCommands) != 0 {
+		for i := range options.StdinPipeCommands {
+			commands = append(commands, options.StdinPipeCommands[i])
+		}
 	}
 
 	args := []interface{}{"backup", "--stdin", "--quiet", "--json"}
@@ -288,12 +290,14 @@ func (w *ResticWrapper) dump(dumpOptions DumpOptions) ([]byte, error) {
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 
-	// first add restic command, then add StdoutPipeCommand
+	// first add restic command, then add StdoutPipeCommands
 	commands := []Command{
 		{Name: ResticCMD, Args: args},
 	}
-	if dumpOptions.StdoutPipeCommand.Name != "" {
-		commands = append(commands, dumpOptions.StdoutPipeCommand)
+	if len(dumpOptions.StdoutPipeCommands) != 0 {
+		for i := range dumpOptions.StdoutPipeCommands {
+			commands = append(commands, dumpOptions.StdoutPipeCommands[i])
+		}
 	}
 	return w.run(commands...)
 }

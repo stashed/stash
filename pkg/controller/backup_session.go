@@ -33,6 +33,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
+	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
@@ -56,6 +57,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
+	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
@@ -330,10 +332,10 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		return err
 	}
 
-	// resolve task template
-	explicitInputs := make(map[string]string)
-	for _, param := range targetInfo.Task.Params {
-		explicitInputs[param.Name] = param.Value
+	// read the addon information
+	addon, err := api_util.ExtractAddonInfo(c.appCatalogClient, targetInfo.Task, targetInfo.Target.Ref, inv.ObjectMeta.Namespace)
+	if err != nil {
+		return err
 	}
 
 	repoInputs, err := c.inputsForRepository(repository)
@@ -359,8 +361,8 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
-		TaskName:        targetInfo.Task.Name,
-		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs), // TODO: reverse priority ???
+		TaskName:        addon.BackupTask.Name,
+		Inputs:          core_util.UpsertMap(explicitInputs(addon.BackupTask.Params), implicitInputs), // TODO: reverse priority ???
 		RuntimeSettings: targetInfo.RuntimeSettings,
 		TempDir:         targetInfo.TempDir,
 	}
@@ -972,4 +974,12 @@ func (c *StashController) getRunningBackupSessionForInvoker(inv invoker.BackupIn
 		}
 	}
 	return nil, nil
+}
+
+func explicitInputs(params []appcat.Param) map[string]string {
+	inputs := make(map[string]string)
+	for _, param := range params {
+		inputs[param.Name] = param.Value
+	}
+	return inputs
 }

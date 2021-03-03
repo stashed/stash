@@ -45,7 +45,7 @@ type SnapshotStatus struct {
 	Username   string   `json:"username" protobuf:"bytes,4,opt,name=username"`
 	UID        int32    `json:"uid" protobuf:"varint,5,opt,name=uid"`
 	Gid        int32    `json:"gid" protobuf:"varint,6,opt,name=gid"`
-	Tags       []string `json:",omitempty" protobuf:"bytes,7,rep,name=tags"`
+	Tags       []string `json:"tags,omitempty" protobuf:"bytes,7,rep,name=tags"`
 	Repository string   `json:"repository" protobuf:"bytes,8,opt,name=repository"`
 }
 

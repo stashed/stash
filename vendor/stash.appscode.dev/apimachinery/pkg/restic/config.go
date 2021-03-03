@@ -46,14 +46,14 @@ type Command struct {
 }
 
 // BackupOptions specifies backup information
-// if StdinPipeCommand is specified, BackupPaths will not be used
+// if StdinPipeCommands is specified, BackupPaths will not be used
 type BackupOptions struct {
-	Host             string
-	BackupPaths      []string
-	StdinPipeCommand Command
-	StdinFileName    string // default "stdin"
-	RetentionPolicy  v1alpha1.RetentionPolicy
-	Exclude          []string
+	Host              string
+	BackupPaths       []string
+	StdinPipeCommands []Command
+	StdinFileName     string // default "stdin"
+	RetentionPolicy   v1alpha1.RetentionPolicy
+	Exclude           []string
 }
 
 // RestoreOptions specifies restore information
@@ -68,12 +68,12 @@ type RestoreOptions struct {
 }
 
 type DumpOptions struct {
-	Host              string
-	SourceHost        string
-	Snapshot          string // default "latest"
-	Path              string
-	FileName          string // default "stdin"
-	StdoutPipeCommand Command
+	Host               string
+	SourceHost         string
+	Snapshot           string // default "latest"
+	Path               string
+	FileName           string // default "stdin"
+	StdoutPipeCommands []Command
 }
 
 type SetupOptions struct {

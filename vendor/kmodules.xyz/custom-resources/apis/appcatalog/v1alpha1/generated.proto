@@ -276,8 +276,13 @@ message ServiceReference {
   optional string query = 5;
 }
 
-message StashTask {
-  optional StashTaskSpec stash = 1;
+message StashAddon {
+  optional StashAddonSpec stash = 1;
+}
+
+// StashAddonSpec is the spec for app
+message StashAddonSpec {
+  optional StashTaskSpec addon = 1;
 }
 
 // StashTaskSpec is the spec for app

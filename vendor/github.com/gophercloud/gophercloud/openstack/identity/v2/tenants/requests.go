@@ -60,17 +60,15 @@ func Create(client *gophercloud.ServiceClient, opts CreateOptsBuilder) (r Create
 		r.Err = err
 		return
 	}
-	resp, err := client.Post(createURL(client), b, &r.Body, &gophercloud.RequestOpts{
+	_, r.Err = client.Post(createURL(client), b, &r.Body, &gophercloud.RequestOpts{
 		OkCodes: []int{200, 201},
 	})
-	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
 	return
 }
 
 // Get requests details on a single tenant by ID.
 func Get(client *gophercloud.ServiceClient, id string) (r GetResult) {
-	resp, err := client.Get(getURL(client, id), &r.Body, nil)
-	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
+	_, r.Err = client.Get(getURL(client, id), &r.Body, nil)
 	return
 }
 
@@ -105,16 +103,14 @@ func Update(client *gophercloud.ServiceClient, id string, opts UpdateOptsBuilder
 		r.Err = err
 		return
 	}
-	resp, err := client.Put(updateURL(client, id), &b, &r.Body, &gophercloud.RequestOpts{
+	_, r.Err = client.Put(updateURL(client, id), &b, &r.Body, &gophercloud.RequestOpts{
 		OkCodes: []int{200},
 	})
-	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
 	return
 }
 
 // Delete is the operation responsible for permanently deleting a tenant.
 func Delete(client *gophercloud.ServiceClient, id string) (r DeleteResult) {
-	resp, err := client.Delete(deleteURL(client, id), nil)
-	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
+	_, r.Err = client.Delete(deleteURL(client, id), nil)
 	return
 }

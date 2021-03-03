@@ -38,15 +38,15 @@ require (
 	k8s.io/client-go v0.18.9
 	k8s.io/kube-aggregator v0.18.9
 	k8s.io/kubernetes v1.18.9
-	kmodules.xyz/client-go v0.0.0-20210213000708-f480974ce46d
+	kmodules.xyz/client-go v0.0.0-20210220080427-fd7308e30bb4
 	kmodules.xyz/constants v0.0.0-20200923054614-6b87dbbae4d6
-	kmodules.xyz/custom-resources v0.0.0-20210216191337-d890c51255a5
-	kmodules.xyz/objectstore-api v0.0.0-20201105133858-cbb2af88d50a
-	kmodules.xyz/offshoot-api v0.0.0-20201105074700-8675f5f686f2
-	kmodules.xyz/openshift v0.0.0-20201105073146-0da509a7d39f
-	kmodules.xyz/prober v0.0.0-20201105074402-a243b3a27fd8
-	kmodules.xyz/webhook-runtime v0.0.0-20201105073856-2dc7382b88c6
-	stash.appscode.dev/apimachinery v0.11.9
+	kmodules.xyz/custom-resources v0.0.0-20210222235834-b3f8dc56b6a3
+	kmodules.xyz/objectstore-api v0.0.0-20210220080829-026d708cd259
+	kmodules.xyz/offshoot-api v0.0.0-20210220080828-fae1f6c66a89
+	kmodules.xyz/openshift v0.0.0-20210220080857-5f0c2b113f42
+	kmodules.xyz/prober v0.0.0-20210220081020-e3067cdcc914
+	kmodules.xyz/webhook-runtime v0.0.0-20210220081624-75da115ae653
+	stash.appscode.dev/apimachinery v0.11.10-0.20210303055414-96a424812762
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
