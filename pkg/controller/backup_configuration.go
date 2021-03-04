@@ -115,6 +115,11 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 			if err := c.EnsureBackupTriggeringCronJobDeleted(inv); err != nil {
 				return err
 			}
+
+			// Ensure that the ClusterRoleBindings for this backup invoker has been deleted
+			if err := stash_rbac.EnsureClusterRoleBindingDeleted(c.kubeClient, inv.ObjectMeta, inv.Labels); err != nil {
+				return err
+			}
 			// Remove finalizer
 			return inv.RemoveFinalizer()
 		}

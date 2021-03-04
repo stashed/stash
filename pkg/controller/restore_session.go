@@ -175,6 +175,10 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 					}
 				}
 			}
+			// Ensure that the ClusterRoleBindings for this restore invoker has been deleted
+			if err := stash_rbac.EnsureClusterRoleBindingDeleted(c.kubeClient, in.ObjectMeta, in.Labels); err != nil {
+				return err
+			}
 			// remove finalizer
 			return in.RemoveFinalizer()
 		}
