@@ -31,6 +31,7 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd/api"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -314,4 +315,22 @@ func EnsureLicenseReaderClusterRoleBinding(kc kubernetes.Interface, owner *metav
 		return in
 	}, metav1.PatchOptions{})
 	return err
+}
+
+func EnsureClusterRoleBindingDeleted(kubeClient kubernetes.Interface, owner metav1.ObjectMeta, selector map[string]string) error {
+	// List all the ClusterRoleBinding with the provided labels
+	resources, err := kubeClient.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(selector).String()})
+	if err != nil {
+		return err
+	}
+	// Delete the ClusterRoleBindings that are controlled by the provided owner
+	for i := range resources.Items {
+		if metav1.IsControlledBy(&resources.Items[i], &owner) {
+			err = kubeClient.RbacV1().ClusterRoleBindings().Delete(context.TODO(), resources.Items[i].Name, metav1.DeleteOptions{})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
