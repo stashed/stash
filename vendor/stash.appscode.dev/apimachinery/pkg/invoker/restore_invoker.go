@@ -19,6 +19,7 @@ package invoker
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -27,6 +28,7 @@ import (
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -34,6 +36,8 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
+	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -59,26 +63,27 @@ type RestoreInvokerStatus struct {
 }
 
 type RestoreInvoker struct {
-	TypeMeta        metav1.TypeMeta
-	ObjectMeta      metav1.ObjectMeta
-	Labels          map[string]string
-	Hash            string
-	Driver          v1beta1.Snapshotter
-	Repository      string
-	TargetsInfo     []RestoreTargetInfo
-	ExecutionOrder  v1beta1.ExecutionOrder
-	Hooks           *v1beta1.RestoreHooks
-	ObjectRef       *core.ObjectReference
-	OwnerRef        *metav1.OwnerReference
-	Status          RestoreInvokerStatus
-	ObjectJson      []byte
-	AddFinalizer    func() error
-	RemoveFinalizer func() error
-	HasCondition    func(*v1beta1.TargetRef, string) (bool, error)
-	GetCondition    func(*v1beta1.TargetRef, string) (int, *kmapi.Condition, error)
-	SetCondition    func(*v1beta1.TargetRef, kmapi.Condition) error
-	IsConditionTrue func(*v1beta1.TargetRef, string) (bool, error)
-	NextInOrder     func(v1beta1.TargetRef, []v1beta1.RestoreMemberStatus) bool
+	TypeMeta                metav1.TypeMeta
+	ObjectMeta              metav1.ObjectMeta
+	Labels                  map[string]string
+	Hash                    string
+	Driver                  v1beta1.Snapshotter
+	Repository              string
+	TargetsInfo             []RestoreTargetInfo
+	ExecutionOrder          v1beta1.ExecutionOrder
+	Hooks                   *v1beta1.RestoreHooks
+	ObjectRef               *core.ObjectReference
+	OwnerRef                *metav1.OwnerReference
+	Status                  RestoreInvokerStatus
+	ObjectJson              []byte
+	AddFinalizer            func() error
+	RemoveFinalizer         func() error
+	HasCondition            func(*v1beta1.TargetRef, string) (bool, error)
+	GetCondition            func(*v1beta1.TargetRef, string) (int, *kmapi.Condition, error)
+	SetCondition            func(*v1beta1.TargetRef, kmapi.Condition) error
+	IsConditionTrue         func(*v1beta1.TargetRef, string) (bool, error)
+	NextInOrder             func(v1beta1.TargetRef, []v1beta1.RestoreMemberStatus) bool
+	EnsureKubeDBIntegration func(appClient appcatalog_cs.Interface) error
 
 	UpdateRestoreInvokerStatus func(status RestoreInvokerStatus) (RestoreInvokerStatus, error)
 	CreateEvent                func(eventType, source, reason, message string) error
@@ -253,6 +258,41 @@ func ExtractRestoreInvokerInfo(kubeClient kubernetes.Interface, stashClient cs.I
 			}, metav1.CreateOptions{})
 			return err
 		}
+		invoker.EnsureKubeDBIntegration = func(appClient appcatalog_cs.Interface) error {
+			for i := range restoreBatch.Spec.Members {
+				target := restoreBatch.Spec.Members[i].Target
+				// Don't do anything if the target is not an AppBinding
+				if target == nil || !TargetOfGroupKind(target.Ref, appcat.SchemeGroupVersion.Group, appcat.ResourceKindApp) {
+					continue
+				}
+				// Get the respective AppBinding
+				appBinding, err := appClient.AppcatalogV1alpha1().AppBindings(restoreBatch.Namespace).Get(context.TODO(), target.Ref.Name, metav1.GetOptions{})
+				if err != nil {
+					// If the AppBinding does not exist, then don't do anything.
+					if kerr.IsNotFound(err) {
+						continue
+					}
+					return err
+				}
+				// If the AppBinding is not managed by KubeDB, then don't do anything
+				if manager, err := meta.GetStringValue(appBinding.Labels, meta.ManagedByLabelKey); err != nil || manager != "kubedb.com" {
+					continue
+				}
+				// Extract the name, and managed-by labels. We are not passing "instance" label because there could be multiple AppBindings.
+				appLabels, err := extractLabels(appBinding.Labels, meta.ManagedByLabelKey, meta.NameLabelKey)
+				if err != nil {
+					return err
+				}
+
+				// Add the labels to the invoker
+				_, _, err = v1beta1_util.PatchRestoreBatch(context.TODO(), stashClient.StashV1beta1(), restoreBatch, func(in *v1beta1.RestoreBatch) *v1beta1.RestoreBatch {
+					in.Labels = meta.OverwriteKeys(in.Labels, appLabels)
+					return in
+				}, metav1.PatchOptions{})
+				return err
+			}
+			return nil
+		}
 	case v1beta1.ResourceKindRestoreSession:
 		// get RestoreSession
 		restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(context.TODO(), invokerName, metav1.GetOptions{})
@@ -409,6 +449,37 @@ func ExtractRestoreInvokerInfo(kubeClient kubernetes.Interface, stashClient cs.I
 			}, metav1.CreateOptions{})
 			return err
 		}
+		invoker.EnsureKubeDBIntegration = func(appClient appcatalog_cs.Interface) error {
+			// Don't do anything if the target is not an AppBinding
+			if restoreSession.Spec.Target == nil || !TargetOfGroupKind(restoreSession.Spec.Target.Ref, appcat.SchemeGroupVersion.Group, appcat.ResourceKindApp) {
+				return nil
+			}
+			// Get the AppBinding
+			appBinding, err := appClient.AppcatalogV1alpha1().AppBindings(restoreSession.Namespace).Get(context.TODO(), restoreSession.Spec.Target.Ref.Name, metav1.GetOptions{})
+			if err != nil {
+				// If the AppBinding does not exist, then don't do anything.
+				if kerr.IsNotFound(err) {
+					return nil
+				}
+				return err
+			}
+			// If the AppBinding is not managed by KubeDB, then don't do anything
+			if manager, err := meta.GetStringValue(appBinding.Labels, meta.ManagedByLabelKey); err != nil || manager != "kubedb.com" {
+				return nil
+			}
+			// Extract the name, instance, and managed-by labels.
+			appLabels, err := extractLabels(appBinding.Labels, meta.InstanceLabelKey, meta.ManagedByLabelKey, meta.NameLabelKey)
+			if err != nil {
+				return err
+			}
+
+			// Add the labels to the invoker
+			_, _, err = v1beta1_util.PatchRestoreSession(context.TODO(), stashClient.StashV1beta1(), restoreSession, func(in *v1beta1.RestoreSession) *v1beta1.RestoreSession {
+				in.Labels = meta.OverwriteKeys(in.Labels, appLabels)
+				return in
+			}, metav1.PatchOptions{})
+			return err
+		}
 	default:
 		return invoker, fmt.Errorf("failed to extract invoker info. Reason: unknown invoker")
 	}
@@ -550,6 +621,26 @@ func TargetRestoreCompleted(ref v1beta1.TargetRef, targetStatus []v1beta1.Restor
 				targetStatus[i].Phase == v1beta1.TargetRestoreFailed ||
 				targetStatus[i].Phase == v1beta1.TargetRestorePhaseUnknown
 		}
+	}
+	return false
+}
+
+func extractLabels(in map[string]string, keys ...string) (map[string]string, error) {
+	out := make(map[string]string, len(keys))
+	for _, k := range keys {
+		val, err := meta.GetStringValue(in, k)
+		if err != nil {
+			return nil, err
+		}
+		out[k] = val
+	}
+	return out, nil
+}
+
+func TargetOfGroupKind(targetRef v1beta1.TargetRef, group, kind string) bool {
+	gv := strings.Split(targetRef.APIVersion, "/")
+	if len(gv) > 0 && gv[0] == group && targetRef.Kind == kind {
+		return true
 	}
 	return false
 }

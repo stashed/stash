@@ -19,9 +19,9 @@ package util
 import (
 	"context"
 	"encoding/json"
-	"strings"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
@@ -32,7 +32,7 @@ func ExtractAddonInfo(appClient appcatalog_cs.Interface, task v1beta1.TaskRef, t
 	var params appcat.StashAddon
 
 	// If the target is AppBinding and it has addon information set in the parameters section, then extract the addon info.
-	if targetOfGroupKind(targetRef, appcat.SchemeGroupVersion.Group, appcat.ResourceKindApp) {
+	if invoker.TargetOfGroupKind(targetRef, appcat.SchemeGroupVersion.Group, appcat.ResourceKindApp) {
 		// get the AppBinding
 		appBinding, err := appClient.AppcatalogV1alpha1().AppBindings(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
@@ -65,14 +65,6 @@ func ExtractAddonInfo(appClient appcatalog_cs.Interface, task v1beta1.TaskRef, t
 	}
 
 	return &addon, nil
-}
-
-func targetOfGroupKind(targetRef v1beta1.TargetRef, group, kind string) bool {
-	gv := strings.Split(targetRef.APIVersion, "/")
-	if gv[0] == group && targetRef.Kind == kind {
-		return true
-	}
-	return false
 }
 
 func getTaskParams(task v1beta1.TaskRef) []appcat.Param {
