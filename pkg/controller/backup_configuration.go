@@ -123,6 +123,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 			// Remove finalizer
 			return inv.RemoveFinalizer()
 		}
+		return nil
 	}
 	err := inv.AddFinalizer()
 	if err != nil {

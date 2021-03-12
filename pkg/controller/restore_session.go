@@ -142,7 +142,7 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 	restoreSession := obj.(*api_v1beta1.RestoreSession)
 	glog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
 	// process sync/add/update event
-	invoker, err := invoker.ExtractRestoreInvokerInfo(
+	inv, err := invoker.ExtractRestoreInvokerInfo(
 		c.kubeClient,
 		c.stashClient,
 		api_v1beta1.ResourceKindRestoreSession,
@@ -152,7 +152,14 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 	if err != nil {
 		return err
 	}
-	return c.applyRestoreInvokerReconciliationLogic(invoker, key)
+
+	// Apply any modification requires for smooth KubeDB integration
+	err = inv.EnsureKubeDBIntegration(c.appCatalogClient)
+	if err != nil {
+		return err
+	}
+
+	return c.applyRestoreInvokerReconciliationLogic(inv, key)
 }
 
 func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.RestoreInvoker, key string) error {
@@ -182,6 +189,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 			// remove finalizer
 			return in.RemoveFinalizer()
 		}
+		return nil
 	}
 
 	// add finalizer
