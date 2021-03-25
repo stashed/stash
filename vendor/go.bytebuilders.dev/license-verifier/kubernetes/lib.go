@@ -111,7 +111,11 @@ func (le *LicenseEnforcer) podName() (string, error) {
 func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) error {
 	// Send interrupt so that all go-routines shut-down gracefully
 	//nolint:errcheck
-	defer syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	defer func() {
+		_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+		time.Sleep(30 * time.Second)
+		_ = syscall.Kill(syscall.Getpid(), syscall.SIGKILL)
+	}()
 
 	// Log licenseInfo verification failure
 	klog.Errorln("Failed to verify license. Reason: ", licenseErr.Error())
@@ -249,18 +253,9 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 		return false, nil
 	}
 
-	if !info.EnforceLicenseImmediately() {
-		licenseMissing := licenseFile == ""
-		if _, err := os.Stat(licenseFile); os.IsNotExist(err) {
-			licenseMissing = true
-		}
-		if licenseMissing {
-			klog.Warningf("license file is missing. You have %v to acquire a valid license", licenseCheckInterval)
-
-			return wait.PollUntil(licenseCheckInterval, fn, stopCh)
-		}
+	if _, err := os.Stat(licenseFile); os.IsNotExist(err) {
+		return errors.New("license file is missing")
 	}
-
 	return wait.PollImmediateUntil(licenseCheckInterval, fn, stopCh)
 }
 
