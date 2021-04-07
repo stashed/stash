@@ -27,7 +27,8 @@ type License struct {
 	metav1.TypeMeta `json:",inline,omitempty"`
 
 	Issuer    string        `json:"issuer,omitempty"` // byte.builders
-	Products  []string      `json:"products,omitempty"`
+	Features  []string      `json:"features,omitempty"`
+	PlanName  string        `json:"planName,omitempty"`
 	Clusters  []string      `json:"clusters,omitempty"` // cluster_id ?
 	User      *User         `json:"user,omitempty"`
 	NotBefore *metav1.Time  `json:"notBefore,omitempty"` // start of subscription start

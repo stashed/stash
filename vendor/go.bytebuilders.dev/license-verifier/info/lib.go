@@ -25,7 +25,7 @@ var (
 	ProductOwnerName string
 	ProductOwnerUID  string
 
-	ProductName string
+	ProductName string // This has been renamed to Features
 	ProductUID  string
 )
 

@@ -31,10 +31,10 @@ import (
 )
 
 type Options struct {
-	ClusterUID  string `json:"clusterUID"`
-	ProductName string `json:"productName"`
-	CACert      []byte `json:"caCert,omitempty"`
-	License     []byte `json:"license"`
+	ClusterUID string `json:"clusterUID"`
+	Features   string `json:"features"`
+	CACert     []byte `json:"caCert,omitempty"`
+	License    []byte `json:"license"`
 }
 
 func VerifyLicense(opts *Options) (v1alpha1.License, error) {
@@ -84,7 +84,23 @@ func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 		NotBefore: &metav1.Time{Time: cert.NotBefore},
 		NotAfter:  &metav1.Time{Time: cert.NotAfter},
 		ID:        cert.SerialNumber.String(),
-		Products:  cert.Subject.Organization,
+		Features:  cert.Subject.Organization,
+	}
+	if len(cert.Subject.OrganizationalUnit) > 0 {
+		license.PlanName = cert.Subject.OrganizationalUnit[0]
+	} else {
+		// old certificate, so plan name auto detected from feature
+		// ref: https://github.com/appscode/offline-license-server/blob/v0.0.20/pkg/server/constants.go#L50-L59
+		features := sets.NewString(cert.Subject.Organization...)
+		if features.Has("kubedb-enterprise") {
+			license.PlanName = "kubedb-enterprise"
+		} else if features.Has("kubedb-community") {
+			license.PlanName = "kubedb-community"
+		} else if features.Has("stash-enterprise") {
+			license.PlanName = "stash-enterprise"
+		} else if features.Has("stash-community") {
+			license.PlanName = "stash-community"
+		}
 	}
 
 	var user *v1alpha1.User
@@ -127,11 +143,11 @@ func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 		license.Reason = e2.Error()
 		return license, e2
 	}
-	products := strings.FieldsFunc(opts.ProductName, func(r rune) bool {
+	features := strings.FieldsFunc(opts.Features, func(r rune) bool {
 		return unicode.IsSpace(r) || r == ',' || r == ';'
 	})
-	if !sets.NewString(cert.Subject.Organization...).HasAny(products...) {
-		e2 := fmt.Errorf("license was not issued for %s", opts.ProductName)
+	if !sets.NewString(cert.Subject.Organization...).HasAny(features...) {
+		e2 := fmt.Errorf("license was not issued for %s", opts.Features)
 		license.Status = v1alpha1.LicenseExpired
 		license.Reason = e2.Error()
 		return license, e2

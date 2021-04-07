@@ -28,8 +28,8 @@ import (
 func (in *License) DeepCopyInto(out *License) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	if in.Products != nil {
-		in, out := &in.Products, &out.Products
+	if in.Features != nil {
+		in, out := &in.Features, &out.Features
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
