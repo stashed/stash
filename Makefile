@@ -371,11 +371,10 @@ install:
 	helm install stash charts/stash --wait	                \
 		--namespace=$(KUBE_NAMESPACE)		                \
 		--set features.community=true                       \
-		--set global.registry=$(REGISTRY)	                \
 		--set-file global.license=$(LICENSE_FILE)	        \
+		--set stash-community.operator.registry=$(REGISTRY)	\
 		--set stash-community.operator.tag=$(TAG)			\
 		--set stash-community.imagePullPolicy=IfNotPresent	\
-		--set cleaner.registry=appscode                     \
 		$(IMAGE_PULL_SECRETS);				                \
 	kubectl wait --for=condition=Available apiservice -l 'app.kubernetes.io/name=stash-community,app.kubernetes.io/instance=stash' --timeout=5m
 
