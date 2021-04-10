@@ -230,15 +230,23 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 			Features: info.ProductName,
 		},
 	}
+
+	if err := verifyLicensePeriodically(le, licenseFile, stopCh); err != nil {
+		return le.handleLicenseVerificationFailure(err)
+	}
+	return nil
+}
+
+func verifyLicensePeriodically(le *LicenseEnforcer, licenseFile string, stopCh <-chan struct{}) error {
 	// Create Kubernetes client
 	err := le.createClients()
 	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
+		return err
 	}
 	// Read cluster UID (UID of the "kube-system" namespace)
 	err = le.readClusterUID()
 	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
+		return err
 	}
 
 	// Periodically verify license with 1 hour interval
@@ -247,12 +255,12 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 		// Read license from file
 		err = le.readLicenseFromFile()
 		if err != nil {
-			return false, le.handleLicenseVerificationFailure(err)
+			return false, err
 		}
 		// Validate license
 		_, err = verifier.VerifyLicense(le.opts)
 		if err != nil {
-			return false, le.handleLicenseVerificationFailure(err)
+			return false, err
 		}
 		klog.Infoln("Successfully verified license!")
 		// return false so that the loop never ends
@@ -281,25 +289,33 @@ func CheckLicenseFile(config *rest.Config, licenseFile string) error {
 			Features: info.ProductName,
 		},
 	}
+
+	if err := checkLicenseFile(le); err != nil {
+		return le.handleLicenseVerificationFailure(err)
+	}
+	return nil
+}
+
+func checkLicenseFile(le *LicenseEnforcer) error {
 	// Create Kubernetes client
 	err := le.createClients()
 	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
+		return err
 	}
 	// Read cluster UID (UID of the "kube-system" namespace)
 	err = le.readClusterUID()
 	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
+		return err
 	}
 	// Read license from file
 	err = le.readLicenseFromFile()
 	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
+		return err
 	}
 	// Validate license
 	_, err = verifier.VerifyLicense(le.opts)
 	if err != nil {
-		return le.handleLicenseVerificationFailure(err)
+		return err
 	}
 	klog.Infoln("Successfully verified license!")
 	return nil
