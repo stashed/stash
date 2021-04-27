@@ -961,7 +961,7 @@ func postBackupActionsSucceeded(conditions []kmapi.Condition) (bool, string) {
 }
 
 func (c *StashController) getRunningBackupSessionForInvoker(inv invoker.BackupInvoker) (*api_v1beta1.BackupSession, error) {
-	backupSessions, err := c.backupSessionLister.List(labels.SelectorFromSet(map[string]string{
+	backupSessions, err := c.backupSessionLister.BackupSessions(inv.ObjectMeta.Namespace).List(labels.SelectorFromSet(map[string]string{
 		apis.LabelInvokerName: inv.ObjectMeta.Name,
 		apis.LabelInvokerType: inv.TypeMeta.Kind,
 	}))
