@@ -32,7 +32,6 @@ import (
 	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
-	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clientcmd"
 )
 
@@ -52,7 +51,6 @@ func NewStashOptions(out, errOut io.Writer) *StashOptions {
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
 			defaultEtcdPathPrefix,
 			server.Codecs.LegacyCodec(admissionv1beta1.SchemeGroupVersion),
-			genericoptions.NewProcessInfo("stash-operator", meta.Namespace()),
 		),
 		ExtraOptions: NewExtraOptions(),
 		StdOut:       out,

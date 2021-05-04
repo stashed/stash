@@ -19,7 +19,6 @@ package v1
 import (
 	"context"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -28,13 +27,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchRole(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.Role) *rbac.Role, opts metav1.PatchOptions) (*rbac.Role, kutil.VerbType, error) {
 	cur, err := c.RbacV1().Roles(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Role %s/%s.", meta.Namespace, meta.Name)
+		klog.V(3).Infof("Creating Role %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.RbacV1().Roles(meta.Namespace).Create(ctx, transform(&rbac.Role{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Role",
@@ -74,7 +74,7 @@ func PatchRoleObject(ctx context.Context, c kubernetes.Interface, cur, mod *rbac
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Role %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	klog.V(3).Infof("Patching Role %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.RbacV1().Roles(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -90,7 +90,7 @@ func TryUpdateRole(ctx context.Context, c kubernetes.Interface, meta metav1.Obje
 			result, e2 = c.RbacV1().Roles(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Role %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update Role %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 

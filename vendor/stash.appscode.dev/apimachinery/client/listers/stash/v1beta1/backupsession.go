@@ -27,8 +27,10 @@ import (
 )
 
 // BackupSessionLister helps list BackupSessions.
+// All objects returned here must be treated as read-only.
 type BackupSessionLister interface {
 	// List lists all BackupSessions in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.BackupSession, err error)
 	// BackupSessions returns an object that can list and get BackupSessions.
 	BackupSessions(namespace string) BackupSessionNamespaceLister
@@ -59,10 +61,13 @@ func (s *backupSessionLister) BackupSessions(namespace string) BackupSessionName
 }
 
 // BackupSessionNamespaceLister helps list and get BackupSessions.
+// All objects returned here must be treated as read-only.
 type BackupSessionNamespaceLister interface {
 	// List lists all BackupSessions in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.BackupSession, err error)
 	// Get retrieves the BackupSession from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1beta1.BackupSession, error)
 	BackupSessionNamespaceListerExpansion
 }

@@ -24,12 +24,12 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/golang/glog"
-	"gomodules.xyz/x/log"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/tools/queue"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
@@ -71,7 +71,7 @@ func (c *StashController) NewDeploymentConfigWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initDeploymentConfigWatcher() {
 	if !discovery.IsPreferredAPIResource(c.kubeClient.Discovery(), ocapps.GroupVersion.String(), apis.KindDeploymentConfig) {
-		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", ocapps.GroupVersion.String(), apis.KindDeploymentConfig)
+		klog.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", ocapps.GroupVersion.String(), apis.KindDeploymentConfig)
 		return
 	}
 	c.dcInformer = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Informer()

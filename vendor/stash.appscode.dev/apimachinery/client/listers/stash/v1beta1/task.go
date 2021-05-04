@@ -27,10 +27,13 @@ import (
 )
 
 // TaskLister helps list Tasks.
+// All objects returned here must be treated as read-only.
 type TaskLister interface {
 	// List lists all Tasks in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.Task, err error)
 	// Get retrieves the Task from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1beta1.Task, error)
 	TaskListerExpansion
 }

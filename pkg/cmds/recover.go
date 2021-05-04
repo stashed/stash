@@ -23,9 +23,9 @@ import (
 	"stash.appscode.dev/stash/pkg/recovery"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 )
 
@@ -44,7 +44,7 @@ func NewCmdRecover() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalln(err)
+				klog.Fatalln(err)
 			}
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)

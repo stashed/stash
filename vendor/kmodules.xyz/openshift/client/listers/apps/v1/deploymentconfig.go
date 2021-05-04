@@ -27,8 +27,10 @@ import (
 )
 
 // DeploymentConfigLister helps list DeploymentConfigs.
+// All objects returned here must be treated as read-only.
 type DeploymentConfigLister interface {
 	// List lists all DeploymentConfigs in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.DeploymentConfig, err error)
 	// DeploymentConfigs returns an object that can list and get DeploymentConfigs.
 	DeploymentConfigs(namespace string) DeploymentConfigNamespaceLister
@@ -59,10 +61,13 @@ func (s *deploymentConfigLister) DeploymentConfigs(namespace string) DeploymentC
 }
 
 // DeploymentConfigNamespaceLister helps list and get DeploymentConfigs.
+// All objects returned here must be treated as read-only.
 type DeploymentConfigNamespaceLister interface {
 	// List lists all DeploymentConfigs in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.DeploymentConfig, err error)
 	// Get retrieves the DeploymentConfig from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.DeploymentConfig, error)
 	DeploymentConfigNamespaceListerExpansion
 }

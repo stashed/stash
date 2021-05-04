@@ -32,7 +32,6 @@ import (
 	httpprobe "kmodules.xyz/prober/probe/http"
 	tcpprobe "kmodules.xyz/prober/probe/tcp"
 
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 )
 
 type Prober struct {
@@ -84,7 +84,7 @@ func RunProbe(config *rest.Config, probes *api_v1.Handler, podName, namespace st
 
 func (pb *Prober) executeProbe(p *api_v1.Handler, pod *core.Pod, timeout time.Duration) error {
 	if p.Exec != nil {
-		log.Debugf("Exec-Probe Pod: %v, Container: %v, Command: %v", formatPod(pod), p.ContainerName, p.Exec.Command)
+		klog.V(5).Infof("Exec-Probe Pod: %v, Container: %v, Command: %v", formatPod(pod), p.ContainerName, p.Exec.Command)
 		res, resp, err := pb.Exec.Probe(pb.Config, pod, p.ContainerName, p.Exec.Command)
 		if res != api.Success && res != api.Warning {
 			return handleProbeFailure("exec", res, resp, err)
@@ -122,10 +122,10 @@ func (pb *Prober) executeHttpGet(p *api_v1.Handler, pod *core.Pod, timeout time.
 		return api.Unknown, "", err
 	}
 	path := p.HTTPGet.Path
-	log.Debugf("HTTP-Probe Host: %v://%v, Port: %v, Path: %v", scheme, host, port, path)
+	klog.V(5).Infof("HTTP-Probe Host: %v://%v, Port: %v, Path: %v", scheme, host, port, path)
 	targetURL := formatURL(scheme, host, port, path)
 	headers := buildHeader(p.HTTPGet.HTTPHeaders)
-	log.Debugf("HTTP-Probe Headers: %v", headers)
+	klog.V(5).Infof("HTTP-Probe Headers: %v", headers)
 	return pb.HttpGet.Probe(targetURL, headers, timeout)
 }
 
@@ -140,10 +140,10 @@ func (pb *Prober) executeHttpPost(p *api_v1.Handler, pod *core.Pod, timeout time
 		return api.Unknown, "", err
 	}
 	path := p.HTTPPost.Path
-	log.Debugf("HTTP-Probe Host: %v://%v, Port: %v, Path: %v", scheme, host, port, path)
+	klog.V(5).Infof("HTTP-Probe Host: %v://%v, Port: %v, Path: %v", scheme, host, port, path)
 	targetURL := formatURL(scheme, host, port, path)
 	headers := buildHeader(p.HTTPPost.HTTPHeaders)
-	log.Debugf("HTTP-Probe Headers: %v", headers)
+	klog.V(5).Infof("HTTP-Probe Headers: %v", headers)
 	return pb.HttpPost.Probe(targetURL, headers, toValues(p.HTTPPost.Form), p.HTTPPost.Body, timeout)
 }
 
@@ -156,7 +156,7 @@ func (pb *Prober) executeTcpProbe(p *api_v1.Handler, pod *core.Pod, timeout time
 	if host == "" {
 		host = pod.Status.PodIP
 	}
-	log.Debugf("TCP-Probe Host: %v, Port: %v, Timeout: %v", host, port, timeout)
+	klog.V(5).Infof("TCP-Probe Host: %v, Port: %v, Timeout: %v", host, port, timeout)
 	return pb.Tcp.Probe(host, port, timeout)
 }
 

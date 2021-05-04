@@ -19,10 +19,10 @@ package queue
 import (
 	"time"
 
-	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog/v2"
 )
 
 // Worker continuously runs a Reconcile function against a message Queue
@@ -57,7 +57,7 @@ func (w *Worker) Run(shutdown <-chan struct{}) {
 		<-shutdown
 
 		// Stop accepting messages into the Queue
-		glog.V(1).Infof("Shutting down %s Queue\n", w.name)
+		klog.V(1).Infof("Shutting down %s Queue\n", w.name)
 		w.queue.ShutDown()
 	}()
 }
@@ -89,11 +89,11 @@ func (w *Worker) processNextEntry() bool {
 		w.queue.Forget(key)
 		return true
 	}
-	glog.Errorf("Failed to process key %v. Reason: %s", key, err)
+	klog.Errorf("Failed to process key %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if w.queue.NumRequeues(key) < w.maxRetries {
-		glog.Infof("Error syncing key %v: %v", key, err)
+		klog.Infof("Error syncing key %v: %v", key, err)
 
 		// Re-enqueue the key rate limited. Based on the rate limiter on the
 		// queue and the re-enqueue history, the key will be processed later again.
@@ -104,6 +104,6 @@ func (w *Worker) processNextEntry() bool {
 	w.queue.Forget(key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
-	glog.Infof("Dropping key %q out of the queue: %v", key, err)
+	klog.Infof("Dropping key %q out of the queue: %v", key, err)
 	return true
 }

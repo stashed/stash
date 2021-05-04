@@ -24,9 +24,9 @@ import (
 	"stash.appscode.dev/stash/pkg/cmds"
 
 	_ "go.bytebuilders.dev/license-verifier/info"
-	"gomodules.xyz/x/log"
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/logs"
 )
 
@@ -39,7 +39,7 @@ func main() {
 	}
 
 	if err := cmds.NewRootCmd().Execute(); err != nil {
-		log.Fatalln("Error in Stash Main:", err)
+		klog.Fatalln("Error in Stash Main:", err)
 	}
-	log.Infoln("Exiting Stash Main")
+	klog.Infoln("Exiting Stash Main")
 }

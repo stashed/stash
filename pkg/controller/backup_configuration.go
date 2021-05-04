@@ -34,7 +34,6 @@ import (
 
 	"github.com/golang/glog"
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/log"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -42,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta2 "kmodules.xyz/client-go/meta"
@@ -476,7 +476,7 @@ func (c *StashController) handleCronJobCreationFailure(ref *core.ObjectReference
 	}
 
 	// write log
-	log.Warningf("failed to create CronJob for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+	klog.Warningf("failed to create CronJob for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to Backup invoker
 	_, err2 := eventer.CreateEvent(
@@ -501,7 +501,7 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.Objec
 		eventSource = eventer.EventSourceRestoreSessionController
 	}
 
-	log.Warningf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+	klog.Warningf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to backup invoker/RestoreSession
 	_, err2 := eventer.CreateEvent(

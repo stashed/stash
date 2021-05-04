@@ -29,11 +29,11 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"gomodules.xyz/x/log"
 	stringz "gomodules.xyz/x/strings"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
@@ -66,7 +66,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 
 	repository, err := c.stashClient.StashV1alpha1().Repositories(inv.ObjectMeta.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("unable to get Repository %s/%s: Reason: %v", inv.ObjectMeta.Namespace, inv.Repository, err)
+		klog.Errorf("unable to get Repository %s/%s: Reason: %v", inv.ObjectMeta.Namespace, inv.Repository, err)
 		return err
 	}
 
@@ -143,7 +143,7 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) {
 }
 
 func (c *StashController) handleInitContainerInjectionFailure(w *wapi.Workload, inv invoker.RestoreInvoker, ref api_v1beta1.TargetRef, err error) error {
-	log.Warningf("Failed to inject stash init-container into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
+	klog.Warningf("Failed to inject stash init-container into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
 
 	// Set "StashInitContainerInjected" condition to "False"
 	cerr := conditions.SetInitContainerInjectedConditionToFalse(inv, ref, err)
@@ -161,7 +161,7 @@ func (c *StashController) handleInitContainerInjectionFailure(w *wapi.Workload, 
 }
 
 func (c *StashController) handleInitContainerInjectionSuccess(w *wapi.Workload, inv invoker.RestoreInvoker, ref api_v1beta1.TargetRef) error {
-	log.Infof("Successfully injected stash init-container into %s %s/%s.", w.Kind, w.Namespace, w.Name)
+	klog.Infof("Successfully injected stash init-container into %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// Set "StashInitContainerInjected" condition to "True"
 	cerr := conditions.SetInitContainerInjectedConditionToTrue(inv, ref)
@@ -179,7 +179,7 @@ func (c *StashController) handleInitContainerInjectionSuccess(w *wapi.Workload, 
 }
 
 func (c *StashController) handleInitContainerDeletionSuccess(w *wapi.Workload) error {
-	log.Infof("Successfully removed stash init-container from %s %s/%s.", w.Kind, w.Namespace, w.Name)
+	klog.Infof("Successfully removed stash init-container from %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(

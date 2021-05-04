@@ -41,42 +41,46 @@ type CertificateSpec struct {
 	// Alias represents the identifier of the certificate.
 	Alias string `json:"alias" protobuf:"bytes,1,opt,name=alias"`
 
+	// IssuerRef is a reference to a Certificate Issuer.
+	// +optional
+	IssuerRef *core.TypedLocalObjectReference `json:"issuerRef,omitempty" protobuf:"bytes,2,opt,name=issuerRef"`
+
 	// Specifies the k8s secret name that holds the certificates.
 	// Default to <resource-name>-<cert-alias>-cert.
 	// +optional
-	SecretName string `json:"secretName,omitempty" protobuf:"bytes,2,opt,name=secretName"`
+	SecretName string `json:"secretName,omitempty" protobuf:"bytes,3,opt,name=secretName"`
 
 	// Full X509 name specification (https://golang.org/pkg/crypto/x509/pkix/#Name).
 	// +optional
-	Subject *X509Subject `json:"subject,omitempty" protobuf:"bytes,3,opt,name=subject"`
+	Subject *X509Subject `json:"subject,omitempty" protobuf:"bytes,4,opt,name=subject"`
 
 	// Certificate default Duration
 	// +optional
-	Duration *metav1.Duration `json:"duration,omitempty" protobuf:"bytes,4,opt,name=duration"`
+	Duration *metav1.Duration `json:"duration,omitempty" protobuf:"bytes,5,opt,name=duration"`
 
 	// Certificate renew before expiration duration
 	// +optional
-	RenewBefore *metav1.Duration `json:"renewBefore,omitempty" protobuf:"bytes,5,opt,name=renewBefore"`
+	RenewBefore *metav1.Duration `json:"renewBefore,omitempty" protobuf:"bytes,6,opt,name=renewBefore"`
 
 	// DNSNames is a list of subject alt names to be used on the Certificate.
 	// +optional
-	DNSNames []string `json:"dnsNames,omitempty" protobuf:"bytes,6,rep,name=dnsNames"`
+	DNSNames []string `json:"dnsNames,omitempty" protobuf:"bytes,7,rep,name=dnsNames"`
 
 	// IPAddresses is a list of IP addresses to be used on the Certificate
 	// +optional
-	IPAddresses []string `json:"ipAddresses,omitempty" protobuf:"bytes,7,rep,name=ipAddresses"`
+	IPAddresses []string `json:"ipAddresses,omitempty" protobuf:"bytes,8,rep,name=ipAddresses"`
 
 	// URIs is a list of URI subjectAltNames to be set on the Certificate.
 	// +optional
-	URIs []string `json:"uris,omitempty" protobuf:"bytes,8,rep,name=uris"`
+	URIs []string `json:"uris,omitempty" protobuf:"bytes,9,rep,name=uris"`
 
 	// EmailAddresses is a list of email subjectAltNames to be set on the Certificate.
 	// +optional
-	EmailAddresses []string `json:"emailAddresses,omitempty" protobuf:"bytes,9,rep,name=emailAddresses"`
+	EmailAddresses []string `json:"emailAddresses,omitempty" protobuf:"bytes,10,rep,name=emailAddresses"`
 
 	// Options to control private keys used for the Certificate.
 	// +optional
-	PrivateKey *CertificatePrivateKey `json:"privateKey,omitempty" protobuf:"bytes,10,opt,name=privateKey"`
+	PrivateKey *CertificatePrivateKey `json:"privateKey,omitempty" protobuf:"bytes,11,opt,name=privateKey"`
 }
 
 // X509Subject Full X509 name specification

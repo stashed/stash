@@ -27,10 +27,13 @@ import (
 )
 
 // BackupBlueprintLister helps list BackupBlueprints.
+// All objects returned here must be treated as read-only.
 type BackupBlueprintLister interface {
 	// List lists all BackupBlueprints in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.BackupBlueprint, err error)
 	// Get retrieves the BackupBlueprint from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1beta1.BackupBlueprint, error)
 	BackupBlueprintListerExpansion
 }

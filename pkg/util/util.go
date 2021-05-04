@@ -28,7 +28,6 @@ import (
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 
 	"github.com/pkg/errors"
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -37,6 +36,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/pushgateway"
@@ -435,7 +435,7 @@ func ResourceKindShortForm(kind string) string {
 
 func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, namespace string) error {
 	var hookErr error
-	log.Infof("Executing %s hooks.........\n", hookType)
+	klog.Infof("Executing %s hooks.........\n", hookType)
 
 	switch h := hook.(type) {
 	case *api_v1beta1.BackupHooks:
@@ -466,7 +466,7 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 		return hookErr
 	}
 
-	log.Infof("Successfully executed %s hook.\n", hookType)
+	klog.Infof("Successfully executed %s hook.\n", hookType)
 	return nil
 }
 

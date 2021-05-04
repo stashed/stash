@@ -27,8 +27,10 @@ import (
 )
 
 // BackupConfigurationLister helps list BackupConfigurations.
+// All objects returned here must be treated as read-only.
 type BackupConfigurationLister interface {
 	// List lists all BackupConfigurations in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.BackupConfiguration, err error)
 	// BackupConfigurations returns an object that can list and get BackupConfigurations.
 	BackupConfigurations(namespace string) BackupConfigurationNamespaceLister
@@ -59,10 +61,13 @@ func (s *backupConfigurationLister) BackupConfigurations(namespace string) Backu
 }
 
 // BackupConfigurationNamespaceLister helps list and get BackupConfigurations.
+// All objects returned here must be treated as read-only.
 type BackupConfigurationNamespaceLister interface {
 	// List lists all BackupConfigurations in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.BackupConfiguration, err error)
 	// Get retrieves the BackupConfiguration from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1beta1.BackupConfiguration, error)
 	BackupConfigurationNamespaceListerExpansion
 }

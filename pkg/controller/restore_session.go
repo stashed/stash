@@ -40,7 +40,6 @@ import (
 
 	"github.com/golang/glog"
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/log"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -48,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -254,7 +254,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 	if in.Status.Phase == api_v1beta1.RestoreFailed ||
 		in.Status.Phase == api_v1beta1.RestoreSucceeded ||
 		in.Status.Phase == api_v1beta1.RestorePhaseUnknown {
-		log.Infof("Skipping processing %s %s/%s. Reason: phase is %q.",
+		klog.Infof("Skipping processing %s %s/%s. Reason: phase is %q.",
 			in.TypeMeta.Kind,
 			in.ObjectMeta.Namespace,
 			in.ObjectMeta.Name,
@@ -874,7 +874,7 @@ func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) e
 
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
-		log.Errorf("failed to write event in %s %s/%s. Reason: %v",
+		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,
@@ -922,7 +922,7 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
-		log.Errorf("failed to write event in %s %s/%s. Reason: %v",
+		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,
@@ -971,7 +971,7 @@ func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, res
 
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
-		log.Errorf("failed to write event in %s %s/%s. Reason: %v",
+		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,
@@ -1068,7 +1068,7 @@ func (c *StashController) getRestorePhase(status invoker.RestoreInvokerStatus) (
 }
 
 func (c *StashController) handleRestoreJobCreationFailure(inv invoker.RestoreInvoker, restoreErr error) error {
-	log.Errorf("failed to ensure restore job for %s %s/%s. Reason: %v",
+	klog.Errorf("failed to ensure restore job for %s %s/%s. Reason: %v",
 		inv.TypeMeta.Kind,
 		inv.ObjectMeta.Namespace,
 		inv.ObjectMeta.Name,
@@ -1083,7 +1083,7 @@ func (c *StashController) handleRestoreJobCreationFailure(inv invoker.RestoreInv
 		fmt.Sprintf("failed to create restore job. Reason: %v", restoreErr),
 	)
 	if err != nil {
-		log.Errorf("failed to write event for %s %s/%s. Reason: ",
+		klog.Errorf("failed to write event for %s %s/%s. Reason: ",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,

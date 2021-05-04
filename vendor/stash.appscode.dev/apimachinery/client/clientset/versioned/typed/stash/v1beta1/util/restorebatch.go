@@ -24,18 +24,18 @@ import (
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchRestoreBatch(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.RestoreBatch) *api.RestoreBatch, opts metav1.PatchOptions) (*api.RestoreBatch, kutil.VerbType, error) {
 	cur, err := c.RestoreBatches(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating RestoreBatch %s/%s.", meta.Namespace, meta.Name)
+		klog.V(3).Infof("Creating RestoreBatch %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.RestoreBatches(meta.Namespace).Create(ctx, transform(&api.RestoreBatch{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       api.ResourceKindRestoreBatch,
@@ -75,7 +75,7 @@ func PatchRestoreBatchObject(ctx context.Context, c cs.StashV1beta1Interface, cu
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching RestoreBatch %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	klog.V(3).Infof("Patching RestoreBatch %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.RestoreBatches(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -91,7 +91,7 @@ func TryUpdateRestoreBatch(ctx context.Context, c cs.StashV1beta1Interface, meta
 			result, e2 = c.RestoreBatches(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update RestoreBatch %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update RestoreBatch %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 

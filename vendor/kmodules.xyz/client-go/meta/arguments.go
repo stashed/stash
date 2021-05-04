@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/glog"
+	"k8s.io/klog/v2"
 )
 
 func UpsertArgumentList(baseArgs []string, overrideArgs []string, protectedFlags ...string) []string {
@@ -97,7 +97,7 @@ func ParseArgumentListToMap(arguments []string) map[string]string {
 		// Warn in all other cases, but don't error out. This can happen only if the user has edited the argument list by hand, so they might know what they are doing
 		if err != nil {
 			if i != 0 {
-				glog.Warningf("WARNING: The component argument %q could not be parsed correctly. The argument must be of the form %q. Skipping...", arg, "--")
+				klog.Warningf("WARNING: The component argument %q could not be parsed correctly. The argument must be of the form %q. Skipping...", arg, "--")
 			}
 			continue
 		}

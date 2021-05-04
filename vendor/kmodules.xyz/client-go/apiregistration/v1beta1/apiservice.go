@@ -19,13 +19,13 @@ package v1beta1
 import (
 	"context"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/klog/v2"
 	reg "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	apireg_cs "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	kutil "kmodules.xyz/client-go"
@@ -34,7 +34,7 @@ import (
 func CreateOrPatchAPIService(ctx context.Context, c apireg_cs.Interface, name string, transform func(*reg.APIService) *reg.APIService, opts metav1.PatchOptions) (*reg.APIService, kutil.VerbType, error) {
 	cur, err := c.ApiregistrationV1beta1().APIServices().Get(ctx, name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating APIService %s.", name)
+		klog.V(3).Infof("Creating APIService %s.", name)
 		out, err := c.ApiregistrationV1beta1().APIServices().Create(ctx, transform(&reg.APIService{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "APIService",
@@ -76,7 +76,7 @@ func PatchAPIServiceObject(ctx context.Context, c apireg_cs.Interface, cur, mod 
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching APIService %s with %s.", cur.Name, string(patch))
+	klog.V(3).Infof("Patching APIService %s with %s.", cur.Name, string(patch))
 	out, err := c.ApiregistrationV1beta1().APIServices().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -92,7 +92,7 @@ func TryUpdateAPIService(ctx context.Context, c apireg_cs.Interface, name string
 			result, e2 = c.ApiregistrationV1beta1().APIServices().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update APIService %s due to %v.", attempt, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update APIService %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
 

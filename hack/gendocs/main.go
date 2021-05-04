@@ -19,7 +19,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -30,6 +29,7 @@ import (
 
 	"github.com/spf13/cobra/doc"
 	"gomodules.xyz/runtime"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -81,11 +81,11 @@ func main() {
 	fmt.Printf("Generating cli markdown tree in: %v\n", dir)
 	err := os.RemoveAll(dir)
 	if err != nil {
-		log.Fatalln(err)
+		klog.Fatalln(err)
 	}
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
-		log.Fatalln(err)
+		klog.Fatalln(err)
 	}
 
 	filePrepender := func(filename string) string {
@@ -107,7 +107,7 @@ func main() {
 		}
 		var buf bytes.Buffer
 		if err := tplFrontMatter.ExecuteTemplate(&buf, "cmd", data); err != nil {
-			log.Fatalln(err)
+			klog.Fatalln(err)
 		}
 		return buf.String()
 	}
@@ -117,19 +117,19 @@ func main() {
 	}
 	err = doc.GenMarkdownTreeCustom(rootCmd, dir, filePrepender, linkHandler)
 	if err != nil {
-		log.Fatalln(err)
+		klog.Fatalln(err)
 	}
 
 	index := filepath.Join(dir, "_index.md")
 	f, err := os.OpenFile(index, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		log.Fatalln(err)
+		klog.Fatalln(err)
 	}
 	err = tplFrontMatter.ExecuteTemplate(f, "index", struct{}{})
 	if err != nil {
-		log.Fatalln(err)
+		klog.Fatalln(err)
 	}
 	if err := f.Close(); err != nil {
-		log.Fatalln(err)
+		klog.Fatalln(err)
 	}
 }

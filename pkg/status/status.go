@@ -33,7 +33,6 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/eventer"
 
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
@@ -65,7 +65,7 @@ type UpdateStatusOptions struct {
 
 func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	// read backup output from file
-	log.Infof("Reading backup output from file: %s", filepath.Join(o.OutputDir, o.OutputFileName))
+	klog.Infof("Reading backup output from file: %s", filepath.Join(o.OutputDir, o.OutputFileName))
 	backupOutput, err := restic.ReadBackupOutput(filepath.Join(o.OutputDir, o.OutputFileName))
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 
 func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 	// read restore output from file
-	log.Infof("Reading restore output from file: %s", filepath.Join(o.OutputDir, o.OutputFileName))
+	klog.Infof("Reading restore output from file: %s", filepath.Join(o.OutputDir, o.OutputFileName))
 	restoreOutput, err := restic.ReadRestoreOutput(filepath.Join(o.OutputDir, o.OutputFileName))
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 }
 
 func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput, inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) error {
-	log.Infof("Updating post backup status.......")
+	klog.Infof("Updating post backup status.......")
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
 	}
@@ -168,7 +168,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			eventMessage,
 		)
 		if err != nil {
-			log.Errorf("failed to create event for %s %s/%s. Reason: %v",
+			klog.Errorf("failed to create event for %s %s/%s. Reason: %v",
 				inv.TypeMeta.Kind,
 				inv.ObjectMeta.Namespace,
 				inv.ObjectMeta.Name,
@@ -193,7 +193,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	}
 	// add or update entry for each host in restore invoker status
 	var err error
-	log.Infof("Updating hosts status for restore target %s %s/%s.",
+	klog.Infof("Updating hosts status for restore target %s %s/%s.",
 		targetInfo.Target.Ref.Kind,
 		inv.ObjectMeta.Namespace,
 		targetInfo.Target.Ref.Name,
@@ -223,7 +223,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 		}
 		err = inv.CreateEvent(eventType, eventer.EventSourceStatusUpdater, eventReason, eventMessage)
 		if err != nil {
-			log.Errorf("failed to create event for %s %s/%s. Reason: %v",
+			klog.Errorf("failed to create event for %s %s/%s. Reason: %v",
 				inv.TypeMeta.Kind,
 				inv.ObjectMeta.Namespace,
 				inv.ObjectMeta.Name,
@@ -247,7 +247,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 				// For StatefulSet and DaemonSet, only the last host will run these PostBackupActions
 				if curTarget.Kind == apis.KindStatefulSet || curTarget.Kind == apis.KindDaemonSet {
 					if len(targetStatus.Stats) != (int(*targetStatus.TotalHosts) - numCurHosts) {
-						log.Infof("Skipping running PostBackupActions. Reason: Only the last host will execute the post backup actions for %s", curTarget.Kind)
+						klog.Infof("Skipping running PostBackupActions. Reason: Only the last host will execute the post backup actions for %s", curTarget.Kind)
 						return nil
 					}
 				}
@@ -262,7 +262,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 					switch action {
 					case apis.ApplyRetentionPolicy:
 						if !kmapi.HasCondition(backupSession.Status.Conditions, apis.RetentionPolicyApplied) {
-							log.Infoln("Applying retention policy.....")
+							klog.Infoln("Applying retention policy.....")
 							w, err := restic.NewResticWrapper(o.SetupOpt)
 							if err != nil {
 								_, condErr := conditions.SetRetentionPolicyAppliedConditionToFalse(o.StashClient, backupSession, err)
@@ -270,7 +270,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 							}
 							res, err := w.ApplyRetentionPolicies(inv.RetentionPolicy)
 							if err != nil {
-								log.Warningf("Failed to apply retention policy. Reason: %s", err.Error())
+								klog.Warningf("Failed to apply retention policy. Reason: %s", err.Error())
 								_, condErr := conditions.SetRetentionPolicyAppliedConditionToFalse(o.StashClient, backupSession, err)
 								return utilerrors.NewAggregate([]error{err, condErr})
 							}
@@ -285,7 +285,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 						}
 					case apis.VerifyRepositoryIntegrity:
 						if !kmapi.HasCondition(backupSession.Status.Conditions, apis.RepositoryIntegrityVerified) {
-							log.Infoln("Verifying repository integrity...........")
+							klog.Infoln("Verifying repository integrity...........")
 							w, err := restic.NewResticWrapper(o.SetupOpt)
 							if err != nil {
 								_, condErr := conditions.SetRepositoryIntegrityVerifiedConditionToFalse(o.StashClient, backupSession, err)
@@ -293,7 +293,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 							}
 							res, err := w.VerifyRepositoryIntegrity()
 							if err != nil {
-								log.Warningf("Failed to verify Repository integrity. Reason: %s", err.Error())
+								klog.Warningf("Failed to verify Repository integrity. Reason: %s", err.Error())
 								_, condErr := conditions.SetRepositoryIntegrityVerifiedConditionToFalse(o.StashClient, backupSession, err)
 								return utilerrors.NewAggregate([]error{err, condErr})
 							}
@@ -309,10 +309,10 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 					case apis.SendRepositoryMetrics:
 						// if metrics enabled then send metrics to the Prometheus pushgateway
 						if o.Metrics.Enabled && !kmapi.HasCondition(backupSession.Status.Conditions, apis.RepositoryMetricsPushed) {
-							log.Infoln("Pushing repository metrics...........")
+							klog.Infoln("Pushing repository metrics...........")
 							err := o.Metrics.SendRepositoryMetrics(o.Config, inv, repoStats)
 							if err != nil {
-								log.Warningf("Failed to send Repository metrics. Reason: %s", err.Error())
+								klog.Warningf("Failed to send Repository metrics. Reason: %s", err.Error())
 								_, condErr := conditions.SetRepositoryMetricsPushedConditionToFalse(o.StashClient, backupSession, err)
 								return utilerrors.NewAggregate([]error{err, condErr})
 							}
@@ -327,7 +327,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 				}
 				// now, update the repository status
 				if repoStats.Integrity != nil {
-					log.Infoln("Updating repository status......")
+					klog.Infoln("Updating repository status......")
 					repo, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
 					if err != nil {
 						return err
@@ -354,7 +354,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 
 func (o UpdateStatusOptions) waitUntilOtherHostsCompleted(backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef, numCurHosts int) error {
 	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (done bool, err error) {
-		log.Infof("Waiting for all other targets/hosts to complete their backup.....")
+		klog.Infof("Waiting for all other targets/hosts to complete their backup.....")
 		newBackupSession, err := o.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err

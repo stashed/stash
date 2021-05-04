@@ -22,11 +22,11 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/golang/glog"
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/tools/queue"
 )
 
@@ -91,9 +91,9 @@ func (c *Controller) runResticScheduler(key string) error {
 					err,
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", r.Kind, r.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", r.Kind, r.Name, rerr)
 			}
-			log.Errorln(err)
+			klog.Errorln(err)
 		}
 	}
 	return nil

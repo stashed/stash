@@ -26,12 +26,12 @@ import (
 	"stash.appscode.dev/stash/pkg/backup"
 
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/log"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -140,7 +140,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	// wait until workloads are scaled down
 	err = c.waitUntilScaledDown()
 	if err != nil {
-		log.Infof(err.Error())
+		klog.Infof(err.Error())
 	}
 
 	//scale up deployment to 1 replica
@@ -194,7 +194,7 @@ func (c *Controller) ScaleDownWorkload() error {
 			if isDaemonOrStatefulSetPod(pod.OwnerReferences) {
 				err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(context.TODO(), pod.Name, meta_util.DeleteInBackground())
 				if err != nil {
-					log.Infof("Error in deleting pod %v. Reason: %v", pod.Name, err.Error())
+					klog.Infof("Error in deleting pod %v. Reason: %v", pod.Name, err.Error())
 				}
 			}
 		}
