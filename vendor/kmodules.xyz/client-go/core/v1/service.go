@@ -19,7 +19,6 @@ package v1
 import (
 	"context"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -28,13 +27,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchService(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Service) *core.Service, opts metav1.PatchOptions) (*core.Service, kutil.VerbType, error) {
 	cur, err := c.CoreV1().Services(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Service %s/%s.", meta.Namespace, meta.Name)
+		klog.V(3).Infof("Creating Service %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.CoreV1().Services(meta.Namespace).Create(ctx, transform(&core.Service{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Service",
@@ -74,7 +74,7 @@ func PatchServiceObject(ctx context.Context, c kubernetes.Interface, cur, mod *c
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Service %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	klog.V(3).Infof("Patching Service %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.CoreV1().Services(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -90,7 +90,7 @@ func TryUpdateService(ctx context.Context, c kubernetes.Interface, meta metav1.O
 			result, e2 = c.CoreV1().Services(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Service %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update Service %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 

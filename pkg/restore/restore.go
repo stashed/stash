@@ -31,13 +31,13 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"gomodules.xyz/x/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	"k8s.io/klog/v2"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -111,7 +111,7 @@ func (opt *Options) Restore(inv invoker.RestoreInvoker, targetInfo invoker.Resto
 
 func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
 
-	log.Infoln("Attempting to elect restore leader")
+	klog.Infoln("Attempting to elect restore leader")
 
 	rlc := resourcelock.ResourceLockConfig{
 		Identity:      os.Getenv(apis.KeyPodName),
@@ -143,7 +143,7 @@ func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo in
 		RetryPeriod:   2 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
-				log.Infoln("Got leadership, preparing for restore")
+				klog.Infoln("Got leadership, preparing for restore")
 				// run restore process
 				restoreOutput, restoreErr := opt.runRestore(inv, targetInfo)
 				if restoreErr != nil {
@@ -154,20 +154,20 @@ func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo in
 					// step down from leadership so that other replicas try to restore
 					cancel()
 					// fail the container so that it restart and re-try to restore
-					log.Fatalf("failed to complete restore. Reason: %v", restoreErr)
+					klog.Fatalf("failed to complete restore. Reason: %v", restoreErr)
 				}
 				if restoreOutput != nil {
 					err = opt.HandleRestoreSuccess(restoreOutput, inv, targetInfo)
 					if err != nil {
 						cancel()
-						log.Fatalf("failed to complete restore. Reason: %v", err)
+						klog.Fatalf("failed to complete restore. Reason: %v", err)
 					}
 				}
 				// restore process is complete. now, step down from leadership so that other replicas can start
 				cancel()
 			},
 			OnStoppedLeading: func() {
-				log.Infoln("Lost leadership")
+				klog.Infoln("Lost leadership")
 			},
 		},
 	})
@@ -178,7 +178,7 @@ func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.Re
 
 	// if already restored for this host then don't process further
 	if opt.isRestoredForThisHost(inv, targetInfo, opt.Host) {
-		log.Infof("Skipping restore for %s %s/%s. Reason: restore already completed for host %q.",
+		klog.Infof("Skipping restore for %s %s/%s. Reason: restore already completed for host %q.",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,
@@ -221,7 +221,7 @@ func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.Re
 
 func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
 	// write log
-	log.Infof("Restore completed successfully for %s %s/%s",
+	klog.Infof("Restore completed successfully for %s %s/%s",
 		inv.TypeMeta.Kind,
 		inv.ObjectMeta.Namespace,
 		inv.ObjectMeta.Name,
@@ -240,7 +240,7 @@ func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput, inv 
 
 func (c *Options) HandleRestoreFailure(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, restoreErr error) error {
 	// write log
-	log.Errorf("Failed to complete restore process for %s %s/%s. Reason: %v",
+	klog.Errorf("Failed to complete restore process for %s %s/%s. Reason: %v",
 		inv.TypeMeta.Kind,
 		inv.ObjectMeta.Namespace,
 		inv.ObjectMeta.Name,

@@ -22,16 +22,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/spf13/pflag"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // ref:
 // - https://github.com/kubernetes/component-base/blob/master/logs/logs.go
-// - https://github.com/kubernetes/klog/blob/master/examples/coexist_glog/coexist_glog.go
+// - https://github.com/kubernetes/klog/blob/master/examples/coexist_glog/coexist_klog.go
 
 const logFlushFreqFlagName = "log-flush-frequency"
 
@@ -85,7 +84,7 @@ func ParseFlags() {
 
 // FlushLogs flushes logs immediately.
 func FlushLogs() {
-	glog.Flush()
+	klog.Flush()
 	klog.Flush()
 }
 

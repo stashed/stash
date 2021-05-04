@@ -29,7 +29,6 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/golang/glog"
-	"gomodules.xyz/x/log"
 	batch "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +38,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -97,12 +97,12 @@ func (c *StashController) initResticWatcher() {
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			oldRes, ok := oldObj.(*api.Restic)
 			if !ok {
-				log.Errorln("Invalid Restic object")
+				klog.Errorln("Invalid Restic object")
 				return
 			}
 			newRes, ok := newObj.(*api.Restic)
 			if !ok {
-				log.Errorln("Invalid Restic object")
+				klog.Errorln("Invalid Restic object")
 				return
 			}
 			if err := newRes.IsValid(); err != nil {

@@ -28,7 +28,6 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"k8s.io/api/admissionregistration/v1beta1"
@@ -43,6 +42,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 	apiregistration "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	apireg_cs "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	kutil "kmodules.xyz/client-go"
@@ -175,7 +175,7 @@ func (d ValidatingWebhookXray) IsActive(ctx context.Context) error {
 				if err != nil {
 					// log failures only if xray fails, otherwise don't confuse users with intermediate failures.
 					for _, msg := range failures {
-						glog.Warningln(msg)
+						klog.Warningln(msg)
 					}
 				}
 				return active, err
@@ -247,7 +247,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	glog.Infof("testing ValidatingWebhook using an object with GVR = %s", gvr.String())
+	klog.Infof("testing ValidatingWebhook using an object with GVR = %s", gvr.String())
 
 	accessor, err := meta.Accessor(d.testObj)
 	if err != nil {
@@ -275,7 +275,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 	if d.op == v1beta1.Create {
 		_, err := ri.Create(ctx, &u, metav1.CreateOptions{})
 		if kutil.AdmissionWebhookDeniedRequest(err) {
-			glog.V(10).Infof("failed to create invalid test object as expected with error: %s", err)
+			klog.V(10).Infof("failed to create invalid test object as expected with error: %s", err)
 			return true, nil
 		} else if err != nil {
 			return false, err
@@ -305,7 +305,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 		defer func() { _ = dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName()) }()
 
 		if kutil.AdmissionWebhookDeniedRequest(err) {
-			glog.V(10).Infof("failed to update test object as expected with error: %s", err)
+			klog.V(10).Infof("failed to update test object as expected with error: %s", err)
 			return true, nil
 		} else if err != nil {
 			return false, err
@@ -340,7 +340,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 				_ = dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
 			}()
 
-			glog.V(10).Infof("failed to delete test object as expected with error: %s", err)
+			klog.V(10).Infof("failed to delete test object as expected with error: %s", err)
 			return true, nil
 		} else if err != nil {
 			return false, err

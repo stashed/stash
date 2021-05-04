@@ -8,7 +8,7 @@ import (
 
 	api "kmodules.xyz/prober/api"
 
-	"gomodules.xyz/x/log"
+	"k8s.io/klog/v2"
 	utilio "k8s.io/utils/io"
 )
 
@@ -45,7 +45,7 @@ func doHTTPProbe(req *http.Request, url *url.URL, headers http.Header, client HT
 	b, err := utilio.ReadAtMost(res.Body, maxRespBodyLength)
 	if err != nil {
 		if err == utilio.ErrLimitReached {
-			log.Debugf("Non fatal body truncation for %s, Response: %v", url.String(), *res)
+			klog.V(5).Infof("Non fatal body truncation for %s, Response: %v", url.String(), *res)
 		} else {
 			return api.Failure, "", err
 		}
@@ -53,13 +53,13 @@ func doHTTPProbe(req *http.Request, url *url.URL, headers http.Header, client HT
 	respBody := string(b)
 	if res.StatusCode >= http.StatusOK && res.StatusCode < http.StatusBadRequest {
 		if res.StatusCode >= http.StatusMultipleChoices { // Redirect
-			log.Debugf("Probe terminated redirects for %s, Response: %v", url.String(), *res)
+			klog.V(5).Infof("Probe terminated redirects for %s, Response: %v", url.String(), *res)
 			return api.Warning, respBody, nil
 		}
-		log.Debugf("Probe succeeded for %s, Response: %v", url.String(), *res)
+		klog.V(5).Infof("Probe succeeded for %s, Response: %v", url.String(), *res)
 		return api.Success, respBody, nil
 	}
-	log.Debugf("Probe failed for %s with request headers %v, response body: %v", url.String(), headers, respBody)
+	klog.V(5).Infof("Probe failed for %s with request headers %v, response body: %v", url.String(), headers, respBody)
 	return api.Failure, fmt.Sprintf("HTTP probe failed with statuscode: %d", res.StatusCode), nil
 }
 

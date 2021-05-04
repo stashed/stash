@@ -22,8 +22,8 @@ import (
 	"stash.appscode.dev/stash/pkg/cmds/server"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
 	v "gomodules.xyz/x/version"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/tools/cli"
 )
 
@@ -39,7 +39,7 @@ func NewCmdRun(out, errOut io.Writer, stopCh <-chan struct{}) *cobra.Command {
 			cli.SendAnalytics(c, v.Version.Version)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			log.Infof("Starting operator version %s+%s ...", v.Version.Version, v.Version.CommitHash)
+			klog.Infof("Starting operator version %s+%s ...", v.Version.Version, v.Version.CommitHash)
 
 			if err := o.Complete(); err != nil {
 				return err

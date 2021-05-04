@@ -27,7 +27,6 @@ import (
 	stash_listers_v1beta1 "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 
 	"github.com/golang/glog"
-	"gomodules.xyz/x/log"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
@@ -38,6 +37,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/klog/v2"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/apiextensions"
 	"kmodules.xyz/client-go/tools/queue"
@@ -227,5 +227,5 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	c.restoreSessionQueue.Run(stopCh)
 
 	<-stopCh
-	log.Infoln("Stopping Stash controller")
+	klog.Infoln("Stopping Stash controller")
 }

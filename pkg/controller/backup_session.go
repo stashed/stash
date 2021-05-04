@@ -41,7 +41,6 @@ import (
 
 	"github.com/golang/glog"
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/log"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -52,6 +51,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -125,7 +125,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.",
+		klog.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.",
 			backupSession.Namespace,
 			backupSession.Name,
 			backupSession.Status.Phase,
@@ -158,7 +158,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 			return err
 		}
 		if runningBS != nil {
-			log.Infof("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
+			klog.Infof("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
 				runningBS.Name,
 				runningBS.Status.Phase,
 			)
@@ -232,7 +232,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 			switch backupExecutor(inv, targetInfo.Target.Ref) {
 			case BackupExecutorSidecar:
 				// Backup model is sidecar. For sidecar model, controller inside sidecar will take care of it.
-				log.Infof("Skipping processing BackupSession %s/%s for target %s %s/%s. Reason: Backup model is sidecar."+
+				klog.Infof("Skipping processing BackupSession %s/%s for target %s %s/%s. Reason: Backup model is sidecar."+
 					"Controller inside sidecar will take care of it.",
 					backupSession.Namespace,
 					backupSession.Name,
@@ -654,7 +654,7 @@ func (c *StashController) setBackupSessionSucceeded(inv invoker.BackupInvoker, b
 		"Backup session completed successfully",
 	)
 	if err != nil {
-		log.Errorf("failed to write event in BackupSession %s/%s. Reason: %v", backupSession.Namespace, backupSession.Name, err)
+		klog.Errorf("failed to write event in BackupSession %s/%s. Reason: %v", backupSession.Namespace, backupSession.Name, err)
 	}
 
 	// send backup metrics
@@ -804,7 +804,7 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 }
 
 func (c *StashController) handleBackupJobCreationFailure(inv invoker.BackupInvoker, backupSession *api_v1beta1.BackupSession, err error) error {
-	log.Warningln("failed to ensure backup job. Reason: ", err)
+	klog.Warningln("failed to ensure backup job. Reason: ", err)
 
 	// write event to BackupSession
 	_, _ = eventer.CreateEvent(

@@ -32,16 +32,16 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/pkg/volumesnapshot"
 
-	vs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
+	vs "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
+	vs_cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 	prober "kmodules.xyz/prober/probe"
 )
@@ -84,7 +84,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalf("Could not get Kubernetes config: %s", err)
+				klog.Fatalf("Could not get Kubernetes config: %s", err)
 			}
 			opt.config = config
 			opt.kubeClient = kubernetes.NewForConfigOrDie(config)
@@ -150,7 +150,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 
 	// If preBackup hook is specified, then execute those hooks first
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PreBackup != nil {
-		log.Infoln("Executing preBackup hooks........")
+		klog.Infoln("Executing preBackup hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preBackup hooks. Reason: POD_NAME environment variable not found")
@@ -159,7 +159,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 		if err != nil {
 			return nil, err
 		}
-		log.Infoln("preBackup hooks has been executed successfully")
+		klog.Infoln("preBackup hooks has been executed successfully")
 	}
 
 	pvcNames, err := opt.getTargetPVCNames(targetInfo.Target.Ref, targetInfo.Target.Replicas)
@@ -212,7 +212,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 
 	// If postBackup hook is specified, then execute those hooks after backup
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup != nil {
-		log.Infoln("Executing postBackup hooks........")
+		klog.Infoln("Executing postBackup hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postBackup hook. Reason: POD_NAME environment variable not found")
@@ -222,7 +222,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual backup process may be succeeded." +
 				"Hence, the backup snapshots might be present in the backend even if the overall BackupSession phase is 'Failed'")
 		}
-		log.Infoln("postBackup hooks has been executed successfully")
+		klog.Infoln("postBackup hooks has been executed successfully")
 	}
 
 	return backupOutput, nil

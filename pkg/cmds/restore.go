@@ -29,11 +29,11 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 )
 
@@ -57,7 +57,7 @@ func NewCmdRestore() *cobra.Command {
 			// create client
 			config, err := clientcmd.BuildConfigFromFlags(opt.MasterURL, opt.KubeconfigPath)
 			if err != nil {
-				log.Fatal(err)
+				klog.Fatal(err)
 				return err
 			}
 			opt.Config = config
@@ -122,7 +122,7 @@ func NewCmdRestore() *cobra.Command {
 
 func waitUntilAllPreviousTargetsExecuted(opt *restore.Options, tref v1beta1_api.TargetRef) error {
 	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (bool, error) {
-		log.Infof("Waiting for all previous targets to complete their restore process...")
+		klog.Infof("Waiting for all previous targets to complete their restore process...")
 		inv, err := invoker.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 		if err != nil {
 			return false, err

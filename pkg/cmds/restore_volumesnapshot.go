@@ -32,16 +32,16 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
+	vs_cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	"github.com/spf13/cobra"
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	storage_api_v1 "k8s.io/api/storage/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 	prober "kmodules.xyz/prober/probe"
 )
@@ -65,7 +65,7 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalf("Could not get Kubernetes config: %s", err)
+				klog.Fatalf("Could not get Kubernetes config: %s", err)
 			}
 			opt.config = config
 			opt.kubeClient = kubernetes.NewForConfigOrDie(config)
@@ -115,7 +115,7 @@ func (opt *VSoption) restoreVolumeSnapshot(inv invoker.RestoreInvoker, targetInf
 
 	// If preRestore hook is specified, then execute those hooks first
 	if inv.Hooks != nil && inv.Hooks.PreRestore != nil {
-		log.Infoln("Executing preRestore hooks........")
+		klog.Infoln("Executing preRestore hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
@@ -124,7 +124,7 @@ func (opt *VSoption) restoreVolumeSnapshot(inv invoker.RestoreInvoker, targetInf
 		if err != nil {
 			return nil, err
 		}
-		log.Infoln("preRestore hooks has been executed successfully")
+		klog.Infoln("preRestore hooks has been executed successfully")
 	}
 
 	var pvcList []core.PersistentVolumeClaim
@@ -241,7 +241,7 @@ func (opt *VSoption) restoreVolumeSnapshot(inv invoker.RestoreInvoker, targetInf
 	}
 	// If postRestore hook is specified, then execute those hooks after restore
 	if inv.Hooks != nil && inv.Hooks.PostRestore != nil {
-		log.Infoln("Executing postRestore hooks........")
+		klog.Infoln("Executing postRestore hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
@@ -251,7 +251,7 @@ func (opt *VSoption) restoreVolumeSnapshot(inv invoker.RestoreInvoker, targetInf
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual restore process may be succeeded." +
 				"Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")
 		}
-		log.Infoln("postRestore hooks has been executed successfully")
+		klog.Infoln("postRestore hooks has been executed successfully")
 	}
 
 	return restoreOutput, nil

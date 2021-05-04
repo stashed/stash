@@ -81,6 +81,8 @@ func UpsertContainer(containers []core.Container, upsert core.Container) []core.
 			container.Command = upsert.Command
 			container.Args = upsert.Args
 			container.Env = upsert.Env
+			container.VolumeMounts = upsert.VolumeMounts
+			container.VolumeDevices = upsert.VolumeDevices
 			containers[i] = container
 			return containers
 		}

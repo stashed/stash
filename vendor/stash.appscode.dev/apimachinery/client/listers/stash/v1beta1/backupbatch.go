@@ -27,8 +27,10 @@ import (
 )
 
 // BackupBatchLister helps list BackupBatches.
+// All objects returned here must be treated as read-only.
 type BackupBatchLister interface {
 	// List lists all BackupBatches in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.BackupBatch, err error)
 	// BackupBatches returns an object that can list and get BackupBatches.
 	BackupBatches(namespace string) BackupBatchNamespaceLister
@@ -59,10 +61,13 @@ func (s *backupBatchLister) BackupBatches(namespace string) BackupBatchNamespace
 }
 
 // BackupBatchNamespaceLister helps list and get BackupBatches.
+// All objects returned here must be treated as read-only.
 type BackupBatchNamespaceLister interface {
 	// List lists all BackupBatches in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.BackupBatch, err error)
 	// Get retrieves the BackupBatch from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1beta1.BackupBatch, error)
 	BackupBatchNamespaceListerExpansion
 }

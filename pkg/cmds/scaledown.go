@@ -20,9 +20,9 @@ import (
 	"stash.appscode.dev/stash/pkg/scale"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 )
 
@@ -42,14 +42,14 @@ func NewCmdScaleDown() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalf("Could not get Kubernetes config: %s", err)
+				klog.Fatalf("Could not get Kubernetes config: %s", err)
 			}
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 
 			ctrl := scale.New(kubeClient, opt)
 			err = ctrl.ScaleDownWorkload()
 			if err != nil {
-				log.Fatal(err)
+				klog.Fatal(err)
 			}
 
 		},

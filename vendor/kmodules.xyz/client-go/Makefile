@@ -19,7 +19,7 @@ REPO     := $(notdir $(shell pwd))
 BIN      := client-go
 
 # https://github.com/appscodelabs/gengo-builder
-CODE_GENERATOR_IMAGE ?= appscode/gengo:release-1.18
+CODE_GENERATOR_IMAGE ?= appscode/gengo:release-1.21
 
 # This version-strategy uses git tags to set the version string
 git_branch       := $(shell git rev-parse --abbrev-ref HEAD)
@@ -45,7 +45,7 @@ endif
 ### These variables should not need tweaking.
 ###
 
-SRC_PKGS := admissionregistration api apiextensions apiregistration apps batch bin certificates core discovery dynamic extensions logs meta openapi policy rbac storage tools
+SRC_PKGS := admissionregistration api apiextensions apiregistration apps batch bin certificates core discovery dynamic extensions logs meta networking openapi policy rbac storage tools
 SRC_DIRS := $(SRC_PKGS) *.go
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64

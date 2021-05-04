@@ -21,7 +21,6 @@ import (
 
 	meta_util "kmodules.xyz/client-go/meta"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -36,13 +35,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/tools/pager"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchNode(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node, opts metav1.PatchOptions) (*core.Node, kutil.VerbType, error) {
 	cur, err := c.CoreV1().Nodes().Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Node %s", meta.Name)
+		klog.V(3).Infof("Creating Node %s", meta.Name)
 		out, err := c.CoreV1().Nodes().Create(ctx, transform(&core.Node{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Node",
@@ -82,7 +82,7 @@ func PatchNodeObject(ctx context.Context, c kubernetes.Interface, cur, mod *core
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Node %s with %s", cur.Name, string(patch))
+	klog.V(3).Infof("Patching Node %s with %s", cur.Name, string(patch))
 	out, err := c.CoreV1().Nodes().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -98,7 +98,7 @@ func TryUpdateNode(ctx context.Context, c kubernetes.Interface, meta metav1.Obje
 			result, e2 = c.CoreV1().Nodes().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Node %s due to %v.", attempt, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update Node %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
 

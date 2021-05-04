@@ -19,13 +19,13 @@ package v1
 import (
 	"context"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 )
 
@@ -38,7 +38,7 @@ func CreateOrUpdateCustomResourceDefinition(
 ) (*api.CustomResourceDefinition, kutil.VerbType, error) {
 	_, err := c.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating CustomResourceDefinition %s.", name)
+		klog.V(3).Infof("Creating CustomResourceDefinition %s.", name)
 		out, err := c.ApiextensionsV1().CustomResourceDefinitions().Create(ctx, transform(&api.CustomResourceDefinition{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: api.SchemeGroupVersion.String(),
@@ -79,7 +79,7 @@ func TryUpdateCustomResourceDefinition(
 			result, e2 = c.ApiextensionsV1().CustomResourceDefinitions().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update CustomResourceDefinition %s due to %v.", attempt, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update CustomResourceDefinition %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
 

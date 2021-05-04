@@ -22,13 +22,13 @@ import (
 
 	"kmodules.xyz/client-go/meta"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 )
 
 // BuildConfigFromFlags is a helper function that builds configs from a master
@@ -118,7 +118,7 @@ func Fix(cfg *rest.Config) *rest.Config {
 				// AKS cluster
 
 				h := "https://" + host
-				glog.Infof("resetting Kubeconfig host to %s from %s for AKS to workaround https://github.com/Azure/AKS/issues/522", h, cfg.Host)
+				klog.Infof("resetting Kubeconfig host to %s from %s for AKS to workaround https://github.com/Azure/AKS/issues/522", h, cfg.Host)
 				cfg.Host = h
 			}
 		}

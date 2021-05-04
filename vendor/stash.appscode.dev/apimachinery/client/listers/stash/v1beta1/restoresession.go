@@ -27,8 +27,10 @@ import (
 )
 
 // RestoreSessionLister helps list RestoreSessions.
+// All objects returned here must be treated as read-only.
 type RestoreSessionLister interface {
 	// List lists all RestoreSessions in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.RestoreSession, err error)
 	// RestoreSessions returns an object that can list and get RestoreSessions.
 	RestoreSessions(namespace string) RestoreSessionNamespaceLister
@@ -59,10 +61,13 @@ func (s *restoreSessionLister) RestoreSessions(namespace string) RestoreSessionN
 }
 
 // RestoreSessionNamespaceLister helps list and get RestoreSessions.
+// All objects returned here must be treated as read-only.
 type RestoreSessionNamespaceLister interface {
 	// List lists all RestoreSessions in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.RestoreSession, err error)
 	// Get retrieves the RestoreSession from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1beta1.RestoreSession, error)
 	RestoreSessionNamespaceListerExpansion
 }

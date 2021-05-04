@@ -1,23 +1,23 @@
 module stash.appscode.dev/stash
 
-go 1.12
+go 1.15
 
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
-	github.com/gogo/protobuf v1.3.1
+	github.com/gogo/protobuf v1.3.2
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/kubernetes-csi/external-snapshotter/v2 v2.1.1-0.20200521091436-82ef6e66e992
+	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.1.0
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/spf13/cobra v1.1.1
+	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/license-verifier v0.9.1
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.1
-	gomodules.xyz/blobfs v0.1.5
+	gomodules.xyz/blobfs v0.1.7
 	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
@@ -30,116 +30,19 @@ require (
 	k8s.io/apimachinery v0.21.0
 	k8s.io/apiserver v0.21.0
 	k8s.io/client-go v0.21.0
+	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.0
 	k8s.io/kubernetes v1.21.0
 	kmodules.xyz/client-go v0.0.0-20210504024435-1eb80721e9b8
-	kmodules.xyz/constants v0.0.0-20200923054614-6b87dbbae4d6
+	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
 	kmodules.xyz/custom-resources v0.0.0-20210504034124-54c54fcdb690
 	kmodules.xyz/objectstore-api v0.0.0-20210504041638-b9e00ab1eab3
 	kmodules.xyz/offshoot-api v0.0.0-20210504040651-7951e351f0f5
 	kmodules.xyz/openshift v0.0.0-20210504040454-a3ddfc579bb7
-	kmodules.xyz/prober v0.0.0-20210504042421-eca494e828bc
+	kmodules.xyz/prober v0.0.0-20210504215326-2e406706b970
 	kmodules.xyz/webhook-runtime v0.0.0-20210504042742-3a9911e3dcdc
-	stash.appscode.dev/apimachinery v0.12.3
-	k8s.io/cli-runtime v0.21.0
-	k8s.io/cloud-provider v0.21.0
-	k8s.io/component-base v0.21.0
-	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7
-	k8s.io/kubectl v0.21.0
-	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
-	kmodules.xyz/crd-schema-fuzz v0.0.0-20210503192455-da44af375c4c
-	kmodules.xyz/monitoring-agent-api v0.0.0-20210504040241-261c2428d207
+	stash.appscode.dev/apimachinery v0.13.1-0.20210504142328-ae1654642a82
 )
-
-
-
-
-
-replace git.apache.org/thrift.git => github.com/apache/thrift v0.13.0
-
-
-
-
-
-
-
-
-
-
-
-replace github.com/Azure/go-autorest/autorest/azure/auth => github.com/Azure/go-autorest/autorest/azure/auth v0.2.0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
 
@@ -248,4 +151,3 @@ replace k8s.io/utils => k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 replace kmodules.xyz/resource-metadata => kmodules.xyz/resource-metadata v0.5.0
 
 replace sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20210427030912-90eeee3bc4ad
-

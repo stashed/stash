@@ -55,48 +55,94 @@ type PodSpec struct {
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty" protobuf:"bytes,1,opt,name=serviceAccountName"`
 
-	// Arguments to the entrypoint.
-	// The docker image's CMD is used if this is not provided.
-	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
-	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
-	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
-	// regardless of whether the variable exists or not.
-	// Cannot be updated.
-	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
-	// +optional
-	Args []string `json:"args,omitempty" protobuf:"bytes,2,rep,name=args"`
-
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,3,rep,name=nodeSelector"`
-
-	// Compute Resources required by the sidecar container.
-	Resources core.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,4,opt,name=resources"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,2,rep,name=nodeSelector"`
 
 	// If specified, the pod's scheduling constraints
 	// +optional
-	Affinity *core.Affinity `json:"affinity,omitempty" protobuf:"bytes,5,opt,name=affinity"`
+	Affinity *core.Affinity `json:"affinity,omitempty" protobuf:"bytes,3,opt,name=affinity"`
 
 	// If specified, the pod will be dispatched by specified scheduler.
 	// If not specified, the pod will be dispatched by default scheduler.
 	// +optional
-	SchedulerName string `json:"schedulerName,omitempty" protobuf:"bytes,6,opt,name=schedulerName"`
+	SchedulerName string `json:"schedulerName,omitempty" protobuf:"bytes,4,opt,name=schedulerName"`
 
 	// If specified, the pod's tolerations.
 	// +optional
-	Tolerations []core.Toleration `json:"tolerations,omitempty" protobuf:"bytes,7,rep,name=tolerations"`
+	Tolerations []core.Toleration `json:"tolerations,omitempty" protobuf:"bytes,5,rep,name=tolerations"`
 
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	// If specified, these secrets will be passed to individual puller implementations for them to use.
 	// +optional
-	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty" protobuf:"bytes,8,rep,name=imagePullSecrets"`
+	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty" protobuf:"bytes,6,rep,name=imagePullSecrets"`
 
-	// List of environment variables to set in the container.
-	// Cannot be updated.
+	// If specified, indicates the pod's priority. "system-node-critical" and
+	// "system-cluster-critical" are two special keywords which indicate the
+	// highest priorities with the former being the highest priority. Any other
+	// name must be defined by creating a PriorityClass object with that name.
+	// If not specified, the pod priority will be default or zero if there is no
+	// default.
 	// +optional
-	Env []core.EnvVar `json:"env,omitempty" protobuf:"bytes,9,rep,name=env"`
+	PriorityClassName string `json:"priorityClassName,omitempty" protobuf:"bytes,7,opt,name=priorityClassName"`
+
+	// The priority value. Various system components use this field to find the
+	// priority of the pod. When Priority Admission Controller is enabled, it
+	// prevents users from setting this field. The admission controller populates
+	// this field from PriorityClassName.
+	// The higher the value, the higher the priority.
+	// +optional
+	Priority *int32 `json:"priority,omitempty" protobuf:"varint,8,opt,name=priority"`
+
+	// Host networking requested for this pod. Use the host's network namespace.
+	// If this option is set, the ports that will be used must be specified.
+	// Default to false.
+	// +k8s:conversion-gen=false
+	// +optional
+	HostNetwork bool `json:"hostNetwork,omitempty" protobuf:"varint,9,opt,name=hostNetwork"`
+
+	// Use the host's pid namespace.
+	// Optional: Default to false.
+	// +k8s:conversion-gen=false
+	// +optional
+	HostPID bool `json:"hostPID,omitempty" protobuf:"varint,10,opt,name=hostPID"`
+
+	// Use the host's ipc namespace.
+	// Optional: Default to false.
+	// +k8s:conversion-gen=false
+	// +optional
+	HostIPC bool `json:"hostIPC,omitempty" protobuf:"varint,11,opt,name=hostIPC"`
+
+	// Share a single process namespace between all of the containers in a pod.
+	// When this is set containers will be able to view and signal processes from other containers
+	// in the same pod, and the first process in each container will not be assigned PID 1.
+	// HostPID and ShareProcessNamespace cannot both be set.
+	// Optional: Default to false.
+	// +k8s:conversion-gen=false
+	// +optional
+	ShareProcessNamespace *bool `json:"shareProcessNamespace,omitempty" protobuf:"varint,12,opt,name=shareProcessNamespace"`
+
+	// SecurityContext holds pod-level security attributes and common container settings.
+	// Optional: Defaults to empty.  See type description for default values of each field.
+	// +optional
+	SecurityContext *core.PodSecurityContext `json:"securityContext,omitempty" protobuf:"bytes,13,opt,name=securityContext"`
+
+	// Set DNS policy for the pod.
+	// Defaults to "ClusterFirst".
+	// Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
+	// DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy.
+	// To have DNS options set along with hostNetwork, you have to specify DNS policy
+	// explicitly to 'ClusterFirstWithHostNet'.
+	// +optional
+	DNSPolicy core.DNSPolicy `json:"dnsPolicy,omitempty" protobuf:"bytes,14,opt,name=dnsPolicy,casttype=k8s.io/api/core/v1.DNSPolicy"`
+
+	// Specifies the DNS parameters of a pod.
+	// Parameters specified here will be merged to the generated DNS
+	// configuration based on DNSPolicy.
+	// +optional
+	DNSConfig *core.PodDNSConfig `json:"dnsConfig,omitempty" protobuf:"bytes,15,opt,name=dnsConfig"`
 
 	// List of initialization containers belonging to the pod.
 	// Init containers are executed in order prior to containers being started. If any
@@ -113,28 +159,31 @@ type PodSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	InitContainers []core.Container `json:"initContainers,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,10,rep,name=initContainers"`
+	InitContainers []core.Container `json:"initContainers,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,16,rep,name=initContainers"`
 
-	// If specified, indicates the pod's priority. "system-node-critical" and
-	// "system-cluster-critical" are two special keywords which indicate the
-	// highest priorities with the former being the highest priority. Any other
-	// name must be defined by creating a PriorityClass object with that name.
-	// If not specified, the pod priority will be default or zero if there is no
-	// default.
-	// +optional
-	PriorityClassName string `json:"priorityClassName,omitempty" protobuf:"bytes,11,opt,name=priorityClassName"`
-	// The priority value. Various system components use this field to find the
-	// priority of the pod. When Priority Admission Controller is enabled, it
-	// prevents users from setting this field. The admission controller populates
-	// this field from PriorityClassName.
-	// The higher the value, the higher the priority.
-	// +optional
-	Priority *int32 `json:"priority,omitempty" protobuf:"varint,12,opt,name=priority"`
+	////////////////////////////////////////////////////////
+	// Application (database) Container Specific Settings //
+	////////////////////////////////////////////////////////
 
-	// SecurityContext holds pod-level security attributes and common container settings.
-	// Optional: Defaults to empty.  See type description for default values of each field.
+	// Arguments to the entrypoint.
+	// The docker image's CMD is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
+	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
+	// regardless of whether the variable exists or not.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
-	SecurityContext *core.PodSecurityContext `json:"securityContext,omitempty" protobuf:"bytes,13,opt,name=securityContext"`
+	Args []string `json:"args,omitempty" protobuf:"bytes,17,rep,name=args"`
+
+	// List of environment variables to set in the container.
+	// Cannot be updated.
+	// +optional
+	Env []core.EnvVar `json:"env,omitempty" protobuf:"bytes,18,rep,name=env"`
+
+	// Compute Resources required by the sidecar container.
+	// +optional
+	Resources core.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,19,opt,name=resources"`
 
 	// Periodic probe of container liveness.
 	// Container will be restarted if the probe fails.
@@ -143,7 +192,7 @@ type PodSpec struct {
 	// Cannot be updated.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
-	LivenessProbe *core.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,14,opt,name=livenessProbe"`
+	LivenessProbe *core.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,20,opt,name=livenessProbe"`
 
 	// Periodic probe of container service readiness.
 	// Container will be removed from service endpoints if the probe fails.
@@ -152,27 +201,18 @@ type PodSpec struct {
 	// To ignore defaulting, set the value to empty ReadynessProbe "{}".
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
-	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty" protobuf:"bytes,15,opt,name=readinessProbe"`
+	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty" protobuf:"bytes,21,opt,name=readinessProbe"`
 
 	// Actions that the management system should take in response to container lifecycle events.
 	// Cannot be updated.
 	// +optional
-	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty" protobuf:"bytes,16,opt,name=lifecycle"`
+	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty" protobuf:"bytes,22,opt,name=lifecycle"`
 
-	// Set DNS policy for the pod.
-	// Defaults to "ClusterFirst".
-	// Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
-	// DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy.
-	// To have DNS options set along with hostNetwork, you have to specify DNS policy
-	// explicitly to 'ClusterFirstWithHostNet'.
+	// Security options the pod should run with.
+	// More info: https://kubernetes.io/docs/concepts/policy/security-context/
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 	// +optional
-	DNSPolicy core.DNSPolicy `json:"dnsPolicy,omitempty" protobuf:"bytes,17,opt,name=dnsPolicy,casttype=k8s.io/api/core/v1.DNSPolicy"`
-
-	// Specifies the DNS parameters of a pod.
-	// Parameters specified here will be merged to the generated DNS
-	// configuration based on DNSPolicy.
-	// +optional
-	DNSConfig *core.PodDNSConfig `json:"dnsConfig,omitempty" protobuf:"bytes,18,opt,name=dnsConfig"`
+	ContainerSecurityContext *core.SecurityContext `json:"containerSecurityContext,omitempty" protobuf:"bytes,23,opt,name=containerSecurityContext"`
 }
 
 // ServiceTemplateSpec describes the data a service should have when created from a template

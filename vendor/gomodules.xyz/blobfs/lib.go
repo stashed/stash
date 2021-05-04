@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"gocloud.dev/blob"
+	_ "gocloud.dev/blob/fileblob"
 	_ "gocloud.dev/blob/memblob"
 )
 
@@ -21,6 +22,10 @@ func New(storageURL string) *BlobFS {
 
 func NewInMemoryFS() *BlobFS {
 	return New("mem://")
+}
+
+func NewOsFs() *BlobFS {
+	return New("file:///")
 }
 
 func (fs *BlobFS) WriteFile(ctx context.Context, filepath string, data []byte) error {

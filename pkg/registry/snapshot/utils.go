@@ -35,12 +35,12 @@ import (
 	"stash.appscode.dev/stash/pkg/cli"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 )
@@ -220,7 +220,7 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 		execErr bytes.Buffer
 	)
 
-	log.Infof("Executing command %v on pod %v", command, pod.Name)
+	klog.Infof("Executing command %v on pod %v", command, pod.Name)
 
 	req := r.kubeClient.CoreV1().RESTClient().Post().
 		Resource("pods").
@@ -301,7 +301,7 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 	}
 	// if repository does not exist in the backend, then nothing to list. Just return.
 	if !resticWrapper.RepositoryAlreadyExist() {
-		log.Infof("unable to verify whether repository exist or not in the backend for Repository: %s/%s", repository.Namespace, repository.Name)
+		klog.Infof("unable to verify whether repository exist or not in the backend for Repository: %s/%s", repository.Namespace, repository.Name)
 		return nil, nil
 	}
 	// list snapshots, returns all snapshots for empty snapshotIDs

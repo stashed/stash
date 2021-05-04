@@ -27,14 +27,14 @@ import (
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	snapshot_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
+	snapshot_cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
@@ -363,19 +363,19 @@ func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, 
 	case apis.KindDeployment:
 		obj, err := k8sClient.AppsV1().Deployments(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		if err != nil {
-			log.Fatalln(err)
+			klog.Fatalln(err)
 		}
 		workloadAnnotation = obj.Annotations
 	case apis.KindReplicationController:
 		obj, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		if err != nil {
-			log.Fatalln(err)
+			klog.Fatalln(err)
 		}
 		workloadAnnotation = obj.Annotations
 	case apis.KindReplicaSet:
 		obj, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
 		if err != nil {
-			log.Fatalln(err)
+			klog.Fatalln(err)
 		}
 		workloadAnnotation = obj.Annotations
 	case apis.KindStatefulSet:
