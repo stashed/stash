@@ -23,14 +23,13 @@ import (
 	"stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/kglog"
 	"gomodules.xyz/x/flags"
-	"gomodules.xyz/x/log/golog"
 	v "gomodules.xyz/x/version"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/pushgateway"
 	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
@@ -50,11 +49,11 @@ func NewRootCmd() *cobra.Command {
 			utilruntime.Must(scheme.AddToScheme(legacyscheme.Scheme))
 			utilruntime.Must(ocscheme.AddToScheme(clientsetscheme.Scheme))
 			utilruntime.Must(ocscheme.AddToScheme(legacyscheme.Scheme))
-			cli.LoggerOptions = golog.ParseFlags(c.Flags())
+			cli.LoggerOptions = kglog.GetOptions(c.Flags())
 		},
 	}
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-	logs.ParseFlags()
+	kglog.ParseFlags()
 	rootCmd.PersistentFlags().StringVar(&pushgateway.ServiceName, "service-name", "stash-operator", "Stash service name.")
 	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
 

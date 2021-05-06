@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package logs
+package kglog
 
 import (
 	"flag"
@@ -22,22 +22,23 @@ import (
 	"log"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/spf13/pflag"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
+	utilruntime "gomodules.xyz/runtime"
+	"gomodules.xyz/wait"
 	"k8s.io/klog/v2"
 )
 
 // ref:
 // - https://github.com/kubernetes/component-base/blob/master/logs/logs.go
-// - https://github.com/kubernetes/klog/blob/master/examples/coexist_glog/coexist_klog.go
+// - https://github.com/kubernetes/klog/blob/master/examples/coexist_glog/coexist_glog.go
 
 const logFlushFreqFlagName = "log-flush-frequency"
 
 var logFlushFreq = pflag.Duration(logFlushFreqFlagName, 5*time.Second, "Maximum number of seconds between log flushes")
 
 func init() {
-	utilruntime.Must(flag.Set("stderrthreshold", "INFO"))
+	_ = flag.Set("stderrthreshold", "INFO")
 }
 
 // AddFlags registers this package's flags on arbitrary FlagSets, such that they point to the
@@ -84,7 +85,7 @@ func ParseFlags() {
 
 // FlushLogs flushes logs immediately.
 func FlushLogs() {
-	klog.Flush()
+	glog.Flush()
 	klog.Flush()
 }
 

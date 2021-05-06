@@ -1,0 +1,14 @@
+github.com/go-logr/logr v0.4.0 h1:K7/B1jt6fIBQVd4Owv2MqGQClcgf0R266+7C/QjRcLc=
+github.com/go-logr/logr v0.4.0/go.mod h1:z6/tIYblkpsD+a4lm/fGIIU9mZ+XfAiaFtq7xTgseGU=
+github.com/golang/glog v0.0.0-20210429001901-424d2337a529 h1:2voWjNECnrZRbfwXxHB1/j8wa6xdKn85B5NzgVL/pTU=
+github.com/golang/glog v0.0.0-20210429001901-424d2337a529/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
+github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
+github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
+gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f h1:hTyhR4r+tj1Uq7/PpFxLTzbeA0LhMVp7bEYfhkzFjdY=
+gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f/go.mod h1:K3m7N+nBOlf91/tpv8REUGwsAgaKFwElQCuiLhm12AQ=
+gomodules.xyz/runtime v0.2.0 h1:fzoGf/lnQ2F/rakbCjNfrZZFiNQ8XVLrR5YrtuhrtkU=
+gomodules.xyz/runtime v0.2.0/go.mod h1:/R/Dw906YIUHKJ5cfKUaJgJrojFjpRU+n0s3Wjn1tqs=
+gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545 h1:iiD24jN1H8PzliVe1igIzYsx8+VmbXG12y9UUSupUJU=
+gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545/go.mod h1:g/epKzZQuCqgvhzhaoG4cSBNGHqnOrhFR4Q7szDJ1JM=
+k8s.io/klog/v2 v2.8.0 h1:Q3gmuM9hKEjefWFFYF0Mat+YyFJvsUyYuwyNNJ5C9Ts=
+k8s.io/klog/v2 v2.8.0/go.mod h1:hy9LJ/NvuK+iVyP4Ehqva4HxZG/oXyIS3n3Jmire4Ec=

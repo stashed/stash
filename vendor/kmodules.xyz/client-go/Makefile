@@ -45,7 +45,7 @@ endif
 ### These variables should not need tweaking.
 ###
 
-SRC_PKGS := admissionregistration api apiextensions apiregistration apps batch bin certificates core discovery dynamic extensions logs meta networking openapi policy rbac storage tools
+SRC_PKGS := admissionregistration api apiextensions apiregistration apps batch bin certificates core discovery dynamic extensions meta networking openapi policy rbac storage tools
 SRC_DIRS := $(SRC_PKGS) *.go
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64

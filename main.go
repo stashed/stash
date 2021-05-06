@@ -24,15 +24,15 @@ import (
 	"stash.appscode.dev/stash/pkg/cmds"
 
 	_ "go.bytebuilders.dev/license-verifier/info"
+	"gomodules.xyz/kglog"
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/klog/v2"
-	"kmodules.xyz/client-go/logs"
 )
 
 func main() {
-	logs.InitLogs()
-	defer logs.FlushLogs()
+	kglog.InitLogs()
+	defer kglog.FlushLogs()
 
 	if len(os.Getenv("GOMAXPROCS")) == 0 {
 		runtime.GOMAXPROCS(runtime.NumCPU())

@@ -24,8 +24,8 @@ import (
 
 	"stash.appscode.dev/stash/pkg/cmds/server"
 
+	"gomodules.xyz/kglog"
 	"gomodules.xyz/x/flags"
-	logs "gomodules.xyz/x/log/golog"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
 )
@@ -64,8 +64,8 @@ func TestMain(m *testing.M) {
 
 func enableLogging() {
 	defer func() {
-		logs.InitLogs()
-		defer logs.FlushLogs()
+		kglog.InitLogs()
+		defer kglog.FlushLogs()
 	}()
 	err := flag.Set("logtostderr", "true")
 	if err != nil {
