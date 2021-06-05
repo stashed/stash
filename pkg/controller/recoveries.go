@@ -29,7 +29,6 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -136,18 +135,18 @@ func (c *StashController) initRecoveryWatcher() {
 func (c *StashController) runRecoveryInjector(key string) error {
 	obj, exists, err := c.recInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 
 	if !exists {
 		// Below we will warm up our cache with a Recovery, so that we will see a delete for one d
-		glog.Warningf("Recovery %s does not exist anymore\n", key)
+		klog.Warningf("Recovery %s does not exist anymore\n", key)
 		return nil
 	}
 
 	d := obj.(*api.Recovery)
-	glog.Infof("Sync/Add/Update for Recovery %s", d.GetName())
+	klog.Infof("Sync/Add/Update for Recovery %s", d.GetName())
 	return c.runRecoveryJob(d)
 }
 

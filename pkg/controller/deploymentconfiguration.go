@@ -23,7 +23,6 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -86,13 +85,13 @@ func (c *StashController) initDeploymentConfigWatcher() {
 func (c *StashController) runDeploymentConfigProcessor(key string) error {
 	obj, exists, err := c.dcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 
 	if !exists {
 		// Below we will warm up our cache with a DeploymentConfig, so that we will see a delete for one deployment
-		glog.Warningf("DeploymentConfig %s does not exist anymore\n", key)
+		klog.Warningf("DeploymentConfig %s does not exist anymore\n", key)
 
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -104,7 +103,7 @@ func (c *StashController) runDeploymentConfigProcessor(key string) error {
 			return err
 		}
 	} else {
-		glog.Infof("Sync/Add/Update for DeploymentConfig %s", key)
+		klog.Infof("Sync/Add/Update for DeploymentConfig %s", key)
 
 		dc := obj.(*ocapps.DeploymentConfig).DeepCopy()
 		dc.GetObjectKind().SetGroupVersionKind(ocapps.GroupVersion.WithKind(apis.KindDeploymentConfig))
@@ -113,14 +112,14 @@ func (c *StashController) runDeploymentConfigProcessor(key string) error {
 		// we don't need to re-write stash logic for DeploymentConfig separately
 		w, err := wcs.ConvertToWorkload(dc.DeepCopy())
 		if err != nil {
-			glog.Errorf("failed to convert DeploymentConfig %s/%s to workload type. Reason: %v", dc.Namespace, dc.Name, err)
+			klog.Errorf("failed to convert DeploymentConfig %s/%s to workload type. Reason: %v", dc.Namespace, dc.Name, err)
 			return err
 		}
 
 		// apply stash backup/restore logic on this workload
 		modified, err := c.applyStashLogic(w, apis.CallerController)
 		if err != nil {
-			glog.Errorf("failed to apply stash logic on DeploymentConfig %s/%s. Reason: %v", dc.Namespace, dc.Name, err)
+			klog.Errorf("failed to apply stash logic on DeploymentConfig %s/%s. Reason: %v", dc.Namespace, dc.Name, err)
 			return err
 		}
 
@@ -128,7 +127,7 @@ func (c *StashController) runDeploymentConfigProcessor(key string) error {
 			// workload has been modified. Patch the workload so that respective pods start with the updated spec
 			_, _, err := ocapps_util.PatchDeploymentConfigObject(context.TODO(), c.ocClient, dc, w.Object.(*ocapps.DeploymentConfig), metav1.PatchOptions{})
 			if err != nil {
-				glog.Errorf("failed to update DeploymentConfig %s/%s. Reason: %v", dc.Namespace, dc.Name, err)
+				klog.Errorf("failed to update DeploymentConfig %s/%s. Reason: %v", dc.Namespace, dc.Name, err)
 				return err
 			}
 

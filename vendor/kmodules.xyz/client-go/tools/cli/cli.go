@@ -25,7 +25,6 @@ import (
 
 	ga "github.com/jpillora/go-ogle-analytics"
 	"github.com/spf13/cobra"
-	"gomodules.xyz/kglog"
 )
 
 const (
@@ -36,7 +35,6 @@ const (
 var (
 	AnalyticsClientID = analytics.ClientID()
 	EnableAnalytics   = true
-	LoggerOptions     kglog.Options
 )
 
 func SendAnalytics(c *cobra.Command, version string) {

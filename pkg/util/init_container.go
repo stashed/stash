@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
+	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/cli"
@@ -45,7 +46,7 @@ func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedRe
 		fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 		fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 	}
-	container.Args = append(container.Args, cli.LoggerOptions.ToFlags()...)
+	container.Args = append(container.Args, flags.LoggerOptions.ToFlags()...)
 
 	return container
 }
@@ -67,7 +68,7 @@ func NewRestoreInitContainer(inv invoker.RestoreInvoker, targetInfo invoker.Rest
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-		}, cli.LoggerOptions.ToFlags()...),
+		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
 				Name: apis.KeyNodeName,

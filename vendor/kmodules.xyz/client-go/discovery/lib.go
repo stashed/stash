@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
-	"gomodules.xyz/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
@@ -34,24 +34,26 @@ func GetVersion(client discovery.DiscoveryInterface) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	gv, err := version.NewVersion(info.GitVersion)
+	gv, err := semver.NewVersion(info.GitVersion)
 	if err != nil {
 		return "", err
 	}
-	return gv.ToMutator().ResetMetadata().ResetPrerelease().String(), nil
+	v := *gv
+	v, _ = v.SetPrerelease("")
+	v, _ = v.SetMetadata("")
+	return v.Original(), nil
 }
 
-func GetVersionInfo(client discovery.DiscoveryInterface) (int64, int64, int64, string, string, error) {
+func GetVersionInfo(client discovery.DiscoveryInterface) (uint64, uint64, uint64, string, string, error) {
 	info, err := client.ServerVersion()
 	if err != nil {
-		return -1, -1, -1, "", "", err
+		return 0, 0, 0, "", "", err
 	}
-	gv, err := version.NewVersion(info.GitVersion)
+	gv, err := semver.NewVersion(info.GitVersion)
 	if err != nil {
-		return -1, -1, -1, "", "", err
+		return 0, 0, 0, "", "", err
 	}
-	v := gv.ToMutator().ResetMetadata().ResetPrerelease()
-	return v.Major(), v.Minor(), v.Patch(), v.Prerelease(), v.Metadata(), nil
+	return gv.Major(), gv.Minor(), gv.Patch(), gv.Prerelease(), gv.Metadata(), nil
 }
 
 func GetBaseVersion(client discovery.DiscoveryInterface) (string, error) {
@@ -59,11 +61,19 @@ func GetBaseVersion(client discovery.DiscoveryInterface) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	gv, err := version.NewVersion(info.GitVersion)
+	gv, err := semver.NewVersion(info.GitVersion)
 	if err != nil {
 		return "", err
 	}
-	return gv.ToMutator().ResetMetadata().ResetPrerelease().ResetPatch().String(), nil
+	return fmt.Sprintf("%s%d.%d.0", originalVPrefix(gv), gv.Major(), gv.Minor()), nil
+}
+
+func originalVPrefix(v *semver.Version) string {
+	// Note, only lowercase v is supported as a prefix by the parser.
+	if v.Original() != "" && v.Original()[:1] == "v" {
+		return v.Original()[:1]
+	}
+	return ""
 }
 
 func CheckAPIVersion(client discovery.DiscoveryInterface, constraint string) (bool, error) {
@@ -71,15 +81,18 @@ func CheckAPIVersion(client discovery.DiscoveryInterface, constraint string) (bo
 	if err != nil {
 		return false, err
 	}
-	cond, err := version.NewConstraint(constraint)
+	cond, err := semver.NewConstraint(constraint)
 	if err != nil {
 		return false, err
 	}
-	v, err := version.NewVersion(info.GitVersion)
+	vPtr, err := semver.NewVersion(info.GitVersion)
 	if err != nil {
 		return false, err
 	}
-	return cond.Check(v.ToMutator().ResetPrerelease().ResetMetadata().Done()), nil
+	v := *vPtr
+	v, _ = v.SetPrerelease("")
+	v, _ = v.SetMetadata("")
+	return cond.Check(&v), nil
 }
 
 func IsPreferredAPIResource(client discovery.DiscoveryInterface, groupVersion, kind string) bool {
@@ -203,11 +216,13 @@ func IsSupportedVersion(kc kubernetes.Interface, constraint string, blackListedV
 	}
 	klog.Infof("Kubernetes version: %#v\n", info)
 
-	gv, err := version.NewVersion(info.GitVersion)
+	gv, err := semver.NewVersion(info.GitVersion)
 	if err != nil {
 		return err
 	}
-	v := gv.ToMutator().ResetMetadata().ResetPrerelease().Done()
+	v := *gv
+	v, _ = v.SetPrerelease("")
+	v, _ = v.SetMetadata("")
 
 	nodes, err := kc.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "node-role.kubernetes.io/master",
@@ -217,14 +232,14 @@ func IsSupportedVersion(kc kubernetes.Interface, constraint string, blackListedV
 	}
 	multiMaster := len(nodes.Items) > 1
 
-	return checkVersion(v, multiMaster, constraint, blackListedVersions, blackListedMultiMasterVersions)
+	return checkVersion(&v, multiMaster, constraint, blackListedVersions, blackListedMultiMasterVersions)
 }
 
-func checkVersion(v *version.Version, multiMaster bool, constraint string, blackListedVersions map[string]error, blackListedMultiMasterVersions map[string]error) error {
+func checkVersion(v *semver.Version, multiMaster bool, constraint string, blackListedVersions map[string]error, blackListedMultiMasterVersions map[string]error) error {
 	vs := v.String()
 
 	if constraint != "" {
-		c, err := version.NewConstraint(constraint)
+		c, err := semver.NewConstraint(constraint)
 		if err != nil {
 			return err
 		}

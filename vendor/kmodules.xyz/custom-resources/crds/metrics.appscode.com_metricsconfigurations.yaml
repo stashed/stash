@@ -7,11 +7,11 @@ metadata:
   name: metricsconfigurations.metrics.appscode.com
 spec:
   additionalPrinterColumns:
-  - JSONPath: .spec.targetRef.group
-    name: Group
+  - JSONPath: .spec.targetRef.apiVersion
+    name: APIVersion
     type: string
-  - JSONPath: .spec.targetRef.resource
-    name: Resource
+  - JSONPath: .spec.targetRef.kind
+    name: Kind
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
@@ -136,7 +136,8 @@ spec:
                           is kept as 1. The metric will look like `kube_pod_info{host_ip=\"172.18.0.2\",
                           pod_ip=\"10.244.0.14\", node=\"kind-control-plane\" .....}
                           \ 1`"
-                        type: string
+                        format: double
+                        type: number
                       valueFromExpression:
                         description: "ValueFromExpression contains an expression for
                           the metric value expression can be a function as well. Parameters
@@ -243,7 +244,8 @@ spec:
                                     look like `kube_pod_info{host_ip=\"172.18.0.2\",
                                     pod_ip=\"10.244.0.14\", node=\"kind-control-plane\"
                                     .....}  1`"
-                                  type: string
+                                  format: double
+                                  type: number
                                 valueFromExpression:
                                   description: "ValueFromExpression contains an expression
                                     for the metric value expression can be a function
@@ -291,7 +293,7 @@ spec:
                     type: object
                   type:
                     description: Type defines the metrics type. For kubernetes based
-                      object, types can only be gauge
+                      object, types can only be "gauge"
                     enum:
                     - gauge
                     type: string
@@ -305,17 +307,17 @@ spec:
               description: TargetRef defines the object for which metrics will be
                 collected
               properties:
-                group:
-                  description: 'Group defines the group of the object. Example: For
-                    Deployment, Group will be ''apps'''
+                apiVersion:
+                  description: APIVersion defines the versioned schema of this representation
+                    of an object.
                   type: string
-                resource:
-                  description: 'Resource defines the resource of the object. Example:
-                    For Deployment, Resource will be ''deployments'''
+                kind:
+                  description: Kind is a string value representing the REST resource
+                    this object represents. In CamelCase.
                   type: string
               required:
-              - group
-              - resource
+              - apiVersion
+              - kind
               type: object
           required:
           - metrics

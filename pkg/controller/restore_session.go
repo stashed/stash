@@ -38,7 +38,6 @@ import (
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"gomodules.xyz/pointer"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -131,16 +130,16 @@ func (c *StashController) initRestoreSessionWatcher() {
 func (c *StashController) runRestoreSessionProcessor(key string) error {
 	obj, exists, err := c.restoreSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 	if !exists {
-		glog.Warningf("RestoreSession %s does not exist anymore\n", key)
+		klog.Warningf("RestoreSession %s does not exist anymore\n", key)
 		return nil
 	}
 
 	restoreSession := obj.(*api_v1beta1.RestoreSession)
-	glog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
+	klog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
 	// process sync/add/update event
 	inv, err := invoker.ExtractRestoreInvokerInfo(
 		c.kubeClient,
@@ -204,7 +203,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 		repository, err := c.stashClient.StashV1alpha1().Repositories(in.ObjectMeta.Namespace).Get(context.TODO(), in.Repository, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				glog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
+				klog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
 					in.ObjectMeta.Namespace,
 					in.Repository,
 					in.TypeMeta.Kind,
@@ -229,7 +228,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 		secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				glog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
+				klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
 					secret.Namespace,
 					secret.Name,
 					repository.Namespace,
@@ -345,7 +344,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 				}
 				targetExist, err := wc.IsTargetExist(tref, in.ObjectMeta.Namespace)
 				if err != nil {
-					glog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
+					klog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
 						tref.APIVersion,
 						tref.Kind,
 						in.ObjectMeta.Namespace,
@@ -359,7 +358,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 
 				if !targetExist {
 					// Target does not exist. Log the information.
-					glog.Infof("Restore target %s %s %s/%s does not exist.",
+					klog.Infof("Restore target %s %s %s/%s does not exist.",
 						tref.APIVersion,
 						tref.Kind,
 						in.ObjectMeta.Namespace,
@@ -370,7 +369,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 						return err
 					}
 					// Now retry after 5 seconds
-					glog.Infof("Requeueing Restore Invoker %s %s/%s after 5 seconds....",
+					klog.Infof("Requeueing Restore Invoker %s %s/%s after 5 seconds....",
 						in.TypeMeta.Kind,
 						in.ObjectMeta.Namespace,
 						in.ObjectMeta.Name,

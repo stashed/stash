@@ -27,7 +27,6 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -137,7 +136,7 @@ func (c *Controller) runScheduler(stopCh <-chan struct{}) {
 	c.rQueue.Run(stopCh)
 
 	<-stopCh
-	glog.Info("Stopping Stash backup")
+	klog.Info("Stopping Stash backup")
 }
 
 func (c *Controller) configureScheduler(r *api.Restic) error {

@@ -24,7 +24,6 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 
-	"github.com/golang/glog"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -33,6 +32,7 @@ import (
 	batch_informers "k8s.io/client-go/informers/batch/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/tools/queue"
 )
 
@@ -58,18 +58,18 @@ func (c *StashController) initJobWatcher() {
 func (c *StashController) runJobInjector(key string) error {
 	obj, exists, err := c.jobInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 	if !exists {
-		glog.Warningf("Job %s does not exist anymore\n", key)
+		klog.Warningf("Job %s does not exist anymore\n", key)
 		return nil
 	} else {
 		job := obj.(*batch.Job)
-		glog.Infof("Sync/Add/Update for Job %s", job.GetName())
+		klog.Infof("Sync/Add/Update for Job %s", job.GetName())
 
 		if job.Status.Succeeded > 0 {
-			glog.Infof("Deleting succeeded job %s", job.GetName())
+			klog.Infof("Deleting succeeded job %s", job.GetName())
 
 			deletePolicy := metav1.DeletePropagationBackground
 			err := c.kubeClient.BatchV1().Jobs(job.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{
@@ -80,7 +80,7 @@ func (c *StashController) runJobInjector(key string) error {
 				return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
 			}
 
-			glog.Infof("Deleted stash job: %s", job.GetName())
+			klog.Infof("Deleted stash job: %s", job.GetName())
 
 			err = stash_rbac.EnsureRepoReaderRolebindingDeleted(c.kubeClient, c.stashClient, &job.ObjectMeta)
 			if err != nil {

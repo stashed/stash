@@ -27,6 +27,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
+	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -74,7 +75,7 @@ func NewCheckJob(restic *api_v1alpha1.Restic, hostName, smartPrefix string, imag
 								"--smart-prefix=" + smartPrefix,
 								fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 								fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-							}, cli.LoggerOptions.ToFlags()...),
+							}, flags.LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
 								{
 									Name:  analytics.Key,
@@ -165,7 +166,7 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api_v1alpha1.Recovery, i
 								"--recovery-name=" + recovery.Name,
 								fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 								fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-							}, cli.LoggerOptions.ToFlags()...),
+							}, flags.LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
 								{
 									Name:  analytics.Key,
@@ -237,7 +238,7 @@ func NewPVCRestorerJob(inv invoker.RestoreInvoker, index int, repository *api_v1
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-		}, cli.LoggerOptions.ToFlags()...),
+		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
 				Name: apis.KeyNodeName,
@@ -328,7 +329,7 @@ func NewVolumeSnapshotterJob(bs *api_v1beta1.BackupSession, backupTarget *api_v1
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-		}, cli.LoggerOptions.ToFlags()...),
+		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
 				Name: apis.KeyPodName,
@@ -376,7 +377,7 @@ func NewVolumeRestorerJob(inv invoker.RestoreInvoker, index int, image docker.Do
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-		}, cli.LoggerOptions.ToFlags()...),
+		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
 				Name: apis.KeyPodName,

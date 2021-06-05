@@ -110,7 +110,7 @@ message MetricValue {
   // As there must be a metric value, metric value is kept as 1.
   // The metric will look like `kube_pod_info{host_ip="172.18.0.2", pod_ip="10.244.0.14", node="kind-control-plane" .....}  1`
   // +optional
-  optional string value = 1;
+  optional double value = 1;
 
   // ValueFromPath contains the field path of the manifest file of a object.
   // ValueFromPath is used when the metric value is coming from
@@ -163,7 +163,7 @@ message Metrics {
   optional string help = 2;
 
   // Type defines the metrics type.
-  // For kubernetes based object, types can only be gauge
+  // For kubernetes based object, types can only be "gauge"
   // +kubebuilder:validation:Enum=gauge;
   optional string type = 3;
 
@@ -198,8 +198,8 @@ message Metrics {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=metricsconfigurations,singular=metricsconfiguration,scope=Cluster,categories={metrics,appscode,all}
-// +kubebuilder:printcolumn:name="Group",type="string",JSONPath=".spec.targetRef.group"
-// +kubebuilder:printcolumn:name="Resource",type="string",JSONPath=".spec.targetRef.resource"
+// +kubebuilder:printcolumn:name="APIVersion",type="string",JSONPath=".spec.targetRef.apiVersion"
+// +kubebuilder:printcolumn:name="Kind",type="string",JSONPath=".spec.targetRef.kind"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 message MetricsConfiguration {
   optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
@@ -284,14 +284,13 @@ message StateValues {
   optional MetricValue metricValue = 2;
 }
 
-// TargetRef contains the Object's group and resource to specify the target resource
+// TargetRef contains the Object's apiVersion & kind to specify the target resource
 message TargetRef {
-  // Group defines the group of the object.
-  // Example: For Deployment, Group will be 'apps'
-  optional string group = 1;
+  // Kind is a string value representing the REST resource this object represents.
+  // In CamelCase.
+  optional string kind = 1;
 
-  // Resource defines the resource of the object.
-  // Example: For Deployment, Resource will be 'deployments'
-  optional string resource = 2;
+  // APIVersion defines the versioned schema of this representation of an object.
+  optional string apiVersion = 2;
 }
 

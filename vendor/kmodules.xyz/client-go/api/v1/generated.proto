@@ -121,6 +121,22 @@ message Condition {
   optional string message = 6;
 }
 
+// ResourceID identifies a resource
+message ResourceID {
+  optional string group = 1;
+
+  optional string version = 2;
+
+  // Name is the plural name of the resource to serve.  It must match the name of the CustomResourceDefinition-registration
+  // too: plural.group and it must be all lowercase.
+  optional string name = 3;
+
+  // Kind is the serialized kind of the resource.  It is normally CamelCase and singular.
+  optional string kind = 4;
+
+  optional string scope = 5;
+}
+
 message TLSConfig {
   // IssuerRef is a reference to a Certificate Issuer.
   // +optional

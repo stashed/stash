@@ -23,13 +23,13 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -80,13 +80,13 @@ func (c *StashController) initRCWatcher() {
 func (c *StashController) runRCInjector(key string) error {
 	obj, exists, err := c.rcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 
 	if !exists {
 		// Below we will warm up our cache with a ReplicationController, so that we will see a delete for one d
-		glog.Warningf("ReplicationController %s does not exist anymore\n", key)
+		klog.Warningf("ReplicationController %s does not exist anymore\n", key)
 
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -98,7 +98,7 @@ func (c *StashController) runRCInjector(key string) error {
 			return err
 		}
 	} else {
-		glog.Infof("Sync/Add/Update for ReplicationController %s", key)
+		klog.Infof("Sync/Add/Update for ReplicationController %s", key)
 
 		rc := obj.(*core.ReplicationController).DeepCopy()
 		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindReplicationController))
@@ -107,14 +107,14 @@ func (c *StashController) runRCInjector(key string) error {
 		// we don't need to re-write stash logic for ReplicationController separately
 		w, err := wcs.ConvertToWorkload(rc.DeepCopy())
 		if err != nil {
-			glog.Errorf("failed to convert replicationcontroller %s/%s to workload type. Reason: %v", rc.Namespace, rc.Name, err)
+			klog.Errorf("failed to convert replicationcontroller %s/%s to workload type. Reason: %v", rc.Namespace, rc.Name, err)
 			return err
 		}
 
 		// apply stash backup/restore logic on this workload
 		modified, err := c.applyStashLogic(w, apis.CallerController)
 		if err != nil {
-			glog.Errorf("failed to apply stash logic on replicationcontroller %s/%s. Reason: %v", rc.Namespace, rc.Name, err)
+			klog.Errorf("failed to apply stash logic on replicationcontroller %s/%s. Reason: %v", rc.Namespace, rc.Name, err)
 			return err
 		}
 
@@ -122,7 +122,7 @@ func (c *StashController) runRCInjector(key string) error {
 			// workload has been modified. patch the workload so that respective pods start with the updated spec
 			_, _, err = core_util.PatchRCObject(context.TODO(), c.kubeClient, rc, w.Object.(*core.ReplicationController), metav1.PatchOptions{})
 			if err != nil {
-				glog.Errorf("failed to update replicationcontroller %s/%s. Reason: %v", rc.Namespace, rc.Name, err)
+				klog.Errorf("failed to update replicationcontroller %s/%s. Reason: %v", rc.Namespace, rc.Name, err)
 				return err
 			}
 		}
