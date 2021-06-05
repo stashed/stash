@@ -32,7 +32,6 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"gomodules.xyz/pointer"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
@@ -64,16 +63,16 @@ func (c *StashController) initBackupConfigurationWatcher() {
 func (c *StashController) runBackupConfigurationProcessor(key string) error {
 	obj, exists, err := c.bcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 	if !exists {
-		glog.Warningf("BackupConfiguration %s does not exit anymore\n", key)
+		klog.Warningf("BackupConfiguration %s does not exit anymore\n", key)
 		return nil
 	}
 
 	backupConfiguration := obj.(*api_v1beta1.BackupConfiguration)
-	glog.Infof("Sync/Add/Update for BackupConfiguration %s", backupConfiguration.GetName())
+	klog.Infof("Sync/Add/Update for BackupConfiguration %s", backupConfiguration.GetName())
 	// process syc/add/update event
 	inv, err := invoker.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupConfiguration, backupConfiguration.Name, backupConfiguration.Namespace)
 	if err != nil {
@@ -135,7 +134,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 		repository, err := c.stashClient.StashV1alpha1().Repositories(inv.ObjectMeta.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				glog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
+				klog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
 					inv.ObjectMeta.Namespace,
 					inv.Repository,
 					inv.TypeMeta.Kind,
@@ -160,7 +159,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 		secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				glog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
+				klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
 					secret.Namespace,
 					secret.Name,
 					repository.Namespace,
@@ -194,7 +193,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 			}
 			targetExist, err := wc.IsTargetExist(tref, inv.ObjectMeta.Namespace)
 			if err != nil {
-				glog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
+				klog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
 					tref.APIVersion,
 					tref.Kind,
 					inv.ObjectMeta.Namespace,
@@ -208,7 +207,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 			if !targetExist {
 				// Target does not exist. Log the information.
 				someTargetMissing = true
-				glog.Infof("Backup target %s %s %s/%s does not exist.",
+				klog.Infof("Backup target %s %s %s/%s does not exist.",
 					tref.APIVersion,
 					tref.Kind,
 					inv.ObjectMeta.Namespace,
@@ -237,7 +236,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 	}
 	// If some backup targets are missing, then retry after some time.
 	if someTargetMissing {
-		glog.Infof("Some targets are missing for backup invoker: %s %s/%s.\nRequeueing after 5 seconds......",
+		klog.Infof("Some targets are missing for backup invoker: %s %s/%s.\nRequeueing after 5 seconds......",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,

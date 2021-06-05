@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
+	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/analytics"
@@ -54,7 +55,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-		}, cli.LoggerOptions.ToFlags()...),
+		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
 				Name: "NODE_NAME",
@@ -124,7 +125,7 @@ func NewBackupSidecarContainer(inv invoker.BackupInvoker, targetInfo invoker.Bac
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-		}, cli.LoggerOptions.ToFlags()...),
+		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
 				Name: apis.KeyNodeName,

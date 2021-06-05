@@ -35,7 +35,6 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -95,7 +94,7 @@ func (c *BackupSessionController) RunBackup(targetInfo invoker.BackupTargetInfo,
 			return err
 		}
 	}
-	glog.Info("Stopping Stash backup")
+	klog.Info("Stopping Stash backup")
 	return nil
 }
 
@@ -151,12 +150,12 @@ func (c *BackupSessionController) initBackupSessionWatcher() error {
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			oldBS, ok := oldObj.(*api_v1beta1.BackupSession)
 			if !ok {
-				glog.Errorf("Invalid BackupSession Object")
+				klog.Errorf("Invalid BackupSession Object")
 				return
 			}
 			newBS, ok := newObj.(*api_v1beta1.BackupSession)
 			if !ok {
-				glog.Errorf("Invalid BackupSession Object")
+				klog.Errorf("Invalid BackupSession Object")
 				return
 			}
 			if !reflect.DeepEqual(&oldBS.Status, &newBS.Status) {
@@ -174,15 +173,15 @@ func (c *BackupSessionController) initBackupSessionWatcher() error {
 func (c *BackupSessionController) processBackupSession(key string) error {
 	obj, exists, err := c.bsInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 	if !exists {
-		glog.Warningf("Backup Session %s does not exist anymore\n", key)
+		klog.Warningf("Backup Session %s does not exist anymore\n", key)
 
 	} else {
 		backupSession := obj.(*api_v1beta1.BackupSession)
-		glog.Infof("Sync/Add/Update for Backup Session %s", backupSession.GetName())
+		klog.Infof("Sync/Add/Update for Backup Session %s", backupSession.GetName())
 
 		inv, err := invoker.ExtractBackupInvokerInfo(c.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, c.Namespace)
 		if err != nil {
@@ -196,7 +195,7 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 				if inv.ExecutionOrder == api_v1beta1.Sequential &&
 					!inv.NextInOrder(targetInfo.Target.Ref, backupSession.Status.Targets) {
 					// backup order is sequential and the current target is not yet to be executed.
-					glog.Infof("Skipping backup. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.")
+					klog.Infof("Skipping backup. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.")
 					return nil
 				}
 
@@ -266,7 +265,7 @@ func (c *BackupSessionController) backup(inv invoker.BackupInvoker, targetInfo i
 	// If the repository hasn't been initialized yet, it means some other process is responsible to initialize the repository.
 	// So, retry after 5 seconds.
 	if !repoInitialized {
-		glog.Infof("Waiting for the backend repository.....")
+		klog.Infof("Waiting for the backend repository.....")
 		c.bsQueue.GetQueue().AddAfter(fmt.Sprintf("%s/%s", backupSession.Namespace, backupSession.Name), 5*time.Second)
 		return nil, nil
 	}

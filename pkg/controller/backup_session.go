@@ -39,7 +39,6 @@ import (
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"gomodules.xyz/pointer"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -106,16 +105,16 @@ func (c *StashController) initBackupSessionWatcher() {
 func (c *StashController) runBackupSessionProcessor(key string) error {
 	obj, exists, err := c.backupSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 	if !exists {
-		glog.Warningf("BackupSession %s does not exist anymore\n", key)
+		klog.Warningf("BackupSession %s does not exist anymore\n", key)
 		return nil
 	}
 
 	backupSession := obj.(*api_v1beta1.BackupSession)
-	glog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
+	klog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
 	// process sync/add/update event
 	return c.applyBackupSessionReconciliationLogic(backupSession)
 }
@@ -213,7 +212,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 		if targetInfo.Target != nil {
 			// Skip processing if the backup has been already initiated before for this target
 			if invoker.TargetBackupInitiated(targetInfo.Target.Ref, backupSession.Status.Targets) {
-				glog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup has been already initiated for this target.", targetInfo.Target.Ref.Kind, backupSession.ObjectMeta.Namespace, targetInfo.Target.Ref.Name)
+				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup has been already initiated for this target.", targetInfo.Target.Ref.Kind, backupSession.ObjectMeta.Namespace, targetInfo.Target.Ref.Name)
 				continue
 			}
 			// ----------------- Ensure Execution Order -------------------
@@ -221,7 +220,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 				!inv.NextInOrder(targetInfo.Target.Ref, backupSession.Status.Targets) {
 				// backup order is sequential and the current target is not yet to be executed.
 				// so, set its phase to "Pending".
-				glog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.", targetInfo.Target.Ref.Kind, backupSession.ObjectMeta.Namespace, targetInfo.Target.Ref.Name)
+				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.", targetInfo.Target.Ref.Kind, backupSession.ObjectMeta.Namespace, targetInfo.Target.Ref.Name)
 				backupSession, err = c.setTargetPhasePending(targetInfo.Target.Ref, backupSession)
 				if err != nil {
 					return err

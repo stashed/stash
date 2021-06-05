@@ -31,13 +31,13 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 )
@@ -76,7 +76,7 @@ func NewCmdRunHook() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := clientcmd.BuildConfigFromFlags(opt.masterURL, opt.kubeConfigPath)
 			if err != nil {
-				glog.Fatalf("Could not get Kubernetes config: %s", err)
+				klog.Fatalf("Could not get Kubernetes config: %s", err)
 				return err
 			}
 

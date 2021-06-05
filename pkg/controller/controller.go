@@ -26,7 +26,6 @@ import (
 	stash_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1"
 	stash_listers_v1beta1 "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 
-	"github.com/golang/glog"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
@@ -168,7 +167,7 @@ func (c *StashController) Run(stopCh <-chan struct{}) {
 func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 
-	glog.Info("Starting Stash controller")
+	klog.Info("Starting Stash controller")
 
 	c.kubeInformerFactory.Start(stopCh)
 	c.stashInformerFactory.Start(stopCh)

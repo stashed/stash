@@ -18,6 +18,8 @@ github.com/Azure/go-autorest/logger
 github.com/Azure/go-autorest/tracing
 # github.com/BurntSushi/toml v0.3.1
 github.com/BurntSushi/toml
+# github.com/Masterminds/semver/v3 v3.1.1
+github.com/Masterminds/semver/v3
 # github.com/NYTimes/gziphandler v1.1.1
 github.com/NYTimes/gziphandler
 # github.com/PuerkitoBio/purell v1.1.1
@@ -137,9 +139,6 @@ github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 github.com/gogo/protobuf/sortkeys
-# github.com/golang/glog v0.0.0-20210429001901-424d2337a529
-## explicit
-github.com/golang/glog
 # github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 github.com/golang/groupcache/lru
 # github.com/golang/protobuf v1.4.3 => github.com/golang/protobuf v1.4.3
@@ -506,13 +505,18 @@ gomodules.xyz/clock
 gomodules.xyz/envsubst
 gomodules.xyz/envsubst/parse
 gomodules.xyz/envsubst/path
+# gomodules.xyz/flags v0.1.0
+## explicit
+gomodules.xyz/flags
+# gomodules.xyz/go-sh v0.1.0
+gomodules.xyz/go-sh
 # gomodules.xyz/homedir v0.0.0-20201104190528-bcd4d5d94b84
 gomodules.xyz/homedir
 # gomodules.xyz/jsonpatch/v2 v2.1.0
 gomodules.xyz/jsonpatch/v2
-# gomodules.xyz/kglog v0.0.1
+# gomodules.xyz/logs v0.0.2
 ## explicit
-gomodules.xyz/kglog
+gomodules.xyz/logs
 # gomodules.xyz/password-generator v0.2.6
 gomodules.xyz/password-generator
 # gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
@@ -531,18 +535,15 @@ gomodules.xyz/stow/google
 gomodules.xyz/stow/local
 gomodules.xyz/stow/s3
 gomodules.xyz/stow/swift
-# gomodules.xyz/version v0.1.0
-gomodules.xyz/version
 # gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545
 gomodules.xyz/wait
-# gomodules.xyz/x v0.0.4
+# gomodules.xyz/x v0.0.5
 ## explicit
 gomodules.xyz/x/analytics
 gomodules.xyz/x/arrays
 gomodules.xyz/x/crypto/rand
 gomodules.xyz/x/encoding/json/types
 gomodules.xyz/x/encoding/yaml
-gomodules.xyz/x/flags
 gomodules.xyz/x/net
 gomodules.xyz/x/strings
 gomodules.xyz/x/version
@@ -1282,7 +1283,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20210505231546-fa4fb8e1d04e
+# kmodules.xyz/client-go v0.0.0-20210605021217-cabaee7b953e
 ## explicit
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
@@ -1313,15 +1314,18 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/custom-resources v0.0.0-20210504034124-54c54fcdb690
+# kmodules.xyz/custom-resources v0.0.0-20210605111625-741fcb992541
 ## explicit
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
+kmodules.xyz/custom-resources/apis/auditor
+kmodules.xyz/custom-resources/apis/auditor/v1alpha1
 kmodules.xyz/custom-resources/apis/metrics
 kmodules.xyz/custom-resources/apis/metrics/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned
 kmodules.xyz/custom-resources/client/clientset/versioned/scheme
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1
+kmodules.xyz/custom-resources/client/clientset/versioned/typed/auditor/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/metrics/v1alpha1
 kmodules.xyz/custom-resources/crds
 # kmodules.xyz/objectstore-api v0.0.0-20210504041638-b9e00ab1eab3
@@ -1456,7 +1460,7 @@ sigs.k8s.io/structured-merge-diff/v4/typed
 sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.13.1-0.20210505235659-974fc12c7593
+# stash.appscode.dev/apimachinery v0.13.1-0.20210605201829-a382bbe2f22a
 ## explicit
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
@@ -1541,5 +1545,4 @@ stash.appscode.dev/apimachinery/pkg/util
 # k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7
 # k8s.io/kubernetes => github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20210427080452-22d2e66bae50
 # k8s.io/utils => k8s.io/utils v0.0.0-20201110183641-67b214c5f920
-# kmodules.xyz/resource-metadata => kmodules.xyz/resource-metadata v0.5.0
 # sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20210427030912-90eeee3bc4ad

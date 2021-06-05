@@ -17,6 +17,7 @@ limitations under the License.
 package crds
 
 import (
+	"embed"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -24,15 +25,15 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+//go:embed *.yaml
+var fs embed.FS
+
 func load(filename string, o interface{}) error {
-	if _, ok := _bindata[filename]; ok {
-		data, err := Asset(filename)
-		if err != nil {
-			return err
-		}
-		return yaml.Unmarshal(data, o)
+	data, err := fs.ReadFile(filename)
+	if err != nil {
+		return err
 	}
-	return nil
+	return yaml.Unmarshal(data, o)
 }
 
 func CustomResourceDefinition(gvr schema.GroupVersionResource) (*apiextensions.CustomResourceDefinition, error) {

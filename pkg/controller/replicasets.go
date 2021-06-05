@@ -23,13 +23,13 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -87,13 +87,13 @@ func (c *StashController) initReplicaSetWatcher() {
 func (c *StashController) runReplicaSetInjector(key string) error {
 	obj, exists, err := c.rsInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 
 	if !exists {
 		// Below we will warm up our cache with a ReplicaSet, so that we will see a delete for one d
-		glog.Warningf("ReplicaSet %s does not exist anymore\n", key)
+		klog.Warningf("ReplicaSet %s does not exist anymore\n", key)
 
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -105,7 +105,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			return err
 		}
 	} else {
-		glog.Infof("Sync/Add/Update for ReplicaSet %s", key)
+		klog.Infof("Sync/Add/Update for ReplicaSet %s", key)
 
 		rs := obj.(*apps.ReplicaSet).DeepCopy()
 		rs.GetObjectKind().SetGroupVersionKind(apps.SchemeGroupVersion.WithKind(apis.KindReplicaSet))
@@ -114,7 +114,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		// we don't need to re-write stash logic for ReplicaSet separately
 		w, err := wcs.ConvertToWorkload(rs.DeepCopy())
 		if err != nil {
-			glog.Errorf("failed to convert ReplicaSet %s/%s to workload type. Reason: %v", rs.Namespace, rs.Name, err)
+			klog.Errorf("failed to convert ReplicaSet %s/%s to workload type. Reason: %v", rs.Namespace, rs.Name, err)
 			return err
 		}
 
@@ -130,7 +130,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 				// workload has been modified. patch the workload so that respective pods start with the updated spec
 				_, _, err = apps_util.PatchReplicaSetObject(context.TODO(), c.kubeClient, rs, w.Object.(*apps.ReplicaSet), metav1.PatchOptions{})
 				if err != nil {
-					glog.Errorf("failed to update ReplicaSet %s/%s. Reason: %v", rs.Namespace, rs.Name, err)
+					klog.Errorf("failed to update ReplicaSet %s/%s. Reason: %v", rs.Namespace, rs.Name, err)
 					return err
 				}
 			}

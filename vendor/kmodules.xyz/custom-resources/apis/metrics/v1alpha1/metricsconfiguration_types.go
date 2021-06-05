@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	ResourceKindMetricsConfiguration     = "MetricsConfiguration"
-	ResourceSingularMetricsConfiguration = "metricsconfiguration"
-	ResourcePluralMetricsConfiguration   = "metricsconfigurations"
+	ResourceKindMetricsConfiguration = "MetricsConfiguration"
+	ResourceMetricsConfiguration     = "metricsconfiguration"
+	ResourceMetricsConfigurations    = "metricsconfigurations"
 )
 
 // MetricsConfiguration defines a generic metrics configuration
@@ -37,11 +37,11 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=metricsconfigurations,singular=metricsconfiguration,scope=Cluster,categories={metrics,appscode,all}
-// +kubebuilder:printcolumn:name="Group",type="string",JSONPath=".spec.targetRef.group"
-// +kubebuilder:printcolumn:name="Resource",type="string",JSONPath=".spec.targetRef.resource"
+// +kubebuilder:printcolumn:name="APIVersion",type="string",JSONPath=".spec.targetRef.apiVersion"
+// +kubebuilder:printcolumn:name="Kind",type="string",JSONPath=".spec.targetRef.kind"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type MetricsConfiguration struct {
-	metav1.TypeMeta   `json:",inline,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 	Spec              MetricsConfigurationSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
 }
@@ -55,15 +55,14 @@ type MetricsConfigurationSpec struct {
 	Metrics []Metrics `json:"metrics" protobuf:"bytes,2,rep,name=metrics"`
 }
 
-// TargetRef contains the Object's group and resource to specify the target resource
+// TargetRef contains the Object's apiVersion & kind to specify the target resource
 type TargetRef struct {
-	// Group defines the group of the object.
-	// Example: For Deployment, Group will be 'apps'
-	Group string `json:"group" protobuf:"bytes,1,opt,name=group"`
+	// Kind is a string value representing the REST resource this object represents.
+	// In CamelCase.
+	Kind string `json:"kind" protobuf:"bytes,1,opt,name=kind"`
 
-	// Resource defines the resource of the object.
-	// Example: For Deployment, Resource will be 'deployments'
-	Resource string `json:"resource" protobuf:"bytes,2,opt,name=resource"`
+	// APIVersion defines the versioned schema of this representation of an object.
+	APIVersion string `json:"apiVersion" protobuf:"bytes,2,opt,name=apiVersion"`
 }
 
 // Metrics contains the configuration of a metric in prometheus style.
@@ -77,7 +76,7 @@ type Metrics struct {
 	Help string `json:"help" protobuf:"bytes,2,opt,name=help"`
 
 	// Type defines the metrics type.
-	// For kubernetes based object, types can only be gauge
+	// For kubernetes based object, types can only be "gauge"
 	// +kubebuilder:validation:Enum=gauge;
 	Type string `json:"type" protobuf:"bytes,3,opt,name=type"`
 
@@ -262,7 +261,7 @@ type MetricValue struct {
 	// As there must be a metric value, metric value is kept as 1.
 	// The metric will look like `kube_pod_info{host_ip="172.18.0.2", pod_ip="10.244.0.14", node="kind-control-plane" .....}  1`
 	// +optional
-	Value string `json:"value,omitempty" protobuf:"bytes,1,opt,name=value"`
+	Value *float64 `json:"value,omitempty" protobuf:"bytes,1,opt,name=value"`
 
 	// ValueFromPath contains the field path of the manifest file of a object.
 	// ValueFromPath is used when the metric value is coming from
