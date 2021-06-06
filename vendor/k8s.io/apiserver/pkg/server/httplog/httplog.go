@@ -75,6 +75,15 @@ func DefaultStacktracePred(status int) bool {
 	return (status < http.StatusOK || status >= http.StatusInternalServerError) && status != http.StatusSwitchingProtocols
 }
 
+// raise log level for successful requests and requests to "/openapi/v2" as this is not configured for dynamic admission controller webhooks
+func logLevel(rl *respLogger) klog.Level {
+	if (rl.status >= http.StatusOK && rl.status < http.StatusMultipleChoices) ||
+		rl.req.RequestURI == "/openapi/v2" {
+		return 8
+	}
+	return 3
+}
+
 // WithLogging wraps the handler with logging.
 func WithLogging(handler http.Handler, pred StacktracePred) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -85,9 +94,11 @@ func WithLogging(handler http.Handler, pred StacktracePred) http.Handler {
 		rl := newLogged(req, w).StacktraceWhen(pred)
 		req = req.WithContext(context.WithValue(ctx, respLoggerContextKey, rl))
 
-		if klog.V(3).Enabled() {
-			defer func() { klog.InfoS("HTTP", rl.LogArgs()...) }()
-		}
+		defer func() {
+			if klog.V(logLevel(rl)).Enabled() {
+				klog.InfoS("HTTP", rl.LogArgs()...)
+			}
+		}()
 		handler.ServeHTTP(rl, req)
 	})
 }

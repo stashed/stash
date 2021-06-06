@@ -1,0 +1,27 @@
+apiVersion: meta.appscode.com/v1alpha3
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: cluster.x-k8s.io
+    k8s.io/kind: Machine
+    k8s.io/resource: machines
+    k8s.io/version: v1alpha3
+  name: cluster.x-k8s.io-v1alpha3-machines
+spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/cluster.x-k8s.io/machines.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/cluster.x-k8s.io/machines.png
+    type: image/png
+  resource:
+    group: cluster.x-k8s.io
+    kind: Machine
+    name: machines
+    scope: Namespaced
+    version: v1alpha3
+  ui:
+    editor:
+      name: clusterxk8sio-machine-editor
+      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      version: v0.1.0

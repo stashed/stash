@@ -1,0 +1,93 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: rbac.authorization.k8s.io
+    k8s.io/kind: ClusterRoleBinding
+    k8s.io/resource: clusterrolebindings
+    k8s.io/version: v1beta1
+  name: rbac.authorization.k8s.io-v1beta1-clusterrolebindings
+spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/rbac.authorization.k8s.io/clusterrolebindings.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/rbac.authorization.k8s.io/clusterrolebindings.png
+    type: image/png
+  resource:
+    group: rbac.authorization.k8s.io
+    kind: ClusterRoleBinding
+    name: clusterrolebindings
+    scope: Cluster
+    version: v1beta1
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
+  validation:
+    openAPIV3Schema:
+      description: ClusterRoleBinding references a ClusterRole, but not contain it.  It can reference a ClusterRole in the global namespace, and adds who information via Subject. Deprecated in v1.17 in favor of rbac.authorization.k8s.io/v1 ClusterRoleBinding, and will no longer be served in v1.22.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        roleRef:
+          description: RoleRef can only reference a ClusterRole in the global namespace. If the RoleRef cannot be resolved, the Authorizer must return an error.
+          properties:
+            apiGroup:
+              description: APIGroup is the group for the resource being referenced
+              type: string
+            kind:
+              description: Kind is the type of resource being referenced
+              type: string
+            name:
+              description: Name is the name of resource being referenced
+              type: string
+          required:
+          - apiGroup
+          - kind
+          - name
+          type: object
+        subjects:
+          description: Subjects holds references to the objects the role applies to.
+          items:
+            description: Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference, or a value for non-objects such as user and group names.
+            properties:
+              apiGroup:
+                description: APIGroup holds the API group of the referenced subject. Defaults to "" for ServiceAccount subjects. Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
+                type: string
+              kind:
+                description: Kind of object being referenced. Values defined by this API group are "User", "Group", and "ServiceAccount". If the Authorizer does not recognized the kind value, the Authorizer should report an error.
+                type: string
+              name:
+                description: Name of the object being referenced.
+                type: string
+              namespace:
+                description: Namespace of the referenced object.  If the object kind is non-namespace, such as "User" or "Group", and this value is not empty the Authorizer should report an error.
+                type: string
+            required:
+            - kind
+            - name
+            type: object
+          type: array
+      required:
+      - roleRef
+      type: object

@@ -7,15 +7,16 @@ require (
 	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
 	github.com/gogo/protobuf v1.3.2
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.1.0
-	github.com/onsi/ginkgo v1.11.0
-	github.com/onsi/gomega v1.8.1
+	github.com/onsi/ginkgo v1.15.0
+	github.com/onsi/gomega v1.10.5
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/client_golang v1.9.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.9.1
-	go.bytebuilders.dev/license-verifier/kubernetes v0.9.1
+	go.bytebuilders.dev/audit v0.0.0-20210606035915-e588bc9c711d
+	go.bytebuilders.dev/license-verifier v0.9.2
+	go.bytebuilders.dev/license-verifier/kubernetes v0.9.2
 	gomodules.xyz/blobfs v0.1.7
 	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/envsubst v0.1.0
@@ -113,8 +114,6 @@ replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.5
 
-replace github.com/jetstack/cert-manager => github.com/kmodules/cert-manager v1.3.1-0.20210429172957-c5436c14ce0e
-
 replace github.com/prometheus-operator/prometheus-operator => github.com/prometheus-operator/prometheus-operator v0.47.0
 
 replace github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring => github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.47.0
@@ -135,7 +134,7 @@ replace k8s.io/api => k8s.io/api v0.21.0
 
 replace k8s.io/apimachinery => github.com/kmodules/apimachinery v0.21.1-rc.0.0.20210405112358-ad4c2289ba4c
 
-replace k8s.io/apiserver => github.com/kmodules/apiserver v0.21.1-0.20210427013338-53dee545b83c
+replace k8s.io/apiserver => github.com/kmodules/apiserver v0.21.1-0.20210525165825-102cf43e00fa
 
 replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.21.0
 

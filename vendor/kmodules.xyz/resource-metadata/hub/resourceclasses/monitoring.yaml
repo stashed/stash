@@ -1,0 +1,38 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceClass
+metadata:
+  creationTimestamp: null
+  name: Monitoring
+spec:
+  apiGroup: monitoring.coreos.com
+  entries:
+  - name: Prometheus
+    required: true
+    type:
+      groups:
+      - monitoring.coreos.com
+      resource: prometheuses
+  - name: Alertmanager
+    required: true
+    type:
+      groups:
+      - monitoring.coreos.com
+      resource: alertmanagers
+  - name: ServiceMonitor
+    required: true
+    type:
+      groups:
+      - monitoring.coreos.com
+      resource: servicemonitors
+  - name: PodMonitor
+    required: true
+    type:
+      groups:
+      - monitoring.coreos.com
+      resource: podmonitors
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/resourceclasses/monitoring.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/resourceclasses/monitoring.png
+    type: image/png
+  weight: 8

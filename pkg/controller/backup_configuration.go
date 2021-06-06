@@ -53,6 +53,9 @@ import (
 func (c *StashController) initBackupConfigurationWatcher() {
 	c.bcInformer = c.stashInformerFactory.Stash().V1beta1().BackupConfigurations().Informer()
 	c.bcQueue = queue.New(api_v1beta1.ResourceKindBackupConfiguration, c.MaxNumRequeues, c.NumThreads, c.runBackupConfigurationProcessor)
+	if c.auditor != nil {
+		c.bcInformer.AddEventHandler(c.auditor)
+	}
 	c.bcInformer.AddEventHandler(queue.NewReconcilableHandler(c.bcQueue.GetQueue()))
 	c.bcLister = c.stashInformerFactory.Stash().V1beta1().BackupConfigurations().Lister()
 }

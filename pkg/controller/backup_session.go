@@ -98,6 +98,9 @@ func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
 func (c *StashController) initBackupSessionWatcher() {
 	c.backupSessionInformer = c.stashInformerFactory.Stash().V1beta1().BackupSessions().Informer()
 	c.backupSessionQueue = queue.New(api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.runBackupSessionProcessor)
+	if c.auditor != nil {
+		c.backupSessionInformer.AddEventHandler(c.auditor)
+	}
 	c.backupSessionInformer.AddEventHandler(queue.DefaultEventHandler(c.backupSessionQueue.GetQueue()))
 	c.backupSessionLister = c.stashInformerFactory.Stash().V1beta1().BackupSessions().Lister()
 }
