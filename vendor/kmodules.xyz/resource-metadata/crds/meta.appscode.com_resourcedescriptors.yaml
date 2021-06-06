@@ -1,0 +1,694 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: resourcedescriptors.meta.appscode.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.phase
+    name: Status
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: meta.appscode.com
+  names:
+    kind: ResourceDescriptor
+    listKind: ResourceDescriptorList
+    plural: resourcedescriptors
+    shortNames:
+    - rd
+    singular: resourcedescriptor
+  preserveUnknownFields: false
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            columns:
+              items:
+                description: ResourceColumnDefinition specifies a column for server
+                  side printing.
+                properties:
+                  description:
+                    description: description is a human readable description of this
+                      column.
+                    type: string
+                  format:
+                    description: format is an optional OpenAPI type definition for
+                      this column. The 'name' format is applied to the primary identifier
+                      column to assist in clients identifying column is the resource
+                      name. See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
+                      for more.
+                    type: string
+                  name:
+                    description: name is a human readable name for the column.
+                    type: string
+                  pathTemplate:
+                    description: 'PathTemplate is a Go text template that will be
+                      evaluated to determine cell value. Users can use JSONPath expression
+                      to extract nested fields and apply template functions from Masterminds/sprig
+                      library. The template function for JSON path is called `jp`.
+                      Example: {{ jp "{.a.b}" . }} or {{ jp "{.a.b}" true }}, if json
+                      output is desired from JSONPath parser'
+                    type: string
+                  priority:
+                    description: priority is an integer defining the relative importance
+                      of this column compared to others. Lower numbers are considered
+                      higher priority. Columns that may be omitted in limited space
+                      scenarios should be given a higher priority.
+                    format: int32
+                    type: integer
+                  type:
+                    description: type is an OpenAPI type definition for this column.
+                      See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
+                      for more.
+                    type: string
+                required:
+                - name
+                - priority
+                - type
+                type: object
+              type: array
+            connections:
+              items:
+                properties:
+                  level:
+                    type: string
+                  nameTemplate:
+                    type: string
+                  namespacePath:
+                    type: string
+                  references:
+                    description: "References are a jsonpath that returns a CSV formatted
+                      references to target resources \n If each row has a single column,
+                      it is target name. Target resource is non-namespaced or uses
+                      the same namespace as the source resource. Example: n1 n2 \n
+                      If each row has two columns, it is target [name,namespace].
+                      Example: n1,ns1 n2,ns2 \n If each row has three columns, it
+                      is target [name,namespace,kind]. Example: n1,ns1,k1 n2,ns2,k2
+                      \n If each row has four columns, it is target [name,namespace,kind,apiGroup].
+                      Example: n1,ns1,k1,apiGroup1 n2,ns2,k2,apiGroup2"
+                    items:
+                      type: string
+                    type: array
+                  selector:
+                    description: A label selector is a label query over a set of resources.
+                      The result of matchLabels and matchExpressions are ANDed. An
+                      empty label selector matches all objects. A null label selector
+                      matches no objects.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                  selectorPath:
+                    type: string
+                  target:
+                    description: TypeMeta describes an individual object in an API
+                      response or request with strings representing the type of the
+                      object and its API schema version. Structures that are versioned
+                      or persisted should inline TypeMeta.
+                    properties:
+                      apiVersion:
+                        description: 'APIVersion defines the versioned schema of this
+                          representation of an object. Servers should convert recognized
+                          schemas to the latest internal value, and may reject unrecognized
+                          values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                        type: string
+                      kind:
+                        description: 'Kind is a string value representing the REST
+                          resource this object represents. Servers may infer this
+                          from the endpoint the client submits requests to. Cannot
+                          be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                        type: string
+                    type: object
+                  targetLabelPath:
+                    description: 'default: metadata.labels'
+                    type: string
+                  type:
+                    type: string
+                required:
+                - target
+                - type
+                type: object
+              type: array
+            icons:
+              description: Icons is an optional list of icons for an application.
+                Icon information includes the source, size, and mime type.
+              items:
+                description: ImageSpec contains information about an image used as
+                  an icon.
+                properties:
+                  size:
+                    description: (optional) The size of the image in pixels (e.g.,
+                      25x25).
+                    type: string
+                  src:
+                    description: The source for image represented as either an absolute
+                      URL to the image or a Data URL containing the image. Data URLs
+                      are defined in RFC 2397.
+                    type: string
+                  type:
+                    description: (optional) The mine type of the image (e.g., "image/png").
+                    type: string
+                required:
+                - src
+                type: object
+              type: array
+            installer:
+              properties:
+                chart:
+                  description: ChartRepoRef references to a single version of a Chart
+                  properties:
+                    name:
+                      type: string
+                    url:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - name
+                  - url
+                  - version
+                  type: object
+                planID:
+                  type: string
+                productID:
+                  type: string
+              type: object
+            links:
+              description: Links are a list of descriptive URLs intended to be used
+                to surface additional documentation, dashboards, etc.
+              items:
+                description: Link contains information about an URL to surface documentation,
+                  dashboards, etc.
+                properties:
+                  description:
+                    description: Description is human readable content explaining
+                      the purpose of the link.
+                    type: string
+                  url:
+                    description: Url typically points at a website address.
+                    type: string
+                type: object
+              type: array
+            maintainers:
+              description: Maintainers is an optional list of maintainers of the application.
+                The maintainers in this list maintain the the source code, images,
+                and package for the application.
+              items:
+                description: ContactData contains information about an individual
+                  or organization.
+                properties:
+                  email:
+                    description: Email is the email address.
+                    type: string
+                  name:
+                    description: Name is the descriptive name.
+                    type: string
+                  url:
+                    description: Url could typically be a website address.
+                    type: string
+                type: object
+              type: array
+            pages:
+              items:
+                properties:
+                  name:
+                    type: string
+                  resources:
+                    items:
+                      properties:
+                        actions:
+                          properties:
+                            create:
+                              type: string
+                          required:
+                          - create
+                          type: object
+                        displayMode:
+                          type: string
+                        ref:
+                          description: GroupVersionResource unambiguously identifies
+                            a resource.
+                          properties:
+                            group:
+                              type: string
+                            resource:
+                              type: string
+                            version:
+                              type: string
+                          required:
+                          - group
+                          - resource
+                          - version
+                          type: object
+                      required:
+                      - actions
+                      - displayMode
+                      - ref
+                      type: object
+                    type: array
+                required:
+                - name
+                - resources
+                type: object
+              type: array
+            resource:
+              description: ResourceID identifies a resource
+              properties:
+                group:
+                  type: string
+                kind:
+                  description: Kind is the serialized kind of the resource.  It is
+                    normally CamelCase and singular.
+                  type: string
+                name:
+                  description: 'Name is the plural name of the resource to serve.  It
+                    must match the name of the CustomResourceDefinition-registration
+                    too: plural.group and it must be all lowercase.'
+                  type: string
+                scope:
+                  description: ResourceScope is an enum defining the different scopes
+                    available to a custom resource
+                  type: string
+                version:
+                  type: string
+              required:
+              - group
+              - kind
+              - name
+              - scope
+              - version
+              type: object
+            resourceRequirements:
+              items:
+                properties:
+                  resources:
+                    description: Json path to resources of type core.ResourceRequirements
+                    type: string
+                  shards:
+                    description: Shards represents number of shards not available
+                      for all resources
+                    type: string
+                  units:
+                    description: json path to replicas of type int if missing or zero(0),
+                      then don't extract resources.
+                    type: string
+                type: object
+              type: array
+            status:
+              properties:
+                danger:
+                  items:
+                    type: string
+                  type: array
+                success:
+                  items:
+                    type: string
+                  type: array
+                warning:
+                  items:
+                    type: string
+                  type: array
+              type: object
+            subTables:
+              description: For array type fields of the resource
+              items:
+                properties:
+                  columns:
+                    items:
+                      description: ResourceColumnDefinition specifies a column for
+                        server side printing.
+                      properties:
+                        description:
+                          description: description is a human readable description
+                            of this column.
+                          type: string
+                        format:
+                          description: format is an optional OpenAPI type definition
+                            for this column. The 'name' format is applied to the primary
+                            identifier column to assist in clients identifying column
+                            is the resource name. See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
+                            for more.
+                          type: string
+                        name:
+                          description: name is a human readable name for the column.
+                          type: string
+                        pathTemplate:
+                          description: 'PathTemplate is a Go text template that will
+                            be evaluated to determine cell value. Users can use JSONPath
+                            expression to extract nested fields and apply template
+                            functions from Masterminds/sprig library. The template
+                            function for JSON path is called `jp`. Example: {{ jp
+                            "{.a.b}" . }} or {{ jp "{.a.b}" true }}, if json output
+                            is desired from JSONPath parser'
+                          type: string
+                        priority:
+                          description: priority is an integer defining the relative
+                            importance of this column compared to others. Lower numbers
+                            are considered higher priority. Columns that may be omitted
+                            in limited space scenarios should be given a higher priority.
+                          format: int32
+                          type: integer
+                        type:
+                          description: type is an OpenAPI type definition for this
+                            column. See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
+                            for more.
+                          type: string
+                      required:
+                      - name
+                      - priority
+                      - type
+                      type: object
+                    type: array
+                  fieldPath:
+                    type: string
+                  name:
+                    type: string
+                required:
+                - name
+                type: object
+              type: array
+            ui:
+              properties:
+                editor:
+                  description: ChartRepoRef references to a single version of a Chart
+                  properties:
+                    name:
+                      type: string
+                    url:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - name
+                  - url
+                  - version
+                  type: object
+                instanceLabelPaths:
+                  description: app.kubernetes.io/instance label must be updated at
+                    these paths when refilling metadata
+                  items:
+                    type: string
+                  type: array
+                options:
+                  description: ChartRepoRef references to a single version of a Chart
+                  properties:
+                    name:
+                      type: string
+                    url:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - name
+                  - url
+                  - version
+                  type: object
+              type: object
+            validation:
+              description: validation describes the schema used for validation and
+                pruning of the custom resource. If present, this validation schema
+                is used to validate all versions. Top-level and per-version schemas
+                are mutually exclusive.
+              properties:
+                openAPIV3Schema:
+                  description: openAPIV3Schema is the OpenAPI v3 schema to use for
+                    validation and pruning.
+                  properties:
+                    $ref:
+                      type: string
+                    $schema:
+                      description: JSONSchemaURL represents a schema url.
+                      type: string
+                    additionalItems:
+                      x-kubernetes-preserve-unknown-fields: true
+                    additionalProperties:
+                      x-kubernetes-preserve-unknown-fields: true
+                    allOf:
+                      items: {}
+                      type: array
+                    anyOf:
+                      items: {}
+                      type: array
+                    default:
+                      description: default is a default value for undefined object
+                        fields. Defaulting is a beta feature under the CustomResourceDefaulting
+                        feature gate. Defaulting requires spec.preserveUnknownFields
+                        to be false.
+                      x-kubernetes-preserve-unknown-fields: true
+                    definitions:
+                      additionalProperties: {}
+                      description: JSONSchemaDefinitions contains the models explicitly
+                        defined in this spec.
+                      type: object
+                    dependencies:
+                      additionalProperties:
+                        x-kubernetes-preserve-unknown-fields: true
+                      description: JSONSchemaDependencies represent a dependencies
+                        property.
+                      type: object
+                    description:
+                      type: string
+                    enum:
+                      items:
+                        x-kubernetes-preserve-unknown-fields: true
+                      type: array
+                    example:
+                      x-kubernetes-preserve-unknown-fields: true
+                    exclusiveMaximum:
+                      type: boolean
+                    exclusiveMinimum:
+                      type: boolean
+                    externalDocs:
+                      description: ExternalDocumentation allows referencing an external
+                        resource for extended documentation.
+                      properties:
+                        description:
+                          type: string
+                        url:
+                          type: string
+                      type: object
+                    format:
+                      description: "format is an OpenAPI v3 format string. Unknown
+                        formats are ignored. The following formats are validated:
+                        \n - bsonobjectid: a bson object ID, i.e. a 24 characters
+                        hex string - uri: an URI as parsed by Golang net/url.ParseRequestURI
+                        - email: an email address as parsed by Golang net/mail.ParseAddress
+                        - hostname: a valid representation for an Internet host name,
+                        as defined by RFC 1034, section 3.1 [RFC1034]. - ipv4: an
+                        IPv4 IP as parsed by Golang net.ParseIP - ipv6: an IPv6 IP
+                        as parsed by Golang net.ParseIP - cidr: a CIDR as parsed by
+                        Golang net.ParseCIDR - mac: a MAC address as parsed by Golang
+                        net.ParseMAC - uuid: an UUID that allows uppercase defined
+                        by the regex (?i)^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$
+                        - uuid3: an UUID3 that allows uppercase defined by the regex
+                        (?i)^[0-9a-f]{8}-?[0-9a-f]{4}-?3[0-9a-f]{3}-?[0-9a-f]{4}-?[0-9a-f]{12}$
+                        - uuid4: an UUID4 that allows uppercase defined by the regex
+                        (?i)^[0-9a-f]{8}-?[0-9a-f]{4}-?4[0-9a-f]{3}-?[89ab][0-9a-f]{3}-?[0-9a-f]{12}$
+                        - uuid5: an UUID5 that allows uppercase defined by the regex
+                        (?i)^[0-9a-f]{8}-?[0-9a-f]{4}-?5[0-9a-f]{3}-?[89ab][0-9a-f]{3}-?[0-9a-f]{12}$
+                        - isbn: an ISBN10 or ISBN13 number string like \"0321751043\"
+                        or \"978-0321751041\" - isbn10: an ISBN10 number string like
+                        \"0321751043\" - isbn13: an ISBN13 number string like \"978-0321751041\"
+                        - creditcard: a credit card number defined by the regex ^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\\\\d{3})\\\\d{11})$
+                        with any non digit characters mixed in - ssn: a U.S. social
+                        security number following the regex ^\\\\d{3}[- ]?\\\\d{2}[-
+                        ]?\\\\d{4}$ - hexcolor: an hexadecimal color code like \"#FFFFFF:
+                        following the regex ^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$ -
+                        rgbcolor: an RGB color code like rgb like \"rgb(255,255,2559\"
+                        - byte: base64 encoded binary data - password: any kind of
+                        string - date: a date string like \"2006-01-02\" as defined
+                        by full-date in RFC3339 - duration: a duration string like
+                        \"22 ns\" as parsed by Golang time.ParseDuration or compatible
+                        with Scala duration format - datetime: a date time string
+                        like \"2014-12-15T19:30:20.000Z\" as defined by date-time
+                        in RFC3339."
+                      type: string
+                    id:
+                      type: string
+                    items:
+                      x-kubernetes-preserve-unknown-fields: true
+                    maxItems:
+                      format: int64
+                      type: integer
+                    maxLength:
+                      format: int64
+                      type: integer
+                    maxProperties:
+                      format: int64
+                      type: integer
+                    maximum:
+                      format: double
+                      type: number
+                    minItems:
+                      format: int64
+                      type: integer
+                    minLength:
+                      format: int64
+                      type: integer
+                    minProperties:
+                      format: int64
+                      type: integer
+                    minimum:
+                      format: double
+                      type: number
+                    multipleOf:
+                      format: double
+                      type: number
+                    not: {}
+                    nullable:
+                      type: boolean
+                    oneOf:
+                      items: {}
+                      type: array
+                    pattern:
+                      type: string
+                    patternProperties:
+                      additionalProperties: {}
+                      type: object
+                    properties:
+                      additionalProperties: {}
+                      type: object
+                    required:
+                      items:
+                        type: string
+                      type: array
+                    title:
+                      type: string
+                    type:
+                      type: string
+                    uniqueItems:
+                      type: boolean
+                    x-kubernetes-embedded-resource:
+                      description: x-kubernetes-embedded-resource defines that the
+                        value is an embedded Kubernetes runtime.Object, with TypeMeta
+                        and ObjectMeta. The type must be object. It is allowed to
+                        further restrict the embedded object. kind, apiVersion and
+                        metadata are validated automatically. x-kubernetes-preserve-unknown-fields
+                        is allowed to be true, but does not have to be if the object
+                        is fully specified (up to kind, apiVersion, metadata).
+                      type: boolean
+                    x-kubernetes-int-or-string:
+                      description: "x-kubernetes-int-or-string specifies that this
+                        value is either an integer or a string. If this is true, an
+                        empty type is allowed and type as child of anyOf is permitted
+                        if following one of the following patterns: \n 1) anyOf:    -
+                        type: integer    - type: string 2) allOf:    - anyOf:      -
+                        type: integer      - type: string    - ... zero or more"
+                      type: boolean
+                    x-kubernetes-list-map-keys:
+                      description: "x-kubernetes-list-map-keys annotates an array
+                        with the x-kubernetes-list-type `map` by specifying the keys
+                        used as the index of the map. \n This tag MUST only be used
+                        on lists that have the \"x-kubernetes-list-type\" extension
+                        set to \"map\". Also, the values specified for this attribute
+                        must be a scalar typed field of the child structure (no nesting
+                        is supported). \n The properties specified must either be
+                        required or have a default value, to ensure those properties
+                        are present for all list items."
+                      items:
+                        type: string
+                      type: array
+                    x-kubernetes-list-type:
+                      description: "x-kubernetes-list-type annotates an array to further
+                        describe its topology. This extension must only be used on
+                        lists and may have 3 possible values: \n 1) `atomic`: the
+                        list is treated as a single entity, like a scalar.      Atomic
+                        lists will be entirely replaced when updated. This extension
+                        \     may be used on any type of list (struct, scalar, ...).
+                        2) `set`:      Sets are lists that must not have multiple
+                        items with the same value. Each      value must be a scalar,
+                        an object with x-kubernetes-map-type `atomic` or an      array
+                        with x-kubernetes-list-type `atomic`. 3) `map`:      These
+                        lists are like maps in that their elements have a non-index
+                        key      used to identify them. Order is preserved upon merge.
+                        The map tag      must only be used on a list with elements
+                        of type object. Defaults to atomic for arrays."
+                      type: string
+                    x-kubernetes-map-type:
+                      description: "x-kubernetes-map-type annotates an object to further
+                        describe its topology. This extension must only be used when
+                        type is object and may have 2 possible values: \n 1) `granular`:
+                        \     These maps are actual maps (key-value pairs) and each
+                        fields are independent      from each other (they can each
+                        be manipulated by separate actors). This is      the default
+                        behaviour for all maps. 2) `atomic`: the list is treated as
+                        a single entity, like a scalar.      Atomic maps will be entirely
+                        replaced when updated."
+                      type: string
+                    x-kubernetes-preserve-unknown-fields:
+                      description: x-kubernetes-preserve-unknown-fields stops the
+                        API server decoding step from pruning fields which are not
+                        specified in the validation schema. This affects fields recursively,
+                        but switches back to normal pruning behaviour if nested properties
+                        or additionalProperties are specified in the schema. This
+                        can either be true or undefined. False is forbidden.
+                      type: boolean
+                  type: object
+              type: object
+          required:
+          - resource
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

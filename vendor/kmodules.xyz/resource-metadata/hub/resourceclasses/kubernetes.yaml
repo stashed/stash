@@ -1,0 +1,35 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceClass
+metadata:
+  creationTimestamp: null
+  name: Kubernetes
+spec:
+  entries:
+  - icons:
+    - src: https://cdn.appscode.com/k8s/icons/resourceclasses/basic.svg
+      type: image/svg+xml
+    - src: https://cdn.appscode.com/k8s/icons/resourceclasses/basic.png
+      type: image/png
+    name: Basic
+    path: /
+    required: true
+  - name: Machines
+    required: true
+    type:
+      groups:
+      - cluster.x-k8s.io
+      - cluster.k8s.io
+      resource: machines
+  - name: Machine Sets
+    required: true
+    type:
+      groups:
+      - cluster.x-k8s.io
+      - cluster.k8s.io
+      resource: machinesets
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/resourceclasses/kubernetes.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/resourceclasses/kubernetes.png
+    type: image/png
+  weight: 1

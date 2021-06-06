@@ -57,6 +57,7 @@ type StashController struct {
 	crdClient        crd_cs.Interface
 	appCatalogClient appcatalog_cs.Interface
 	recorder         record.EventRecorder
+	auditor          cache.ResourceEventHandler
 
 	kubeInformerFactory  informers.SharedInformerFactory
 	ocInformerFactory    oc_informers.SharedInformerFactory

@@ -1,0 +1,89 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: rbac.authorization.k8s.io
+    k8s.io/kind: Role
+    k8s.io/resource: roles
+    k8s.io/version: v1alpha1
+  name: rbac.authorization.k8s.io-v1alpha1-roles
+spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/rbac.authorization.k8s.io/roles.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/rbac.authorization.k8s.io/roles.png
+    type: image/png
+  resource:
+    group: rbac.authorization.k8s.io
+    kind: Role
+    name: roles
+    scope: Namespaced
+    version: v1alpha1
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
+  validation:
+    openAPIV3Schema:
+      description: Role is a namespaced, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding. Deprecated in v1.17 in favor of rbac.authorization.k8s.io/v1 Role, and will no longer be served in v1.22.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            namespace:
+              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        rules:
+          description: Rules holds all the PolicyRules for this Role
+          items:
+            description: PolicyRule holds information that describes a policy rule, but does not contain information about who the rule applies to or which namespace the rule applies to.
+            properties:
+              apiGroups:
+                description: APIGroups is the name of the APIGroup that contains the resources.  If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed.
+                items:
+                  type: string
+                type: array
+              nonResourceURLs:
+                description: NonResourceURLs is a set of partial urls that a user should have access to.  *s are allowed, but only as the full, final step in the path Since non-resource URLs are not namespaced, this field is only applicable for ClusterRoles referenced from a ClusterRoleBinding. Rules can either apply to API resources (such as "pods" or "secrets") or non-resource URL paths (such as "/api"),  but not both.
+                items:
+                  type: string
+                type: array
+              resourceNames:
+                description: ResourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed.
+                items:
+                  type: string
+                type: array
+              resources:
+                description: Resources is a list of resources this rule applies to.  ResourceAll represents all resources.
+                items:
+                  type: string
+                type: array
+              verbs:
+                description: Verbs is a list of Verbs that apply to ALL the ResourceKinds and AttributeRestrictions contained in this rule.  VerbAll represents all kinds.
+                items:
+                  type: string
+                type: array
+            required:
+            - verbs
+            type: object
+          type: array
+      type: object

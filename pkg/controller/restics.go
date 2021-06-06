@@ -74,6 +74,9 @@ func (c *StashController) NewResticWebhook() hooks.AdmissionHook {
 func (c *StashController) initResticWatcher() {
 	c.rstInformer = c.stashInformerFactory.Stash().V1alpha1().Restics().Informer()
 	c.rstQueue = queue.New("Restic", c.MaxNumRequeues, c.NumThreads, c.runResticInjector)
+	if c.auditor != nil {
+		c.rstInformer.AddEventHandler(c.auditor)
+	}
 	c.rstInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.Restic); ok {

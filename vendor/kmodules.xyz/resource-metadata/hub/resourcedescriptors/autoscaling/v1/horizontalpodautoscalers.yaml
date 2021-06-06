@@ -1,0 +1,90 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: autoscaling
+    k8s.io/kind: HorizontalPodAutoscaler
+    k8s.io/resource: horizontalpodautoscalers
+    k8s.io/version: v1
+  name: autoscaling-v1-horizontalpodautoscalers
+spec:
+  columns:
+  - name: Name
+    pathTemplate: '{{ jp "{.metadata.name}" . }}'
+    priority: 3
+    type: string
+  - name: Namespace
+    pathTemplate: '{{ jp "{.metadata.namespace}" . }}'
+    priority: 3
+    type: string
+  - name: Reference
+    pathTemplate: '{{ jp "{.spec.scaleTargetRef.kind}/{.spec.scaleTargetRef.name}" . }}'
+    priority: 3
+    type: string
+  - name: Target CPU Utilization
+    pathTemplate: '{{ jp "{.spec.targetCPUUtilizationPercentage}" . }}%'
+    priority: 3
+    type: string
+  - name: Min-Replica(s)
+    pathTemplate: '{{ jp "{.spec.minReplicas}" . }}'
+    priority: 3
+    type: string
+  - name: Max-Replica(s)
+    pathTemplate: '{{ jp "{.spec.maxReplicas}" . }}'
+    priority: 3
+    type: string
+  - name: Age
+    pathTemplate: '{{ jp "{.metadata.creationTimestamp}" . }}'
+    priority: 3
+    type: date
+  connections:
+  - namespacePath: metadata.namespace
+    references:
+    - '{.spec.scaleTargetRef.name},{.metadata.namespace},{.spec.scaleTargetRef.kind},{.spec.scaleTargetRef.apiVersion}'
+    target:
+      apiVersion: apps/v1
+      kind: Deployment
+    type: MatchRef
+  - namespacePath: metadata.namespace
+    references:
+    - '{.spec.scaleTargetRef.name},{.metadata.namespace},{.spec.scaleTargetRef.kind},{.spec.scaleTargetRef.apiVersion}'
+    target:
+      apiVersion: apps/v1
+      kind: ReplicaSet
+    type: MatchRef
+  - namespacePath: metadata.namespace
+    references:
+    - '{.spec.scaleTargetRef.name},{.metadata.namespace},{.spec.scaleTargetRef.kind}'
+    target:
+      apiVersion: v1
+      kind: ReplicationController
+    type: MatchRef
+  - namespacePath: metadata.namespace
+    references:
+    - '{.spec.scaleTargetRef.name},{.metadata.namespace},{.spec.scaleTargetRef.kind},{.spec.scaleTargetRef.apiVersion}'
+    target:
+      apiVersion: apps/v1
+      kind: StatefulSet
+    type: MatchRef
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/autoscaling/horizontalpodautoscalers.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/autoscaling/horizontalpodautoscalers.png
+    type: image/png
+  pages:
+  - name: Basic
+    resources:
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: apps
+        resource: deployments
+        version: v1
+  resource:
+    group: autoscaling
+    kind: HorizontalPodAutoscaler
+    name: horizontalpodautoscalers
+    scope: Namespaced
+    version: v1

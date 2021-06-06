@@ -1,0 +1,98 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: acme.cert-manager.io
+    k8s.io/kind: Order
+    k8s.io/resource: orders
+    k8s.io/version: v1alpha2
+  name: acme.cert-manager.io-v1alpha2-orders
+spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/acme.cert-manager.io/orders.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/acme.cert-manager.io/orders.png
+    type: image/png
+  resource:
+    group: acme.cert-manager.io
+    kind: Order
+    name: orders
+    scope: Namespaced
+    version: v1alpha2
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
+  validation:
+    openAPIV3Schema:
+      description: Order is a type to represent an Order with an ACME server
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            namespace:
+              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        spec:
+          properties:
+            commonName:
+              description: CommonName is the common name as specified on the DER encoded CSR. If specified, this value must also be present in `dnsNames` or `ipAddresses`. This field must match the corresponding field on the DER encoded CSR.
+              type: string
+            csr:
+              description: Certificate signing request bytes in DER encoding. This will be used when finalizing the order. This field must be set on the order.
+              format: byte
+              type: string
+            dnsNames:
+              description: DNSNames is a list of DNS names that should be included as part of the Order validation process. This field must match the corresponding field on the DER encoded CSR.
+              items:
+                type: string
+              type: array
+            duration:
+              description: Duration is the duration for the not after date for the requested certificate. this is set on order creation as pe the ACME spec.
+              type: string
+            ipAddresses:
+              description: IPAddresses is a list of IP addresses that should be included as part of the Order validation process. This field must match the corresponding field on the DER encoded CSR.
+              items:
+                type: string
+              type: array
+            issuerRef:
+              description: IssuerRef references a properly configured ACME-type Issuer which should be used to create this Order. If the Issuer does not exist, processing will be retried. If the Issuer is not an 'ACME' Issuer, an error will be returned and the Order will be marked as failed.
+              properties:
+                group:
+                  description: Group of the resource being referred to.
+                  type: string
+                kind:
+                  description: Kind of the resource being referred to.
+                  type: string
+                name:
+                  description: Name of the resource being referred to.
+                  type: string
+              required:
+              - name
+              type: object
+          required:
+          - csr
+          - issuerRef
+          type: object
+      required:
+      - metadata
+      type: object

@@ -1,0 +1,92 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: engine.kubevault.com
+    k8s.io/kind: GCPRole
+    k8s.io/resource: gcproles
+    k8s.io/version: v1alpha1
+  name: engine.kubevault.com-v1alpha1-gcproles
+spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/engine.kubevault.com/gcproles.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/engine.kubevault.com/gcproles.png
+    type: image/png
+  resource:
+    group: engine.kubevault.com
+    kind: GCPRole
+    name: gcproles
+    scope: Namespaced
+    version: v1alpha1
+  ui:
+    editor:
+      name: enginekubevaultcom-gcprole-editor
+      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      version: v0.1.0
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            namespace:
+              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        spec:
+          description: 'GCPRoleSpec contains connection information, GCP role info, etc More info: https://www.vaultproject.io/api/secret/gcp/index.html#parameters'
+          properties:
+            bindings:
+              description: Bindings configuration string (expects HCL or JSON format in raw or base64-encoded string)
+              type: string
+            path:
+              description: 'Path defines the path of the Google Cloud secret engine default: gcp More info: https://www.vaultproject.io/docs/auth/gcp.html#via-the-cli-helper'
+              type: string
+            project:
+              description: Name of the GCP project that this roleset's service account will belong to. Cannot be updated.
+              type: string
+            secretType:
+              description: Specifies the type of secret generated for this role set
+              enum:
+              - access_token
+              - service_account_key
+              type: string
+            tokenScopes:
+              description: List of OAuth scopes to assign to access_token secrets generated under this role set (access_token role sets only)
+              items:
+                type: string
+              type: array
+            vaultRef:
+              description: VaultRef is the name of a AppBinding referencing to a Vault Server
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
+          required:
+          - bindings
+          - project
+          - secretType
+          - vaultRef
+          type: object
+      type: object
