@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/discovery"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -81,15 +82,21 @@ func (c *Config) New() (*StashController, error) {
 		return nil, err
 	}
 
-	// audit event publisher
-	natscfg, err := auditlib.NewNatsConfig(c.KubeClient.CoreV1().Namespaces(), c.LicenseFile)
-	if err != nil {
-		return nil, err
-	}
 	mapper := discovery.NewResourceMapper(discovery.NewRestMapper(c.KubeClient.Discovery()))
-	fn := auditlib.BillingEventCreator{
-		Mapper:    mapper,
-		LicenseID: natscfg.LicenseID,
+
+	// audit event publisher
+	// WARNING: https://stackoverflow.com/a/46275411/244009
+	var auditor cache.ResourceEventHandler
+	if c.LicenseFile != "" {
+		natscfg, err := auditlib.NewNatsConfig(c.KubeClient.CoreV1().Namespaces(), c.LicenseFile)
+		if err != nil {
+			return nil, err
+		}
+		fn := auditlib.BillingEventCreator{
+			Mapper:    mapper,
+			LicenseID: natscfg.LicenseID,
+		}
+		auditor = auditlib.NewEventPublisher(natscfg, mapper, fn.CreateEvent)
 	}
 
 	ctrl := &StashController{
@@ -104,7 +111,7 @@ func (c *Config) New() (*StashController, error) {
 		stashInformerFactory: stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
 		ocInformerFactory:    oc_informers.NewSharedInformerFactory(c.OcClient, c.ResyncPeriod),
 		recorder:             eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
-		auditor:              auditlib.NewEventPublisher(natscfg, mapper, fn.CreateEvent),
+		auditor:              auditor,
 	}
 
 	// register CRDs
@@ -113,7 +120,7 @@ func (c *Config) New() (*StashController, error) {
 	}
 
 	// ensure default functions
-	err = util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImage, ctrl.StashImageTag)
+	err := util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImage, ctrl.StashImageTag)
 	if err != nil {
 		return nil, err
 	}

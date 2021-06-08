@@ -30,10 +30,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type EventCreator func(obj runtime.Object) (*api.Event, error)
@@ -186,4 +189,28 @@ func (p *EventPublisher) OnDelete(obj interface{}) {
 	if err := p.Publish(ev, api.EventDelete); err != nil {
 		klog.Errorf("Error while publishing event, reason: %v", err)
 	}
+}
+
+func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr ctrl.Manager, gvk schema.GroupVersionKind) error {
+	if p == nil {
+		return nil
+	}
+	i, err := mgr.GetCache().GetInformerForKind(ctx, gvk)
+	if err != nil {
+		return err
+	}
+	i.AddEventHandler(p)
+	return nil
+}
+
+func (p *EventPublisher) SetupWithManager(ctx context.Context, mgr ctrl.Manager, obj client.Object) error {
+	if p == nil {
+		return nil
+	}
+	i, err := mgr.GetCache().GetInformer(ctx, obj)
+	if err != nil {
+		return err
+	}
+	i.AddEventHandler(p)
+	return nil
 }
