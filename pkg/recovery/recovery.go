@@ -30,12 +30,12 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/cenkalti/backoff"
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 )
 
 type Controller struct {
@@ -74,12 +74,12 @@ func (c *Controller) Run() {
 	err = backoff.Retry(operation, b)
 
 	if err != nil {
-		log.Errorln(err)
+		klog.Errorln(err)
 		return
 	}
 
 	if err = recovery.IsValid(); err != nil {
-		log.Errorf("Failed to validate recovery %s, reason: %s", recovery.Name, err)
+		klog.Errorf("Failed to validate recovery %s, reason: %s", recovery.Name, err)
 		_, err = stash_util.UpdateRecoveryStatus(
 			context.TODO(),
 			c.stashClient,
@@ -89,7 +89,7 @@ func (c *Controller) Run() {
 				return recovery.UID, in
 			}, metav1.UpdateOptions{})
 		if err != nil {
-			log.Errorln(err)
+			klog.Errorln(err)
 		}
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
@@ -102,13 +102,13 @@ func (c *Controller) Run() {
 				fmt.Sprintf("Failed to validate recovery %s, reason: %s", recovery.Name, err),
 			)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
+			klog.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 		}
 		return
 	}
 
 	if err = c.RecoverOrErr(recovery); err != nil {
-		log.Errorf("Failed to complete recovery %s, reason: %s", recovery.Name, err)
+		klog.Errorf("Failed to complete recovery %s, reason: %s", recovery.Name, err)
 		_, err = stash_util.UpdateRecoveryStatus(
 			context.TODO(),
 			c.stashClient,
@@ -118,7 +118,7 @@ func (c *Controller) Run() {
 				return recovery.UID, in
 			}, metav1.UpdateOptions{})
 		if err != nil {
-			log.Errorln(err)
+			klog.Errorln(err)
 		}
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
@@ -131,12 +131,12 @@ func (c *Controller) Run() {
 				fmt.Sprintf("Failed to complete recovery %s, reason: %s", recovery.Name, err),
 			)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
+			klog.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 		}
 		return
 	}
 
-	log.Infof("Recovery %s succeeded\n", recovery.Name)
+	klog.Infof("Recovery %s succeeded\n", recovery.Name)
 	_, err = stash_util.UpdateRecoveryStatus(
 		context.TODO(),
 		c.stashClient,
@@ -147,7 +147,7 @@ func (c *Controller) Run() {
 			return recovery.UID, in
 		}, metav1.UpdateOptions{})
 	if err != nil {
-		log.Errorln(err)
+		klog.Errorln(err)
 	}
 	ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 	if rerr == nil {
@@ -160,7 +160,7 @@ func (c *Controller) Run() {
 			fmt.Sprintf("Recovery %s succeeded", recovery.Name),
 		)
 	} else {
-		log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
+		klog.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 	}
 }
 
@@ -217,7 +217,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 					fmt.Sprintf("failed to recover FileGroup %s, reason: %v", path, err),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 			}
 			_, err = stash_util.SetRecoveryStats(context.TODO(), c.stashClient, recovery.ObjectMeta, path, d, api.RecoveryFailed, metav1.UpdateOptions{})
 			if err != nil {

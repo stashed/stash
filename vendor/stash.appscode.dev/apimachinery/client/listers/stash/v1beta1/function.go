@@ -27,10 +27,13 @@ import (
 )
 
 // FunctionLister helps list Functions.
+// All objects returned here must be treated as read-only.
 type FunctionLister interface {
 	// List lists all Functions in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.Function, err error)
 	// Get retrieves the Function from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1beta1.Function, error)
 	FunctionListerExpansion
 }

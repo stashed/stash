@@ -20,12 +20,12 @@ import (
 	"context"
 	"time"
 
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	core_informers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
@@ -46,7 +46,7 @@ func (c *StashController) initNamespaceWatcher() {
 					for _, item := range items {
 						err2 := c.stashClient.StashV1alpha1().Restics(item.Namespace).Delete(context.TODO(), item.Name, meta_util.DeleteInForeground())
 						if err2 != nil {
-							log.Errorln(err2)
+							klog.Errorln(err2)
 						}
 					}
 				}

@@ -32,6 +32,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/client-go/api/v1.CertificatePrivateKey": schema_kmodulesxyz_client_go_api_v1_CertificatePrivateKey(ref),
 		"kmodules.xyz/client-go/api/v1.CertificateSpec":       schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref),
 		"kmodules.xyz/client-go/api/v1.Condition":             schema_kmodulesxyz_client_go_api_v1_Condition(ref),
+		"kmodules.xyz/client-go/api/v1.ResourceID":            schema_kmodulesxyz_client_go_api_v1_ResourceID(ref),
 		"kmodules.xyz/client-go/api/v1.TLSConfig":             schema_kmodulesxyz_client_go_api_v1_TLSConfig(ref),
 		"kmodules.xyz/client-go/api/v1.X509Subject":           schema_kmodulesxyz_client_go_api_v1_X509Subject(ref),
 		"kmodules.xyz/client-go/api/v1.stringSetMerger":       schema_kmodulesxyz_client_go_api_v1_stringSetMerger(ref),
@@ -67,8 +68,15 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 					"alias": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Alias represents the identifier of the certificate.",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"issuerRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IssuerRef is a reference to a Certificate Issuer.",
+							Ref:         ref("k8s.io/api/core/v1.TypedLocalObjectReference"),
 						},
 					},
 					"secretName": {
@@ -103,8 +111,9 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -117,8 +126,9 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -131,8 +141,9 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -145,8 +156,9 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -163,7 +175,7 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.CertificatePrivateKey", "kmodules.xyz/client-go/api/v1.X509Subject"},
+			"k8s.io/api/core/v1.TypedLocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.CertificatePrivateKey", "kmodules.xyz/client-go/api/v1.X509Subject"},
 	}
 }
 
@@ -176,6 +188,7 @@ func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback)
 					"type": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Type of condition in CamelCase or in foo.example.com/CamelCase. Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important.",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -183,6 +196,7 @@ func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback)
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status of the condition, one of True, False, Unknown.",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -197,12 +211,14 @@ func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback)
 					"lastTransitionTime": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.",
+							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 					"reason": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The reason for the condition's last transition in CamelCase. The specific API may choose whether or not this field is considered a guaranteed API. This field may not be empty.",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -210,6 +226,7 @@ func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback)
 					"message": {
 						SchemaProps: spec.SchemaProps{
 							Description: "A human readable message indicating details about the transition. This field may be empty.",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -220,6 +237,57 @@ func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_kmodulesxyz_client_go_api_v1_ResourceID(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ResourceID identifies a resource",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"group": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the plural name of the resource to serve.  It must match the name of the CustomResourceDefinition-registration too: plural.group and it must be all lowercase.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is the serialized kind of the resource.  It is normally CamelCase and singular.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"scope": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"group", "version", "name", "kind", "scope"},
+			},
+		},
 	}
 }
 
@@ -242,7 +310,8 @@ func schema_kmodulesxyz_client_go_api_v1_TLSConfig(ref common.ReferenceCallback)
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("kmodules.xyz/client-go/api/v1.CertificateSpec"),
+										Default: map[string]interface{}{},
+										Ref:     ref("kmodules.xyz/client-go/api/v1.CertificateSpec"),
 									},
 								},
 							},
@@ -270,8 +339,9 @@ func schema_kmodulesxyz_client_go_api_v1_X509Subject(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -284,8 +354,9 @@ func schema_kmodulesxyz_client_go_api_v1_X509Subject(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -298,8 +369,9 @@ func schema_kmodulesxyz_client_go_api_v1_X509Subject(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -312,8 +384,9 @@ func schema_kmodulesxyz_client_go_api_v1_X509Subject(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -326,8 +399,9 @@ func schema_kmodulesxyz_client_go_api_v1_X509Subject(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -340,8 +414,9 @@ func schema_kmodulesxyz_client_go_api_v1_X509Subject(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},
@@ -354,8 +429,9 @@ func schema_kmodulesxyz_client_go_api_v1_X509Subject(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},

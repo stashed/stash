@@ -37,7 +37,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/robfig/cron/v3"
-	"gomodules.xyz/x/log"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -49,6 +48,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	"kmodules.xyz/client-go/tools/queue"
@@ -137,7 +137,7 @@ func (c *Controller) Backup() error {
 					err.Error(),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", restic.Kind, restic.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", restic.Kind, restic.Name, rerr)
 			}
 		}
 		return err
@@ -169,7 +169,7 @@ func (c *Controller) Backup() error {
 				err.Error(),
 			)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
+			klog.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
 		}
 		return err
 	}
@@ -189,7 +189,7 @@ func (c *Controller) Backup() error {
 					err.Error(),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
 			}
 			return err
 		}
@@ -200,7 +200,7 @@ func (c *Controller) Backup() error {
 			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s", job.Name, err)
 		}
 
-		log.Infoln("Created check job:", job.Name)
+		klog.Infoln("Created check job:", job.Name)
 		ref, rerr := reference.GetReference(scheme.Scheme, repository)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -212,10 +212,10 @@ func (c *Controller) Backup() error {
 				fmt.Sprintf("Created check job: %s", job.Name),
 			)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
+			klog.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
 		}
 	} else {
-		log.Infoln("Check job already exists, skipping creation:", job.Name)
+		klog.Infoln("Check job already exists, skipping creation:", job.Name)
 		ref, rerr := reference.GetReference(scheme.Scheme, repository)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -227,7 +227,7 @@ func (c *Controller) Backup() error {
 				fmt.Sprintf("Check job already exists, skipping creation: %s", job.Name),
 			)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
+			klog.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
 		}
 	}
 	return nil
@@ -248,7 +248,7 @@ func (c *Controller) setup() (*api.Restic, *api.Repository, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	log.Infof("Found restic %s", restic.Name)
+	klog.Infof("Found restic %s", restic.Name)
 	if err := restic.IsValid(); err != nil {
 		return restic, nil, err
 	}
@@ -256,7 +256,7 @@ func (c *Controller) setup() (*api.Restic, *api.Repository, error) {
 	if err != nil {
 		return restic, nil, err
 	}
-	log.Infof("Found repository secret %s", secret.Name)
+	klog.Infof("Found repository secret %s", secret.Name)
 
 	// setup restic-cli
 	prefix := ""
@@ -275,7 +275,7 @@ func (c *Controller) setup() (*api.Restic, *api.Repository, error) {
 
 func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Repository) (err error) {
 	if restic.Spec.Paused {
-		log.Infoln("skipped logging since restic is paused.")
+		klog.Infoln("skipped logging since restic is paused.")
 		return nil
 	}
 	startTime := metav1.Now()
@@ -328,7 +328,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 			)
 			err := pusher.Gatherer(registry).Push()
 			if err != nil {
-				log.Errorln(err)
+				klog.Errorln(err)
 			}
 		}
 		if err == nil {
@@ -348,7 +348,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 				metav1.UpdateOptions{},
 			)
 			if err2 != nil {
-				log.Errorln(err2)
+				klog.Errorln(err2)
 			}
 		}
 	}()
@@ -357,7 +357,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "backup")
 		err = c.measure(c.resticCLI.Backup, restic, fg, backupOpMetric)
 		if err != nil {
-			log.Errorf("Backup failed for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
+			klog.Errorf("Backup failed for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
 			ref, rerr := reference.GetReference(scheme.Scheme, repository)
 			if rerr == nil {
 				eventer.CreateEventWithLog(
@@ -369,7 +369,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 					fmt.Sprintf("Backup failed, reason: %s", err),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
 			}
 			return
 		} else {
@@ -385,14 +385,14 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 					fmt.Sprintf("Backed up pod: %s, path: %s", hostname, fg.Path),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
 			}
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, restic, fg, forgetOpMetric)
 		if err != nil {
-			log.Errorf("Failed to forget old snapshots for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
+			klog.Errorf("Failed to forget old snapshots for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
 			ref, rerr := reference.GetReference(scheme.Scheme, repository)
 			if rerr == nil {
 				eventer.CreateEventWithLog(
@@ -404,7 +404,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 					fmt.Sprintf("Failed to forget old snapshots, reason: %s", err),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
 			}
 			return
 		}

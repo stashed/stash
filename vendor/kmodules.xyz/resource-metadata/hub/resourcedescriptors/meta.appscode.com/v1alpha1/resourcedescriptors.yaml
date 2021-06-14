@@ -1,0 +1,22 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: meta.appscode.com
+    k8s.io/kind: ResourceDescriptor
+    k8s.io/resource: resourcedescriptors
+    k8s.io/version: v1alpha1
+  name: meta.appscode.com-v1alpha1-resourcedescriptors
+spec:
+  resource:
+    group: meta.appscode.com
+    kind: ResourceDescriptor
+    name: resourcedescriptors
+    scope: Namespaced
+    version: v1alpha1
+  ui:
+    editor:
+      name: metaappscodecom-resourcedescriptor-editor
+      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      version: v0.1.0

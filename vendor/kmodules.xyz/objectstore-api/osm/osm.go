@@ -31,7 +31,6 @@ import (
 	osconst "kmodules.xyz/constants/openstack"
 	api "kmodules.xyz/objectstore-api/api/v1"
 
-	otx "github.com/appscode/osm/context"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
@@ -84,9 +83,9 @@ func NewOSMSecret(kc kubernetes.Interface, name, namespace string, spec api.Back
 		delete(osmCtx.Config, s3.ConfigCACertData)
 	}
 
-	osmCfg := &otx.OSMConfig{
+	osmCfg := &OSMConfig{
 		CurrentContext: osmCtx.Name,
-		Contexts:       []*otx.Context{osmCtx},
+		Contexts:       []*Context{osmCtx},
 	}
 	osmBytes, err := yaml.Marshal(osmCfg)
 	if err != nil {
@@ -133,9 +132,9 @@ func WriteOSMConfig(kc kubernetes.Interface, namespace string, spec api.Backend,
 		delete(osmCtx.Config, s3.ConfigCACertData)
 	}
 
-	osmCfg := &otx.OSMConfig{
+	osmCfg := &OSMConfig{
 		CurrentContext: osmCtx.Name,
-		Contexts:       []*otx.Context{osmCtx},
+		Contexts:       []*Context{osmCtx},
 	}
 	osmBytes, err := yaml.Marshal(osmCfg)
 	if err != nil {
@@ -164,7 +163,7 @@ func CheckBucketAccess(client kubernetes.Interface, spec api.Backend, namespace 
 	return c.HasWriteAccess()
 }
 
-func NewOSMContext(client kubernetes.Interface, spec api.Backend, namespace string) (*otx.Context, error) {
+func NewOSMContext(client kubernetes.Interface, spec api.Backend, namespace string) (*Context, error) {
 	config := make(map[string][]byte)
 
 	if spec.StorageSecretName != "" {
@@ -175,7 +174,7 @@ func NewOSMContext(client kubernetes.Interface, spec api.Backend, namespace stri
 		config = secret.Data
 	}
 
-	nc := &otx.Context{
+	nc := &Context{
 		Name:   "objectstore",
 		Config: stow.ConfigMap{},
 	}

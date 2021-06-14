@@ -27,8 +27,10 @@ import (
 )
 
 // RecoveryLister helps list Recoveries.
+// All objects returned here must be treated as read-only.
 type RecoveryLister interface {
 	// List lists all Recoveries in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.Recovery, err error)
 	// Recoveries returns an object that can list and get Recoveries.
 	Recoveries(namespace string) RecoveryNamespaceLister
@@ -59,10 +61,13 @@ func (s *recoveryLister) Recoveries(namespace string) RecoveryNamespaceLister {
 }
 
 // RecoveryNamespaceLister helps list and get Recoveries.
+// All objects returned here must be treated as read-only.
 type RecoveryNamespaceLister interface {
 	// List lists all Recoveries in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.Recovery, err error)
 	// Get retrieves the Recovery from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.Recovery, error)
 	RecoveryNamespaceListerExpansion
 }

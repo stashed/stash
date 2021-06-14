@@ -28,10 +28,10 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/meta"
@@ -67,7 +67,7 @@ func NewCmdCreateBackupSession() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalf("Could not get Kubernetes config: %s", err)
+				klog.Fatalf("Could not get Kubernetes config: %s", err)
 			}
 			opt.k8sClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
@@ -78,7 +78,7 @@ func NewCmdCreateBackupSession() *cobra.Command {
 			}
 
 			if err = opt.createBackupSession(); err != nil {
-				log.Fatal(err)
+				klog.Fatal(err)
 			}
 		},
 	}

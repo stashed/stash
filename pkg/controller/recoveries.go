@@ -29,8 +29,6 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
-	"gomodules.xyz/x/log"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -42,6 +40,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
@@ -77,6 +76,9 @@ func (c *StashController) NewRecoveryWebhook() hooks.AdmissionHook {
 func (c *StashController) initRecoveryWatcher() {
 	c.recInformer = c.stashInformerFactory.Stash().V1alpha1().Recoveries().Informer()
 	c.recQueue = queue.New("Recovery", c.MaxNumRequeues, c.NumThreads, c.runRecoveryInjector)
+	if c.auditor != nil {
+		c.recInformer.AddEventHandler(c.auditor)
+	}
 	c.recInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.Recovery); ok {
@@ -99,12 +101,12 @@ func (c *StashController) initRecoveryWatcher() {
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			oldRes, ok := oldObj.(*api.Recovery)
 			if !ok {
-				log.Errorln("Invalid Recovery object")
+				klog.Errorln("Invalid Recovery object")
 				return
 			}
 			newRes, ok := newObj.(*api.Recovery)
 			if !ok {
-				log.Errorln("Invalid Recovery object")
+				klog.Errorln("Invalid Recovery object")
 				return
 			}
 			if err := newRes.IsValid(); err != nil {
@@ -136,18 +138,18 @@ func (c *StashController) initRecoveryWatcher() {
 func (c *StashController) runRecoveryInjector(key string) error {
 	obj, exists, err := c.recInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 
 	if !exists {
 		// Below we will warm up our cache with a Recovery, so that we will see a delete for one d
-		glog.Warningf("Recovery %s does not exist anymore\n", key)
+		klog.Warningf("Recovery %s does not exist anymore\n", key)
 		return nil
 	}
 
 	d := obj.(*api.Recovery)
-	glog.Infof("Sync/Add/Update for Recovery %s", d.GetName())
+	klog.Infof("Sync/Add/Update for Recovery %s", d.GetName())
 	return c.runRecoveryJob(d)
 }
 
@@ -175,10 +177,10 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	job, err = c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(context.TODO(), job, metav1.CreateOptions{})
 	if err != nil {
 		if kerr.IsAlreadyExists(err) {
-			log.Infoln("Skipping to create recovery job. Reason: job already exist")
+			klog.Infoln("Skipping to create recovery job. Reason: job already exist")
 			return nil
 		}
-		log.Errorln(err)
+		klog.Errorln(err)
 
 		_, err2 := stash_util.UpdateRecoveryStatus(
 			context.TODO(),
@@ -214,7 +216,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		return errors.NewAggregate([]error{err, err2})
 	}
 
-	log.Infoln("Recovery job created:", job.Name)
+	klog.Infoln("Recovery job created:", job.Name)
 	ref, rerr := reference.GetReference(scheme.Scheme, rec)
 	if rerr == nil {
 		c.recorder.Eventf(ref, core.EventTypeNormal, eventer.EventReasonJobCreated, "Recovery job created: %s", job.Name)

@@ -23,7 +23,7 @@ import (
 
 	api "kmodules.xyz/prober/api"
 
-	"gomodules.xyz/x/log"
+	"k8s.io/klog/v2"
 )
 
 // New creates Prober.
@@ -55,7 +55,7 @@ func DoTCPProbe(addr string, timeout time.Duration) (api.Result, string, error) 
 	}
 	err = conn.Close()
 	if err != nil {
-		log.Errorf("Unexpected error closing TCP probe socket: %v (%#v)", err, err)
+		klog.Errorf("Unexpected error closing TCP probe socket: %v (%#v)", err, err)
 	}
 	return api.Success, "", nil
 }

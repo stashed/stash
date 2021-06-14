@@ -1,0 +1,61 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: authentication.k8s.io
+    k8s.io/kind: TokenReview
+    k8s.io/resource: tokenreviews
+    k8s.io/version: v1beta1
+  name: authentication.k8s.io-v1beta1-tokenreviews
+spec:
+  resource:
+    group: authentication.k8s.io
+    kind: TokenReview
+    name: tokenreviews
+    scope: Cluster
+    version: v1beta1
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
+  validation:
+    openAPIV3Schema:
+      description: 'TokenReview attempts to authenticate a token to a known user. Note: TokenReview requests may be cached by the webhook token authenticator plugin in the kube-apiserver.'
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        spec:
+          description: Spec holds information about the request being evaluated
+          properties:
+            audiences:
+              description: Audiences is a list of the identifiers that the resource server presented with the token identifies as. Audience-aware token authenticators will verify that the token was intended for at least one of the audiences in this list. If no audiences are provided, the audience will default to the audience of the Kubernetes apiserver.
+              items:
+                type: string
+              type: array
+            token:
+              description: Token is the opaque bearer token.
+              type: string
+          type: object
+      required:
+      - spec
+      type: object

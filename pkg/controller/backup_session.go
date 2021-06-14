@@ -39,9 +39,7 @@ import (
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/log"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -52,6 +50,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -99,6 +98,9 @@ func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
 func (c *StashController) initBackupSessionWatcher() {
 	c.backupSessionInformer = c.stashInformerFactory.Stash().V1beta1().BackupSessions().Informer()
 	c.backupSessionQueue = queue.New(api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.runBackupSessionProcessor)
+	if c.auditor != nil {
+		c.backupSessionInformer.AddEventHandler(c.auditor)
+	}
 	c.backupSessionInformer.AddEventHandler(queue.DefaultEventHandler(c.backupSessionQueue.GetQueue()))
 	c.backupSessionLister = c.stashInformerFactory.Stash().V1beta1().BackupSessions().Lister()
 }
@@ -106,16 +108,16 @@ func (c *StashController) initBackupSessionWatcher() {
 func (c *StashController) runBackupSessionProcessor(key string) error {
 	obj, exists, err := c.backupSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 	if !exists {
-		glog.Warningf("BackupSession %s does not exist anymore\n", key)
+		klog.Warningf("BackupSession %s does not exist anymore\n", key)
 		return nil
 	}
 
 	backupSession := obj.(*api_v1beta1.BackupSession)
-	glog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
+	klog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
 	// process sync/add/update event
 	return c.applyBackupSessionReconciliationLogic(backupSession)
 }
@@ -125,7 +127,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.",
+		klog.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.",
 			backupSession.Namespace,
 			backupSession.Name,
 			backupSession.Status.Phase,
@@ -158,7 +160,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 			return err
 		}
 		if runningBS != nil {
-			log.Infof("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
+			klog.Infof("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
 				runningBS.Name,
 				runningBS.Status.Phase,
 			)
@@ -213,7 +215,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 		if targetInfo.Target != nil {
 			// Skip processing if the backup has been already initiated before for this target
 			if invoker.TargetBackupInitiated(targetInfo.Target.Ref, backupSession.Status.Targets) {
-				glog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup has been already initiated for this target.", targetInfo.Target.Ref.Kind, backupSession.ObjectMeta.Namespace, targetInfo.Target.Ref.Name)
+				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup has been already initiated for this target.", targetInfo.Target.Ref.Kind, backupSession.ObjectMeta.Namespace, targetInfo.Target.Ref.Name)
 				continue
 			}
 			// ----------------- Ensure Execution Order -------------------
@@ -221,7 +223,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 				!inv.NextInOrder(targetInfo.Target.Ref, backupSession.Status.Targets) {
 				// backup order is sequential and the current target is not yet to be executed.
 				// so, set its phase to "Pending".
-				glog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.", targetInfo.Target.Ref.Kind, backupSession.ObjectMeta.Namespace, targetInfo.Target.Ref.Name)
+				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.", targetInfo.Target.Ref.Kind, backupSession.ObjectMeta.Namespace, targetInfo.Target.Ref.Name)
 				backupSession, err = c.setTargetPhasePending(targetInfo.Target.Ref, backupSession)
 				if err != nil {
 					return err
@@ -232,7 +234,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 			switch backupExecutor(inv, targetInfo.Target.Ref) {
 			case BackupExecutorSidecar:
 				// Backup model is sidecar. For sidecar model, controller inside sidecar will take care of it.
-				log.Infof("Skipping processing BackupSession %s/%s for target %s %s/%s. Reason: Backup model is sidecar."+
+				klog.Infof("Skipping processing BackupSession %s/%s for target %s %s/%s. Reason: Backup model is sidecar."+
 					"Controller inside sidecar will take care of it.",
 					backupSession.Namespace,
 					backupSession.Name,
@@ -654,7 +656,7 @@ func (c *StashController) setBackupSessionSucceeded(inv invoker.BackupInvoker, b
 		"Backup session completed successfully",
 	)
 	if err != nil {
-		log.Errorf("failed to write event in BackupSession %s/%s. Reason: %v", backupSession.Namespace, backupSession.Name, err)
+		klog.Errorf("failed to write event in BackupSession %s/%s. Reason: %v", backupSession.Namespace, backupSession.Name, err)
 	}
 
 	// send backup metrics
@@ -804,7 +806,7 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 }
 
 func (c *StashController) handleBackupJobCreationFailure(inv invoker.BackupInvoker, backupSession *api_v1beta1.BackupSession, err error) error {
-	log.Warningln("failed to ensure backup job. Reason: ", err)
+	klog.Warningln("failed to ensure backup job. Reason: ", err)
 
 	// write event to BackupSession
 	_, _ = eventer.CreateEvent(

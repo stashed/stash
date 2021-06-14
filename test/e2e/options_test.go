@@ -24,10 +24,9 @@ import (
 
 	"stash.appscode.dev/stash/pkg/cmds/server"
 
-	"gomodules.xyz/x/flags"
-	"gomodules.xyz/x/log"
-	logs "gomodules.xyz/x/log/golog"
+	"gomodules.xyz/logs"
 	"k8s.io/client-go/util/homedir"
+	"k8s.io/klog/v2"
 )
 
 type E2EOptions struct {
@@ -69,7 +68,7 @@ func enableLogging() {
 	}()
 	err := flag.Set("logtostderr", "true")
 	if err != nil {
-		log.Errorln(err)
+		klog.Errorln(err)
 	}
 	logLevelFlag := flag.Lookup("v")
 	if logLevelFlag != nil {
@@ -77,5 +76,5 @@ func enableLogging() {
 			return
 		}
 	}
-	flags.SetLogLevel(2)
+	_ = flag.Set("v", "2")
 }

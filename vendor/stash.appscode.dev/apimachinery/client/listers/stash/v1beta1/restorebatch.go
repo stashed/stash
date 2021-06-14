@@ -27,8 +27,10 @@ import (
 )
 
 // RestoreBatchLister helps list RestoreBatches.
+// All objects returned here must be treated as read-only.
 type RestoreBatchLister interface {
 	// List lists all RestoreBatches in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.RestoreBatch, err error)
 	// RestoreBatches returns an object that can list and get RestoreBatches.
 	RestoreBatches(namespace string) RestoreBatchNamespaceLister
@@ -59,10 +61,13 @@ func (s *restoreBatchLister) RestoreBatches(namespace string) RestoreBatchNamesp
 }
 
 // RestoreBatchNamespaceLister helps list and get RestoreBatches.
+// All objects returned here must be treated as read-only.
 type RestoreBatchNamespaceLister interface {
 	// List lists all RestoreBatches in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1beta1.RestoreBatch, err error)
 	// Get retrieves the RestoreBatch from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1beta1.RestoreBatch, error)
 	RestoreBatchNamespaceListerExpansion
 }

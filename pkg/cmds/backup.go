@@ -29,10 +29,10 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
 	v "gomodules.xyz/x/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/cli"
 )
@@ -64,74 +64,74 @@ func NewCmdBackup() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalf("Could not get Kubernetes config: %s", err)
+				klog.Fatalf("Could not get Kubernetes config: %s", err)
 			}
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)
 
 			opt.NodeName = os.Getenv("NODE_NAME")
 			if opt.NodeName == "" {
-				log.Fatalln(`Missing ENV var "NODE_NAME"`)
+				klog.Fatalln(`Missing ENV var "NODE_NAME"`)
 			}
 			opt.PodName = os.Getenv("POD_NAME")
 			if opt.PodName == "" {
-				log.Fatalln(`Missing ENV var "POD_NAME"`)
+				klog.Fatalln(`Missing ENV var "POD_NAME"`)
 			}
 
 			if err := opt.Workload.Canonicalize(); err != nil {
-				log.Fatalf(err.Error())
+				klog.Fatalf(err.Error())
 			}
 			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefix(opt.PodName, opt.NodeName); err != nil {
-				log.Fatalf(err.Error())
+				klog.Fatalf(err.Error())
 			}
 			if err = util.WorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
-				log.Fatalf(err.Error())
+				klog.Fatalf(err.Error())
 			}
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // make ScratchDir in setup()
 
 			ctrl := backup.New(kubeClient, stashClient, opt)
 
 			if opt.RunViaCron {
-				log.Infoln("Running backup periodically via cron")
+				klog.Infoln("Running backup periodically via cron")
 				if err = ctrl.BackupScheduler(); err != nil {
-					log.Fatal(err)
+					klog.Fatal(err)
 				}
 			} else { // for offline backup
 				if opt.Workload.Kind == apis.KindDaemonSet || opt.Workload.Kind == apis.KindStatefulSet {
-					log.Infoln("Running backup once")
+					klog.Infoln("Running backup once")
 					if err = ctrl.Backup(); err != nil {
-						log.Fatal(err)
+						klog.Fatal(err)
 					}
 				} else {
 					//if replica > 1 we should not take backup
 					replica, err := util.WorkloadReplicas(kubeClient, opt.Namespace, opt.Workload.Kind, opt.Workload.Name)
 					if err != nil {
-						log.Fatal(err)
+						klog.Fatal(err)
 					}
 
 					if replica > 1 {
-						log.Infof("Skipping backup...\n" +
+						klog.Infof("Skipping backup...\n" +
 							"Reason: Backup type offline and replica > 1\n" +
 							"Backup has taken by another replica or scheduled CronJob hasn't run yet.")
 					} else if !util.HasOldReplicaAnnotation(kubeClient, opt.Namespace, opt.Workload) {
-						log.Infof("Skipping backup...\n" +
+						klog.Infof("Skipping backup...\n" +
 							"Reason: Backup type offline and workload does not have 'old-replica' annotation.\n" +
 							"Backup will be taken at next scheduled time.")
 					} else {
-						log.Infoln("Running backup once")
+						klog.Infoln("Running backup once")
 						if err = ctrl.Backup(); err != nil {
-							log.Fatal(err)
+							klog.Fatal(err)
 						}
 
 						// offline backup done. now scale up replica to original replica number
 						err = scale.ScaleUpWorkload(kubeClient, opt)
 						if err != nil {
-							log.Fatal(err)
+							klog.Fatal(err)
 						}
 					}
 				}
 			}
-			log.Infoln("Exiting Stash Backup")
+			klog.Infoln("Exiting Stash Backup")
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")

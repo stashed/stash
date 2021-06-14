@@ -24,8 +24,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
+	"k8s.io/klog/v2"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
@@ -184,6 +184,6 @@ func (w *ResticWrapper) DumpEnv() error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("ENV:\n%s", string(out))
+	klog.V(5).Infof("ENV:\n%s", string(out))
 	return nil
 }

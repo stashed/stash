@@ -25,13 +25,13 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"gomodules.xyz/x/log"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/apis/batch"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -157,7 +157,7 @@ func ensureSidecarRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Wo
 		return err
 	}
 	if err == nil {
-		log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getSidecarRoleBindingName(w.Name, w.Kind))
+		klog.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getSidecarRoleBindingName(w.Name, w.Kind))
 	}
 	return nil
 }

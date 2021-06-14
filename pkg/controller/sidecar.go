@@ -31,7 +31,6 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"gomodules.xyz/x/log"
 	stringz "gomodules.xyz/x/strings"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -39,6 +38,7 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -180,7 +180,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.Back
 
 	repository, err := c.stashClient.StashV1alpha1().Repositories(inv.ObjectMeta.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("unable to get repository %s/%s: Reason: %v", inv.ObjectMeta.Namespace, inv.Repository, err)
+		klog.Errorf("unable to get repository %s/%s: Reason: %v", inv.ObjectMeta.Namespace, inv.Repository, err)
 		return err
 	}
 
@@ -306,7 +306,7 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 		for _, pod := range podsToRestart {
 			err := c.kubeClient.CoreV1().Pods(w.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 			if err != nil {
-				log.Errorln(err)
+				klog.Errorln(err)
 			}
 		}
 		return false, nil // try again
@@ -328,7 +328,7 @@ func isPodOwnedByWorkload(w *wapi.Workload, pod core.Pod) bool {
 }
 
 func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, inv invoker.BackupInvoker, tref api_v1beta1.TargetRef, err error) error {
-	log.Warningf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
+	klog.Warningf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
 
 	// Failed to inject stash sidecar. So, set "StashSidecarInjected" condition to "False".
 	cerr := conditions.SetSidecarInjectedConditionToFalse(inv, tref, err)
@@ -346,7 +346,7 @@ func (c *StashController) handleSidecarInjectionFailure(w *wapi.Workload, inv in
 }
 
 func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload, inv invoker.BackupInvoker, tref api_v1beta1.TargetRef) error {
-	log.Infof("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name)
+	klog.Infof("Successfully injected stash sidecar into %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// Set "StashSidecarInjected" condition to "True"
 	cerr := conditions.SetSidecarInjectedConditionToTrue(inv, tref)
@@ -364,7 +364,7 @@ func (c *StashController) handleSidecarInjectionSuccess(w *wapi.Workload, inv in
 }
 
 func (c *StashController) handleSidecarDeletionSuccess(w *wapi.Workload) error {
-	log.Infof("Successfully removed stash sidecar from %s %s/%s.", w.Kind, w.Namespace, w.Name)
+	klog.Infof("Successfully removed stash sidecar from %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(

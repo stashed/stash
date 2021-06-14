@@ -1,0 +1,201 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: ops.kubedb.com
+    k8s.io/kind: PerconaXtraDBOpsRequest
+    k8s.io/resource: perconaxtradbopsrequests
+    k8s.io/version: v1alpha1
+  name: ops.kubedb.com-v1alpha1-perconaxtradbopsrequests
+spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/perconaxtradbopsrequests.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/perconaxtradbopsrequests.png
+    type: image/png
+  resource:
+    group: ops.kubedb.com
+    kind: PerconaXtraDBOpsRequest
+    name: perconaxtradbopsrequests
+    scope: Namespaced
+    version: v1alpha1
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
+  ui:
+    editor:
+      name: opskubedbcom-perconaxtradbopsrequest-editor
+      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      version: v0.1.0
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            namespace:
+              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        spec:
+          properties:
+            configuration:
+              type: object
+            databaseRef:
+              properties:
+                name:
+                  type: string
+              type: object
+            horizontalScaling:
+              type: object
+            restart:
+              type: object
+            tls:
+              properties:
+                certificates:
+                  items:
+                    properties:
+                      alias:
+                        type: string
+                      dnsNames:
+                        items:
+                          type: string
+                        type: array
+                      duration:
+                        type: string
+                      emailAddresses:
+                        items:
+                          type: string
+                        type: array
+                      ipAddresses:
+                        items:
+                          type: string
+                        type: array
+                      issuerRef:
+                        properties:
+                          apiGroup:
+                            type: string
+                          kind:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      privateKey:
+                        properties:
+                          encoding:
+                            enum:
+                            - PKCS1
+                            - PKCS8
+                            type: string
+                        type: object
+                      renewBefore:
+                        type: string
+                      secretName:
+                        type: string
+                      subject:
+                        properties:
+                          countries:
+                            items:
+                              type: string
+                            type: array
+                          localities:
+                            items:
+                              type: string
+                            type: array
+                          organizationalUnits:
+                            items:
+                              type: string
+                            type: array
+                          organizations:
+                            items:
+                              type: string
+                            type: array
+                          postalCodes:
+                            items:
+                              type: string
+                            type: array
+                          provinces:
+                            items:
+                              type: string
+                            type: array
+                          serialNumber:
+                            type: string
+                          streetAddresses:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      uris:
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - alias
+                    type: object
+                  type: array
+                issuerRef:
+                  properties:
+                    apiGroup:
+                      type: string
+                    kind:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                  - kind
+                  - name
+                  type: object
+                remove:
+                  type: boolean
+                rotateCertificates:
+                  type: boolean
+              type: object
+            type:
+              enum:
+              - Upgrade
+              - HorizontalScaling
+              - VerticalScaling
+              - VolumeExpansion
+              - Restart
+              - Reconfigure
+              - ReconfigureTLS
+              type: string
+            upgrade:
+              properties:
+                readinessCriteria:
+                  type: object
+                targetVersion:
+                  type: string
+              type: object
+            verticalScaling:
+              properties:
+                readinessCriteria:
+                  type: object
+              type: object
+            volumeExpansion:
+              type: object
+          required:
+          - databaseRef
+          - type
+          type: object
+      type: object

@@ -1,0 +1,92 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: flowcontrol.apiserver.k8s.io
+    k8s.io/kind: PriorityLevelConfiguration
+    k8s.io/resource: prioritylevelconfigurations
+    k8s.io/version: v1beta1
+  name: flowcontrol.apiserver.k8s.io-v1beta1-prioritylevelconfigurations
+spec:
+  resource:
+    group: flowcontrol.apiserver.k8s.io
+    kind: PriorityLevelConfiguration
+    name: prioritylevelconfigurations
+    scope: Namespaced
+    version: v1beta1
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
+  validation:
+    openAPIV3Schema:
+      description: PriorityLevelConfiguration represents the configuration of a priority level.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            namespace:
+              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        spec:
+          description: '`spec` is the specification of the desired behavior of a "request-priority". More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
+          properties:
+            limited:
+              description: '`limited` specifies how requests are handled for a Limited priority level. This field must be non-empty if and only if `type` is `"Limited"`.'
+              properties:
+                assuredConcurrencyShares:
+                  description: "`assuredConcurrencyShares` (ACS) configures the execution limit, which is a limit on the number of requests of this priority level that may be exeucting at a given time.  ACS must be a positive number. The server's concurrency limit (SCL) is divided among the concurrency-controlled priority levels in proportion to their assured concurrency shares. This produces the assured concurrency value (ACV) --- the number of requests that may be executing at a time --- for each such priority level: \n             ACV(l) = ceil( SCL * ACS(l) / ( sum[priority levels k] ACS(k) ) ) \n bigger numbers of ACS mean more reserved concurrent requests (at the expense of every other PL). This field has a default value of 30."
+                  format: int32
+                  type: integer
+                limitResponse:
+                  description: '`limitResponse` indicates what to do with requests that can not be executed right now'
+                  properties:
+                    queuing:
+                      description: '`queuing` holds the configuration parameters for queuing. This field may be non-empty only if `type` is `"Queue"`.'
+                      properties:
+                        handSize:
+                          description: '`handSize` is a small positive number that configures the shuffle sharding of requests into queues.  When enqueuing a request at this priority level the request''s flow identifier (a string pair) is hashed and the hash value is used to shuffle the list of queues and deal a hand of the size specified here.  The request is put into one of the shortest queues in that hand. `handSize` must be no larger than `queues`, and should be significantly smaller (so that a few heavy flows do not saturate most of the queues).  See the user-facing documentation for more extensive guidance on setting this field.  This field has a default value of 8.'
+                          format: int32
+                          type: integer
+                        queueLengthLimit:
+                          description: '`queueLengthLimit` is the maximum number of requests allowed to be waiting in a given queue of this priority level at a time; excess requests are rejected.  This value must be positive.  If not specified, it will be defaulted to 50.'
+                          format: int32
+                          type: integer
+                        queues:
+                          description: '`queues` is the number of queues for this priority level. The queues exist independently at each apiserver. The value must be positive.  Setting it to 1 effectively precludes shufflesharding and thus makes the distinguisher method of associated flow schemas irrelevant.  This field has a default value of 64.'
+                          format: int32
+                          type: integer
+                      type: object
+                    type:
+                      description: '`type` is "Queue" or "Reject". "Queue" means that requests that can not be executed upon arrival are held in a queue until they can be executed or a queuing limit is reached. "Reject" means that requests that can not be executed upon arrival are rejected. Required.'
+                      type: string
+                  required:
+                  - type
+                  type: object
+              type: object
+            type:
+              description: '`type` indicates whether this priority level is subject to limitation on request execution.  A value of `"Exempt"` means that requests of this priority level are not subject to a limit (and thus are never queued) and do not detract from the capacity made available to other priority levels.  A value of `"Limited"` means that (a) requests of this priority level _are_ subject to limits and (b) some of the server''s limited capacity is made available exclusively to this priority level. Required.'
+              type: string
+          required:
+          - type
+          type: object
+      type: object

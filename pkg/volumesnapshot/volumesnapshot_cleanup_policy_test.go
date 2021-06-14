@@ -25,8 +25,8 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	crdv1 "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
-	vsfake "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned/fake"
+	crdv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
+	vsfake "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/fake"
 	"gomodules.xyz/pointer"
 	"gomodules.xyz/x/strings"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

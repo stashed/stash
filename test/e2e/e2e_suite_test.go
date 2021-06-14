@@ -36,11 +36,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/flags"
+	"gomodules.xyz/logs"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-	"kmodules.xyz/client-go/logs"
-	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 )
 
@@ -63,7 +63,7 @@ func TestE2e(t *testing.T) {
 var _ = BeforeSuite(func() {
 	utilruntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))
 	utilruntime.Must(scheme.AddToScheme(legacyscheme.Scheme))
-	cli.LoggerOptions.Verbosity = "5"
+	flags.LoggerOptions.Verbosity = "5"
 
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)
 	Expect(err).NotTo(HaveOccurred())

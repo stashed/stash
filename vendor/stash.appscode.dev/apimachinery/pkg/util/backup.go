@@ -28,10 +28,10 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 
-	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
@@ -98,7 +98,7 @@ func IsRepositoryInitialized(opt ActionOptions) (bool, error) {
 
 func WaitForBackendRepository(opt ActionOptions) error {
 	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (done bool, err error) {
-		glog.Infof("Waiting for the backend repository.....")
+		klog.Infof("Waiting for the backend repository.....")
 		repoInitialized, err := IsRepositoryInitialized(opt)
 		if err != nil {
 			return false, err

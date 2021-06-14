@@ -23,13 +23,13 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -98,13 +98,13 @@ func (c *StashController) initStatefulSetWatcher() {
 func (c *StashController) runStatefulSetInjector(key string) error {
 	obj, exists, err := c.ssInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 
 	if !exists {
 		// Below we will warm up our cache with a StatefulSet, so that we will see a delete for one d
-		glog.Warningf("StatefulSet %s does not exist anymore\n", key)
+		klog.Warningf("StatefulSet %s does not exist anymore\n", key)
 
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -117,7 +117,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		}
 
 	} else {
-		glog.Infof("Sync/Add/Update for StatefulSet %s", key)
+		klog.Infof("Sync/Add/Update for StatefulSet %s", key)
 
 		ss := obj.(*appsv1.StatefulSet).DeepCopy()
 		ss.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindStatefulSet))
@@ -126,14 +126,14 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		// we don't need to re-write stash logic for StatefulSet separately
 		w, err := wcs.ConvertToWorkload(ss.DeepCopy())
 		if err != nil {
-			glog.Errorf("failed to convert StatefulSet %s/%s to workload type. Reason: %v", ss.Namespace, ss.Name, err)
+			klog.Errorf("failed to convert StatefulSet %s/%s to workload type. Reason: %v", ss.Namespace, ss.Name, err)
 			return err
 		}
 
 		// apply stash backup/restore logic on this workload
 		modified, err := c.applyStashLogic(w, apis.CallerController)
 		if err != nil {
-			glog.Errorf("failed to apply stash logic on StatefulSet %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
+			klog.Errorf("failed to apply stash logic on StatefulSet %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
 			return err
 		}
 		if modified {
@@ -146,7 +146,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			// workload has been modified. patch the workload so that respective pods start with the updated spec
 			_, _, err = apps_util.PatchStatefulSetObject(context.TODO(), c.kubeClient, ss, w.Object.(*appsv1.StatefulSet), metav1.PatchOptions{})
 			if err != nil {
-				glog.Errorf("failed to update statefulset %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
+				klog.Errorf("failed to update statefulset %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
 				return err
 			}
 

@@ -2,18 +2,24 @@ package mimetype
 
 import "github.com/gabriel-vasile/mimetype/internal/matchers"
 
+// mimetype stores the list of MIME types in a tree structure with
+// "application/octet-stream" at the root of the hierarchy. The hierarchy
+// approach minimizes the number of checks that need to be done on the input
+// and allows for more precise results once the base type of file has been
+// identified.
+//
 // root is a matcher which passes for any slice of bytes.
 // When a matcher passes the check, the children matchers
 // are tried in order to find a more accurate MIME type.
-var root = newMIME("application/octet-stream", "", func([]byte) bool { return true },
+var root = newMIME("application/octet-stream", "", func([]byte, uint32) bool { return true },
 	sevenZ, zip, pdf, fdf, ole, ps, psd, p7s, ogg, png, jpg, jp2, jpx, jpm, gif, webp,
 	exe, elf, ar, tar, xar, bz2, fits, tiff, bmp, ico, mp3, flac, midi, ape,
 	musePack, amr, wav, aiff, au, mpeg, quickTime, mqv, mp4, webM, threeGP,
 	threeG2, avi, flv, mkv, asf, aac, voc, aMp4, m4a, m3u, m4v, rmvb, utf32le, utf32be,
 	utf16le, utf16be, gzip, class, swf, crx, ttf, woff, woff2, otf, eot, wasm,
 	shx, dbf, dcm, rar, djvu, mobi, lit, bpg, sqlite3, dwg, nes, macho, qcp,
-	icns, heic, heicSeq, heif, heifSeq, mrc, mdb, accdb, zstd, cab, utf8,
-	rpm, xz, lzip, torrent, cpio, tzif, xcf, pat, gbr,
+	icns, heic, heicSeq, heif, heifSeq, hdr, mrc, mdb, accdb, zstd, cab, utf8,
+	rpm, xz, lzip, torrent, cpio, tzif, xcf, pat, gbr, glb,
 )
 
 // The list of nodes appended to the root node.
@@ -22,7 +28,7 @@ var (
 	gzip = newMIME("application/gzip", ".gz", matchers.Gzip).
 		alias("application/x-gzip", "application/x-gunzip", "application/gzipped", "application/gzip-compressed", "application/x-gzip-compressed", "gzip/document")
 	sevenZ = newMIME("application/x-7z-compressed", ".7z", matchers.SevenZ)
-	zip    = newMIME("application/zip", ".zip", matchers.Zip, xlsx, docx, pptx, epub, jar, odt, ods, odp, odg, odf).
+	zip    = newMIME("application/zip", ".zip", matchers.Zip, xlsx, docx, pptx, epub, jar, odt, ods, odp, odg, odf, odc, sxc).
 		alias("application/x-zip", "application/x-zip-compressed")
 	tar = newMIME("application/x-tar", ".tar", matchers.Tar)
 	xar = newMIME("application/x-xar", ".xar", matchers.Xar)
@@ -35,7 +41,8 @@ var (
 	pptx = newMIME("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx", matchers.Pptx)
 	epub = newMIME("application/epub+zip", ".epub", matchers.Epub)
 	jar  = newMIME("application/jar", ".jar", matchers.Jar)
-	ole  = newMIME("application/x-ole-storage", "", matchers.Ole, msg, xls, pub, ppt, doc)
+	ole  = newMIME("application/x-ole-storage", "", matchers.Ole, aaf, msg, xls, pub, ppt, doc)
+	aaf  = newMIME("application/octet-stream", ".aaf", matchers.Aaf)
 	doc  = newMIME("application/msword", ".doc", matchers.Doc).
 		alias("application/vnd.ms-word")
 	ppt = newMIME("application/vnd.ms-powerpoint", ".ppt", matchers.Ppt).
@@ -55,7 +62,7 @@ var (
 	utf16le  = newMIME("text/plain; charset=utf-16le", ".txt", matchers.Utf16le)
 	utf16be  = newMIME("text/plain; charset=utf-16be", ".txt", matchers.Utf16be)
 	utf8     = newMIME("text/plain; charset=utf-8", ".txt", matchers.Utf8, html, svg, xml, php, js, lua, perl, python, json, ndJson, rtf, tcl, csv, tsv, vCard, iCalendar, warc)
-	xml      = newMIME("text/xml; charset=utf-8", ".xml", matchers.Xml, rss, atom, x3d, kml, xliff, collada, gml, gpx, tcx, amf, threemf, xfdf)
+	xml      = newMIME("text/xml; charset=utf-8", ".xml", matchers.Xml, rss, atom, x3d, kml, xliff, collada, gml, gpx, tcx, amf, threemf, xfdf, owl2)
 	json     = newMIME("application/json", ".json", matchers.Json, geoJson)
 	csv      = newMIME("text/csv", ".csv", matchers.Csv)
 	tsv      = newMIME("text/tab-separated-values", ".tsv", matchers.Tsv)
@@ -76,6 +83,7 @@ var (
 	svg       = newMIME("image/svg+xml", ".svg", matchers.Svg)
 	rss       = newMIME("application/rss+xml", ".rss", matchers.Rss).
 			alias("text/rss")
+	owl2    = newMIME("application/owl+xml", ".owl", matchers.Owl2)
 	atom    = newMIME("application/atom+xml", ".atom", matchers.Atom)
 	x3d     = newMIME("model/x3d+xml", ".x3d", matchers.X3d)
 	kml     = newMIME("application/vnd.google-earth.kml+xml", ".kml", matchers.Kml)
@@ -106,6 +114,7 @@ var (
 	heicSeq = newMIME("image/heic-sequence", ".heic", matchers.HeicSequence)
 	heif    = newMIME("image/heif", ".heif", matchers.Heif)
 	heifSeq = newMIME("image/heif-sequence", ".heif", matchers.HeifSequence)
+	hdr     = newMIME("image/vnd.radiance", ".hdr", matchers.Hdr)
 	mp3     = newMIME("audio/mpeg", ".mp3", matchers.Mp3).
 		alias("audio/x-mpeg", "audio/mp3")
 	flac = newMIME("audio/flac", ".flac", matchers.Flac)
@@ -186,6 +195,9 @@ var (
 		alias("application/x-vnd.oasis.opendocument.graphics-template")
 	odf = newMIME("application/vnd.oasis.opendocument.formula", ".odf", matchers.Odf).
 		alias("application/x-vnd.oasis.opendocument.formula")
+	odc = newMIME("application/vnd.oasis.opendocument.chart", ".odc", matchers.Odc).
+		alias("application/x-vnd.oasis.opendocument.chart")
+	sxc = newMIME("application/vnd.sun.xml.calc", ".sxc", matchers.Sxc)
 	rar = newMIME("application/x-rar-compressed", ".rar", matchers.Rar).
 		alias("application/x-rar")
 	djvu    = newMIME("image/vnd.djvu", ".djvu", matchers.DjVu)
@@ -212,4 +224,5 @@ var (
 	pat     = newMIME("image/x-gimp-pat", ".pat", matchers.Pat)
 	gbr     = newMIME("image/x-gimp-gbr", ".gbr", matchers.Gbr)
 	xfdf    = newMIME("application/vnd.adobe.xfdf", ".xfdf", matchers.Xfdf)
+	glb     = newMIME("model/gltf-binary", ".glb", matchers.Glb)
 )

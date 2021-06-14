@@ -1,0 +1,64 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: snapshot.storage.k8s.io
+    k8s.io/kind: VolumeSnapshotClass
+    k8s.io/resource: volumesnapshotclasses
+    k8s.io/version: v1beta1
+  name: snapshot.storage.k8s.io-v1beta1-volumesnapshotclasses
+spec:
+  resource:
+    group: snapshot.storage.k8s.io
+    kind: VolumeSnapshotClass
+    name: volumesnapshotclasses
+    scope: Cluster
+    version: v1beta1
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
+  validation:
+    openAPIV3Schema:
+      description: VolumeSnapshotClass specifies parameters that a underlying storage system uses when creating a volume snapshot. A specific VolumeSnapshotClass is used by specifying its name in a VolumeSnapshot object. VolumeSnapshotClasses are non-namespaced
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        deletionPolicy:
+          description: deletionPolicy determines whether a VolumeSnapshotContent created through the VolumeSnapshotClass should be deleted when its bound VolumeSnapshot is deleted. Supported values are "Retain" and "Delete". "Retain" means that the VolumeSnapshotContent and its physical snapshot on underlying storage system are kept. "Delete" means that the VolumeSnapshotContent and its physical snapshot on underlying storage system are deleted. Required.
+          enum:
+          - Delete
+          - Retain
+          type: string
+        driver:
+          description: driver is the name of the storage driver that handles this VolumeSnapshotClass. Required.
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        parameters:
+          additionalProperties:
+            type: string
+          description: parameters is a key-value map with storage driver specific parameters for creating snapshots. These values are opaque to Kubernetes.
+          type: object
+      required:
+      - deletionPolicy
+      - driver
+      type: object

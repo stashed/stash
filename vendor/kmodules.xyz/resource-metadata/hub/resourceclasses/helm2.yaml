@@ -1,0 +1,20 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceClass
+metadata:
+  creationTimestamp: null
+  name: Helm 2
+spec:
+  entries:
+  - icons:
+    - src: https://cdn.appscode.com/k8s/icons/resourceclasses/release.svg
+      type: image/svg+xml
+    - src: https://cdn.appscode.com/k8s/icons/resourceclasses/release.png
+      type: image/png
+    name: Releases
+    path: /helm/v2/releases
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/resourceclasses/helm.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/resourceclasses/helm.png
+    type: image/png
+  weight: 3

@@ -23,8 +23,8 @@ import (
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 
-	"gomodules.xyz/x/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 )
 
 func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix string) (*api.Repository, error) {
@@ -71,7 +71,7 @@ func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix st
 		metav1.PatchOptions{},
 	)
 	if err == nil {
-		log.Infof("Repository %v created", repository.Name)
+		klog.Infof("Repository %v created", repository.Name)
 	}
 	return repo, err
 }

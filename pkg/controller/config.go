@@ -25,12 +25,12 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
-	core "k8s.io/api/core/v1"
+	auditlib "go.bytebuilders.dev/audit/lib"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/discovery"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -82,24 +82,36 @@ func (c *Config) New() (*StashController, error) {
 		return nil, err
 	}
 
-	tweakListOptions := func(opt *metav1.ListOptions) {
+	mapper := discovery.NewResourceMapper(discovery.NewRestMapper(c.KubeClient.Discovery()))
+
+	// audit event publisher
+	// WARNING: https://stackoverflow.com/a/46275411/244009
+	var auditor cache.ResourceEventHandler
+	if c.LicenseFile != "" {
+		natscfg, err := auditlib.NewNatsConfig(c.KubeClient.CoreV1().Namespaces(), c.LicenseFile)
+		if err != nil {
+			return nil, err
+		}
+		fn := auditlib.BillingEventCreator{
+			Mapper:    mapper,
+			LicenseID: natscfg.LicenseID,
+		}
+		auditor = auditlib.NewEventPublisher(natscfg, mapper, fn.CreateEvent)
 	}
+
 	ctrl := &StashController{
-		config:           c.config,
-		clientConfig:     c.ClientConfig,
-		kubeClient:       c.KubeClient,
-		ocClient:         c.OcClient,
-		stashClient:      c.StashClient,
-		crdClient:        c.CRDClient,
-		appCatalogClient: c.AppCatalogClient,
-		kubeInformerFactory: informers.NewSharedInformerFactoryWithOptions(
-			c.KubeClient,
-			c.ResyncPeriod,
-			informers.WithNamespace(core.NamespaceAll),
-			informers.WithTweakListOptions(tweakListOptions)),
+		config:               c.config,
+		clientConfig:         c.ClientConfig,
+		kubeClient:           c.KubeClient,
+		ocClient:             c.OcClient,
+		stashClient:          c.StashClient,
+		crdClient:            c.CRDClient,
+		appCatalogClient:     c.AppCatalogClient,
+		kubeInformerFactory:  informers.NewSharedInformerFactoryWithOptions(c.KubeClient, c.ResyncPeriod),
 		stashInformerFactory: stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
 		ocInformerFactory:    oc_informers.NewSharedInformerFactory(c.OcClient, c.ResyncPeriod),
 		recorder:             eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
+		auditor:              auditor,
 	}
 
 	// register CRDs

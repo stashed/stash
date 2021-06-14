@@ -1,1 +1,0 @@
-- Adapted from https://github.com/kubernetes/apimachinery/blob/bfe7139b14565386b4470736ca765bf21616b60e/pkg/api/meta/restmapper.go#L72

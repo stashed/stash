@@ -3,8 +3,8 @@ package version
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/cobra"
-	semver "gomodules.xyz/version"
 )
 
 type version struct {
@@ -17,18 +17,6 @@ type version struct {
 	GoVersion       string `json:"goVersion,omitempty"`
 	Compiler        string `json:"compiler,omitempty"`
 	Platform        string `json:"platform,omitempty"`
-	// Deprecated
-	Os string `json:"os,omitempty"`
-	// Deprecated
-	Arch string `json:"arch,omitempty"`
-	// Deprecated
-	BuildTimestamp string `json:"buildTimestamp,omitempty"`
-	// Deprecated
-	BuildHost string `json:"buildHost,omitempty"`
-	// Deprecated
-	BuildHostOs string `json:"buildHostOs,omitempty"`
-	// Deprecated
-	BuildHostArch string `json:"buildHostArch,omitempty"`
 }
 
 func (v *version) Print() {
@@ -70,7 +58,7 @@ func NewCmdVersion() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("failed to parse --check: %v", err)
 				}
-				v, err := semver.NewSemver(Version.Version)
+				v, err := semver.NewVersion(Version.Version)
 				if err != nil {
 					return fmt.Errorf("failed to parse version: %v", err)
 				}

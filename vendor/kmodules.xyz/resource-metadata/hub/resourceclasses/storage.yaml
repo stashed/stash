@@ -1,0 +1,31 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceClass
+metadata:
+  creationTimestamp: null
+  name: Storage
+spec:
+  entries:
+  - name: Persistent Volume Claims
+    required: true
+    type:
+      groups:
+      - ""
+      resource: persistentvolumeclaims
+  - name: Persistent Volulmes
+    required: true
+    type:
+      groups:
+      - ""
+      resource: persistentvolumes
+  - name: Storage Classes
+    required: true
+    type:
+      groups:
+      - storage.k8s.io
+      resource: storageclasses
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/resourceclasses/storage.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/resourceclasses/storage.png
+    type: image/png
+  weight: 7

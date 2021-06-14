@@ -26,8 +26,6 @@ import (
 	stash_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1"
 	stash_listers_v1beta1 "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 
-	"github.com/golang/glog"
-	"gomodules.xyz/x/log"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
@@ -38,6 +36,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/klog/v2"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/apiextensions"
 	"kmodules.xyz/client-go/tools/queue"
@@ -58,6 +57,7 @@ type StashController struct {
 	crdClient        crd_cs.Interface
 	appCatalogClient appcatalog_cs.Interface
 	recorder         record.EventRecorder
+	auditor          cache.ResourceEventHandler
 
 	kubeInformerFactory  informers.SharedInformerFactory
 	ocInformerFactory    oc_informers.SharedInformerFactory
@@ -168,7 +168,7 @@ func (c *StashController) Run(stopCh <-chan struct{}) {
 func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 
-	glog.Info("Starting Stash controller")
+	klog.Info("Starting Stash controller")
 
 	c.kubeInformerFactory.Start(stopCh)
 	c.stashInformerFactory.Start(stopCh)
@@ -227,5 +227,5 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	c.restoreSessionQueue.Run(stopCh)
 
 	<-stopCh
-	log.Infoln("Stopping Stash controller")
+	klog.Infoln("Stopping Stash controller")
 }

@@ -21,9 +21,9 @@ import (
 	"stash.appscode.dev/stash/pkg/check"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 )
 
@@ -43,16 +43,16 @@ func NewCmdCheck() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalln(err)
+				klog.Fatalln(err)
 			}
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)
 
 			c := check.New(kubeClient, stashClient, opt)
 			if err = c.Run(); err != nil {
-				log.Fatal(err)
+				klog.Fatal(err)
 			}
-			log.Infoln("Exiting stash check")
+			klog.Infoln("Exiting stash check")
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")

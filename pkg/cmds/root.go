@@ -17,20 +17,16 @@ limitations under the License.
 package cmds
 
 import (
-	"flag"
 	"os"
 
 	"stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/flags"
-	"gomodules.xyz/x/log/golog"
 	v "gomodules.xyz/x/version"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/pushgateway"
 	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
@@ -43,18 +39,14 @@ func NewRootCmd() *cobra.Command {
 		Long:              `Stash is a Kubernetes operator for restic. For more information, visit here: https://appscode.com/products/stash`,
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
-			flags.DumpAll(c.Flags())
 			cli.SendAnalytics(c, v.Version.Version)
 
 			utilruntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))
 			utilruntime.Must(scheme.AddToScheme(legacyscheme.Scheme))
 			utilruntime.Must(ocscheme.AddToScheme(clientsetscheme.Scheme))
 			utilruntime.Must(ocscheme.AddToScheme(legacyscheme.Scheme))
-			cli.LoggerOptions = golog.ParseFlags(c.Flags())
 		},
 	}
-	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-	logs.ParseFlags()
 	rootCmd.PersistentFlags().StringVar(&pushgateway.ServiceName, "service-name", "stash-operator", "Stash service name.")
 	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
 

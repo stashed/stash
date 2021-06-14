@@ -27,9 +27,19 @@ var (
 
 	ProductName string // This has been renamed to Features
 	ProductUID  string
+
+	prodRegistrationAPIEndpoint string = "https://byte.builders/api/v1/register"
+	qaRegistrationAPIEndpoint   string = "https://appscode.ninja/api/v1/register"
 )
 
 func SkipLicenseVerification() bool {
 	v, _ := strconv.ParseBool(EnforceLicense)
 	return !v
+}
+
+func RegistrationAPIEndpoint() string {
+	if SkipLicenseVerification() {
+		return qaRegistrationAPIEndpoint
+	}
+	return prodRegistrationAPIEndpoint
 }

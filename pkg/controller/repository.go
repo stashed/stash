@@ -25,11 +25,11 @@ import (
 	stash_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"gomodules.xyz/stow"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/objectstore-api/osm"
@@ -62,6 +62,9 @@ func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {
 func (c *StashController) initRepositoryWatcher() {
 	c.repoInformer = c.stashInformerFactory.Stash().V1alpha1().Repositories().Informer()
 	c.repoQueue = queue.New("Repository", c.MaxNumRequeues, c.NumThreads, c.runRepositoryReconciler)
+	if c.auditor != nil {
+		c.repoInformer.AddEventHandler(c.auditor)
+	}
 	c.repoInformer.AddEventHandler(queue.NewReconcilableHandler(c.repoQueue.GetQueue()))
 	c.repoLister = c.stashInformerFactory.Stash().V1alpha1().Repositories().Lister()
 }
@@ -69,14 +72,14 @@ func (c *StashController) initRepositoryWatcher() {
 func (c *StashController) runRepositoryReconciler(key string) error {
 	obj, exist, err := c.repoInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 
 	if !exist {
-		glog.Warningf("Repository %s does not exist anymore\n", key)
+		klog.Warningf("Repository %s does not exist anymore\n", key)
 	} else {
-		glog.Infof("Sync/Add/Update for Repository %s", key)
+		klog.Infof("Sync/Add/Update for Repository %s", key)
 
 		repo := obj.(*api.Repository)
 

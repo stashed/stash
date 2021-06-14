@@ -27,9 +27,7 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +35,7 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 )
 
 func (c *Controller) BackupScheduler() error {
@@ -72,7 +71,7 @@ func (c *Controller) setupAndRunScheduler(stopBackup <-chan struct{}) error {
 					err.Error(),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", restic.Kind, restic.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", restic.Kind, restic.Name, rerr)
 			}
 		}
 		return err
@@ -106,14 +105,14 @@ func (c *Controller) electLeader() error {
 			RetryPeriod:   2 * time.Second,
 			Callbacks: leaderelection.LeaderCallbacks{
 				OnStartedLeading: func(ctx context.Context) {
-					log.Infoln("Got leadership, preparing backup backup")
+					klog.Infoln("Got leadership, preparing backup backup")
 					err := c.setupAndRunScheduler(ctx.Done())
 					if err != nil {
-						log.Errorln(err)
+						klog.Errorln(err)
 					}
 				},
 				OnStoppedLeading: func() {
-					log.Infoln("Lost leadership, stopping backup backup")
+					klog.Infoln("Lost leadership, stopping backup backup")
 				},
 			},
 		})
@@ -137,7 +136,7 @@ func (c *Controller) runScheduler(stopCh <-chan struct{}) {
 	c.rQueue.Run(stopCh)
 
 	<-stopCh
-	glog.Info("Stopping Stash backup")
+	klog.Info("Stopping Stash backup")
 }
 
 func (c *Controller) configureScheduler(r *api.Restic) error {
@@ -151,9 +150,9 @@ func (c *Controller) configureScheduler(r *api.Restic) error {
 			if rerr == nil {
 				c.recorder.Event(ref, core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", r.Kind, r.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", r.Kind, r.Name, rerr)
 			}
-			log.Errorln(err)
+			klog.Errorln(err)
 		}
 	})
 	if err != nil {
@@ -162,7 +161,7 @@ func (c *Controller) configureScheduler(r *api.Restic) error {
 	_, err = c.cron.AddFunc("0 0 */3 * *", func() {
 		err2 := c.checkOnceForScheduler()
 		if err2 != nil {
-			log.Errorln(err2)
+			klog.Errorln(err2)
 		}
 	})
 	return err
@@ -171,12 +170,12 @@ func (c *Controller) configureScheduler(r *api.Restic) error {
 func (c *Controller) runOnceForScheduler() error {
 	select {
 	case <-c.locked:
-		log.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
+		klog.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
 		defer func() {
 			c.locked <- struct{}{}
 		}()
 	default:
-		log.Warningf("Skipping backup schedule for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
+		klog.Warningf("Skipping backup schedule for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
 		return nil
 	}
 
@@ -225,12 +224,12 @@ func (c *Controller) checkOnceForScheduler() (err error) {
 
 	select {
 	case <-c.locked:
-		log.Infof("Acquired lock for Repository %s/%s", repository.Namespace, repository.Name)
+		klog.Infof("Acquired lock for Repository %s/%s", repository.Namespace, repository.Name)
 		defer func() {
 			c.locked <- struct{}{}
 		}()
 	default:
-		log.Warningf("Skipping checkup schedule for Repository %s/%s", repository.Namespace, repository.Name)
+		klog.Warningf("Skipping checkup schedule for Repository %s/%s", repository.Namespace, repository.Name)
 		return
 	}
 
@@ -245,7 +244,7 @@ func (c *Controller) checkOnceForScheduler() (err error) {
 				"Repository check failed for workload %s %s/%s. Reason: %v",
 				c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
+			klog.Errorf("Failed to write event on %s %s. Reason: %s", repository.Kind, repository.Name, rerr)
 		}
 	}
 	return

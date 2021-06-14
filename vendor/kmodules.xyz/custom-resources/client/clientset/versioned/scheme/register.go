@@ -20,6 +20,8 @@ package scheme
 
 import (
 	appcatalogv1alpha1 "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+	auditorv1alpha1 "kmodules.xyz/custom-resources/apis/auditor/v1alpha1"
+	metricsv1alpha1 "kmodules.xyz/custom-resources/apis/metrics/v1alpha1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -33,6 +35,8 @@ var Codecs = serializer.NewCodecFactory(Scheme)
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
 	appcatalogv1alpha1.AddToScheme,
+	auditorv1alpha1.AddToScheme,
+	metricsv1alpha1.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

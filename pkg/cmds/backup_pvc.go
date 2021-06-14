@@ -26,12 +26,12 @@ import (
 	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/flags"
+	"gomodules.xyz/flags"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
@@ -80,7 +80,7 @@ func NewCmdBackupPVC() *cobra.Command {
 
 			config, err := clientcmd.BuildConfigFromFlags(opt.masterURL, opt.kubeConfigPath)
 			if err != nil {
-				glog.Fatalf("Could not get Kubernetes config: %s", err)
+				klog.Fatalf("Could not get Kubernetes config: %s", err)
 				return err
 			}
 			opt.config = config

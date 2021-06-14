@@ -19,7 +19,6 @@ package framework
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -31,6 +30,7 @@ import (
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
@@ -132,7 +132,7 @@ func (fi *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim,
 func (fi *Invocation) CleanupUndeletedPVCs() {
 	pvcList, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		log.Println(err)
+		klog.Infoln(err)
 		return
 	}
 
@@ -141,7 +141,7 @@ func (fi *Invocation) CleanupUndeletedPVCs() {
 		if strings.Contains(pvc.Name, fi.app) {
 			err = fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Delete(context.TODO(), pvc.Name, meta_util.DeleteInBackground())
 			if err != nil {
-				log.Println(err)
+				klog.Infoln(err)
 			}
 		}
 	}

@@ -22,7 +22,6 @@ import (
 
 	core_util "kmodules.xyz/client-go/core/v1"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"gomodules.xyz/pointer"
 	apps "k8s.io/api/apps/v1"
@@ -32,13 +31,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchDeployment(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.Deployment) *apps.Deployment, opts metav1.PatchOptions) (*apps.Deployment, kutil.VerbType, error) {
 	cur, err := c.AppsV1().Deployments(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Deployment %s/%s.", meta.Namespace, meta.Name)
+		klog.V(3).Infof("Creating Deployment %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.AppsV1().Deployments(meta.Namespace).Create(ctx, transform(&apps.Deployment{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Deployment",
@@ -78,7 +78,7 @@ func PatchDeploymentObject(ctx context.Context, c kubernetes.Interface, cur, mod
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Deployment %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	klog.V(3).Infof("Patching Deployment %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.AppsV1().Deployments(cur.Namespace).Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -94,7 +94,7 @@ func TryUpdateDeployment(ctx context.Context, c kubernetes.Interface, meta metav
 			result, e2 = c.AppsV1().Deployments(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Deployment %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update Deployment %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 

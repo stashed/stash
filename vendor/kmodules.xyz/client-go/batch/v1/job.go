@@ -19,7 +19,6 @@ package v1
 import (
 	"context"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"gomodules.xyz/pointer"
 	batch "k8s.io/api/batch/v1"
@@ -29,13 +28,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchJob(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.Job) *batch.Job, opts metav1.PatchOptions) (*batch.Job, kutil.VerbType, error) {
 	cur, err := c.BatchV1().Jobs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Job %s/%s.", meta.Namespace, meta.Name)
+		klog.V(3).Infof("Creating Job %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.BatchV1().Jobs(meta.Namespace).Create(ctx, transform(&batch.Job{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Job",
@@ -75,7 +75,7 @@ func PatchJobObject(ctx context.Context, c kubernetes.Interface, cur, mod *batch
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Job %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	klog.V(3).Infof("Patching Job %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.BatchV1().Jobs(cur.Namespace).Patch(ctx, cur.Name, ktypes.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -91,7 +91,7 @@ func TryUpdateJob(ctx context.Context, c kubernetes.Interface, meta metav1.Objec
 			result, e2 = c.BatchV1().Jobs(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Job %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update Job %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 

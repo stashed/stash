@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,6 +28,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -105,7 +105,7 @@ func NewEventRecorder(client kubernetes.Interface, component string) record.Even
 	broadcaster.StartEventWatcher(
 		func(event *core.Event) {
 			if _, err := client.CoreV1().Events(event.Namespace).Create(context.TODO(), event, metav1.CreateOptions{}); err != nil {
-				log.Errorln(err)
+				klog.Errorln(err)
 			}
 		},
 	)
@@ -140,8 +140,8 @@ func CreateEvent(client kubernetes.Interface, component string, obj runtime.Obje
 func CreateEventWithLog(client kubernetes.Interface, component string, obj runtime.Object, eventType, reason, message string) {
 	event, err := CreateEvent(client, component, obj, eventType, reason, message)
 	if err != nil {
-		log.Errorln("Failed to write event, reason: ", err)
+		klog.Errorln("Failed to write event, reason: ", err)
 	} else {
-		log.Infoln("Event created: ", event.Name)
+		klog.Infoln("Event created: ", event.Name)
 	}
 }

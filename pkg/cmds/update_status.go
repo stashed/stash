@@ -25,7 +25,7 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/flags"
+	"gomodules.xyz/flags"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )

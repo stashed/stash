@@ -26,7 +26,6 @@ import (
 	v1 "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	cs "kmodules.xyz/webhook-runtime/client/workload/v1"
 
-	"github.com/golang/glog"
 	jsoniter "github.com/json-iterator/go"
 	jp "gomodules.xyz/jsonpatch/v2"
 	"k8s.io/api/admission/v1beta1"
@@ -38,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
@@ -168,8 +168,8 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 			if err != nil {
 				return api.StatusInternalServerError(err)
 			}
-			if glog.V(8) {
-				glog.V(8).Infoln("patch:", string(patch))
+			if klog.V(8).Enabled() {
+				klog.V(8).Infoln("patch:", string(patch))
 			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch
@@ -225,8 +225,8 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 			if err != nil {
 				return api.StatusInternalServerError(err)
 			}
-			if glog.V(8) {
-				glog.V(8).Infoln("patch:", string(patch))
+			if klog.V(8).Enabled() {
+				klog.V(8).Infoln("patch:", string(patch))
 			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch

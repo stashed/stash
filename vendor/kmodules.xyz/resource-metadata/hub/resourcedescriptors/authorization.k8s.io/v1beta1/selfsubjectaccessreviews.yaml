@@ -1,0 +1,88 @@
+apiVersion: meta.appscode.com/v1alpha1
+kind: ResourceDescriptor
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: authorization.k8s.io
+    k8s.io/kind: SelfSubjectAccessReview
+    k8s.io/resource: selfsubjectaccessreviews
+    k8s.io/version: v1beta1
+  name: authorization.k8s.io-v1beta1-selfsubjectaccessreviews
+spec:
+  resource:
+    group: authorization.k8s.io
+    kind: SelfSubjectAccessReview
+    name: selfsubjectaccessreviews
+    scope: Cluster
+    version: v1beta1
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
+  validation:
+    openAPIV3Schema:
+      description: SelfSubjectAccessReview checks whether or the current user can perform an action.  Not filling in a spec.namespace means "in all namespaces".  Self is a special case, because users should always be able to check whether they can perform an action
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          properties:
+            name:
+              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            labels:
+              additionalProperties:
+                type: string
+              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+          type: object
+        spec:
+          description: Spec holds information about the request being evaluated.  user and groups must be empty
+          properties:
+            nonResourceAttributes:
+              description: NonResourceAttributes describes information for a non-resource access request
+              properties:
+                path:
+                  description: Path is the URL path of the request
+                  type: string
+                verb:
+                  description: Verb is the standard HTTP verb
+                  type: string
+              type: object
+            resourceAttributes:
+              description: ResourceAuthorizationAttributes describes information for a resource access request
+              properties:
+                group:
+                  description: Group is the API Group of the Resource.  "*" means all.
+                  type: string
+                name:
+                  description: Name is the name of the resource being requested for a "get" or deleted for a "delete". "" (empty) means all.
+                  type: string
+                namespace:
+                  description: Namespace is the namespace of the action being requested.  Currently, there is no distinction between no namespace and all namespaces "" (empty) is defaulted for LocalSubjectAccessReviews "" (empty) is empty for cluster-scoped resources "" (empty) means "all" for namespace scoped resources from a SubjectAccessReview or SelfSubjectAccessReview
+                  type: string
+                resource:
+                  description: Resource is one of the existing resource types.  "*" means all.
+                  type: string
+                subresource:
+                  description: Subresource is one of the existing resource types.  "" means none.
+                  type: string
+                verb:
+                  description: 'Verb is a kubernetes resource API verb, like: get, list, watch, create, update, delete, proxy.  "*" means all.'
+                  type: string
+                version:
+                  description: Version is the API Version of the Resource.  "*" means all.
+                  type: string
+              type: object
+          type: object
+      required:
+      - spec
+      type: object

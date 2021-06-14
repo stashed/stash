@@ -21,12 +21,11 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
-	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/tools/queue"
 )
 
@@ -66,18 +65,18 @@ func (c *Controller) initResticWatcher() {
 func (c *Controller) runResticScheduler(key string) error {
 	obj, exists, err := c.rInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 
 	if !exists {
 		// Below we will warm up our cache with a Restic, so that we will see a delete for one d
-		glog.Warningf("Restic %s does not exist anymore\n", key)
+		klog.Warningf("Restic %s does not exist anymore\n", key)
 
 		c.cron.Stop()
 	} else {
 		r := obj.(*api.Restic)
-		glog.Infof("Sync/Add/Update for Restic %s", r.GetName())
+		klog.Infof("Sync/Add/Update for Restic %s", r.GetName())
 
 		err := c.configureScheduler(r)
 		if err != nil {
@@ -91,9 +90,9 @@ func (c *Controller) runResticScheduler(key string) error {
 					err,
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s", r.Kind, r.Name, rerr)
+				klog.Errorf("Failed to write event on %s %s. Reason: %s", r.Kind, r.Name, rerr)
 			}
-			log.Errorln(err)
+			klog.Errorln(err)
 		}
 	}
 	return nil

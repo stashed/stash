@@ -25,7 +25,7 @@ import (
 	"runtime"
 	"time"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // StacktracePred returns true if a stacktrace should be logged for this status.
@@ -75,6 +75,15 @@ func DefaultStacktracePred(status int) bool {
 	return (status < http.StatusOK || status >= http.StatusInternalServerError) && status != http.StatusSwitchingProtocols
 }
 
+// raise log level for successful requests and requests to "/openapi/v2" as this is not configured for dynamic admission controller webhooks
+func logLevel(rl *respLogger) klog.Level {
+	if (rl.status >= http.StatusOK && rl.status < http.StatusMultipleChoices) ||
+		rl.req.RequestURI == "/openapi/v2" {
+		return 8
+	}
+	return 3
+}
+
 // WithLogging wraps the handler with logging.
 func WithLogging(handler http.Handler, pred StacktracePred) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -85,7 +94,11 @@ func WithLogging(handler http.Handler, pred StacktracePred) http.Handler {
 		rl := newLogged(req, w).StacktraceWhen(pred)
 		req = req.WithContext(context.WithValue(ctx, respLoggerContextKey, rl))
 
-		defer rl.Log()
+		defer func() {
+			if klog.V(logLevel(rl)).Enabled() {
+				klog.InfoS("HTTP", rl.LogArgs()...)
+			}
+		}()
 		handler.ServeHTTP(rl, req)
 	})
 }
@@ -153,26 +166,34 @@ func (rl *respLogger) Addf(format string, data ...interface{}) {
 	rl.addedInfo += "\n" + fmt.Sprintf(format, data...)
 }
 
-// Log is intended to be called once at the end of your request handler, via defer
-func (rl *respLogger) Log() {
+func (rl *respLogger) LogArgs() []interface{} {
 	latency := time.Since(rl.startTime)
-	if klog.V(3) {
-		if !rl.hijacked {
-			if klog.V(8) {
-				klog.InfoDepth(1, fmt.Sprintf("verb=%q URI=%q latency=%v resp=%v UserAgent=%q srcIP=%q: %v%v",
-					rl.req.Method, rl.req.RequestURI,
-					latency, rl.status,
-					rl.req.UserAgent(), rl.req.RemoteAddr,
-					rl.statusStack, rl.addedInfo,
-				))
-			}
-		} else {
-			klog.InfoDepth(1, fmt.Sprintf("verb=%q URI=%q latency=%v UserAgent=%q srcIP=%q: hijacked",
-				rl.req.Method, rl.req.RequestURI,
-				latency, rl.req.UserAgent(), rl.req.RemoteAddr,
-			))
+	if rl.hijacked {
+		return []interface{}{
+			"verb", rl.req.Method,
+			"URI", rl.req.RequestURI,
+			"latency", latency,
+			"userAgent", rl.req.UserAgent(),
+			"srcIP", rl.req.RemoteAddr,
+			"hijacked", true,
 		}
 	}
+	args := []interface{}{
+		"verb", rl.req.Method,
+		"URI", rl.req.RequestURI,
+		"latency", latency,
+		"userAgent", rl.req.UserAgent(),
+		"srcIP", rl.req.RemoteAddr,
+		"resp", rl.status,
+	}
+	if len(rl.statusStack) > 0 {
+		args = append(args, "statusStack", rl.statusStack)
+	}
+
+	if len(rl.addedInfo) > 0 {
+		args = append(args, "addedInfo", rl.addedInfo)
+	}
+	return args
 }
 
 // Header implements http.ResponseWriter.
@@ -196,7 +217,7 @@ func (rl *respLogger) Write(b []byte) (int, error) {
 func (rl *respLogger) Flush() {
 	if flusher, ok := rl.w.(http.Flusher); ok {
 		flusher.Flush()
-	} else if klog.V(2) {
+	} else if klog.V(2).Enabled() {
 		klog.InfoDepth(1, fmt.Sprintf("Unable to convert %+v into http.Flusher", rl.w))
 	}
 }

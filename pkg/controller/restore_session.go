@@ -38,9 +38,7 @@ import (
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/golang/glog"
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/log"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -48,6 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -124,6 +123,9 @@ func (c *StashController) NewRestoreSessionMutator() hooks.AdmissionHook {
 func (c *StashController) initRestoreSessionWatcher() {
 	c.restoreSessionInformer = c.stashInformerFactory.Stash().V1beta1().RestoreSessions().Informer()
 	c.restoreSessionQueue = queue.New(api_v1beta1.ResourceKindRestoreSession, c.MaxNumRequeues, c.NumThreads, c.runRestoreSessionProcessor)
+	if c.auditor != nil {
+		c.restoreSessionInformer.AddEventHandler(c.auditor)
+	}
 	c.restoreSessionInformer.AddEventHandler(queue.DefaultEventHandler(c.restoreSessionQueue.GetQueue()))
 	c.restoreSessionLister = c.stashInformerFactory.Stash().V1beta1().RestoreSessions().Lister()
 }
@@ -131,16 +133,16 @@ func (c *StashController) initRestoreSessionWatcher() {
 func (c *StashController) runRestoreSessionProcessor(key string) error {
 	obj, exists, err := c.restoreSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
 	}
 	if !exists {
-		glog.Warningf("RestoreSession %s does not exist anymore\n", key)
+		klog.Warningf("RestoreSession %s does not exist anymore\n", key)
 		return nil
 	}
 
 	restoreSession := obj.(*api_v1beta1.RestoreSession)
-	glog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
+	klog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
 	// process sync/add/update event
 	inv, err := invoker.ExtractRestoreInvokerInfo(
 		c.kubeClient,
@@ -204,7 +206,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 		repository, err := c.stashClient.StashV1alpha1().Repositories(in.ObjectMeta.Namespace).Get(context.TODO(), in.Repository, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				glog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
+				klog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
 					in.ObjectMeta.Namespace,
 					in.Repository,
 					in.TypeMeta.Kind,
@@ -229,7 +231,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 		secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				glog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
+				klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
 					secret.Namespace,
 					secret.Name,
 					repository.Namespace,
@@ -254,7 +256,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 	if in.Status.Phase == api_v1beta1.RestoreFailed ||
 		in.Status.Phase == api_v1beta1.RestoreSucceeded ||
 		in.Status.Phase == api_v1beta1.RestorePhaseUnknown {
-		log.Infof("Skipping processing %s %s/%s. Reason: phase is %q.",
+		klog.Infof("Skipping processing %s %s/%s. Reason: phase is %q.",
 			in.TypeMeta.Kind,
 			in.ObjectMeta.Namespace,
 			in.ObjectMeta.Name,
@@ -345,7 +347,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 				}
 				targetExist, err := wc.IsTargetExist(tref, in.ObjectMeta.Namespace)
 				if err != nil {
-					glog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
+					klog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
 						tref.APIVersion,
 						tref.Kind,
 						in.ObjectMeta.Namespace,
@@ -359,7 +361,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 
 				if !targetExist {
 					// Target does not exist. Log the information.
-					glog.Infof("Restore target %s %s %s/%s does not exist.",
+					klog.Infof("Restore target %s %s %s/%s does not exist.",
 						tref.APIVersion,
 						tref.Kind,
 						in.ObjectMeta.Namespace,
@@ -370,7 +372,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 						return err
 					}
 					// Now retry after 5 seconds
-					glog.Infof("Requeueing Restore Invoker %s %s/%s after 5 seconds....",
+					klog.Infof("Requeueing Restore Invoker %s %s/%s after 5 seconds....",
 						in.TypeMeta.Kind,
 						in.ObjectMeta.Namespace,
 						in.ObjectMeta.Name,
@@ -874,7 +876,7 @@ func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) e
 
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
-		log.Errorf("failed to write event in %s %s/%s. Reason: %v",
+		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,
@@ -922,7 +924,7 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
-		log.Errorf("failed to write event in %s %s/%s. Reason: %v",
+		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,
@@ -971,7 +973,7 @@ func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, res
 
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
-		log.Errorf("failed to write event in %s %s/%s. Reason: %v",
+		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,
@@ -1068,7 +1070,7 @@ func (c *StashController) getRestorePhase(status invoker.RestoreInvokerStatus) (
 }
 
 func (c *StashController) handleRestoreJobCreationFailure(inv invoker.RestoreInvoker, restoreErr error) error {
-	log.Errorf("failed to ensure restore job for %s %s/%s. Reason: %v",
+	klog.Errorf("failed to ensure restore job for %s %s/%s. Reason: %v",
 		inv.TypeMeta.Kind,
 		inv.ObjectMeta.Namespace,
 		inv.ObjectMeta.Name,
@@ -1083,7 +1085,7 @@ func (c *StashController) handleRestoreJobCreationFailure(inv invoker.RestoreInv
 		fmt.Sprintf("failed to create restore job. Reason: %v", restoreErr),
 	)
 	if err != nil {
-		log.Errorf("failed to write event for %s %s/%s. Reason: ",
+		klog.Errorf("failed to write event for %s %s/%s. Reason: ",
 			inv.TypeMeta.Kind,
 			inv.ObjectMeta.Namespace,
 			inv.ObjectMeta.Name,

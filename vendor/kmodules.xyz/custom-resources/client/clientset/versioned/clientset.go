@@ -22,6 +22,8 @@ import (
 	"fmt"
 
 	appcatalogv1alpha1 "kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1"
+	auditorv1alpha1 "kmodules.xyz/custom-resources/client/clientset/versioned/typed/auditor/v1alpha1"
+	metricsv1alpha1 "kmodules.xyz/custom-resources/client/clientset/versioned/typed/metrics/v1alpha1"
 
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -31,6 +33,8 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	AppcatalogV1alpha1() appcatalogv1alpha1.AppcatalogV1alpha1Interface
+	AuditorV1alpha1() auditorv1alpha1.AuditorV1alpha1Interface
+	MetricsV1alpha1() metricsv1alpha1.MetricsV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -38,11 +42,23 @@ type Interface interface {
 type Clientset struct {
 	*discovery.DiscoveryClient
 	appcatalogV1alpha1 *appcatalogv1alpha1.AppcatalogV1alpha1Client
+	auditorV1alpha1    *auditorv1alpha1.AuditorV1alpha1Client
+	metricsV1alpha1    *metricsv1alpha1.MetricsV1alpha1Client
 }
 
 // AppcatalogV1alpha1 retrieves the AppcatalogV1alpha1Client
 func (c *Clientset) AppcatalogV1alpha1() appcatalogv1alpha1.AppcatalogV1alpha1Interface {
 	return c.appcatalogV1alpha1
+}
+
+// AuditorV1alpha1 retrieves the AuditorV1alpha1Client
+func (c *Clientset) AuditorV1alpha1() auditorv1alpha1.AuditorV1alpha1Interface {
+	return c.auditorV1alpha1
+}
+
+// MetricsV1alpha1 retrieves the MetricsV1alpha1Client
+func (c *Clientset) MetricsV1alpha1() metricsv1alpha1.MetricsV1alpha1Interface {
+	return c.metricsV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -70,6 +86,14 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cs.auditorV1alpha1, err = auditorv1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
+	cs.metricsV1alpha1, err = metricsv1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -83,6 +107,8 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.appcatalogV1alpha1 = appcatalogv1alpha1.NewForConfigOrDie(c)
+	cs.auditorV1alpha1 = auditorv1alpha1.NewForConfigOrDie(c)
+	cs.metricsV1alpha1 = metricsv1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -92,6 +118,8 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.appcatalogV1alpha1 = appcatalogv1alpha1.New(c)
+	cs.auditorV1alpha1 = auditorv1alpha1.New(c)
+	cs.metricsV1alpha1 = metricsv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

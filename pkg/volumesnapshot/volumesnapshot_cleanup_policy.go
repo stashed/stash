@@ -24,11 +24,11 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	vs_api "github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/v2/pkg/client/clientset/versioned"
-	"gomodules.xyz/x/log"
+	vs_api "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
+	vs_cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 )
 
 // Some of the code of this file has been copied from restic/restic repository.
@@ -152,7 +152,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 		}
 	}
 
-	log.Infof("VolumeSnapshot kept: %d removed: %d", len(kept), len(removed))
+	klog.Infof("VolumeSnapshot kept: %d removed: %d", len(kept), len(removed))
 	return nil
 }
 
