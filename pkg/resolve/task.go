@@ -106,7 +106,7 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 			ReadinessProbe:  function.Spec.RuntimeSettings.ReadinessProbe,
 			Lifecycle:       function.Spec.RuntimeSettings.Lifecycle,
 			SecurityContext: function.Spec.RuntimeSettings.SecurityContext,
-			ImagePullPolicy: core.PullAlways,
+			ImagePullPolicy: core.PullIfNotPresent,
 		}
 
 		// mount tmp volume

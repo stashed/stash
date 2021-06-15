@@ -1264,7 +1264,7 @@ k8s.io/utils/pointer
 k8s.io/utils/trace
 # kmodules.xyz/apiversion v0.2.0
 kmodules.xyz/apiversion
-# kmodules.xyz/client-go v0.0.0-20210605021217-cabaee7b953e
+# kmodules.xyz/client-go v0.0.0-20210614094429-affdb80e35c8
 ## explicit
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
