@@ -122,7 +122,7 @@ func NewResourceMapper(mapper meta.RESTMapper) ResourceMapper {
 }
 
 func (m *resourcemapper) ResourceIDForGVK(gvk schema.GroupVersionKind) (*kmapi.ResourceID, error) {
-	m.lock.RLocker()
+	m.lock.RLock()
 	rid, ok := m.cache[gvk]
 	m.lock.RUnlock()
 	if ok {
@@ -156,7 +156,7 @@ func (m *resourcemapper) ResourceIDForGVR(gvr schema.GroupVersionResource) (*kma
 		return nil, err
 	}
 
-	m.lock.RLocker()
+	m.lock.RLock()
 	rid, ok := m.cache[gvk]
 	m.lock.RUnlock()
 	if ok {
