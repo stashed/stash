@@ -35,8 +35,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type EventCreator func(obj runtime.Object) (*api.Event, error)
@@ -191,7 +191,7 @@ func (p *EventPublisher) OnDelete(obj interface{}) {
 	}
 }
 
-func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr ctrl.Manager, gvk schema.GroupVersionKind) error {
+func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr manager.Manager, gvk schema.GroupVersionKind) error {
 	if p == nil {
 		return nil
 	}
@@ -203,7 +203,7 @@ func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr ctrl.M
 	return nil
 }
 
-func (p *EventPublisher) SetupWithManager(ctx context.Context, mgr ctrl.Manager, obj client.Object) error {
+func (p *EventPublisher) SetupWithManager(ctx context.Context, mgr manager.Manager, obj client.Object) error {
 	if p == nil {
 		return nil
 	}

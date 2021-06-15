@@ -53,7 +53,7 @@ var (
 func TestMain(m *testing.M) {
 	flag.StringVar(&options.DockerRegistry, "docker-registry", "", "Set Docker Registry")
 	flag.StringVar(&options.StashImageTag, "image-tag", "", "Set Stash Image Tag")
-	flag.StringVar(&options.KubeConfig, "kube-config", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	flag.StringVar(&options.KubeConfig, "kubeconfig", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	flag.StringVar(&options.KubeContext, "kube-context", "", "Name of kube context")
 	flag.StringVar(&options.StorageClass, "storageclass", "standard", "Storageclass for PVC")
 	enableLogging()
