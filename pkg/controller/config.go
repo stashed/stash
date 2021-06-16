@@ -33,6 +33,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/discovery"
+	"kmodules.xyz/client-go/tools/cli"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
@@ -87,7 +88,7 @@ func (c *Config) New() (*StashController, error) {
 	// audit event publisher
 	// WARNING: https://stackoverflow.com/a/46275411/244009
 	var auditor cache.ResourceEventHandler
-	if c.LicenseFile != "" {
+	if c.LicenseFile != "" && cli.EnableAnalytics {
 		natscfg, err := auditlib.NewNatsConfig(c.KubeClient.CoreV1().Namespaces(), c.LicenseFile)
 		if err != nil {
 			return nil, err
