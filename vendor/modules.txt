@@ -344,7 +344,7 @@ github.com/yudai/gojsondiff
 github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 github.com/yudai/golcs
-# go.bytebuilders.dev/audit v0.0.3-0.20210617102646-9a063efe293c
+# go.bytebuilders.dev/audit v0.0.3-0.20210617125454-23193a3e71c3
 ## explicit
 go.bytebuilders.dev/audit/api/v1
 go.bytebuilders.dev/audit/lib
@@ -542,7 +542,7 @@ gomodules.xyz/stow/google
 gomodules.xyz/stow/local
 gomodules.xyz/stow/s3
 gomodules.xyz/stow/swift
-# gomodules.xyz/sync v0.0.0-20201105042349-3c834d722081
+# gomodules.xyz/sync v0.1.0
 gomodules.xyz/sync
 # gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545
 gomodules.xyz/wait

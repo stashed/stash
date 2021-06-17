@@ -63,10 +63,12 @@ func (o *Once) doSlow(f func() error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.done == 0 {
-		defer atomic.StoreInt32(&o.done, 1)
-		err := f()
-		if err != nil {
-			atomic.StoreInt32(&o.done, -1)
-		}
+		var err error
+		defer func() {
+			if err == nil {
+				atomic.StoreInt32(&o.done, 1)
+			}
+		}()
+		err = f()
 	}
 }
