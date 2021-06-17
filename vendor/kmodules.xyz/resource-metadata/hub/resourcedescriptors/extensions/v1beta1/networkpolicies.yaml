@@ -27,7 +27,7 @@ spec:
     editor:
       name: extensions-networkpolicy-editor
       url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: DEPRECATED 1.9 - This group version of NetworkPolicy is deprecated by networking/v1/NetworkPolicy. NetworkPolicy describes what network traffic is allowed for a set of Pods

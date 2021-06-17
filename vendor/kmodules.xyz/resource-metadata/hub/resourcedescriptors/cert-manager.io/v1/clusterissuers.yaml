@@ -53,7 +53,7 @@ spec:
     editor:
       name: certmanagerio-clusterissuer-editor
       url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: A ClusterIssuer represents a certificate issuing authority which can be referenced as part of `issuerRef` fields. It is similar to an Issuer, however it is cluster-scoped and therefore can be referenced by resources that exist in *any* namespace, not just the same namespace as the referent.

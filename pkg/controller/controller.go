@@ -26,6 +26,7 @@ import (
 	stash_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1"
 	stash_listers_v1beta1 "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 
+	auditlib "go.bytebuilders.dev/audit/lib"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
@@ -39,6 +40,7 @@ import (
 	"k8s.io/klog/v2"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/apiextensions"
+	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/tools/queue"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -57,7 +59,8 @@ type StashController struct {
 	crdClient        crd_cs.Interface
 	appCatalogClient appcatalog_cs.Interface
 	recorder         record.EventRecorder
-	auditor          cache.ResourceEventHandler
+	mapper           discovery.ResourceMapper
+	auditor          *auditlib.EventPublisher
 
 	kubeInformerFactory  informers.SharedInformerFactory
 	ocInformerFactory    oc_informers.SharedInformerFactory
@@ -147,7 +150,12 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 
 		appCatalog.AppBinding{}.CustomResourceDefinition(),
 	}
-	return apiextensions.RegisterCRDs(c.crdClient, crds)
+	err := apiextensions.RegisterCRDs(c.crdClient, crds)
+	if err != nil {
+		return err
+	}
+	c.mapper.Reset()
+	return nil
 }
 
 func (c *StashController) Run(stopCh <-chan struct{}) {

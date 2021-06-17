@@ -22,7 +22,7 @@ spec:
     editor:
       name: authorizationk8sio-selfsubjectaccessreview-editor
       url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: SelfSubjectAccessReview checks whether or the current user can perform an action.  Not filling in a spec.namespace means "in all namespaces".  Self is a special case, because users should always be able to check whether they can perform an action

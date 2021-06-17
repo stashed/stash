@@ -44,6 +44,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
 )
 
 type HelmVersion string
@@ -64,6 +65,7 @@ type Registry struct {
 	cache KV
 	m     sync.RWMutex
 	// TODO: store in KV so cached for multiple instances of BB api server
+	cfg           *rest.Config
 	preferred     map[schema.GroupResource]schema.GroupVersionResource
 	lastRefreshed time.Time
 	regGVK        map[schema.GroupVersionKind]*kmapi.ResourceID
@@ -107,12 +109,19 @@ func NewRegistryOfKnownResources() *Registry {
 }
 
 func (r *Registry) DiscoverResources(cfg *rest.Config) error {
-	preferred, reg, err := r.createRegistry(cfg)
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	r.cfg = cfg
+	return r.discoverResources()
+}
+
+func (r *Registry) discoverResources() error {
+	preferred, reg, err := r.createRegistry(r.cfg)
 	if err != nil {
 		return err
 	}
 
-	r.m.Lock()
 	r.preferred = preferred
 	r.lastRefreshed = time.Now()
 	for filename, rd := range reg {
@@ -122,7 +131,6 @@ func (r *Registry) DiscoverResources(cfg *rest.Config) error {
 			r.cache.Set(filename, rd)
 		}
 	}
-	r.m.Unlock()
 
 	return nil
 }
@@ -132,6 +140,17 @@ func (r *Registry) Refresh(cfg *rest.Config) error {
 		return r.DiscoverResources(cfg)
 	}
 	return nil
+}
+
+func (r *Registry) Reset() {
+	r.m.Lock()
+	defer r.m.Unlock()
+	if r.cfg == nil {
+		return
+	}
+	if err := r.discoverResources(); err != nil {
+		klog.ErrorS(err, "failed to reset Registry")
+	}
 }
 
 func DiscoverHelm(cfg *rest.Config) (HelmVersion, string, error) {

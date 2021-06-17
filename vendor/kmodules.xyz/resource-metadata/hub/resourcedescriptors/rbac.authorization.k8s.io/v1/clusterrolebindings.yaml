@@ -69,7 +69,7 @@ spec:
     editor:
       name: rbacauthorizationk8sio-clusterrolebinding-editor
       url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: ClusterRoleBinding references a ClusterRole, but not contain it.  It can reference a ClusterRole in the global namespace, and adds who information via Subject.

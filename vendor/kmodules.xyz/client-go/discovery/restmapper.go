@@ -105,6 +105,7 @@ type ResourceMapper interface {
 	Preferred(gvr schema.GroupVersionResource) (schema.GroupVersionResource, error)
 	ExistsGVR(gvr schema.GroupVersionResource) (bool, error)
 	ExistsGVK(gvk schema.GroupVersionKind) (bool, error)
+	Reset()
 }
 
 type resourcemapper struct {
@@ -257,4 +258,13 @@ func (m *resourcemapper) ExistsGVK(gvk schema.GroupVersionKind) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (m *resourcemapper) Reset() {
+	type ResetCache interface {
+		Reset()
+	}
+	if c, ok := m.mapper.(ResetCache); ok {
+		c.Reset()
+	}
 }

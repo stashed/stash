@@ -75,9 +75,9 @@ func (c *StashController) NewRecoveryWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initRecoveryWatcher() {
 	c.recInformer = c.stashInformerFactory.Stash().V1alpha1().Recoveries().Informer()
-	c.recQueue = queue.New("Recovery", c.MaxNumRequeues, c.NumThreads, c.runRecoveryInjector)
+	c.recQueue = queue.New(api.ResourceKindRecovery, c.MaxNumRequeues, c.NumThreads, c.runRecoveryInjector)
 	if c.auditor != nil {
-		c.recInformer.AddEventHandler(c.auditor)
+		c.recInformer.AddEventHandler(c.auditor.ForGVK(api.SchemeGroupVersion.WithKind(api.ResourceKindRecovery)))
 	}
 	c.recInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {

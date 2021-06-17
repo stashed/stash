@@ -208,7 +208,7 @@ spec:
     editor:
       name: batch-cronjob-editor
       url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: CronJob represents the configuration of a single cron job.

@@ -18,6 +18,7 @@ package lib
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,6 +33,13 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/tools/clusterid"
+)
+
+const (
+	natsConnectionTimeout       = 350 * time.Millisecond
+	natsConnectionRetryInterval = 100 * time.Millisecond
+	natsEventPublishTimeout     = 10 * time.Second
+	natsRequestTimeout          = 2 * time.Second
 )
 
 type NatsConfig struct {
@@ -90,7 +98,7 @@ func NewNatsConfig(client corev1.NamespaceInterface, LicenseFile string) (*NatsC
 		return nil, err
 	}
 
-	klog.InfoS("using nats server", "server", natscred.Server, "subject", natscred.Subject, "licenseID", natscred.LicenseID)
+	klog.V(5).InfoS("using event receiver", "address", natscred.Server, "subject", natscred.Subject, "licenseID", natscred.LicenseID)
 
 	natscred.Client, err = NewConnection(natscred)
 	if err != nil {
@@ -110,7 +118,7 @@ func NewConnection(natscred NatsCredential) (nc *nats.Conn, err error) {
 		nats.ErrorHandler(errorHandler),
 		nats.ReconnectHandler(reconnectHandler),
 		nats.DisconnectErrHandler(disconnectHandler),
-		//nats.UseOldRequestStyle(),
+		// nats.UseOldRequestStyle(),
 	}
 
 	credFile := "/tmp/nats.creds"
@@ -129,38 +137,43 @@ func NewConnection(natscred NatsCredential) (nc *nats.Conn, err error) {
 	//}
 
 	// initial connections can error due to DNS lookups etc, just retry, eventually with backoff
+	ctx, cancel := context.WithTimeout(context.Background(), natsConnectionTimeout)
+	defer cancel()
+
+	ticker := time.NewTicker(natsConnectionRetryInterval)
 	for {
-		nc, err := nats.Connect(servers, opts...)
-		if err == nil {
-			return nc, nil
+		select {
+		case <-ticker.C:
+			nc, err := nats.Connect(servers, opts...)
+			if err == nil {
+				return nc, nil
+			}
+			klog.V(5).InfoS("failed to connect to event receiver", "error", err)
+		case <-ctx.Done():
+			return nil, ctx.Err()
 		}
-
-		klog.Infof("could not connect to NATS: %s\n", err)
-
-		time.Sleep(500 * time.Millisecond)
 	}
 }
 
 // called during errors subscriptions etc
 func errorHandler(nc *nats.Conn, s *nats.Subscription, err error) {
 	if s != nil {
-		klog.Infof("Error in NATS connection: %s: subscription: %s: %s", nc.ConnectedUrl(), s.Subject, err)
+		klog.V(5).Infof("error in event receiver connection: %s: subscription: %s: %s", nc.ConnectedUrl(), s.Subject, err)
 		return
 	}
-
-	klog.Infof("Error in NATS connection: %s: %s", nc.ConnectedUrl(), err)
+	klog.V(5).Infof("Error in event receiver connection: %s: %s", nc.ConnectedUrl(), err)
 }
 
 // called after reconnection
 func reconnectHandler(nc *nats.Conn) {
-	klog.Infof("Reconnected to %s", nc.ConnectedUrl())
+	klog.V(5).Infof("Reconnected to %s", nc.ConnectedUrl())
 }
 
 // called after disconnection
 func disconnectHandler(nc *nats.Conn, err error) {
 	if err != nil {
-		klog.Infof("Disconnected from NATS due to error: %v", err)
+		klog.V(5).Infof("Disconnected from event receiver due to error: %v", err)
 	} else {
-		klog.Infof("Disconnected from NATS")
+		klog.V(5).Infof("Disconnected from event receiver")
 	}
 }

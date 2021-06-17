@@ -14,7 +14,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.2
+	go.bytebuilders.dev/audit v0.0.4
 	go.bytebuilders.dev/license-verifier v0.9.2
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.2
 	gomodules.xyz/blobfs v0.1.7
@@ -35,13 +35,14 @@ require (
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.0
 	k8s.io/kubernetes v1.21.0
-	kmodules.xyz/client-go v0.0.0-20210614094429-affdb80e35c8
+	kmodules.xyz/client-go v0.0.0-20210617065519-f2753be223ea
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
 	kmodules.xyz/custom-resources v0.0.0-20210605111625-741fcb992541
 	kmodules.xyz/objectstore-api v0.0.0-20210504041638-b9e00ab1eab3
 	kmodules.xyz/offshoot-api v0.0.0-20210504040651-7951e351f0f5
 	kmodules.xyz/openshift v0.0.0-20210504040454-a3ddfc579bb7
 	kmodules.xyz/prober v0.0.0-20210504215326-2e406706b970
+	kmodules.xyz/resource-metadata v0.5.6-0.20210617074124-bbed3118a7f0 // indirect
 	kmodules.xyz/webhook-runtime v0.0.0-20210504042742-3a9911e3dcdc
 	stash.appscode.dev/apimachinery v0.14.0
 )

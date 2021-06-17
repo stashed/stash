@@ -771,8 +771,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yvasiyarov/go-metrics v0.0.0-20140926110328-57bccd1ccd43/go.mod h1:aX5oPXxHm3bOH+xeAttToC8pqch2ScQN/JoXYupl6xs=
 github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50/go.mod h1:NUSPSUX/bi6SeDMUh6brw0nXpxHnc96TguQh0+r/ssA=
 github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f/go.mod h1:GlGEuHIJweS1mbCqG+7vt2nvWLzLLnRHbXz5JKd/Qbg=
-go.bytebuilders.dev/audit v0.0.2 h1:zyGrqj1wQKE5Z3MejxuthdxuDaX+euIUXT/YvZZU/Cs=
-go.bytebuilders.dev/audit v0.0.2/go.mod h1:BPmxV+giJ8qfMXCfms7IQUW+zRWaJhXzgOm5krfTnwc=
+go.bytebuilders.dev/audit v0.0.4 h1:OSaAahtbOXM/4bhPYXZw6Ea7wP6sD4WHPL3dcqRDars=
+go.bytebuilders.dev/audit v0.0.4/go.mod h1:SqHywe8xg3+1QkJaOK001pOezWYFYdTZwOYOHtMacgU=
 go.bytebuilders.dev/license-verifier v0.9.2 h1:v1ARKQSKEJM22m7BWLHHTsSOf//o/VLAvGgvpm/njEQ=
 go.bytebuilders.dev/license-verifier v0.9.2/go.mod h1:0sBh2Y3jcTLQYeV9ySbBgN5Ibatp6aNtvH/gI1ZFXCk=
 go.bytebuilders.dev/license-verifier/kubernetes v0.9.2 h1:XHeEDdUkdD8cr8aTavhvHvcBV20gw4DAiFDeTeSzHn4=
@@ -1080,6 +1080,8 @@ gomodules.xyz/sets v0.0.0-20210218105342-2efe2fb519a2 h1:JhyydLTz2aE09lMNheZHt6F
 gomodules.xyz/sets v0.0.0-20210218105342-2efe2fb519a2/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
 gomodules.xyz/stow v0.2.4 h1:TwsLIE8OAN3hkUR45CJwbJEoqYzWv33yuuq++ZkYdyo=
 gomodules.xyz/stow v0.2.4/go.mod h1:aAgUEHyZ+4nKznyVupMMkP0JX9MXW1ZRrbRGaclp3E0=
+gomodules.xyz/sync v0.1.0 h1:Y7vHOtMrqN9FojRwkCQdC17dKL1fVx+6xb7WdfnXX58=
+gomodules.xyz/sync v0.1.0/go.mod h1:kv570yCdknyiZ8Y94uaRFGBC5E47TV/5A7PD9jlnJoQ=
 gomodules.xyz/version v0.1.0/go.mod h1:Y8xuV02mL/45psyPKG3NCVOwvAOy6T5Kx0l3rCjKSjU=
 gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545 h1:iiD24jN1H8PzliVe1igIzYsx8+VmbXG12y9UUSupUJU=
 gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545/go.mod h1:g/epKzZQuCqgvhzhaoG4cSBNGHqnOrhFR4Q7szDJ1JM=
@@ -1212,8 +1214,8 @@ kmodules.xyz/client-go v0.0.0-20210504024435-1eb80721e9b8/go.mod h1:Q5iJv9pP1jHS
 kmodules.xyz/client-go v0.0.0-20210514054158-27e164b43474/go.mod h1:R+xaDwIcqjPygQcVd3+0K2WBEwMB+wSZJAK18WdSr0A=
 kmodules.xyz/client-go v0.0.0-20210604221903-63c016279a47/go.mod h1:UmCe/Qt2Y6vW4JIX41RiXVhnAlm8HuCOcv0dDWFJme0=
 kmodules.xyz/client-go v0.0.0-20210605021217-cabaee7b953e/go.mod h1:UmCe/Qt2Y6vW4JIX41RiXVhnAlm8HuCOcv0dDWFJme0=
-kmodules.xyz/client-go v0.0.0-20210614094429-affdb80e35c8 h1:E+A1qAhRtT2OPe2M2QCJot0//jnAwwRcGG7eaW7vNH4=
-kmodules.xyz/client-go v0.0.0-20210614094429-affdb80e35c8/go.mod h1:gYaJ+Ggm2RpDK5pifrSbmY0J5mVE3UL6JSIGjrw873Q=
+kmodules.xyz/client-go v0.0.0-20210617065519-f2753be223ea h1:WLGJinu4b1D57wO/LZa04GAUxaKSn+UFz9DSFd8YfB4=
+kmodules.xyz/client-go v0.0.0-20210617065519-f2753be223ea/go.mod h1:gYaJ+Ggm2RpDK5pifrSbmY0J5mVE3UL6JSIGjrw873Q=
 kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278 h1:sFmqh4EaiZ4K2FkkGvrDFddstq8GSf6ogH24IAsuKew=
 kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20210503192455-da44af375c4c/go.mod h1:QDC1mgkeHEV9DAJCtkAk7arY4aWqI5EKoXiB2FnreoA=
@@ -1229,8 +1231,9 @@ kmodules.xyz/openshift v0.0.0-20210504040454-a3ddfc579bb7/go.mod h1:T6jBAUCoXuGZ
 kmodules.xyz/prober v0.0.0-20210504042421-eca494e828bc/go.mod h1:Asmxrv1or+IbQf8U/B/5I/YFcnpMhyM6DxaByMWwDTQ=
 kmodules.xyz/prober v0.0.0-20210504215326-2e406706b970 h1:O3dG9jPo3fpBbP7rDWY1YLOEZY1KAFuIO2lTURQ43Lo=
 kmodules.xyz/prober v0.0.0-20210504215326-2e406706b970/go.mod h1:Asmxrv1or+IbQf8U/B/5I/YFcnpMhyM6DxaByMWwDTQ=
-kmodules.xyz/resource-metadata v0.5.6-0.20210605023550-078e9b8f32c7 h1:VTIcvZWGnioWAvHTpruu5LTewT9//LnVKs69FNCP6q4=
 kmodules.xyz/resource-metadata v0.5.6-0.20210605023550-078e9b8f32c7/go.mod h1:XHlSPIsm0LTsMsLul/6X5TLUUOjMAJCtcNcMA5zop1Q=
+kmodules.xyz/resource-metadata v0.5.6-0.20210617074124-bbed3118a7f0 h1:Z8IwmZY+pkz7jO7FxY/UB2rAJtujlccom1wK6phaRwI=
+kmodules.xyz/resource-metadata v0.5.6-0.20210617074124-bbed3118a7f0/go.mod h1:ZpQacoZGwK2TipK9ZwxnISJqb/mkeqQvbZhWwuh/66c=
 kmodules.xyz/webhook-runtime v0.0.0-20210504042742-3a9911e3dcdc h1:YqkyvmQRy4/K9fBL7wfDSC3/kCfbBy4UTV3RjowEtQ4=
 kmodules.xyz/webhook-runtime v0.0.0-20210504042742-3a9911e3dcdc/go.mod h1:6XuoN0H+Od+12aEywFaQnPJ3DYfJZE+Sx0MB4dzWI5Q=
 modernc.org/cc v1.0.0/go.mod h1:1Sk4//wdnYJiUIxnW8ddKpaOJCF37yAdqYnkxUpaYxw=

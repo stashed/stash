@@ -22,7 +22,7 @@ spec:
     editor:
       name: storagek8sio-volumeattachment-editor
       url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: "VolumeAttachment captures the intent to attach or detach the specified volume to/from the specified node. \n VolumeAttachment objects are non-namespaced."
