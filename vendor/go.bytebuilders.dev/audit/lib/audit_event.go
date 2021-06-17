@@ -28,11 +28,10 @@ import (
 )
 
 type AuditEventCreator struct {
-	Graph     *graph.Graph
-	Finder    *graph.ObjectFinder
-	Factory   dynamicfactory.Factory
-	Mapper    discovery.ResourceMapper
-	LicenseID string
+	Graph   *graph.Graph
+	Finder  *graph.ObjectFinder
+	Factory dynamicfactory.Factory
+	Mapper  discovery.ResourceMapper
 }
 
 func (p *AuditEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error) {
@@ -68,7 +67,6 @@ func (p *AuditEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error) 
 	return &api.Event{
 		Resource:    r,
 		ResourceID:  *rid,
-		LicenseID:   p.LicenseID,
 		Connections: connections,
 	}, nil
 }

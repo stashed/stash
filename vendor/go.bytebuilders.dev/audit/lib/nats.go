@@ -18,6 +18,7 @@ package lib
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,6 +33,11 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/tools/clusterid"
+)
+
+const (
+	connectionTimeout = 1 * time.Second
+	retryInterval     = 100 * time.Millisecond
 )
 
 type NatsConfig struct {
@@ -129,15 +135,21 @@ func NewConnection(natscred NatsCredential) (nc *nats.Conn, err error) {
 	//}
 
 	// initial connections can error due to DNS lookups etc, just retry, eventually with backoff
+	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+	defer cancel()
+
+	ticker := time.NewTicker(retryInterval)
 	for {
-		nc, err := nats.Connect(servers, opts...)
-		if err == nil {
-			return nc, nil
+		select {
+		case <-ticker.C:
+			nc, err := nats.Connect(servers, opts...)
+			if err == nil {
+				return nc, nil
+			}
+			klog.Infof("could not connect to NATS: %s\n", err)
+		case <-ctx.Done():
+			return nil, ctx.Err()
 		}
-
-		klog.Infof("could not connect to NATS: %s\n", err)
-
-		time.Sleep(500 * time.Millisecond)
 	}
 }
 

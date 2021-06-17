@@ -89,15 +89,12 @@ func (c *Config) New() (*StashController, error) {
 	// WARNING: https://stackoverflow.com/a/46275411/244009
 	var auditor cache.ResourceEventHandler
 	if c.LicenseFile != "" && cli.EnableAnalytics {
-		natscfg, err := auditlib.NewNatsConfig(c.KubeClient.CoreV1().Namespaces(), c.LicenseFile)
-		if err != nil {
-			return nil, err
-		}
 		fn := auditlib.BillingEventCreator{
-			Mapper:    mapper,
-			LicenseID: natscfg.LicenseID,
+			Mapper: mapper,
 		}
-		auditor = auditlib.NewEventPublisher(natscfg, mapper, fn.CreateEvent)
+		auditor = auditlib.NewResilientEventPublisher(func() (*auditlib.NatsConfig, error) {
+			return auditlib.NewNatsConfig(c.KubeClient.CoreV1().Namespaces(), c.LicenseFile)
+		}, mapper, fn.CreateEvent)
 	}
 
 	ctrl := &StashController{
@@ -112,6 +109,7 @@ func (c *Config) New() (*StashController, error) {
 		stashInformerFactory: stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
 		ocInformerFactory:    oc_informers.NewSharedInformerFactory(c.OcClient, c.ResyncPeriod),
 		recorder:             eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
+		mapper:               mapper,
 		auditor:              auditor,
 	}
 

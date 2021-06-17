@@ -21,12 +21,12 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
 )
 
 type BillingEventCreator struct {
-	Mapper    discovery.ResourceMapper
-	LicenseID string
+	Mapper discovery.ResourceMapper
 }
 
 func (p *BillingEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error) {
@@ -37,7 +37,12 @@ func (p *BillingEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error
 	}
 	m.SetManagedFields(nil)
 
-	rid, err := p.Mapper.ResourceIDForGVK(obj.GetObjectKind().GroupVersionKind())
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	if gvk.Kind == "" || gvk.Version == "" || gvk.Group == "" {
+		klog.Warningf("Incomplete GVK found in object %+v", obj)
+	}
+
+	rid, err := p.Mapper.ResourceIDForGVK(gvk)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +50,5 @@ func (p *BillingEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error
 	return &api.Event{
 		Resource:   r,
 		ResourceID: *rid,
-		LicenseID:  p.LicenseID,
 	}, nil
 }

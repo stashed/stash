@@ -18,6 +18,11 @@ spec:
   resourceRequirements:
   - resources: spec.podTemplate.spec.resources
     units: spec.replicas
+  ui:
+    editor:
+      name: internalapiserverk8sio-storageversion-editor
+      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: ' Storage version of a specific resource.'

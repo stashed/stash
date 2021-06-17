@@ -27,7 +27,7 @@ spec:
     editor:
       name: admissionregistrationk8sio-mutatingwebhookconfiguration-editor
       url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: MutatingWebhookConfiguration describes the configuration of and admission webhook that accept or reject and may change the object.

@@ -279,7 +279,7 @@ spec:
     editor:
       name: apps-replicaset-editor
       url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       description: ReplicaSet ensures that a specified number of pod replicas are running at any given time.

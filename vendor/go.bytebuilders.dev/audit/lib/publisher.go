@@ -27,6 +27,7 @@ import (
 	"github.com/cloudevents/sdk-go/v2/binding/format"
 	cloudevents "github.com/cloudevents/sdk-go/v2/event"
 	"github.com/google/uuid"
+	"gomodules.xyz/sync"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,6 +43,9 @@ import (
 type EventCreator func(obj runtime.Object) (*api.Event, error)
 
 type EventPublisher struct {
+	once    sync.Once
+	connect func() error
+
 	nats        *NatsConfig
 	mapper      discovery.ResourceMapper
 	createEvent EventCreator
@@ -52,14 +56,40 @@ func NewEventPublisher(
 	mapper discovery.ResourceMapper,
 	fn EventCreator,
 ) *EventPublisher {
-	return &EventPublisher{
-		nats:        nats,
+	p := &EventPublisher{
 		mapper:      mapper,
 		createEvent: fn,
 	}
+	p.connect = func() error {
+		p.nats = nats
+		return nil
+	}
+	return p
+}
+
+func NewResilientEventPublisher(
+	fnConnect func() (*NatsConfig, error),
+	mapper discovery.ResourceMapper,
+	fnCreateEvent EventCreator,
+) *EventPublisher {
+	p := &EventPublisher{
+		mapper:      mapper,
+		createEvent: fnCreateEvent,
+	}
+	p.connect = func() error {
+		var err error
+		p.nats, err = fnConnect()
+		return err
+	}
+	return p
 }
 
 func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
+	p.once.Do(p.connect)
+	if p.nats == nil {
+		return fmt.Errorf("not connected to nats")
+	}
+
 	event := cloudeventssdk.NewEvent()
 	setEventDefaults(&event, p.nats.Subject, et)
 
@@ -118,6 +148,7 @@ func (p *EventPublisher) OnAdd(o interface{}) {
 		klog.ErrorS(err, "failed to create event data")
 		return
 	}
+	ev.LicenseID = p.nats.LicenseID
 
 	if err = p.Publish(ev, api.EventCreate); err != nil {
 		klog.Errorf("Error while publishing event, reason: %v", err)
@@ -157,6 +188,7 @@ func (p *EventPublisher) OnUpdate(oldObj, newObj interface{}) {
 		klog.ErrorS(err, "failed to create event data")
 		return
 	}
+	ev.LicenseID = p.nats.LicenseID
 
 	if err = p.Publish(ev, api.EventUpdate); err != nil {
 		klog.Errorf("Error while publishing event, reason: %v", err)
@@ -185,6 +217,7 @@ func (p *EventPublisher) OnDelete(obj interface{}) {
 		klog.ErrorS(err, "failed to create event data")
 		return
 	}
+	ev.LicenseID = p.nats.LicenseID
 
 	if err := p.Publish(ev, api.EventDelete); err != nil {
 		klog.Errorf("Error while publishing event, reason: %v", err)
