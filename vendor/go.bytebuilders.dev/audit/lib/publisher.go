@@ -199,7 +199,6 @@ func (p *ResourceEventPublisher) OnAdd(o interface{}) {
 		klog.V(5).InfoS("failed to create event data", "error", err)
 		return
 	}
-	ev.LicenseID = p.nats.LicenseID
 
 	if err = p.p.Publish(ev, api.EventCreated); err != nil {
 		klog.V(5).InfoS("error while publishing event", "error", err)
@@ -232,7 +231,6 @@ func (p *ResourceEventPublisher) OnUpdate(oldObj, newObj interface{}) {
 		klog.V(5).InfoS("failed to create event data", "error", err)
 		return
 	}
-	ev.LicenseID = p.nats.LicenseID
 
 	if err = p.p.Publish(ev, api.EventUpdated); err != nil {
 		klog.V(5).InfoS("failed to publish event", "error", err)
@@ -261,7 +259,6 @@ func (p *ResourceEventPublisher) OnDelete(obj interface{}) {
 		klog.V(5).InfoS("failed to create event data", "error", err)
 		return
 	}
-	ev.LicenseID = p.nats.LicenseID
 
 	if err := p.p.Publish(ev, api.EventDeleted); err != nil {
 		klog.V(5).InfoS("failed to publish event", "error", err)
