@@ -81,12 +81,11 @@ func NewResilientEventPublisher(
 		if err != nil {
 			klog.V(5).InfoS("failed to connect with event receiver", "error", err)
 		}
-		return err
-	}
 	return p
 }
+	p.once.Do(p.connect)
+	}
 
-func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
 	event := cloudeventssdk.NewEvent()
 	event.SetID(fmt.Sprintf("%s.%d", ev.Resource.GetUID(), ev.Resource.GetGeneration()))
 	// /byte.builders/auditor/license_id/feature/info.ProductName/api_group/api_resource/
@@ -200,6 +199,7 @@ func (p *ResourceEventPublisher) OnAdd(o interface{}) {
 		klog.V(5).InfoS("failed to create event data", "error", err)
 		return
 	}
+	ev.LicenseID = p.nats.LicenseID
 
 	if err = p.p.Publish(ev, api.EventCreated); err != nil {
 		klog.V(5).InfoS("error while publishing event", "error", err)
@@ -232,6 +232,7 @@ func (p *ResourceEventPublisher) OnUpdate(oldObj, newObj interface{}) {
 		klog.V(5).InfoS("failed to create event data", "error", err)
 		return
 	}
+	ev.LicenseID = p.nats.LicenseID
 
 	if err = p.p.Publish(ev, api.EventUpdated); err != nil {
 		klog.V(5).InfoS("failed to publish event", "error", err)
@@ -260,6 +261,7 @@ func (p *ResourceEventPublisher) OnDelete(obj interface{}) {
 		klog.V(5).InfoS("failed to create event data", "error", err)
 		return
 	}
+	ev.LicenseID = p.nats.LicenseID
 
 	if err := p.p.Publish(ev, api.EventDeleted); err != nil {
 		klog.V(5).InfoS("failed to publish event", "error", err)
