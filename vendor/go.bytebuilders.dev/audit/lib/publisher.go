@@ -37,6 +37,7 @@ import (
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -165,6 +166,26 @@ func (p *EventPublisher) ForGVK(gvk schema.GroupVersionKind) cache.ResourceEvent
 	}
 }
 
+func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr manager.Manager, gvk schema.GroupVersionKind) error {
+	if p == nil {
+		return nil
+	}
+	i, err := mgr.GetCache().GetInformerForKind(ctx, gvk)
+	if err != nil {
+		return err
+	}
+	i.AddEventHandler(p.ForGVK(gvk))
+	return nil
+}
+
+func (p *EventPublisher) SetupWithManager(ctx context.Context, mgr manager.Manager, obj client.Object) error {
+	gvk, err := apiutil.GVKForObject(obj, mgr.GetScheme())
+	if err != nil {
+		return err
+	}
+	return p.SetupWithManagerForKind(ctx, mgr, gvk)
+}
+
 type ResourceEventPublisher struct {
 	p           *EventPublisher
 	createEvent EventCreator
@@ -254,28 +275,4 @@ func (p *ResourceEventPublisher) OnDelete(obj interface{}) {
 	if err := p.p.Publish(ev, api.EventDelete); err != nil {
 		klog.V(5).InfoS("failed to publish event", "error", err)
 	}
-}
-
-func (p *ResourceEventPublisher) SetupWithManagerForKind(ctx context.Context, mgr manager.Manager, gvk schema.GroupVersionKind) error {
-	if p == nil {
-		return nil
-	}
-	i, err := mgr.GetCache().GetInformerForKind(ctx, gvk)
-	if err != nil {
-		return err
-	}
-	i.AddEventHandler(p)
-	return nil
-}
-
-func (p *ResourceEventPublisher) SetupWithManager(ctx context.Context, mgr manager.Manager, obj client.Object) error {
-	if p == nil {
-		return nil
-	}
-	i, err := mgr.GetCache().GetInformer(ctx, obj)
-	if err != nil {
-		return err
-	}
-	i.AddEventHandler(p)
-	return nil
 }
