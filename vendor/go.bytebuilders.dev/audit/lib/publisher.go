@@ -135,9 +135,39 @@ func setEventDefaults(event *cloudevents.Event, natsSubject string, et api.Event
 	event.SetTime(time.Now())
 }
 
-var _ cache.ResourceEventHandler = &EventPublisher{}
+func (p *EventPublisher) ForGVK(gvk schema.GroupVersionKind) cache.ResourceEventHandler {
+	if gvk.Version == "" || gvk.Kind == "" {
+		panic(fmt.Sprintf("incomplete GVK; %+v", gvk))
+	}
 
-func (p *EventPublisher) OnAdd(o interface{}) {
+	return &ResourceEventPublisher{
+		p: p,
+		createEvent: func(obj runtime.Object) (*api.Event, error) {
+			r := obj.DeepCopyObject()
+			r.GetObjectKind().SetGroupVersionKind(gvk)
+			m, err := meta.Accessor(r)
+			if err != nil {
+				return nil, err
+			}
+			m.SetManagedFields(nil)
+			ev, err := p.createEvent(r)
+			if err != nil {
+				return nil, err
+			}
+			ev.LicenseID = p.nats.LicenseID
+			return ev, nil
+		},
+	}
+}
+
+type ResourceEventPublisher struct {
+	p           *EventPublisher
+	createEvent EventCreator
+}
+
+var _ cache.ResourceEventHandler = &ResourceEventPublisher{}
+
+func (p *ResourceEventPublisher) OnAdd(o interface{}) {
 	obj, ok := o.(runtime.Object)
 	if !ok {
 		return
@@ -148,14 +178,13 @@ func (p *EventPublisher) OnAdd(o interface{}) {
 		klog.ErrorS(err, "failed to create event data")
 		return
 	}
-	ev.LicenseID = p.nats.LicenseID
 
-	if err = p.Publish(ev, api.EventCreate); err != nil {
+	if err = p.p.Publish(ev, api.EventCreate); err != nil {
 		klog.Errorf("Error while publishing event, reason: %v", err)
 	}
 }
 
-func (p *EventPublisher) OnUpdate(oldObj, newObj interface{}) {
+func (p *ResourceEventPublisher) OnUpdate(oldObj, newObj interface{}) {
 	uOld, err := meta.Accessor(oldObj)
 	if err != nil {
 		klog.ErrorS(err, "failed to get accessor for old object")
@@ -188,14 +217,13 @@ func (p *EventPublisher) OnUpdate(oldObj, newObj interface{}) {
 		klog.ErrorS(err, "failed to create event data")
 		return
 	}
-	ev.LicenseID = p.nats.LicenseID
 
-	if err = p.Publish(ev, api.EventUpdate); err != nil {
+	if err = p.p.Publish(ev, api.EventUpdate); err != nil {
 		klog.Errorf("Error while publishing event, reason: %v", err)
 	}
 }
 
-func (p *EventPublisher) OnDelete(obj interface{}) {
+func (p *ResourceEventPublisher) OnDelete(obj interface{}) {
 	var object runtime.Object
 	var ok bool
 	if object, ok = obj.(runtime.Object); !ok {
@@ -217,14 +245,13 @@ func (p *EventPublisher) OnDelete(obj interface{}) {
 		klog.ErrorS(err, "failed to create event data")
 		return
 	}
-	ev.LicenseID = p.nats.LicenseID
 
-	if err := p.Publish(ev, api.EventDelete); err != nil {
+	if err := p.p.Publish(ev, api.EventDelete); err != nil {
 		klog.Errorf("Error while publishing event, reason: %v", err)
 	}
 }
 
-func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr manager.Manager, gvk schema.GroupVersionKind) error {
+func (p *ResourceEventPublisher) SetupWithManagerForKind(ctx context.Context, mgr manager.Manager, gvk schema.GroupVersionKind) error {
 	if p == nil {
 		return nil
 	}
@@ -236,7 +263,7 @@ func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr manage
 	return nil
 }
 
-func (p *EventPublisher) SetupWithManager(ctx context.Context, mgr manager.Manager, obj client.Object) error {
+func (p *ResourceEventPublisher) SetupWithManager(ctx context.Context, mgr manager.Manager, obj client.Object) error {
 	if p == nil {
 		return nil
 	}

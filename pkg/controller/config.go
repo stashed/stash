@@ -30,7 +30,6 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/tools/cli"
@@ -87,7 +86,7 @@ func (c *Config) New() (*StashController, error) {
 
 	// audit event publisher
 	// WARNING: https://stackoverflow.com/a/46275411/244009
-	var auditor cache.ResourceEventHandler
+	var auditor *auditlib.EventPublisher
 	if c.LicenseFile != "" && cli.EnableAnalytics {
 		fn := auditlib.BillingEventCreator{
 			Mapper: mapper,

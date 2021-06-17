@@ -19,9 +19,7 @@ package lib
 import (
 	api "go.bytebuilders.dev/audit/api/v1"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
 )
 
@@ -30,25 +28,13 @@ type BillingEventCreator struct {
 }
 
 func (p *BillingEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error) {
-	r := obj.DeepCopyObject()
-	m, err := meta.Accessor(r)
-	if err != nil {
-		return nil, err
-	}
-	m.SetManagedFields(nil)
-
-	gvk := obj.GetObjectKind().GroupVersionKind()
-	if gvk.Kind == "" || gvk.Version == "" || gvk.Group == "" {
-		klog.Warningf("Incomplete GVK found in object %+v", obj)
-	}
-
-	rid, err := p.Mapper.ResourceIDForGVK(gvk)
+	rid, err := p.Mapper.ResourceIDForGVK(obj.GetObjectKind().GroupVersionKind())
 	if err != nil {
 		return nil, err
 	}
 
 	return &api.Event{
-		Resource:   r,
+		Resource:   obj,
 		ResourceID: *rid,
 	}, nil
 }

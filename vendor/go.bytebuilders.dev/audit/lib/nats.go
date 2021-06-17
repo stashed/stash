@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	connectionTimeout = 1 * time.Second
+	connectionTimeout = 350 * time.Millisecond
 	retryInterval     = 100 * time.Millisecond
 )
 
