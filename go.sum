@@ -770,8 +770,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yvasiyarov/go-metrics v0.0.0-20140926110328-57bccd1ccd43/go.mod h1:aX5oPXxHm3bOH+xeAttToC8pqch2ScQN/JoXYupl6xs=
 github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50/go.mod h1:NUSPSUX/bi6SeDMUh6brw0nXpxHnc96TguQh0+r/ssA=
 github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f/go.mod h1:GlGEuHIJweS1mbCqG+7vt2nvWLzLLnRHbXz5JKd/Qbg=
-go.bytebuilders.dev/audit v0.0.5 h1:J5Aio4LIwC33TuzWma2MB9R33W/t4cauVQJ/SvnICMg=
-go.bytebuilders.dev/audit v0.0.5/go.mod h1:GZAEkoOENq0l08FB6oJh8f1oGyKXUQXxd6Kg+RPpNzY=
+go.bytebuilders.dev/audit v0.0.7 h1:3w+ofpc59DNeWhvrwtrgRoIQGwEhAyqHZtvxCX1J3CU=
+go.bytebuilders.dev/audit v0.0.7/go.mod h1:pLOah94jc2oS62e8woosk7EAOHLyS0qkI4bGth18qyA=
 go.bytebuilders.dev/license-verifier v0.9.2 h1:v1ARKQSKEJM22m7BWLHHTsSOf//o/VLAvGgvpm/njEQ=
 go.bytebuilders.dev/license-verifier v0.9.2/go.mod h1:0sBh2Y3jcTLQYeV9ySbBgN5Ibatp6aNtvH/gI1ZFXCk=
 go.bytebuilders.dev/license-verifier/kubernetes v0.9.2 h1:XHeEDdUkdD8cr8aTavhvHvcBV20gw4DAiFDeTeSzHn4=

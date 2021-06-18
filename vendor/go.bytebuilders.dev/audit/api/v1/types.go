@@ -18,22 +18,33 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type EventType string
 
 const (
-	EventCreate EventType = "create"
-	EventUpdate EventType = "update"
-	EventDelete EventType = "delete"
+	// ref: https://github.com/cloudevents/spec/blob/v1.0.1/spec.md#type
+
+	EventCreated EventType = "builders.byte.auditor.created.v1"
+	EventUpdated EventType = "builders.byte.auditor.updated.v1"
+	EventDeleted EventType = "builders.byte.auditor.deleted.v1"
 )
 
+// +k8s:deepcopy-gen=false
 type Event struct {
 	LicenseID   string                                                          `json:"licenseID,omitempty"`
 	ResourceID  kmapi.ResourceID                                                `json:"resourceID,omitempty"`
-	Resource    runtime.Object                                                  `json:"resource,omitempty"`
+	Resource    client.Object                                                   `json:"resource,omitempty"`
+	Connections map[schema.GroupVersionResource][]*metav1.PartialObjectMetadata `json:"connections,omitempty"`
+}
+
+type UnstructuredEvent struct {
+	LicenseID   string                                                          `json:"licenseID,omitempty"`
+	ResourceID  kmapi.ResourceID                                                `json:"resourceID,omitempty"`
+	Resource    *unstructured.Unstructured                                      `json:"resource,omitempty"`
 	Connections map[schema.GroupVersionResource][]*metav1.PartialObjectMetadata `json:"connections,omitempty"`
 }

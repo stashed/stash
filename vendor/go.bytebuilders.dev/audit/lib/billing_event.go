@@ -19,15 +19,15 @@ package lib
 import (
 	api "go.bytebuilders.dev/audit/api/v1"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"kmodules.xyz/client-go/discovery"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type BillingEventCreator struct {
 	Mapper discovery.ResourceMapper
 }
 
-func (p *BillingEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error) {
+func (p *BillingEventCreator) CreateEvent(obj client.Object) (*api.Event, error) {
 	rid, err := p.Mapper.ResourceIDForGVK(obj.GetObjectKind().GroupVersionKind())
 	if err != nil {
 		return nil, err

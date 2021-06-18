@@ -24,6 +24,7 @@ import (
 	"kmodules.xyz/client-go/discovery"
 	dynamicfactory "kmodules.xyz/client-go/dynamic/factory"
 	"kmodules.xyz/resource-metadata/pkg/graph"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type AuditEventCreator struct {
@@ -33,7 +34,7 @@ type AuditEventCreator struct {
 	Mapper  discovery.ResourceMapper
 }
 
-func (p *AuditEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error) {
+func (p *AuditEventCreator) CreateEvent(obj client.Object) (*api.Event, error) {
 	rid, err := p.Mapper.ResourceIDForGVK(obj.GetObjectKind().GroupVersionKind())
 	if err != nil {
 		return nil, err
