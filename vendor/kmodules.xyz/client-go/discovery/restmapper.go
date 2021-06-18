@@ -28,8 +28,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 func APIResourceForGVK(client discovery.DiscoveryInterface, gvk schema.GroupVersionKind) (metav1.APIResource, error) {
@@ -120,6 +122,14 @@ var _ ResourceMapper = &resourcemapper{}
 
 func NewResourceMapper(mapper meta.RESTMapper) ResourceMapper {
 	return &resourcemapper{mapper: mapper, cache: map[schema.GroupVersionKind]*kmapi.ResourceID{}}
+}
+
+func NewDynamicResourceMapper(cfg *rest.Config, opts ...apiutil.DynamicRESTMapperOption) (ResourceMapper, error) {
+	mapper, err := apiutil.NewDynamicRESTMapper(cfg, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &resourcemapper{mapper: mapper, cache: map[schema.GroupVersionKind]*kmapi.ResourceID{}}, nil
 }
 
 func (m *resourcemapper) ResourceIDForGVK(gvk schema.GroupVersionKind) (*kmapi.ResourceID, error) {

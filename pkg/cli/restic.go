@@ -24,8 +24,8 @@ import (
 
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
-	shell "github.com/codeskyblue/go-sh"
 	"github.com/pkg/errors"
+	shell "gomodules.xyz/go-sh"
 	"k8s.io/klog/v2"
 )
 

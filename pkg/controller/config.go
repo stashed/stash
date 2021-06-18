@@ -82,7 +82,10 @@ func (c *Config) New() (*StashController, error) {
 		return nil, err
 	}
 
-	mapper := discovery.NewResourceMapper(discovery.NewRestMapper(c.KubeClient.Discovery()))
+	mapper, err := discovery.NewDynamicResourceMapper(c.ClientConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	// audit event publisher
 	// WARNING: https://stackoverflow.com/a/46275411/244009
@@ -118,7 +121,7 @@ func (c *Config) New() (*StashController, error) {
 	}
 
 	// ensure default functions
-	err := util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImage, ctrl.StashImageTag)
+	err = util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImage, ctrl.StashImageTag)
 	if err != nil {
 		return nil, err
 	}
