@@ -484,3 +484,6 @@ push-to-kind: container
 	@echo "Loading docker image into kind cluster...."
 	@kind load docker-image $(REGISTRY)/stash:$(TAG)
 	@echo "Image has been pushed successfully into kind cluster."
+
+.PHONY: deploy-to-kind
+deploy-to-kind: uninstall push-to-kind install

@@ -27,6 +27,7 @@ require (
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0
+	gomodules.xyz/mergo v0.3.13-0.20210702100041-9d62ff8ece4d
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
 	gomodules.xyz/x v0.0.5
 	k8s.io/api v0.21.1

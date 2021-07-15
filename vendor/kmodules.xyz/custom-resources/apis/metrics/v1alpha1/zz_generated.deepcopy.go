@@ -91,7 +91,11 @@ func (in *Metrics) DeepCopyInto(out *Metrics) {
 		*out = make([]Parameter, len(*in))
 		copy(*out, *in)
 	}
-	in.States.DeepCopyInto(&out.States)
+	if in.States != nil {
+		in, out := &in.States, &out.States
+		*out = new(State)
+		(*in).DeepCopyInto(*out)
+	}
 	in.MetricValue.DeepCopyInto(&out.MetricValue)
 	return
 }

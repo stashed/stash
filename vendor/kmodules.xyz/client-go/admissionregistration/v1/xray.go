@@ -14,23 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	apireg_util "kmodules.xyz/client-go/apiregistration/v1beta1"
+	admreg "kmodules.xyz/client-go/admissionregistration"
+	apireg_util "kmodules.xyz/client-go/apiregistration/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/discovery"
 	dynamic_util "kmodules.xyz/client-go/dynamic"
 	meta_util "kmodules.xyz/client-go/meta"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/pkg/errors"
-	"github.com/spf13/pflag"
-	"k8s.io/api/admissionregistration/v1beta1"
+	v1 "k8s.io/api/admissionregistration/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,31 +42,16 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	apiregistration "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	apiregistration "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	apireg_cs "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	kutil "kmodules.xyz/client-go"
 )
-
-func init() {
-	pflag.BoolVar(&bypassValidatingWebhookXray, "bypass-validating-webhook-xray", bypassValidatingWebhookXray, "if true, bypasses validating webhook xray checks")
-}
-
-const (
-	KeyAdmissionWebhookActive = "admission-webhook.appscode.com/active"
-	KeyAdmissionWebhookStatus = "admission-webhook.appscode.com/status"
-)
-
-var bypassValidatingWebhookXray = false
-
-var ErrMissingKind = errors.New("test object missing kind")
-var ErrMissingVersion = errors.New("test object missing version")
-var ErrWebhookNotActivated = errors.New("Admission webhooks are not activated. Enable it by configuring --enable-admission-plugins flag of kube-apiserver. For details, visit: https://appsco.de/kube-apiserver-webhooks")
 
 type ValidatingWebhookXray struct {
 	config    *rest.Config
 	apisvc    string
 	testObj   runtime.Object
-	op        v1beta1.OperationType
+	op        v1.OperationType
 	transform func(_ runtime.Object)
 	stopCh    <-chan struct{}
 }
@@ -77,7 +61,7 @@ func NewCreateValidatingWebhookXray(config *rest.Config, apisvc string, testObj 
 		config:    config,
 		apisvc:    apisvc,
 		testObj:   testObj,
-		op:        v1beta1.Create,
+		op:        v1.Create,
 		transform: nil,
 		stopCh:    stopCh,
 	}
@@ -88,7 +72,7 @@ func NewUpdateValidatingWebhookXray(config *rest.Config, apisvc string, testObj 
 		config:    config,
 		apisvc:    apisvc,
 		testObj:   testObj,
-		op:        v1beta1.Update,
+		op:        v1.Update,
 		transform: transform,
 		stopCh:    stopCh,
 	}
@@ -99,7 +83,7 @@ func NewDeleteValidatingWebhookXray(config *rest.Config, apisvc string, testObj 
 		config:    config,
 		apisvc:    apisvc,
 		testObj:   testObj,
-		op:        v1beta1.Delete,
+		op:        v1.Delete,
 		transform: transform,
 		stopCh:    stopCh,
 	}
@@ -123,8 +107,8 @@ func (d ValidatingWebhookXray) IsActive(ctx context.Context) error {
 	kc := kubernetes.NewForConfigOrDie(d.config)
 	apireg := apireg_cs.NewForConfigOrDie(d.config)
 
-	if bypassValidatingWebhookXray {
-		apisvc, err := apireg.ApiregistrationV1beta1().APIServices().Get(ctx, d.apisvc, metav1.GetOptions{})
+	if admreg.BypassValidatingWebhookXray() {
+		apisvc, err := apireg.ApiregistrationV1().APIServices().Get(ctx, d.apisvc, metav1.GetOptions{})
 		if err == nil {
 			_ = d.updateAPIService(ctx, apireg, apisvc, nil)
 		}
@@ -134,7 +118,7 @@ func (d ValidatingWebhookXray) IsActive(ctx context.Context) error {
 	attempt := 0
 	var failures []string
 	return wait.PollImmediateUntil(kutil.RetryInterval, func() (bool, error) {
-		apisvc, err := apireg.ApiregistrationV1beta1().APIServices().Get(ctx, d.apisvc, metav1.GetOptions{})
+		apisvc, err := apireg.ApiregistrationV1().APIServices().Get(ctx, d.apisvc, metav1.GetOptions{})
 		if err != nil {
 			return false, retry(err)
 		}
@@ -191,11 +175,11 @@ func (d ValidatingWebhookXray) updateAPIService(ctx context.Context, apireg apir
 			annotations = map[string]string{}
 		}
 		if err == nil {
-			annotations[KeyAdmissionWebhookActive] = "true"
-			annotations[KeyAdmissionWebhookStatus] = ""
+			annotations[admreg.KeyAdmissionWebhookActive] = "true"
+			annotations[admreg.KeyAdmissionWebhookStatus] = ""
 		} else {
-			annotations[KeyAdmissionWebhookActive] = "false"
-			annotations[KeyAdmissionWebhookStatus] = string(kerr.ReasonForError(err)) + "|" + err.Error()
+			annotations[admreg.KeyAdmissionWebhookActive] = "false"
+			annotations[admreg.KeyAdmissionWebhookStatus] = string(kerr.ReasonForError(err)) + "|" + err.Error()
 		}
 		return annotations
 	}
@@ -237,10 +221,10 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 
 	gvk := d.testObj.GetObjectKind().GroupVersionKind()
 	if gvk.Version == "" {
-		return false, ErrMissingVersion
+		return false, admreg.ErrMissingVersion
 	}
 	if gvk.Kind == "" {
-		return false, ErrMissingKind
+		return false, admreg.ErrMissingKind
 	}
 
 	gvr, err := discovery.ResourceForGVK(kc.Discovery(), gvk)
@@ -272,7 +256,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	if d.op == v1beta1.Create {
+	if d.op == v1.Create {
 		_, err := ri.Create(ctx, &u, metav1.CreateOptions{})
 		if kutil.AdmissionWebhookDeniedRequest(err) {
 			klog.V(10).Infof("failed to create invalid test object as expected with error: %s", err)
@@ -282,8 +266,8 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 		}
 
 		_ = dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
-		return false, ErrWebhookNotActivated
-	} else if d.op == v1beta1.Update {
+		return false, admreg.ErrWebhookNotActivated
+	} else if d.op == v1.Update {
 		_, err := ri.Create(ctx, &u, metav1.CreateOptions{})
 		if err != nil {
 			return false, err
@@ -311,8 +295,8 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 			return false, err
 		}
 
-		return false, ErrWebhookNotActivated
-	} else if d.op == v1beta1.Delete {
+		return false, admreg.ErrWebhookNotActivated
+	} else if d.op == v1.Delete {
 		_, err := ri.Create(ctx, &u, metav1.CreateOptions{})
 		if err != nil {
 			return false, err
@@ -345,7 +329,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 		} else if err != nil {
 			return false, err
 		}
-		return false, ErrWebhookNotActivated
+		return false, admreg.ErrWebhookNotActivated
 	}
 
 	return false, nil
