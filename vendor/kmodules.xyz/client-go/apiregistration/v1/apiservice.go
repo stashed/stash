@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1
 
 import (
 	"context"
@@ -26,16 +26,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
-	reg "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	reg "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	apireg_cs "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchAPIService(ctx context.Context, c apireg_cs.Interface, name string, transform func(*reg.APIService) *reg.APIService, opts metav1.PatchOptions) (*reg.APIService, kutil.VerbType, error) {
-	cur, err := c.ApiregistrationV1beta1().APIServices().Get(ctx, name, metav1.GetOptions{})
+	cur, err := c.ApiregistrationV1().APIServices().Get(ctx, name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		klog.V(3).Infof("Creating APIService %s.", name)
-		out, err := c.ApiregistrationV1beta1().APIServices().Create(ctx, transform(&reg.APIService{
+		out, err := c.ApiregistrationV1().APIServices().Create(ctx, transform(&reg.APIService{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "APIService",
 				APIVersion: reg.SchemeGroupVersion.String(),
@@ -77,7 +77,7 @@ func PatchAPIServiceObject(ctx context.Context, c apireg_cs.Interface, cur, mod 
 		return cur, kutil.VerbUnchanged, nil
 	}
 	klog.V(3).Infof("Patching APIService %s with %s.", cur.Name, string(patch))
-	out, err := c.ApiregistrationV1beta1().APIServices().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
+	out, err := c.ApiregistrationV1().APIServices().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
@@ -85,11 +85,11 @@ func TryUpdateAPIService(ctx context.Context, c apireg_cs.Interface, name string
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.ApiregistrationV1beta1().APIServices().Get(ctx, name, metav1.GetOptions{})
+		cur, e2 := c.ApiregistrationV1().APIServices().Get(ctx, name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.ApiregistrationV1beta1().APIServices().Update(ctx, transform(cur.DeepCopy()), opts)
+			result, e2 = c.ApiregistrationV1().APIServices().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		klog.Errorf("Attempt %d failed to update APIService %s due to %v.", attempt, cur.Name, e2)

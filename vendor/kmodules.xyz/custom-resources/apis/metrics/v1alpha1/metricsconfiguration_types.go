@@ -99,7 +99,7 @@ type Metrics struct {
 	// Metrics must contain either States or MetricValue.
 	// If both are specified, MetricValue will be ignored.
 	// +optional
-	States State `json:"states,omitempty" protobuf:"bytes,7,opt,name=states"`
+	States *State `json:"states,omitempty" protobuf:"bytes,7,opt,name=states"`
 
 	// MetricValue defines the configuration to obtain metric value.
 	//

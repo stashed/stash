@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
-	reg "k8s.io/api/admissionregistration/v1beta1"
+	reg "k8s.io/api/admissionregistration/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -40,10 +40,10 @@ import (
 )
 
 func CreateOrPatchValidatingWebhookConfiguration(ctx context.Context, c kubernetes.Interface, name string, transform func(*reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration, opts metav1.PatchOptions) (*reg.ValidatingWebhookConfiguration, kutil.VerbType, error) {
-	cur, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
+	cur, err := c.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		klog.V(3).Infof("Creating ValidatingWebhookConfiguration %s.", name)
-		out, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Create(ctx, transform(&reg.ValidatingWebhookConfiguration{
+		out, err := c.AdmissionregistrationV1().ValidatingWebhookConfigurations().Create(ctx, transform(&reg.ValidatingWebhookConfiguration{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ValidatingWebhookConfiguration",
 				APIVersion: reg.SchemeGroupVersion.String(),
@@ -85,7 +85,7 @@ func PatchValidatingWebhookConfigurationObject(ctx context.Context, c kubernetes
 		return cur, kutil.VerbUnchanged, nil
 	}
 	klog.V(3).Infof("Patching ValidatingWebhookConfiguration %s with %s.", cur.Name, string(patch))
-	out, err := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
+	out, err := c.AdmissionregistrationV1().ValidatingWebhookConfigurations().Patch(ctx, cur.Name, types.StrategicMergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
@@ -93,11 +93,11 @@ func TryUpdateValidatingWebhookConfiguration(ctx context.Context, c kubernetes.I
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
+		cur, e2 := c.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Update(ctx, transform(cur.DeepCopy()), opts)
+			result, e2 = c.AdmissionregistrationV1().ValidatingWebhookConfigurations().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		klog.Errorf("Attempt %d failed to update ValidatingWebhookConfiguration %s due to %v.", attempt, cur.Name, e2)
@@ -124,11 +124,11 @@ func UpdateValidatingWebhookCABundle(config *rest.Config, webhookConfigName stri
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 			options.FieldSelector = fields.OneTermEqualSelector(kutil.ObjectNameField, webhookConfigName).String()
-			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(ctx, options)
+			return kc.AdmissionregistrationV1().ValidatingWebhookConfigurations().List(ctx, options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 			options.FieldSelector = fields.OneTermEqualSelector(kutil.ObjectNameField, webhookConfigName).String()
-			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Watch(ctx, options)
+			return kc.AdmissionregistrationV1().ValidatingWebhookConfigurations().Watch(ctx, options)
 		},
 	}
 
@@ -179,11 +179,11 @@ func SyncValidatingWebhookCABundle(config *rest.Config, webhookConfigName string
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 			options.FieldSelector = fields.OneTermEqualSelector(kutil.ObjectNameField, webhookConfigName).String()
-			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(ctx, options)
+			return kc.AdmissionregistrationV1().ValidatingWebhookConfigurations().List(ctx, options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 			options.FieldSelector = fields.OneTermEqualSelector(kutil.ObjectNameField, webhookConfigName).String()
-			return kc.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Watch(ctx, options)
+			return kc.AdmissionregistrationV1().ValidatingWebhookConfigurations().Watch(ctx, options)
 		},
 	}
 

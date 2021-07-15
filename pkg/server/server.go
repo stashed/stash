@@ -42,7 +42,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/kubernetes"
-	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
+	reg_util "kmodules.xyz/client-go/admissionregistration/v1"
 	dynamic_util "kmodules.xyz/client-go/dynamic"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"

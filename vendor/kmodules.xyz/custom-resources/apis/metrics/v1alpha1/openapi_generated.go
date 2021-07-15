@@ -15978,7 +15978,6 @@ func schema_custom_resources_apis_metrics_v1alpha1_Metrics(ref common.ReferenceC
 					"states": {
 						SchemaProps: spec.SchemaProps{
 							Description: "States handle metrics with label cardinality. States specify the possible states for a label and their corresponding MetricValue configuration.\n\nMetrics must contain either States or MetricValue. If both are specified, MetricValue will be ignored.",
-							Default:     map[string]interface{}{},
 							Ref:         ref("kmodules.xyz/custom-resources/apis/metrics/v1alpha1.State"),
 						},
 					},
