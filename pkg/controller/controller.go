@@ -150,12 +150,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 
 		appCatalog.AppBinding{}.CustomResourceDefinition(),
 	}
-	err := apiextensions.RegisterCRDs(c.crdClient, crds)
-	if err != nil {
-		return err
-	}
-	c.mapper.Reset()
-	return nil
+	return apiextensions.RegisterCRDs(c.crdClient, crds)
 }
 
 func (c *StashController) Run(stopCh <-chan struct{}) {
