@@ -81,11 +81,12 @@ func NewResilientEventPublisher(
 		if err != nil {
 			klog.V(5).InfoS("failed to connect with event receiver", "error", err)
 		}
+		return err
+	}
 	return p
 }
-	p.once.Do(p.connect)
-	}
 
+func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
 	event := cloudeventssdk.NewEvent()
 	event.SetID(fmt.Sprintf("%s.%d", ev.Resource.GetUID(), ev.Resource.GetGeneration()))
 	// /byte.builders/auditor/license_id/feature/info.ProductName/api_group/api_resource/

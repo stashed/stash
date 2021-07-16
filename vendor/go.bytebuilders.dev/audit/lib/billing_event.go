@@ -27,6 +27,14 @@ type BillingEventCreator struct {
 	Mapper discovery.ResourceMapper
 }
 
-func (p *BillingEventCreator) CreateEvent(obj runtime.Object) (*api.Event, error) {
+func (p *BillingEventCreator) CreateEvent(obj client.Object) (*api.Event, error) {
+	rid, err := p.Mapper.ResourceIDForGVK(obj.GetObjectKind().GroupVersionKind())
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.Event{
+		Resource:   obj,
+		ResourceID: *rid,
 	}, nil
 }
