@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/http"
 	"runtime"
+	"strings"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -78,7 +79,10 @@ func DefaultStacktracePred(status int) bool {
 // raise log level for successful requests and requests to "/openapi/v2" as this is not configured for dynamic admission controller webhooks
 func logLevel(rl *respLogger) klog.Level {
 	if (rl.status >= http.StatusOK && rl.status < http.StatusMultipleChoices) ||
-		rl.req.RequestURI == "/openapi/v2" {
+		rl.req.RequestURI == "/openapi/v2" ||
+		(rl.status == http.StatusForbidden &&
+			rl.req.Method == http.MethodGet &&
+			(strings.Contains(rl.req.RequestURI, "mutator") || strings.Contains(rl.req.RequestURI, "validator"))) {
 		return 8
 	}
 	return 3

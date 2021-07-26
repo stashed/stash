@@ -451,8 +451,8 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/klauspost/cpuid v1.2.0/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
 github.com/kmodules/apimachinery v0.21.2-rc.0.0.20210617231004-332981b97d2d h1:6Yzcd8c16QYTv0rd0TSNWLNJ+WeJM5qp41eT9XIu78s=
 github.com/kmodules/apimachinery v0.21.2-rc.0.0.20210617231004-332981b97d2d/go.mod h1:jbreFvJo3ov9rj7eWT7+sYiRx+qZuCYXwWT1bcDswPY=
-github.com/kmodules/apiserver v0.21.2-0.20210617231348-daadbf0c8d5e h1:xIQQmNVPJjW2Guczh414xPGR1MnH9yeR3c8qaqACNpE=
-github.com/kmodules/apiserver v0.21.2-0.20210617231348-daadbf0c8d5e/go.mod h1:nLLYZvMWn35glJ4/FZRhzLG/3MPxAaZTgV4FJZdr+tY=
+github.com/kmodules/apiserver v0.21.2-0.20210716212718-83e5493ac170 h1:JnFBVfamGETJErVnJ4WoE3q+n1+4hrq61uY23HsV3c4=
+github.com/kmodules/apiserver v0.21.2-0.20210716212718-83e5493ac170/go.mod h1:nLLYZvMWn35glJ4/FZRhzLG/3MPxAaZTgV4FJZdr+tY=
 github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20210617232219-a432af45d932 h1:J4rp2NvjFplpFgWe0DXz+PM1XotXTLmtTFhPSkRbRa8=
 github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20210617232219-a432af45d932/go.mod h1:mgkvSg6x5tL795vhwYyg0pKDYmCm/WYdy8LI54LvRJA=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
