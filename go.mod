@@ -21,7 +21,7 @@ require (
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/flags v0.1.0
 	gomodules.xyz/go-sh v0.1.0
-	gomodules.xyz/logs v0.0.2
+	gomodules.xyz/logs v0.0.3
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
 	gomodules.xyz/runtime v0.2.0
 	gomodules.xyz/stow v0.2.4
@@ -35,14 +35,15 @@ require (
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kubernetes v1.21.1
-	kmodules.xyz/client-go v0.0.0-20210715065708-d4f0cc74ead1
+	kmodules.xyz/client-go v0.0.0-20210719120358-dd0503cf99cf
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
 	kmodules.xyz/custom-resources v0.0.0-20210715200638-d7eae69a48fb
 	kmodules.xyz/objectstore-api v0.0.0-20210618005912-71f8a80f48f9
 	kmodules.xyz/offshoot-api v0.0.0-20210618005544-5217a24765da
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
-	kmodules.xyz/webhook-runtime v0.0.0-20210618013329-0accb929102b
+	kmodules.xyz/resource-metadata v0.5.8-0.20210722055301-dcc1abc08aa0 // indirect
+	kmodules.xyz/webhook-runtime v0.0.0-20210716205500-e489faf01981
 	stash.appscode.dev/apimachinery v0.14.2-0.20210715200631-5399637188c0
 )
 
@@ -128,7 +129,7 @@ replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20201110
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.27.1
 
-replace helm.sh/helm/v3 => github.com/kubepack/helm/v3 v3.1.0-rc.1.0.20210503022716-7e2d4913a125
+replace helm.sh/helm/v3 => github.com/kubepack/helm/v3 v3.6.1-0.20210518225915-c3e0ce48dd1b
 
 replace k8s.io/api => k8s.io/api v0.21.1
 
@@ -149,3 +150,5 @@ replace k8s.io/kubernetes => github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20
 replace k8s.io/utils => k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 
 replace sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20210427030912-90eeee3bc4ad
+
+replace github.com/satori/go.uuid => github.com/gofrs/uuid v4.0.0+incompatible

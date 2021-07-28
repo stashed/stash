@@ -23,40 +23,64 @@ spec:
   ui:
     editor:
       name: voyagerappscodecom-certificate-editor
-      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      url: https://bundles.byte.builders/ui/
       version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           properties:
             name:
-              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              description: 'Name must be unique within a namespace. Is required when
+                creating resources, although some resources may allow a client to
+                request the generation of an appropriate name automatically. Name
+                is primarily intended for creation idempotence and configuration definition.
+                Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
               type: string
             namespace:
-              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              description: "Namespace defines the space within which each name must
+                be unique. An empty namespace is equivalent to the \"default\" namespace,
+                but \"default\" is the canonical representation. Not all objects are
+                required to be scoped to a namespace - the value of this field for
+                those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated.
+                More info: http://kubernetes.io/docs/user-guide/namespaces"
               type: string
             labels:
               additionalProperties:
                 type: string
-              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              description: 'Map of string keys and values that can be used to organize
+                and categorize (scope and select) objects. May match selectors of
+                replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
             annotations:
               additionalProperties:
                 type: string
-              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              description: 'Annotations is an unstructured key value map stored with
+                a resource that may be set by external tools to store and retrieve
+                arbitrary metadata. They are not queryable and should be preserved
+                when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
               type: object
           type: object
         spec:
           properties:
             acmeUserSecretName:
-              description: 'Secret contains ACMEUser information. Secret must contain a key `email` If empty tries to find an Secret via domains if not found create an ACMEUser and stores as a secret. Secrets key to be expected:  ACME_EMAIL -> required, if not provided it will through error.  ACME_SERVER_URL -> custom server url to generate certificates, default is lets encrypt.  ACME_USER_DATA -> user data, if not found one will be created for the provided email,    and stored in the key.'
+              description: 'Secret contains ACMEUser information. Secret must contain
+                a key `email` If empty tries to find an Secret via domains if not
+                found create an ACMEUser and stores as a secret. Secrets key to be
+                expected:  ACME_EMAIL -> required, if not provided it will through
+                error.  ACME_SERVER_URL -> custom server url to generate certificates,
+                default is lets encrypt.  ACME_USER_DATA -> user data, if not found
+                one will be created for the provided email,    and stored in the key.'
               type: string
             challengeProvider:
               description: ChallengeProvider details to verify domains
@@ -72,7 +96,8 @@ spec:
                 http:
                   properties:
                     ingress:
-                      description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                      description: LocalTypedReference contains enough information
+                        to let you inspect or modify the referred object.
                       properties:
                         apiVersion:
                           description: API version of the referent.
@@ -87,7 +112,10 @@ spec:
                   type: object
               type: object
             domains:
-              description: Tries to obtain a single certificate using all domains passed into Domains. The first domain in domains is used for the CommonName field of the certificate, all other domains are added using the Subject Alternate Names extension.
+              description: Tries to obtain a single certificate using all domains
+                passed into Domains. The first domain in domains is used for the CommonName
+                field of the certificate, all other domains are added using the Subject
+                Alternate Names extension.
               items:
                 type: string
               type: array
@@ -95,17 +123,21 @@ spec:
               description: Indicates that the certificate is paused.
               type: boolean
             renewalBufferDays:
-              description: Configure certificate renewal buffer period in days. Default 15 days.
+              description: Configure certificate renewal buffer period in days. Default
+                15 days.
               format: int32
               type: integer
             storage:
-              description: Storage backend to store the certificates currently, kubernetes secret and vault.
+              description: Storage backend to store the certificates currently, kubernetes
+                secret and vault.
               properties:
                 secret:
-                  description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
                   properties:
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
                       type: string
                   type: object
                 vault:

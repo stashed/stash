@@ -231,13 +231,14 @@ func EnsureVolumeMountDeletedByPath(mounts []core.VolumeMount, mountPath string)
 
 func UpsertEnvVars(vars []core.EnvVar, nv ...core.EnvVar) []core.EnvVar {
 	upsert := func(env core.EnvVar) {
+		if env.ValueFrom != nil &&
+			env.ValueFrom.FieldRef != nil &&
+			env.ValueFrom.FieldRef.APIVersion == "" {
+			env.ValueFrom.FieldRef.APIVersion = "v1"
+		}
+
 		for i, v := range vars {
 			if v.Name == env.Name {
-				if env.ValueFrom != nil &&
-					env.ValueFrom.FieldRef != nil &&
-					env.ValueFrom.FieldRef.APIVersion == "" {
-					env.ValueFrom.FieldRef.APIVersion = "v1"
-				}
 				vars[i] = env
 				return
 			}

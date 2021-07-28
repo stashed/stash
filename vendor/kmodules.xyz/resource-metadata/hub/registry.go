@@ -34,10 +34,7 @@ import (
 	"kmodules.xyz/resource-metadata/hub/resourcedescriptors"
 
 	stringz "gomodules.xyz/x/strings"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	crdv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	crdv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -257,19 +254,7 @@ func (r *Registry) createRegistry(cfg *rest.Config) (map[schema.GroupResource]sc
 			if !v1alpha1.IsOfficialType(rd.Spec.Resource.Group) {
 				crd, err := apiext.CustomResourceDefinitions().Get(context.TODO(), fmt.Sprintf("%s.%s", rd.Spec.Resource.Name, rd.Spec.Resource.Group), metav1.GetOptions{})
 				if err == nil {
-					var inner apiextensions.CustomResourceDefinition
-					err = crdv1beta1.Convert_v1beta1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(crd, &inner, nil)
-					if err != nil {
-						return nil, nil, err
-					}
-
-					var out crdv1.CustomResourceDefinition
-					err = crdv1.Convert_apiextensions_CustomResourceDefinition_To_v1_CustomResourceDefinition(&inner, &out, nil)
-					if err != nil {
-						return nil, nil, err
-					}
-
-					for _, v := range out.Spec.Versions {
+					for _, v := range crd.Spec.Versions {
 						if v.Name == rs.Version {
 							rd.Spec.Validation = v.Schema
 							break

@@ -309,12 +309,12 @@
           "ui": {
             "options": {
               "name": "elasticsearch-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "elasticsearch-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -351,12 +351,12 @@
           "ui": {
             "options": {
               "name": "mariadb-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "mariadb-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -378,12 +378,12 @@
           "ui": {
             "options": {
               "name": "memcached-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "memcached-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -405,12 +405,12 @@
           "ui": {
             "options": {
               "name": "mongodb-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "mongodb-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -432,12 +432,12 @@
           "ui": {
             "options": {
               "name": "mysql-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "mysql-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -459,12 +459,12 @@
           "ui": {
             "options": {
               "name": "perconaxtradb-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "perconaxtradb-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -486,12 +486,12 @@
           "ui": {
             "options": {
               "name": "pgbouncer-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "pgbouncer-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -513,12 +513,12 @@
           "ui": {
             "options": {
               "name": "postgres-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "postgres-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -540,12 +540,12 @@
           "ui": {
             "options": {
               "name": "proxysql-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "proxysql-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }
@@ -567,12 +567,12 @@
           "ui": {
             "options": {
               "name": "redis-editor-options",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             },
             "editor": {
               "name": "redis-editor",
-              "url": "https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable",
+              "url": "https://bundles.byte.builders/ui/",
               "version": "v0.1.0"
             }
           }

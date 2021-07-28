@@ -21,48 +21,80 @@ spec:
   ui:
     editor:
       name: networkingk8sio-ingressclass-editor
-      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      url: https://bundles.byte.builders/ui/
       version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
-      description: IngressClass represents the class of the Ingress, referenced by the Ingress Spec. The `ingressclass.kubernetes.io/is-default-class` annotation can be used to indicate that an IngressClass should be considered default. When a single IngressClass resource has this annotation set to true, new Ingress resources without a class specified will be assigned this default class.
+      description: IngressClass represents the class of the Ingress, referenced by
+        the Ingress Spec. The `ingressclass.kubernetes.io/is-default-class` annotation
+        can be used to indicate that an IngressClass should be considered default.
+        When a single IngressClass resource has this annotation set to true, new Ingress
+        resources without a class specified will be assigned this default class.
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           properties:
             name:
-              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              description: 'Name must be unique within a namespace. Is required when
+                creating resources, although some resources may allow a client to
+                request the generation of an appropriate name automatically. Name
+                is primarily intended for creation idempotence and configuration definition.
+                Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
               type: string
             namespace:
-              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              description: "Namespace defines the space within which each name must
+                be unique. An empty namespace is equivalent to the \"default\" namespace,
+                but \"default\" is the canonical representation. Not all objects are
+                required to be scoped to a namespace - the value of this field for
+                those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated.
+                More info: http://kubernetes.io/docs/user-guide/namespaces"
               type: string
             labels:
               additionalProperties:
                 type: string
-              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              description: 'Map of string keys and values that can be used to organize
+                and categorize (scope and select) objects. May match selectors of
+                replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
             annotations:
               additionalProperties:
                 type: string
-              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              description: 'Annotations is an unstructured key value map stored with
+                a resource that may be set by external tools to store and retrieve
+                arbitrary metadata. They are not queryable and should be preserved
+                when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
               type: object
           type: object
         spec:
-          description: 'Spec is the desired state of the IngressClass. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
+          description: 'Spec is the desired state of the IngressClass. More info:
+            https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
           properties:
             controller:
-              description: Controller refers to the name of the controller that should handle this class. This allows for different "flavors" that are controlled by the same controller. For example, you may have different Parameters for the same implementing controller. This should be specified as a domain-prefixed path no more than 250 characters in length, e.g. "acme.io/ingress-controller". This field is immutable.
+              description: Controller refers to the name of the controller that should
+                handle this class. This allows for different "flavors" that are controlled
+                by the same controller. For example, you may have different Parameters
+                for the same implementing controller. This should be specified as
+                a domain-prefixed path no more than 250 characters in length, e.g.
+                "acme.io/ingress-controller". This field is immutable.
               type: string
             parameters:
-              description: Parameters is a link to a custom resource containing additional configuration for the controller. This is optional if the controller does not require extra parameters.
+              description: Parameters is a link to a custom resource containing additional
+                configuration for the controller. This is optional if the controller
+                does not require extra parameters.
               properties:
                 apiGroup:
-                  description: APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.
+                  description: APIGroup is the group for the resource being referenced.
+                    If APIGroup is not specified, the specified Kind must be in the
+                    core API group. For any other third-party types, APIGroup is required.
                   type: string
                 kind:
                   description: Kind is the type of resource being referenced.
@@ -71,10 +103,15 @@ spec:
                   description: Name is the name of resource being referenced.
                   type: string
                 namespace:
-                  description: Namespace is the namespace of the resource being referenced. This field is required when scope is set to "Namespace" and must be unset when scope is set to "Cluster".
+                  description: Namespace is the namespace of the resource being referenced.
+                    This field is required when scope is set to "Namespace" and must
+                    be unset when scope is set to "Cluster".
                   type: string
                 scope:
-                  description: Scope represents if this refers to a cluster or namespace scoped resource. This may be set to "Cluster" (default) or "Namespace". Field can be enabled with IngressClassNamespacedParams feature gate.
+                  description: Scope represents if this refers to a cluster or namespace
+                    scoped resource. This may be set to "Cluster" (default) or "Namespace".
+                    Field can be enabled with IngressClassNamespacedParams feature
+                    gate.
                   type: string
               required:
               - kind

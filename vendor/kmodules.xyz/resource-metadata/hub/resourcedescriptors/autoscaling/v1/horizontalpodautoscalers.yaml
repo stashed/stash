@@ -19,7 +19,8 @@ spec:
     priority: 3
     type: string
   - name: Reference
-    pathTemplate: '{{ jp "{.spec.scaleTargetRef.kind}/{.spec.scaleTargetRef.name}" . }}'
+    pathTemplate: '{{ jp "{.spec.scaleTargetRef.kind}/{.spec.scaleTargetRef.name}"
+      . }}'
     priority: 3
     type: string
   - name: Target CPU Utilization
