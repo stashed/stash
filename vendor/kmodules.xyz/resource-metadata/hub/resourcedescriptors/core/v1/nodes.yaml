@@ -26,57 +26,80 @@ spec:
   ui:
     editor:
       name: core-node-editor
-      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      url: https://bundles.byte.builders/ui/
       version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
-      description: Node is a worker node in Kubernetes. Each node will have a unique identifier in the cache (i.e. in etcd).
+      description: Node is a worker node in Kubernetes. Each node will have a unique
+        identifier in the cache (i.e. in etcd).
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           properties:
             name:
-              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              description: 'Name must be unique within a namespace. Is required when
+                creating resources, although some resources may allow a client to
+                request the generation of an appropriate name automatically. Name
+                is primarily intended for creation idempotence and configuration definition.
+                Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
               type: string
             labels:
               additionalProperties:
                 type: string
-              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              description: 'Map of string keys and values that can be used to organize
+                and categorize (scope and select) objects. May match selectors of
+                replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
             annotations:
               additionalProperties:
                 type: string
-              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              description: 'Annotations is an unstructured key value map stored with
+                a resource that may be set by external tools to store and retrieve
+                arbitrary metadata. They are not queryable and should be preserved
+                when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
               type: object
           type: object
         spec:
           description: Spec defines the behavior of a node. https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
           properties:
             configSource:
-              description: If specified, the source to get node configuration from The DynamicKubeletConfig feature gate must be enabled for the Kubelet to use this field
+              description: If specified, the source to get node configuration from
+                The DynamicKubeletConfig feature gate must be enabled for the Kubelet
+                to use this field
               properties:
                 configMap:
                   description: ConfigMap is a reference to a Node's ConfigMap
                   properties:
                     kubeletConfigKey:
-                      description: KubeletConfigKey declares which key of the referenced ConfigMap corresponds to the KubeletConfiguration structure This field is required in all cases.
+                      description: KubeletConfigKey declares which key of the referenced
+                        ConfigMap corresponds to the KubeletConfiguration structure
+                        This field is required in all cases.
                       type: string
                     name:
-                      description: Name is the metadata.name of the referenced ConfigMap. This field is required in all cases.
+                      description: Name is the metadata.name of the referenced ConfigMap.
+                        This field is required in all cases.
                       type: string
                     namespace:
-                      description: Namespace is the metadata.namespace of the referenced ConfigMap. This field is required in all cases.
+                      description: Namespace is the metadata.namespace of the referenced
+                        ConfigMap. This field is required in all cases.
                       type: string
                     resourceVersion:
-                      description: ResourceVersion is the metadata.ResourceVersion of the referenced ConfigMap. This field is forbidden in Node.Spec, and required in Node.Status.
+                      description: ResourceVersion is the metadata.ResourceVersion
+                        of the referenced ConfigMap. This field is forbidden in Node.Spec,
+                        and required in Node.Status.
                       type: string
                     uid:
-                      description: UID is the metadata.UID of the referenced ConfigMap. This field is forbidden in Node.Spec, and required in Node.Status.
+                      description: UID is the metadata.UID of the referenced ConfigMap.
+                        This field is forbidden in Node.Spec, and required in Node.Status.
                       type: string
                   required:
                   - kubeletConfigKey
@@ -85,32 +108,41 @@ spec:
                   type: object
               type: object
             externalID:
-              description: 'Deprecated. Not all kubelets will set this field. Remove field after 1.13. see: https://issues.k8s.io/61966'
+              description: 'Deprecated. Not all kubelets will set this field. Remove
+                field after 1.13. see: https://issues.k8s.io/61966'
               type: string
             podCIDR:
               description: PodCIDR represents the pod IP range assigned to the node.
               type: string
             podCIDRs:
-              description: podCIDRs represents the IP ranges assigned to the node for usage by Pods on that node. If this field is specified, the 0th entry must match the podCIDR field. It may contain at most 1 value for each of IPv4 and IPv6.
+              description: podCIDRs represents the IP ranges assigned to the node
+                for usage by Pods on that node. If this field is specified, the 0th
+                entry must match the podCIDR field. It may contain at most 1 value
+                for each of IPv4 and IPv6.
               items:
                 type: string
               type: array
             providerID:
-              description: 'ID of the node assigned by the cloud provider in the format: <ProviderName>://<ProviderSpecificNodeID>'
+              description: 'ID of the node assigned by the cloud provider in the format:
+                <ProviderName>://<ProviderSpecificNodeID>'
               type: string
             taints:
               description: If specified, the node's taints.
               items:
-                description: The node this Taint is attached to has the "effect" on any pod that does not tolerate the Taint.
+                description: The node this Taint is attached to has the "effect" on
+                  any pod that does not tolerate the Taint.
                 properties:
                   effect:
-                    description: Required. The effect of the taint on pods that do not tolerate the taint. Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                    description: Required. The effect of the taint on pods that do
+                      not tolerate the taint. Valid effects are NoSchedule, PreferNoSchedule
+                      and NoExecute.
                     type: string
                   key:
                     description: Required. The taint key to be applied to a node.
                     type: string
                   timeAdded:
-                    description: TimeAdded represents the time at which the taint was added. It is only written for NoExecute taints.
+                    description: TimeAdded represents the time at which the taint
+                      was added. It is only written for NoExecute taints.
                     format: date-time
                     type: string
                   value:
@@ -122,7 +154,8 @@ spec:
                 type: object
               type: array
             unschedulable:
-              description: 'Unschedulable controls node schedulability of new pods. By default, node is schedulable. More info: https://kubernetes.io/docs/concepts/nodes/node/#manual-node-administration'
+              description: 'Unschedulable controls node schedulability of new pods.
+                By default, node is schedulable. More info: https://kubernetes.io/docs/concepts/nodes/node/#manual-node-administration'
               type: boolean
           type: object
       type: object

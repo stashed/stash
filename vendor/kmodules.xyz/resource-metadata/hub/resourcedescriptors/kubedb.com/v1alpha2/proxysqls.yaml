@@ -9,6 +9,59 @@ metadata:
     k8s.io/version: v1alpha2
   name: kubedb.com-v1alpha2-proxysqls
 spec:
+  columns:
+  - name: Name
+    pathTemplate: '{{ jp "{.metadata.name}" . }}'
+    priority: 3
+    type: string
+  - name: Namespace
+    pathTemplate: '{{ jp "{.metadata.namespace}" . }}'
+    priority: 3
+    type: string
+  - name: Labels
+    pathTemplate: '{{ jp "{.metadata.labels}" . }}'
+    priority: 3
+    type: object
+  - name: Annotations
+    pathTemplate: '{{ jp "{.metadata.annotations}" . }}'
+    priority: 1
+    type: object
+  - name: Version
+    pathTemplate: '{{ jp "{.spec.version}" . }}'
+    priority: 3
+    type: string
+  - name: Mode
+    pathTemplate: '{{ jp "{$}" . | kubedb_db_mode }}'
+    priority: 3
+    type: string
+  - name: Replicas
+    pathTemplate: '{{ jp "{$}" . | kubedb_db_replicas }}'
+    priority: 3
+    type: string
+  - name: Phase
+    pathTemplate: '{{ jp "{.status.phase}" . }}'
+    priority: 3
+    type: string
+  - name: Total Resources
+    pathTemplate: '{{ jp "{$}" .  | kubedb_db_resources }}'
+    priority: 3
+    type: object
+  - name: Auth Secret
+    pathTemplate: '{{ jp "{.spec.authSecret.name}" . }}'
+    priority: 1
+    type: string
+  - name: Termination Policy
+    pathTemplate: '{{ jp "{.spec.terminationPolicy}" . }}'
+    priority: 3
+    type: string
+  - name: Halted
+    pathTemplate: '{{ jp "{.spec.halted}" . }}'
+    priority: 1
+    type: string
+  - name: Age
+    pathTemplate: '{{ jp "{.metadata.creationTimestamp}" . }}'
+    priority: 3
+    type: date
   connections:
   - level: Controller
     namespacePath: metadata.namespace
@@ -32,13 +85,32 @@ spec:
       apiVersion: v1
       kind: Service
     type: MatchSelector
-  - level: Owner
+  - level: Controller
     nameTemplate: '{.metadata.name}'
     namespacePath: metadata.namespace
     target:
       apiVersion: appcatalog.appscode.com/v1alpha1
       kind: AppBinding
     type: MatchName
+  - references:
+    - '{.spec.version}'
+    target:
+      apiVersion: catalog.kubedb.com/v1alpha1
+      kind: ProxySQLVersion
+    type: MatchRef
+  - namespacePath: metadata.namespace
+    references:
+    - '{.spec.tls.issuerRef.name},{.metadata.namespace}'
+    target:
+      apiVersion: cert-manager.io/v1
+      kind: Issuer
+    type: MatchRef
+  - references:
+    - '{.spec.tls.issuerRef.name}'
+    target:
+      apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+    type: MatchRef
   icons:
   - src: https://cdn.appscode.com/k8s/icons/kubedb.com/proxysqls.svg
     type: image/svg+xml
@@ -47,6 +119,27 @@ spec:
   pages:
   - name: Basic
     resources:
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: appcatalog.appscode.com
+        resource: appbindings
+        version: v1alpha1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: catalog.kubedb.com
+        resource: proxysqlversions
+        version: v1alpha1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: apps
+        resource: statefulsets
+        version: v1
     - actions:
         create: Never
       displayMode: List
@@ -61,21 +154,77 @@ spec:
         group: ""
         resource: services
         version: v1
-  - name: Backups
-    resources:
-    - actions:
-        create: IfEmpty
-      displayMode: Field
-      ref:
-        group: stash.appscode.com
-        resource: backupconfigurations
-        version: v1beta1
     - actions:
         create: Never
       displayMode: List
       ref:
-        group: stash.appscode.com
-        resource: backupsessions
+        group: ""
+        resource: secrets
+        version: v1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: ""
+        resource: persistentvolumeclaims
+        version: v1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: policy
+        resource: poddisruptionbudgets
+        version: v1beta1
+  - name: Security
+    resources:
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: ""
+        resource: serviceaccounts
+        version: v1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: rbac.authorization.k8s.io
+        resource: roles
+        version: v1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: rbac.authorization.k8s.io
+        resource: rolebindings
+        version: v1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: cert-manager.io
+        resource: certificates
+        version: v1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: cert-manager.io
+        resource: issuers
+        version: v1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: cert-manager.io
+        resource: clusterissuers
+        version: v1
+    - actions:
+        create: Never
+      displayMode: List
+      ref:
+        group: policy
+        resource: podsecuritypolicies
         version: v1beta1
   - name: Operations
     resources:
@@ -90,21 +239,14 @@ spec:
     resources:
     - actions:
         create: IfEmpty
-      displayMode: Field
+      displayMode: List
       ref:
         group: monitoring.coreos.com
         resource: servicemonitors
         version: v1
     - actions:
-        create: IfEmpty
-      displayMode: Field
-      ref:
-        group: monitoring.coreos.com
-        resource: podmonitors
-        version: v1
-    - actions:
         create: Never
-      displayMode: Field
+      displayMode: List
       ref:
         group: monitoring.coreos.com
         resource: prometheuses
@@ -126,10 +268,42 @@ spec:
     warning:
     - Critical
     - Halted
+  subTables:
+  - columns:
+    - name: Type
+      pathTemplate: '{{ jp "{.type}" . }}'
+      priority: 0
+      type: string
+    - name: Status
+      pathTemplate: '{{ jp "{.status}" . }}'
+      priority: 0
+      type: string
+    - name: Reason
+      pathTemplate: '{{ jp "{.reason}" . }}'
+      priority: 0
+      type: string
+    - name: Last Transition Time
+      pathTemplate: '{{ jp "{.lastTransitionTime}" . }}'
+      priority: 0
+      type: date
+    - name: Observed Generation
+      pathTemplate: '{{ jp "{.observedGeneration}" . }}'
+      priority: 0
+      type: string
+    - name: Message
+      pathTemplate: '{{ jp "{.message}" . }}'
+      priority: 0
+      type: string
+    fieldPath: .status.conditions
+    name: Conditions
   ui:
     editor:
       name: kubedbcom-proxysql-editor
-      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      url: https://bundles.byte.builders/ui/
+      version: v0.2.0-alpha.0
+    options:
+      name: kubedbcom-proxysql-editor-options
+      url: https://bundles.byte.builders/ui/
       version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
@@ -141,20 +315,34 @@ spec:
         metadata:
           properties:
             name:
-              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              description: 'Name must be unique within a namespace. Is required when
+                creating resources, although some resources may allow a client to
+                request the generation of an appropriate name automatically. Name
+                is primarily intended for creation idempotence and configuration definition.
+                Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
               type: string
             namespace:
-              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              description: "Namespace defines the space within which each name must
+                be unique. An empty namespace is equivalent to the \"default\" namespace,
+                but \"default\" is the canonical representation. Not all objects are
+                required to be scoped to a namespace - the value of this field for
+                those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated.
+                More info: http://kubernetes.io/docs/user-guide/namespaces"
               type: string
             labels:
               additionalProperties:
                 type: string
-              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              description: 'Map of string keys and values that can be used to organize
+                and categorize (scope and select) objects. May match selectors of
+                replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
             annotations:
               additionalProperties:
                 type: string
-              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              description: 'Annotations is an unstructured key value map stored with
+                a resource that may be set by external tools to store and retrieve
+                arbitrary metadata. They are not queryable and should be preserved
+                when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
               type: object
           type: object
         spec:
@@ -327,6 +515,15 @@ spec:
                                 user:
                                   type: string
                               type: object
+                            seccompProfile:
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
+                              type: object
                             windowsOptions:
                               properties:
                                 gmsaCredentialSpec:
@@ -490,6 +687,29 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                              - key
+                                              - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
                                       namespaces:
                                         items:
                                           type: string
@@ -511,6 +731,29 @@ spec:
                               items:
                                 properties:
                                   labelSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                  namespaceSelector:
                                     properties:
                                       matchExpressions:
                                         items:
@@ -574,6 +817,29 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                              - key
+                                              - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
                                       namespaces:
                                         items:
                                           type: string
@@ -595,6 +861,29 @@ spec:
                               items:
                                 properties:
                                   labelSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                  namespaceSelector:
                                     properties:
                                       matchExpressions:
                                         items:
@@ -672,6 +961,15 @@ spec:
                               type: string
                             user:
                               type: string
+                          type: object
+                        seccompProfile:
+                          properties:
+                            localhostProfile:
+                              type: string
+                            type:
+                              type: string
+                          required:
+                          - type
                           type: object
                         windowsOptions:
                           properties:
@@ -1038,6 +1336,9 @@ spec:
                                 required:
                                 - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -1129,6 +1430,9 @@ spec:
                                 required:
                                 - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -1191,6 +1495,15 @@ spec:
                                     type: string
                                   user:
                                     type: string
+                                type: object
+                              seccompProfile:
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
+                                required:
+                                - type
                                 type: object
                               windowsOptions:
                                 properties:
@@ -1263,6 +1576,9 @@ spec:
                                 required:
                                 - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -1479,6 +1795,9 @@ spec:
                           required:
                           - port
                           type: object
+                        terminationGracePeriodSeconds:
+                          format: int64
+                          type: integer
                         timeoutSeconds:
                           format: int32
                           type: integer
@@ -1553,6 +1872,9 @@ spec:
                           required:
                           - port
                           type: object
+                        terminationGracePeriodSeconds:
+                          format: int64
+                          type: integer
                         timeoutSeconds:
                           format: int32
                           type: integer
@@ -1603,6 +1925,15 @@ spec:
                               type: string
                             user:
                               type: string
+                          type: object
+                        seccompProfile:
+                          properties:
+                            localhostProfile:
+                              type: string
+                            type:
+                              type: string
+                          required:
+                          - type
                           type: object
                         supplementalGroups:
                           items:

@@ -86,34 +86,52 @@ spec:
   ui:
     editor:
       name: appcatalogappscodecom-appbinding-editor
-      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      url: https://bundles.byte.builders/ui/
       version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           properties:
             name:
-              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              description: 'Name must be unique within a namespace. Is required when
+                creating resources, although some resources may allow a client to
+                request the generation of an appropriate name automatically. Name
+                is primarily intended for creation idempotence and configuration definition.
+                Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
               type: string
             namespace:
-              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              description: "Namespace defines the space within which each name must
+                be unique. An empty namespace is equivalent to the \"default\" namespace,
+                but \"default\" is the canonical representation. Not all objects are
+                required to be scoped to a namespace - the value of this field for
+                those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated.
+                More info: http://kubernetes.io/docs/user-guide/namespaces"
               type: string
             labels:
               additionalProperties:
                 type: string
-              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              description: 'Map of string keys and values that can be used to organize
+                and categorize (scope and select) objects. May match selectors of
+                replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
             annotations:
               additionalProperties:
                 type: string
-              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              description: 'Annotations is an unstructured key value map stored with
+                a resource that may be set by external tools to store and retrieve
+                arbitrary metadata. They are not queryable and should be preserved
+                when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
               type: object
           type: object
         spec:
@@ -123,30 +141,39 @@ spec:
               description: ClientConfig defines how to communicate with the app. Required
               properties:
                 caBundle:
-                  description: CABundle is a PEM encoded CA bundle which will be used to validate the serving certificate of this app.
+                  description: CABundle is a PEM encoded CA bundle which will be used
+                    to validate the serving certificate of this app.
                   format: byte
                   type: string
                 insecureSkipTLSVerify:
-                  description: InsecureSkipTLSVerify disables TLS certificate verification when communicating with this app. This is strongly discouraged.  You should use the CABundle instead.
+                  description: InsecureSkipTLSVerify disables TLS certificate verification
+                    when communicating with this app. This is strongly discouraged.  You
+                    should use the CABundle instead.
                   type: boolean
                 service:
-                  description: "`service` is a reference to the service for this app. Either `service` or `url` must be specified. \n If the webhook is running within the cluster, then you should use `service`."
+                  description: "`service` is a reference to the service for this app.
+                    Either `service` or `url` must be specified. \n If the webhook
+                    is running within the cluster, then you should use `service`."
                   properties:
                     name:
                       description: '`name` is the name of the service. Required'
                       type: string
                     path:
-                      description: '`path` is an optional URL path which will be sent in any request to this service.'
+                      description: '`path` is an optional URL path which will be sent
+                        in any request to this service.'
                       type: string
                     port:
                       description: The port that will be exposed by this app.
                       format: int32
                       type: integer
                     query:
-                      description: '`query` is optional encoded query string, without ''?'' which will be sent in any request to this service.'
+                      description: '`query` is optional encoded query string, without
+                        ''?'' which will be sent in any request to this service.'
                       type: string
                     scheme:
-                      description: 'Specifies which scheme to use, for example: http, https If specified, then it will applied as prefix in this format: scheme:// If not specified, then nothing will be prefixed'
+                      description: 'Specifies which scheme to use, for example: http,
+                        https If specified, then it will applied as prefix in this
+                        format: scheme:// If not specified, then nothing will be prefixed'
                       type: string
                   required:
                   - name
@@ -154,47 +181,86 @@ spec:
                   - scheme
                   type: object
                 url:
-                  description: "`url` gives the location of the app, in standard URL form (`[scheme://]host:port/path`). Exactly one of `url` or `service` must be specified. \n The `host` should not refer to a service running in the cluster; use the `service` field instead. The host might be resolved via external DNS in some apiservers (e.g., `kube-apiserver` cannot resolve in-cluster DNS as that would be a layering violation). `host` may also be an IP address. \n A path is optional, and if present may be any string permissible in a URL. You may use the path to pass an arbitrary string to the app, for example, a cluster identifier. \n Attempting to use a user or basic auth e.g. \"user:password@\" is not allowed. Fragments (\"#...\") and query parameters (\"?...\") are not allowed, either."
+                  description: "`url` gives the location of the app, in standard URL
+                    form (`[scheme://]host:port/path`). Exactly one of `url` or `service`
+                    must be specified. \n The `host` should not refer to a service
+                    running in the cluster; use the `service` field instead. The host
+                    might be resolved via external DNS in some apiservers (e.g., `kube-apiserver`
+                    cannot resolve in-cluster DNS as that would be a layering violation).
+                    `host` may also be an IP address. \n A path is optional, and if
+                    present may be any string permissible in a URL. You may use the
+                    path to pass an arbitrary string to the app, for example, a cluster
+                    identifier. \n Attempting to use a user or basic auth e.g. \"user:password@\"
+                    is not allowed. Fragments (\"#...\") and query parameters (\"?...\")
+                    are not allowed, either."
                   type: string
               type: object
             parameters:
-              description: "Parameters is a set of the parameters to be used to connect to the app. The inline YAML/JSON payload to be translated into equivalent JSON object. \n The Parameters field is NOT secret or secured in any way and should NEVER be used to hold sensitive information. To set parameters that contain secret information, you should ALWAYS store that information in a Secret."
+              description: "Parameters is a set of the parameters to be used to connect
+                to the app. The inline YAML/JSON payload to be translated into equivalent
+                JSON object. \n The Parameters field is NOT secret or secured in any
+                way and should NEVER be used to hold sensitive information. To set
+                parameters that contain secret information, you should ALWAYS store
+                that information in a Secret."
               type: object
               x-kubernetes-embedded-resource: true
               x-kubernetes-preserve-unknown-fields: true
             secret:
-              description: Secret is the name of the secret to create in the AppBinding's namespace that will hold the credentials associated with the AppBinding.
+              description: Secret is the name of the secret to create in the AppBinding's
+                namespace that will hold the credentials associated with the AppBinding.
               properties:
                 name:
-                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
                   type: string
               type: object
             secretTransforms:
-              description: List of transformations that should be applied to the credentials associated with the ServiceBinding before they are inserted into the Secret.
+              description: List of transformations that should be applied to the credentials
+                associated with the ServiceBinding before they are inserted into the
+                Secret.
               items:
-                description: 'SecretTransform is a single transformation that is applied to the credentials returned from the broker before they are inserted into the Secret associated with the ServiceBinding. Because different brokers providing the same type of service may each return a different credentials structure, users can specify the transformations that should be applied to the Secret to adapt its entries to whatever the service consumer expects. For example, the credentials returned by the broker may include the key "USERNAME", but the consumer requires the username to be exposed under the key "DB_USER" instead. To have the Service Catalog transform the Secret, the following SecretTransform must be specified in ServiceBinding.spec.secretTransform: - {"renameKey": {"from": "USERNAME", "to": "DB_USER"}} Only one of the SecretTransform''s members may be specified.'
+                description: 'SecretTransform is a single transformation that is applied
+                  to the credentials returned from the broker before they are inserted
+                  into the Secret associated with the ServiceBinding. Because different
+                  brokers providing the same type of service may each return a different
+                  credentials structure, users can specify the transformations that
+                  should be applied to the Secret to adapt its entries to whatever
+                  the service consumer expects. For example, the credentials returned
+                  by the broker may include the key "USERNAME", but the consumer requires
+                  the username to be exposed under the key "DB_USER" instead. To have
+                  the Service Catalog transform the Secret, the following SecretTransform
+                  must be specified in ServiceBinding.spec.secretTransform: - {"renameKey":
+                  {"from": "USERNAME", "to": "DB_USER"}} Only one of the SecretTransform''s
+                  members may be specified.'
                 properties:
                   addKey:
-                    description: AddKey represents a transform that adds an additional key to the credentials Secret
+                    description: AddKey represents a transform that adds an additional
+                      key to the credentials Secret
                     properties:
                       key:
                         description: The name of the key to add
                         type: string
                       stringValue:
-                        description: The string (non-binary) value to add to the Secret under the specified key.
+                        description: The string (non-binary) value to add to the Secret
+                          under the specified key.
                         type: string
                       value:
-                        description: The binary value (possibly non-string) to add to the Secret under the specified key. If both value and stringValue are specified, then value is ignored and stringValue is stored.
+                        description: The binary value (possibly non-string) to add
+                          to the Secret under the specified key. If both value and
+                          stringValue are specified, then value is ignored and stringValue
+                          is stored.
                         format: byte
                         type: string
                     required:
                     - key
                     type: object
                   addKeysFrom:
-                    description: AddKeysFrom represents a transform that merges all the entries of an existing Secret into the credentials Secret
+                    description: AddKeysFrom represents a transform that merges all
+                      the entries of an existing Secret into the credentials Secret
                     properties:
                       secretRef:
-                        description: The reference to the Secret that should be merged into the credentials Secret.
+                        description: The reference to the Secret that should be merged
+                          into the credentials Secret.
                         properties:
                           name:
                             description: Name of the referent.
@@ -205,7 +271,8 @@ spec:
                         type: object
                     type: object
                   removeKey:
-                    description: RemoveKey represents a transform that removes a credentials Secret entry
+                    description: RemoveKey represents a transform that removes a credentials
+                      Secret entry
                     properties:
                       key:
                         description: The key to remove from the Secret
@@ -214,7 +281,8 @@ spec:
                     - key
                     type: object
                   renameKey:
-                    description: RenameKey represents a transform that renames a credentials Secret entry's key
+                    description: RenameKey represents a transform that renames a credentials
+                      Secret entry's key
                     properties:
                       from:
                         description: The name of the key to rename

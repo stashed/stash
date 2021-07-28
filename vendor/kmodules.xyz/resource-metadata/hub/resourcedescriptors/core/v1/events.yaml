@@ -59,17 +59,24 @@ spec:
   ui:
     editor:
       name: core-event-editor
-      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      url: https://bundles.byte.builders/ui/
       version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
-      description: Event is a report of an event somewhere in the cluster.  Events have a limited retention time and triggers and messages may evolve with time.  Event consumers should not rely on the timing of an event with a given Reason reflecting a consistent underlying trigger, or the continued existence of events with that Reason.  Events should be treated as informative, best-effort, supplemental data.
+      description: Event is a report of an event somewhere in the cluster.  Events
+        have a limited retention time and triggers and messages may evolve with time.  Event
+        consumers should not rely on the timing of an event with a given Reason reflecting
+        a consistent underlying trigger, or the continued existence of events with
+        that Reason.  Events should be treated as informative, best-effort, supplemental
+        data.
       properties:
         action:
           description: What action was taken/failed regarding to the Regarding object.
           type: string
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         count:
           description: The number of times this event has occurred.
@@ -80,7 +87,8 @@ spec:
           format: date-time
           type: string
         firstTimestamp:
-          description: The time at which the event was first recorded. (Time of server receipt is in TypeMeta.)
+          description: The time at which the event was first recorded. (Time of server
+            receipt is in TypeMeta.)
           format: date-time
           type: string
         involvedObject:
@@ -90,7 +98,16 @@ spec:
               description: API version of the referent.
               type: string
             fieldPath:
-              description: 'If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: "spec.containers{name}" (where "name" refers to the name of the container that triggered the event) or if no container name is specified "spec.containers[2]" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object. TODO: this design is not final and this field is subject to change in the future.'
+              description: 'If referring to a piece of an object instead of an entire
+                object, this string should contain a valid JSON/Go field access statement,
+                such as desiredState.manifest.containers[2]. For example, if the object
+                reference is to a container within a pod, this would take on a value
+                like: "spec.containers{name}" (where "name" refers to the name of
+                the container that triggered the event) or if no container name is
+                specified "spec.containers[2]" (container with index 2 in this pod).
+                This syntax is chosen only to have some well-defined way of referencing
+                a part of an object. TODO: this design is not final and this field
+                is subject to change in the future.'
               type: string
             kind:
               description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -102,43 +119,64 @@ spec:
               description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
               type: string
             resourceVersion:
-              description: 'Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+              description: 'Specific resourceVersion to which this reference is made,
+                if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
               type: string
             uid:
               description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
               type: string
           type: object
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         lastTimestamp:
-          description: The time at which the most recent occurrence of this event was recorded.
+          description: The time at which the most recent occurrence of this event
+            was recorded.
           format: date-time
           type: string
         message:
-          description: 'A human-readable description of the status of this operation. TODO: decide on maximum length.'
+          description: 'A human-readable description of the status of this operation.
+            TODO: decide on maximum length.'
           type: string
         metadata:
           properties:
             name:
-              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              description: 'Name must be unique within a namespace. Is required when
+                creating resources, although some resources may allow a client to
+                request the generation of an appropriate name automatically. Name
+                is primarily intended for creation idempotence and configuration definition.
+                Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
               type: string
             namespace:
-              description: "Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the \"default\" namespace, but \"default\" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+              description: "Namespace defines the space within which each name must
+                be unique. An empty namespace is equivalent to the \"default\" namespace,
+                but \"default\" is the canonical representation. Not all objects are
+                required to be scoped to a namespace - the value of this field for
+                those objects will be empty. \n Must be a DNS_LABEL. Cannot be updated.
+                More info: http://kubernetes.io/docs/user-guide/namespaces"
               type: string
             labels:
               additionalProperties:
                 type: string
-              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              description: 'Map of string keys and values that can be used to organize
+                and categorize (scope and select) objects. May match selectors of
+                replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
             annotations:
               additionalProperties:
                 type: string
-              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              description: 'Annotations is an unstructured key value map stored with
+                a resource that may be set by external tools to store and retrieve
+                arbitrary metadata. They are not queryable and should be preserved
+                when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
               type: object
           type: object
         reason:
-          description: 'This should be a short, machine understandable string that gives the reason for the transition into the object''s current status. TODO: provide exact specification for format.'
+          description: 'This should be a short, machine understandable string that
+            gives the reason for the transition into the object''s current status.
+            TODO: provide exact specification for format.'
           type: string
         related:
           description: Optional secondary object for more complex actions.
@@ -147,7 +185,16 @@ spec:
               description: API version of the referent.
               type: string
             fieldPath:
-              description: 'If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: "spec.containers{name}" (where "name" refers to the name of the container that triggered the event) or if no container name is specified "spec.containers[2]" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object. TODO: this design is not final and this field is subject to change in the future.'
+              description: 'If referring to a piece of an object instead of an entire
+                object, this string should contain a valid JSON/Go field access statement,
+                such as desiredState.manifest.containers[2]. For example, if the object
+                reference is to a container within a pod, this would take on a value
+                like: "spec.containers{name}" (where "name" refers to the name of
+                the container that triggered the event) or if no container name is
+                specified "spec.containers[2]" (container with index 2 in this pod).
+                This syntax is chosen only to have some well-defined way of referencing
+                a part of an object. TODO: this design is not final and this field
+                is subject to change in the future.'
               type: string
             kind:
               description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -159,7 +206,8 @@ spec:
               description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
               type: string
             resourceVersion:
-              description: 'Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+              description: 'Specific resourceVersion to which this reference is made,
+                if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
               type: string
             uid:
               description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
@@ -172,10 +220,12 @@ spec:
           description: ID of the controller instance, e.g. `kubelet-xyzf`.
           type: string
         series:
-          description: Data about the Event series this event represents or nil if it's a singleton Event.
+          description: Data about the Event series this event represents or nil if
+            it's a singleton Event.
           properties:
             count:
-              description: Number of occurrences in this series up to the last heartbeat time
+              description: Number of occurrences in this series up to the last heartbeat
+                time
               format: int32
               type: integer
             lastObservedTime:
@@ -184,7 +234,8 @@ spec:
               type: string
           type: object
         source:
-          description: The component reporting this event. Should be a short machine understandable string.
+          description: The component reporting this event. Should be a short machine
+            understandable string.
           properties:
             component:
               description: Component from which the event is generated.
@@ -194,7 +245,8 @@ spec:
               type: string
           type: object
         type:
-          description: Type of this event (Normal, Warning), new types could be added in the future
+          description: Type of this event (Normal, Warning), new types could be added
+            in the future
           type: string
       required:
       - involvedObject

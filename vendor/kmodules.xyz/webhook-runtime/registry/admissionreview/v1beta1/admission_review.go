@@ -28,7 +28,7 @@ import (
 
 // Adapted from https://github.com/openshift/generic-admission-server/blob/master/pkg/registry/admissionreview/admission_review.go
 
-type AdmissionHookFunc func(admissionSpec *admission.AdmissionRequest) *admission.AdmissionResponse
+type AdmissionHookFunc func(req *admission.AdmissionRequest) *admission.AdmissionResponse
 
 type REST struct {
 	hookFn AdmissionHookFunc

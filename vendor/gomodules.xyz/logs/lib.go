@@ -47,7 +47,7 @@ func AddFlags(fs *pflag.FlagSet) {
 	fs.AddFlag(pflag.Lookup(logFlushFreqFlagName))
 }
 
-// KlogWriter serves as a bridge between the standard log package and the glog package.
+// KlogWriter serves as a bridge between the standard log package and the klog package.
 type KlogWriter struct{}
 
 // Write implements the io.Writer interface.

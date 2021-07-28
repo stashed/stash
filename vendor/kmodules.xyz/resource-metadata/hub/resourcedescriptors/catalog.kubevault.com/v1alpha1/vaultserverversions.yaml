@@ -20,46 +20,68 @@ spec:
     name: vaultserverversions
     scope: Cluster
     version: v1alpha1
+  resourceRequirements:
+  - resources: spec.podTemplate.spec.resources
+    units: spec.replicas
   ui:
     editor:
       name: catalogkubevaultcom-vaultserverversion-editor
-      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      url: https://bundles.byte.builders/ui/
       version: v0.2.0-alpha.0
   validation:
     openAPIV3Schema:
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           properties:
             name:
-              description: 'Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              description: 'Name must be unique within a namespace. Is required when
+                creating resources, although some resources may allow a client to
+                request the generation of an appropriate name automatically. Name
+                is primarily intended for creation idempotence and configuration definition.
+                Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
               type: string
             labels:
               additionalProperties:
                 type: string
-              description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              description: 'Map of string keys and values that can be used to organize
+                and categorize (scope and select) objects. May match selectors of
+                replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
             annotations:
               additionalProperties:
                 type: string
-              description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              description: 'Annotations is an unstructured key value map stored with
+                a resource that may be set by external tools to store and retrieve
+                arbitrary metadata. They are not queryable and should be preserved
+                when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
               type: object
           type: object
         spec:
           description: VaultServerVersionSpec is the spec for postgres version
           properties:
             deprecated:
-              description: Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
+              description: Deprecated versions usable but regarded as obsolete and
+                best avoided, typically due to having been superseded.
               type: boolean
             exporter:
               description: Exporter Image
               properties:
                 image:
+                  description: Image is the Docker image name
+                  type: string
+                imagePullPolicy:
+                  description: ImagePullPolicy one of Always, Never, IfNotPresent.
+                    It defaults to Always if :latest is used, or IfNotPresent overwise.
                   type: string
               required:
               - image
@@ -68,6 +90,11 @@ spec:
               description: Unsealer Image
               properties:
                 image:
+                  description: Image is the Docker image name
+                  type: string
+                imagePullPolicy:
+                  description: ImagePullPolicy one of Always, Never, IfNotPresent.
+                    It defaults to Always if :latest is used, or IfNotPresent overwise.
                   type: string
               required:
               - image
@@ -76,6 +103,11 @@ spec:
               description: Vault Image
               properties:
                 image:
+                  description: Image is the Docker image name
+                  type: string
+                imagePullPolicy:
+                  description: ImagePullPolicy one of Always, Never, IfNotPresent.
+                    It defaults to Always if :latest is used, or IfNotPresent overwise.
                   type: string
               required:
               - image
