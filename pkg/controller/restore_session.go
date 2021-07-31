@@ -855,12 +855,12 @@ func (c *StashController) setRestorePhaseRunning(inv invoker.RestoreInvoker) err
 func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) error {
 	var err error
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
-	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time).String()
+	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time)
 
 	// update restore invoker status
 	inv.Status, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestoreSucceeded,
-		SessionDuration: sessionDuration,
+		SessionDuration: sessionDuration.Round(time.Second).String(),
 	})
 	if err != nil {
 		return err
@@ -903,12 +903,12 @@ func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) e
 func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, restoreErr error) error {
 	var err error
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
-	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time).String()
+	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time)
 
 	// update restore invoker status
 	inv.Status, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestoreFailed,
-		SessionDuration: sessionDuration,
+		SessionDuration: sessionDuration.Round(time.Second).String(),
 	})
 	if err != nil {
 		return err
@@ -952,12 +952,12 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, restoreErr error) error {
 	var err error
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
-	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time).String()
+	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time)
 
 	// update restore invoker status
 	inv.Status, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestorePhaseUnknown,
-		SessionDuration: sessionDuration,
+		SessionDuration: sessionDuration.Round(time.Second).String(),
 	})
 	if err != nil {
 		return err

@@ -44,7 +44,7 @@ require (
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
 	kmodules.xyz/resource-metadata v0.5.8-0.20210722055301-dcc1abc08aa0 // indirect
 	kmodules.xyz/webhook-runtime v0.0.0-20210716205500-e489faf01981
-	stash.appscode.dev/apimachinery v0.14.2-0.20210715200631-5399637188c0
+	stash.appscode.dev/apimachinery v0.14.2-0.20210728022045-68cf54c06a1c
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

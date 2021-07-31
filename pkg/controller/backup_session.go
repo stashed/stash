@@ -637,7 +637,7 @@ func (c *StashController) setBackupSessionSucceeded(inv invoker.BackupInvoker, b
 		backupSession.ObjectMeta,
 		func(in *api_v1beta1.BackupSessionStatus) (types.UID, *api_v1beta1.BackupSessionStatus) {
 			in.Phase = api_v1beta1.BackupSessionSucceeded
-			in.SessionDuration = sessionDuration.String()
+			in.SessionDuration = sessionDuration.Round(time.Second).String()
 			return backupSession.UID, in
 		},
 		metav1.UpdateOptions{},
@@ -686,6 +686,9 @@ func (c *StashController) setBackupSessionSucceeded(inv invoker.BackupInvoker, b
 
 func (c *StashController) setBackupSessionFailed(inv invoker.BackupInvoker, backupSession *api_v1beta1.BackupSession, backupErr error) error {
 
+	// total backup session duration is the difference between the time when BackupSession was created and current time
+	sessionDuration := time.Since(backupSession.CreationTimestamp.Time)
+
 	// set BackupSession phase to "Failed"
 	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(
 		context.TODO(),
@@ -693,6 +696,7 @@ func (c *StashController) setBackupSessionFailed(inv invoker.BackupInvoker, back
 		backupSession.ObjectMeta,
 		func(in *api_v1beta1.BackupSessionStatus) (types.UID, *api_v1beta1.BackupSessionStatus) {
 			in.Phase = api_v1beta1.BackupSessionFailed
+			in.SessionDuration = sessionDuration.Round(time.Second).String()
 			return backupSession.UID, in
 		},
 		metav1.UpdateOptions{},
