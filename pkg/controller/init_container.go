@@ -103,8 +103,6 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 
 	// add an emptyDir volume for holding temporary files
 	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, targetInfo.TempDir)
-	// add  downward volume to make some information of the workload accessible to the container
-	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
 	// add storage secret as volume to the workload. this is mounted on the restore init container
 	w.Spec.Template.Spec.Volumes = util.UpsertSecretVolume(w.Spec.Template.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
 
