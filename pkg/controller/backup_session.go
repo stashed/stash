@@ -242,6 +242,12 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 					backupSession.Namespace,
 					targetInfo.Target.Ref.Name,
 				)
+				// After upgrading Stash operator, the existing stash sidecar may still use the old configuration (i.e. image tag).
+				// So, make sure that stash sidecar has the latest configurations.
+				if err := c.ensureLatestSidecarConfiguration(inv, targetInfo); err != nil {
+					klog.Infof("failed to ensure latest configuration for stash sidecar. Reason: %s", err.Error())
+					return err
+				}
 			case BackupExecutorCSIDriver:
 				// VolumeSnapshotter driver has been used. So, ensure VolumeSnapshotter job
 				err = c.ensureVolumeSnapshotterJob(inv, targetInfo, backupSession, i)

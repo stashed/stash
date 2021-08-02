@@ -25,6 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/pointer"
@@ -35,9 +36,14 @@ import (
 	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	kutil "kmodules.xyz/client-go"
+	apps_util "kmodules.xyz/client-go/apps/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
+	ocapps "kmodules.xyz/openshift/apis/apps/v1"
+	ocapps_util "kmodules.xyz/openshift/client/clientset/versioned/typed/apps/v1/util"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	wcs "kmodules.xyz/webhook-runtime/client/workload/v1"
 )
@@ -305,4 +311,143 @@ func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, 
 		})
 	}
 	return imagePullSecrets, nil
+}
+
+func (c *StashController) ensureLatestSidecarConfiguration(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) error {
+	obj, err := c.getTargetWorkload(inv, targetInfo)
+	if err != nil {
+		return err
+	}
+	w, err := wcs.ConvertToWorkload(obj.DeepCopyObject())
+	if err != nil {
+		return err
+	}
+	err = c.ensureBackupSidecar(w, inv, targetInfo, apis.CallerController)
+	if err != nil {
+		return err
+	}
+	// apply the changes into the original object
+	err = wcs.ApplyWorkload(w.Object, w)
+	if err != nil {
+		return err
+	}
+	return c.patchTargetWorkload(w, obj, targetInfo)
+}
+
+func (c *StashController) getTargetWorkload(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) (runtime.Object, error) {
+	switch targetInfo.Target.Ref.Kind {
+	case apis.KindDeployment:
+		dp, err := c.dpLister.Deployments(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		if err != nil {
+			return nil, err
+		}
+		dp.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDeployment))
+		return dp, nil
+	case apis.KindDaemonSet:
+		ds, err := c.dsLister.DaemonSets(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		if err != nil {
+			return nil, err
+		}
+		ds.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDaemonSet))
+		return ds, nil
+	case apis.KindStatefulSet:
+		ss, err := c.ssLister.StatefulSets(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		if err != nil {
+			return nil, err
+		}
+		ss.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindStatefulSet))
+		return ss, nil
+	case apis.KindReplicaSet:
+		rs, err := c.rsLister.ReplicaSets(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		if err != nil {
+			return nil, err
+		}
+		rs.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindReplicaSet))
+		return rs, nil
+	case apis.KindReplicationController:
+		rc, err := c.rcLister.ReplicationControllers(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		if err != nil {
+			return nil, err
+		}
+		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindReplicationController))
+		return rc, nil
+	case apis.KindDeploymentConfig:
+		dc, err := c.dcLister.DeploymentConfigs(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		if err != nil {
+			return nil, err
+		}
+		dc.GetObjectKind().SetGroupVersionKind(ocapps.GroupVersion.WithKind(apis.KindDeploymentConfig))
+		return dc, nil
+	default:
+		return nil, fmt.Errorf("failed to get target workload. Reason: unknown kind %s", targetInfo.Target.Ref.Kind)
+	}
+}
+
+func (c *StashController) patchTargetWorkload(w *wapi.Workload, oldObj runtime.Object, targetInfo invoker.BackupTargetInfo) error {
+	switch targetInfo.Target.Ref.Kind {
+	case apis.KindDeployment:
+		_, verb, err := apps_util.PatchDeploymentObject(context.TODO(), c.kubeClient, oldObj.(*appsv1.Deployment), w.Object.(*appsv1.Deployment), metav1.PatchOptions{})
+		if err != nil {
+			return err
+		}
+		if verb == kutil.VerbPatched {
+			return util.WaitUntilDeploymentReady(c.kubeClient, oldObj.(*appsv1.Deployment).ObjectMeta)
+		}
+
+	case apis.KindDaemonSet:
+		_, verb, err := apps_util.PatchDaemonSetObject(context.TODO(), c.kubeClient, oldObj.(*appsv1.DaemonSet), w.Object.(*appsv1.DaemonSet), metav1.PatchOptions{})
+		if err != nil {
+			return err
+		}
+		if verb == kutil.VerbPatched {
+			return util.WaitUntilDaemonSetReady(c.kubeClient, oldObj.(*appsv1.DaemonSet).ObjectMeta)
+		}
+	case apis.KindStatefulSet:
+		_, verb, err := apps_util.PatchStatefulSetObject(context.TODO(), c.kubeClient, oldObj.(*appsv1.StatefulSet), w.Object.(*appsv1.StatefulSet), metav1.PatchOptions{})
+		if err != nil {
+			return err
+		}
+		if verb == kutil.VerbPatched {
+			return util.WaitUntilStatefulSetReady(c.kubeClient, oldObj.(*appsv1.StatefulSet).ObjectMeta)
+		}
+	case apis.KindReplicaSet:
+		_, verb, err := apps_util.PatchReplicaSetObject(context.TODO(), c.kubeClient, oldObj.(*appsv1.ReplicaSet), w.Object.(*appsv1.ReplicaSet), metav1.PatchOptions{})
+		if err != nil {
+			return err
+		}
+		if verb == kutil.VerbPatched {
+			stageChanged, err := c.ensureWorkloadLatestState(w)
+			if err != nil {
+				return err
+			}
+			if stageChanged {
+				return util.WaitUntilReplicaSetReady(c.kubeClient, oldObj.(*appsv1.ReplicaSet).ObjectMeta)
+			}
+		}
+	case apis.KindReplicationController:
+		_, verb, err := core_util.PatchRCObject(context.TODO(), c.kubeClient, oldObj.(*core.ReplicationController), w.Object.(*core.ReplicationController), metav1.PatchOptions{})
+		if err != nil {
+			return err
+		}
+		if verb == kutil.VerbPatched {
+			stageChanged, err := c.ensureWorkloadLatestState(w)
+			if err != nil {
+				return err
+			}
+			if stageChanged {
+				return util.WaitUntilReplicaSetReady(c.kubeClient, oldObj.(*appsv1.ReplicaSet).ObjectMeta)
+			}
+		}
+	case apis.KindDeploymentConfig:
+		_, verb, err := ocapps_util.PatchDeploymentConfigObject(context.TODO(), c.ocClient, oldObj.(*ocapps.DeploymentConfig), w.Object.(*ocapps.DeploymentConfig), metav1.PatchOptions{})
+		if err != nil {
+			return err
+		}
+		if verb == kutil.VerbPatched {
+			return util.WaitUntilDeploymentConfigReady(c.ocClient, oldObj.(*ocapps.DeploymentConfig).ObjectMeta)
+		}
+	default:
+		return fmt.Errorf("unkown workload kind: %s", targetInfo.Target.Ref.Kind)
+	}
+	return nil
 }
