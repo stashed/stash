@@ -129,7 +129,6 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) {
 	if !util.HasStashContainer(w) {
 		// remove the helpers volumes added for init-container
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.PodinfoVolumeName)
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.StashSecretVolume)
 	}
 

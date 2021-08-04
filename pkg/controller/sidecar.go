@@ -239,7 +239,6 @@ func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload) {
 	if !util.HasStashContainer(w) {
 		// remove the helpers volumes that were added for sidecar
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.PodinfoVolumeName)
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.StashSecretVolume)
 	}
 

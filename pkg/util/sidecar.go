@@ -146,10 +146,6 @@ func NewBackupSidecarContainer(inv invoker.BackupInvoker, targetInfo invoker.Bac
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      apis.PodinfoVolumeName,
-				MountPath: "/etc/stash",
-			},
-			{
 				Name:      apis.StashSecretVolume,
 				MountPath: apis.StashSecretMountDir,
 			},
