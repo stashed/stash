@@ -26,8 +26,8 @@ import (
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 
 	"github.com/pkg/errors"
-	"gomodules.xyz/sets"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type Options struct {

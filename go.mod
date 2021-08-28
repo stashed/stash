@@ -14,18 +14,19 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/audit v0.0.7
-	go.bytebuilders.dev/license-verifier v0.9.2
-	go.bytebuilders.dev/license-verifier/kubernetes v0.9.2
+	go.bytebuilders.dev/license-verifier v0.9.3
+	go.bytebuilders.dev/license-verifier/kubernetes v0.9.3
 	gomodules.xyz/blobfs v0.1.7
 	gomodules.xyz/cert v1.2.0
+	gomodules.xyz/encoding v0.0.2
 	gomodules.xyz/envsubst v0.1.0
-	gomodules.xyz/flags v0.1.0
+	gomodules.xyz/flags v0.1.2
 	gomodules.xyz/go-sh v0.1.0
-	gomodules.xyz/logs v0.0.3
-	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
+	gomodules.xyz/logs v0.0.4
+	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/runtime v0.2.0
 	gomodules.xyz/stow v0.2.4
-	gomodules.xyz/x v0.0.5
+	gomodules.xyz/x v0.0.7
 	gopkg.in/ini.v1 v1.51.0
 	k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver v0.21.1
@@ -35,15 +36,15 @@ require (
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kubernetes v1.21.1
-	kmodules.xyz/client-go v0.0.0-20210719120358-dd0503cf99cf
+	kmodules.xyz/client-go v0.0.0-20210827153326-54ead9c6225f
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
-	kmodules.xyz/custom-resources v0.0.0-20210715200638-d7eae69a48fb
-	kmodules.xyz/objectstore-api v0.0.0-20210618005912-71f8a80f48f9
-	kmodules.xyz/offshoot-api v0.0.0-20210618005544-5217a24765da
+	kmodules.xyz/custom-resources v0.0.0-20210824055127-e5a3d2d6c161
+	kmodules.xyz/objectstore-api v0.0.0-20210817052835-df749235585e
+	kmodules.xyz/offshoot-api v0.0.0-20210804100837-d0388be3e60d
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
-	kmodules.xyz/resource-metadata v0.5.8-0.20210722055301-dcc1abc08aa0 // indirect
-	kmodules.xyz/webhook-runtime v0.0.0-20210716205500-e489faf01981
+	kmodules.xyz/resource-metadata v0.5.8-0.20210827075808-ed8d9b48f916 // indirect
+	kmodules.xyz/webhook-runtime v0.0.0-20210804101750-5c602fd5cf06
 	stash.appscode.dev/apimachinery v0.15.0
 )
 

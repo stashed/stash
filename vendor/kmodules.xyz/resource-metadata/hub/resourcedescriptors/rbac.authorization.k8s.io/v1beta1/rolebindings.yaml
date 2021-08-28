@@ -20,9 +20,6 @@ spec:
     name: rolebindings
     scope: Namespaced
     version: v1beta1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   validation:
     openAPIV3Schema:
       description: RoleBinding references a role, but does not contain it.  It can

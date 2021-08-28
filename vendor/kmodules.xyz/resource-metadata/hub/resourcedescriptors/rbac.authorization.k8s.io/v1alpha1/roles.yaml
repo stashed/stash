@@ -20,9 +20,6 @@ spec:
     name: roles
     scope: Namespaced
     version: v1alpha1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   validation:
     openAPIV3Schema:
       description: Role is a namespaced, logical grouping of PolicyRules that can

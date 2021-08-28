@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	appsv1 "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,7 +71,7 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 func (c *StashController) initDeploymentWatcher() {
 	c.dpInformer = c.kubeInformerFactory.Apps().V1().Deployments().Informer()
 	c.dpQueue = queue.New("Deployment", c.MaxNumRequeues, c.NumThreads, c.runDeploymentInjector)
-	c.dpInformer.AddEventHandler(queue.DefaultEventHandler(c.dpQueue.GetQueue()))
+	c.dpInformer.AddEventHandler(queue.DefaultEventHandler(c.dpQueue.GetQueue(), core.NamespaceAll))
 	c.dpLister = c.kubeInformerFactory.Apps().V1().Deployments().Lister()
 }
 

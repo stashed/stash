@@ -51,7 +51,7 @@ func (c *StashController) initJobWatcher() {
 		)
 	})
 	c.jobQueue = queue.New("Job", c.MaxNumRequeues, c.NumThreads, c.runJobInjector)
-	c.jobInformer.AddEventHandler(queue.DefaultEventHandler(c.jobQueue.GetQueue()))
+	c.jobInformer.AddEventHandler(queue.DefaultEventHandler(c.jobQueue.GetQueue(), core.NamespaceAll))
 	c.jobLister = c.kubeInformerFactory.Batch().V1().Jobs().Lister()
 }
 

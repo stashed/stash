@@ -20,9 +20,6 @@ spec:
     name: challenges
     scope: Namespaced
     version: v1alpha2
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   validation:
     openAPIV3Schema:
       description: Challenge is a type to represent a Challenge request with an ACME

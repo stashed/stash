@@ -102,9 +102,6 @@ spec:
     name: cronjobs
     scope: Namespaced
     version: v1beta1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   subTables:
   - columns:
     - name: Name

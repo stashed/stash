@@ -61,9 +61,6 @@ spec:
     name: mongodbversions
     scope: Cluster
     version: v1alpha1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   ui:
     editor:
       name: catalogkubedbcom-mongodbversion-editor

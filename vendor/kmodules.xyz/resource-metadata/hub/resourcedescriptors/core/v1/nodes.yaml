@@ -20,9 +20,6 @@ spec:
     name: nodes
     scope: Cluster
     version: v1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   ui:
     editor:
       name: core-node-editor

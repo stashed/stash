@@ -70,7 +70,7 @@ func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook 
 func (c *StashController) initRCWatcher() {
 	c.rcInformer = c.kubeInformerFactory.Core().V1().ReplicationControllers().Informer()
 	c.rcQueue = queue.New("ReplicationController", c.MaxNumRequeues, c.NumThreads, c.runRCInjector)
-	c.rcInformer.AddEventHandler(queue.DefaultEventHandler(c.rcQueue.GetQueue()))
+	c.rcInformer.AddEventHandler(queue.DefaultEventHandler(c.rcQueue.GetQueue(), core.NamespaceAll))
 	c.rcLister = c.kubeInformerFactory.Core().V1().ReplicationControllers().Lister()
 }
 

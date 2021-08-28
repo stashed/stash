@@ -23,6 +23,7 @@ import (
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -75,7 +76,7 @@ func (c *StashController) initDeploymentConfigWatcher() {
 	}
 	c.dcInformer = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Informer()
 	c.dcQueue = queue.New(apis.KindDeploymentConfig, c.MaxNumRequeues, c.NumThreads, c.runDeploymentConfigProcessor)
-	c.dcInformer.AddEventHandler(queue.DefaultEventHandler(c.dcQueue.GetQueue()))
+	c.dcInformer.AddEventHandler(queue.DefaultEventHandler(c.dcQueue.GetQueue(), core.NamespaceAll))
 	c.dcLister = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Lister()
 }
 

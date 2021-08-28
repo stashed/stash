@@ -15,9 +15,6 @@ spec:
     name: selfsubjectrulesreviews
     scope: Cluster
     version: v1beta1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   validation:
     openAPIV3Schema:
       description: SelfSubjectRulesReview enumerates the set of actions the current

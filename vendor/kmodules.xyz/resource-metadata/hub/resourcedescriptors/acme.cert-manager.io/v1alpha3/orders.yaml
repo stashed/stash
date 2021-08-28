@@ -20,9 +20,6 @@ spec:
     name: orders
     scope: Namespaced
     version: v1alpha3
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   validation:
     openAPIV3Schema:
       description: Order is a type to represent an Order with an ACME server

@@ -336,22 +336,6 @@ spec:
               - scope
               - version
               type: object
-            resourceRequirements:
-              items:
-                properties:
-                  resources:
-                    description: Json path to resources of type core.ResourceRequirements
-                    type: string
-                  shards:
-                    description: Shards represents number of shards not available
-                      for all resources
-                    type: string
-                  units:
-                    description: json path to replicas of type int if missing or zero(0),
-                      then don't extract resources.
-                    type: string
-                type: object
-              type: array
             status:
               properties:
                 danger:

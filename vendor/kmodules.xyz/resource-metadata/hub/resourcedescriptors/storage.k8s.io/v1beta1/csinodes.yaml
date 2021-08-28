@@ -20,9 +20,6 @@ spec:
     name: csinodes
     scope: Cluster
     version: v1beta1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   validation:
     openAPIV3Schema:
       description: DEPRECATED - This group version of CSINode is deprecated by storage/v1/CSINode.
