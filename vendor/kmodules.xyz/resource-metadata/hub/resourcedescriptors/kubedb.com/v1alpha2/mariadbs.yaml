@@ -31,11 +31,11 @@ spec:
     priority: 3
     type: string
   - name: Mode
-    pathTemplate: '{{ jp "{$}" . | kubedb_db_mode }}'
+    pathTemplate: '{{ k8s_resource_mode . }}'
     priority: 3
     type: string
   - name: Replicas
-    pathTemplate: '{{ jp "{$}" . | kubedb_db_replicas }}'
+    pathTemplate: '{{ k8s_resource_replicas_by_roles . | toRawJson }}'
     priority: 3
     type: string
   - name: Phase
@@ -43,12 +43,16 @@ spec:
     priority: 3
     type: string
   - name: Total Resources
-    pathTemplate: '{{ jp "{$}" .  | kubedb_db_resources }}'
+    pathTemplate: '{{ k8s_total_resource_limits . | toRawJson }}'
     priority: 3
     type: object
   - name: Auth Secret
     pathTemplate: '{{ jp "{.spec.authSecret.name}" . }}'
     priority: 1
+    type: string
+  - name: SSL Required
+    pathTemplate: '{{ jp "{.spec.requireSSL}" . }}'
+    priority: 3
     type: string
   - name: Termination Policy
     pathTemplate: '{{ jp "{.spec.terminationPolicy}" . }}'
@@ -294,9 +298,6 @@ spec:
     name: mariadbs
     scope: Namespaced
     version: v1alpha2
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   status:
     danger:
     - NotReady

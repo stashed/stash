@@ -9,15 +9,22 @@ metadata:
     k8s.io/version: v1
   name: voyager.appscode.com-v1-ingresses
 spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/voyager.appscode.com/ingresses.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/voyager.appscode.com/ingresses.png
+    type: image/png
   resource:
     group: voyager.appscode.com
     kind: Ingress
     name: ingresses
     scope: Namespaced
     version: v1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
+  ui:
+    editor:
+      name: voyagerappscodecom-ingress-editor
+      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      version: v0.1.0
   validation:
     openAPIV3Schema:
       properties:
@@ -2224,26 +2231,13 @@ spec:
                     items:
                       type: string
                     type: array
-                  ref:
-                    description: Ref to used tls termination.
-                    properties:
-                      apiVersion:
-                        description: API version of the referent.
-                        type: string
-                      kind:
-                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
-                        type: string
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                        type: string
-                    type: object
                   secretName:
                     description: SecretName is the name of the secret used to terminate
                       SSL traffic on 443. Field is left optional to allow SSL routing
                       based on SNI hostname alone. If the SNI host in a listener conflicts
                       with the "Host" header field used by an IngressRule, the SNI
                       host is used for termination and value of the Host header is
-                      used for routing. Deprecated
+                      used for routing.
                     type: string
                 type: object
               type: array

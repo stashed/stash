@@ -20,9 +20,6 @@ spec:
     name: redisversions
     scope: Cluster
     version: v1alpha1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   ui:
     editor:
       name: catalogkubedbcom-redisversion-editor

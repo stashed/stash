@@ -65,9 +65,6 @@ spec:
     name: backupsessions
     scope: Namespaced
     version: v1beta1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   ui:
     editor:
       name: stashappscodecom-backupsession-editor

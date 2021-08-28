@@ -20,9 +20,6 @@ spec:
     name: vaultpolicies
     scope: Namespaced
     version: v1alpha1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   ui:
     editor:
       name: policykubevaultcom-vaultpolicy-editor

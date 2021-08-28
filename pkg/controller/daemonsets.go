@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	appsv1 "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -87,7 +88,7 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 func (c *StashController) initDaemonSetWatcher() {
 	c.dsInformer = c.kubeInformerFactory.Apps().V1().DaemonSets().Informer()
 	c.dsQueue = queue.New("DaemonSet", c.MaxNumRequeues, c.NumThreads, c.runDaemonSetInjector)
-	c.dsInformer.AddEventHandler(queue.DefaultEventHandler(c.dsQueue.GetQueue()))
+	c.dsInformer.AddEventHandler(queue.DefaultEventHandler(c.dsQueue.GetQueue(), core.NamespaceAll))
 	c.dsLister = c.kubeInformerFactory.Apps().V1().DaemonSets().Lister()
 }
 

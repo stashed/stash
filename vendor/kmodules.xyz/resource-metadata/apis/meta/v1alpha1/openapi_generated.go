@@ -329,7 +329,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceDescriptorList":     schema_resource_metadata_apis_meta_v1alpha1_ResourceDescriptorList(ref),
 		"kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceDescriptorSpec":     schema_resource_metadata_apis_meta_v1alpha1_ResourceDescriptorSpec(ref),
 		"kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourcePanel":              schema_resource_metadata_apis_meta_v1alpha1_ResourcePanel(ref),
-		"kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceRequirements":       schema_resource_metadata_apis_meta_v1alpha1_ResourceRequirements(ref),
 		"kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceSection":            schema_resource_metadata_apis_meta_v1alpha1_ResourceSection(ref),
 		"kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceSubTableDefinition": schema_resource_metadata_apis_meta_v1alpha1_ResourceSubTableDefinition(ref),
 		"kmodules.xyz/resource-metadata/apis/meta/v1alpha1.StatusCodes":                schema_resource_metadata_apis_meta_v1alpha1_StatusCodes(ref),
@@ -15863,19 +15862,6 @@ func schema_resource_metadata_apis_meta_v1alpha1_ResourceDescriptorSpec(ref comm
 							},
 						},
 					},
-					"resourceRequirements": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceRequirements"),
-									},
-								},
-							},
-						},
-					},
 					"ui": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("kmodules.xyz/resource-metadata/apis/meta/v1alpha1.UIParameters"),
@@ -15891,7 +15877,7 @@ func schema_resource_metadata_apis_meta_v1alpha1_ResourceDescriptorSpec(ref comm
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1.CustomResourceValidation", "kmodules.xyz/client-go/api/v1.ResourceID", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ContactData", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.DeploymentParameters", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ImageSpec", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.Link", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.RelatedResourcePage", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceColumnDefinition", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceConnection", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceRequirements", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceSubTableDefinition", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.StatusCodes", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.UIParameters"},
+			"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1.CustomResourceValidation", "kmodules.xyz/client-go/api/v1.ResourceID", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ContactData", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.DeploymentParameters", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ImageSpec", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.Link", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.RelatedResourcePage", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceColumnDefinition", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceConnection", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.ResourceSubTableDefinition", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.StatusCodes", "kmodules.xyz/resource-metadata/apis/meta/v1alpha1.UIParameters"},
 	}
 }
 
@@ -15932,39 +15918,6 @@ func schema_resource_metadata_apis_meta_v1alpha1_ResourcePanel(ref common.Refere
 		},
 		Dependencies: []string{
 			"kmodules.xyz/resource-metadata/apis/meta/v1alpha1.PanelSection"},
-	}
-}
-
-func schema_resource_metadata_apis_meta_v1alpha1_ResourceRequirements(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"units": {
-						SchemaProps: spec.SchemaProps{
-							Description: "json path to replicas of type int if missing or zero(0), then don't extract resources.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"shards": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Shards represents number of shards not available for all resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"resources": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Json path to resources of type core.ResourceRequirements",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
 	}
 }
 

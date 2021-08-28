@@ -328,7 +328,7 @@ func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, features [
 		return err
 	}
 
-	apiSvc, err := aggrClient.ApiregistrationV1beta1().APIServices().Get(context.TODO(), apiServiceName, metav1.GetOptions{})
+	apiSvc, err := aggrClient.ApiregistrationV1().APIServices().Get(context.TODO(), apiServiceName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

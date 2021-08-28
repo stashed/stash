@@ -26,6 +26,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/stow"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -65,7 +66,7 @@ func (c *StashController) initRepositoryWatcher() {
 	if c.auditor != nil {
 		c.repoInformer.AddEventHandler(c.auditor.ForGVK(api.SchemeGroupVersion.WithKind(api.ResourceKindRepository)))
 	}
-	c.repoInformer.AddEventHandler(queue.NewReconcilableHandler(c.repoQueue.GetQueue()))
+	c.repoInformer.AddEventHandler(queue.NewReconcilableHandler(c.repoQueue.GetQueue(), core.NamespaceAll))
 	c.repoLister = c.stashInformerFactory.Stash().V1alpha1().Repositories().Lister()
 }
 

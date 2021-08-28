@@ -73,45 +73,9 @@ type ResourceDescriptorSpec struct {
 	// Links are a list of descriptive URLs intended to be used to surface additional documentation, dashboards, etc.
 	Links []Link `json:"links,omitempty"`
 
-	ResourceRequirements []ResourceRequirements `json:"resourceRequirements,omitempty"`
-
 	UI *UIParameters `json:"ui,omitempty"`
 
 	Installer *DeploymentParameters `json:"installer,omitempty"`
-}
-
-/*
-
-[
-{
-	"units": "spec.replicas",
-	"resources": "spec.podTemplate.spec.resources",
-},
-{
-	"units": "spec.topology.master.replicas",
-	"resources": "spec.topology.master.resources",
-},
-{
-	"units": "spec.topology.data.replicas",
-	"resources": "spec.topology.data.resources",
-},
-{
-	"units": "spec.topology.ingest.replicas",
-	"resources": "spec.topology.ingest.resources",
-}
-]
-
-*/
-
-type ResourceRequirements struct {
-	// json path to replicas of type int
-	// if missing or zero(0), then don't extract resources.
-	Units string `json:"units,omitempty"`
-	// Shards represents number of shards
-	// not available for all resources
-	Shards string `json:"shards,omitempty"`
-	// Json path to resources of type core.ResourceRequirements
-	Resources string `json:"resources,omitempty"`
 }
 
 type RelatedResourcePage struct {

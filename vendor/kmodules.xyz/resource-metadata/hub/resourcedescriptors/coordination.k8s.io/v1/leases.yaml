@@ -20,9 +20,6 @@ spec:
     name: leases
     scope: Namespaced
     version: v1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   ui:
     editor:
       name: coordinationk8sio-lease-editor

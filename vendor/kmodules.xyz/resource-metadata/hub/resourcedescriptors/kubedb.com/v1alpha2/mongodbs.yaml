@@ -31,11 +31,11 @@ spec:
     priority: 3
     type: string
   - name: Mode
-    pathTemplate: '{{ jp "{$}" . | kubedb_db_mode }}'
+    pathTemplate: '{{ k8s_resource_mode . }}'
     priority: 3
     type: string
   - name: Replicas
-    pathTemplate: '{{ jp "{$}" . | kubedb_db_replicas }}'
+    pathTemplate: '{{ k8s_resource_replicas_by_roles . | toRawJson }}'
     priority: 3
     type: string
   - name: Phase
@@ -43,7 +43,7 @@ spec:
     priority: 3
     type: string
   - name: Total Resources
-    pathTemplate: '{{ jp "{$}" .  | kubedb_db_resources }}'
+    pathTemplate: '{{ k8s_total_resource_limits . | toRawJson }}'
     priority: 3
     type: object
   - name: Auth Secret
@@ -306,18 +306,6 @@ spec:
     name: mongodbs
     scope: Namespaced
     version: v1alpha2
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
-  - resources: spec.shardTopology.shard.podTemplate.spec.resources
-    shards: spec.shardTopology.shard.replicas
-    units: spec.shardTopology.shard.shards
-  - resources: spec.shardTopology.configServer.podTemplate.spec.resources
-    shards: spec.shardTopology.configServer.replicas
-    units: spec.shardTopology.configServer.shards
-  - resources: spec.shardTopology.mongos.podTemplate.spec.resources
-    shards: spec.shardTopology.mongos.replicas
-    units: spec.shardTopology.mongos.shards
   status:
     danger:
     - NotReady

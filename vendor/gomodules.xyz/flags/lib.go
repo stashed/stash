@@ -75,7 +75,9 @@ func PrintFlags(fs *pflag.FlagSet, list ...string) {
 		val := flag.Value.String()
 		for _, keyword := range bl.UnsortedList() {
 			if strings.Contains(name, keyword) {
-				val = "***REDACTED***"
+				if val != "" {
+					val = "***REDACTED***"
+				}
 				break
 			}
 		}

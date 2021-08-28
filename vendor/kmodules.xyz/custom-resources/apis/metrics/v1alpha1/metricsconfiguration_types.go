@@ -282,23 +282,30 @@ type MetricValue struct {
 	//
 	// Available expression evaluation functions are:
 	//
-	// toInt() returns 1 if the expression is true otherwise 0,
-	// example: toInt(phase == 'Running')
+	// int() returns 1 if the expression is true otherwise 0,
+	// example: int(phase == 'Running')
 	//
-	// evaluatePercentage(a, b) returns the value of (a * b%)
-	// example: evaluatePercentage(replicas, maxUnavailable)
+	// percentage(percent, total, roundUp) returns the value of (percent * total%) when `percent` contains the percent(%) value.
+	// If percent represents an Integer value, then it will simply return it.
+	// roundUp is an optional field. By default, its value is false. If roundUp is set as `true`, the resultant value will be rounded up.
+	// example: (i) percentage("25%", 4) will return 1.
+	//         (ii) percentage("25%", 1 , true) will return 1 as roundUp is set as true.
+	//        (iii) percentage(2, 4) will return 2 as percent is representing an Integer value.
 	//
-	// calculateCPU() returns the cpu in unit core
-	// example: calculateCPU(cpu), for cpu value 150m, it will return 0.15
+	// cpu_cores() returns the cpu in unit core
+	// example: cpu_cores(cpu), for cpu value 150m, it will return 0.15
 	//
-	// calculateMemory() returns the memory size in byte
-	// example: calculateMemory(memory), for memory value 1 ki, it will return 1024
+	// bytes() returns the memory size in byte
+	// example: bytes(memory), for memory value 1 ki, it will return 1024
 	//
-	// toUnix() returns the DateTime string into unix format.
-	// example: toUnix(dateTime) will return the corresponding unix value for the given dateTime
+	// unix() returns the DateTime string into unix format.
+	// example: unix(dateTime) will return the corresponding unix value for the given dateTime
 	//
 	// in above examples phase, replicas, maxUnavailable, cpu, memory, dateTime are Parameter's key
 	// those values will come from corresponding Parameter's value
+	//
+	// Some expression evaluation functions are used for calculating resource requests and limits.
+	// Those functions are stated here: https://github.com/kmodules/resource-metrics/blob/master/eval.go
 	// +optional
 	ValueFromExpression string `json:"valueFromExpression,omitempty" protobuf:"bytes,3,opt,name=valueFromExpression"`
 }

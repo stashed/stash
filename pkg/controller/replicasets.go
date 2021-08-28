@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	apps "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -77,7 +78,7 @@ func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
 func (c *StashController) initReplicaSetWatcher() {
 	c.rsInformer = c.kubeInformerFactory.Apps().V1().ReplicaSets().Informer()
 	c.rsQueue = queue.New("ReplicaSet", c.MaxNumRequeues, c.NumThreads, c.runReplicaSetInjector)
-	c.rsInformer.AddEventHandler(queue.DefaultEventHandler(c.rsQueue.GetQueue()))
+	c.rsInformer.AddEventHandler(queue.DefaultEventHandler(c.rsQueue.GetQueue(), core.NamespaceAll))
 	c.rsLister = c.kubeInformerFactory.Apps().V1().ReplicaSets().Lister()
 }
 

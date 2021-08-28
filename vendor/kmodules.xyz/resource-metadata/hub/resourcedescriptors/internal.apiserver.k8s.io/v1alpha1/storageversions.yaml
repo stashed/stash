@@ -15,9 +15,6 @@ spec:
     name: storageversions
     scope: Namespaced
     version: v1alpha1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   ui:
     editor:
       name: internalapiserverk8sio-storageversion-editor

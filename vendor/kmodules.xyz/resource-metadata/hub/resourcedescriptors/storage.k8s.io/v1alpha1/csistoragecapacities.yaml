@@ -15,9 +15,6 @@ spec:
     name: csistoragecapacities
     scope: Namespaced
     version: v1alpha1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   validation:
     openAPIV3Schema:
       description: "CSIStorageCapacity stores the result of one CSI GetCapacity call.

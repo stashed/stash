@@ -15,9 +15,6 @@ spec:
     name: volumesnapshots
     scope: Namespaced
     version: v1beta1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   validation:
     openAPIV3Schema:
       description: VolumeSnapshot is a user's request for either creating a point-in-time

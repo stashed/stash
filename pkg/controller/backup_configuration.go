@@ -56,7 +56,7 @@ func (c *StashController) initBackupConfigurationWatcher() {
 	if c.auditor != nil {
 		c.bcInformer.AddEventHandler(c.auditor.ForGVK(api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration)))
 	}
-	c.bcInformer.AddEventHandler(queue.NewReconcilableHandler(c.bcQueue.GetQueue()))
+	c.bcInformer.AddEventHandler(queue.NewReconcilableHandler(c.bcQueue.GetQueue(), core.NamespaceAll))
 	c.bcLister = c.stashInformerFactory.Stash().V1beta1().BackupConfigurations().Lister()
 }
 

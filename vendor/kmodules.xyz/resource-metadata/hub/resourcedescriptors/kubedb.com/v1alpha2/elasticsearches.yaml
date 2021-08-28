@@ -30,22 +30,22 @@ spec:
     pathTemplate: '{{ jp "{.spec.version}" . }}'
     priority: 3
     type: string
-  - name: Mode
-    pathTemplate: '{{ jp "{$}" . | kubedb_db_mode }}'
-    priority: 3
-    type: string
   - name: Replicas
-    pathTemplate: '{{ jp "{$}" . | kubedb_db_replicas }}'
+    pathTemplate: '{{ k8s_resource_replicas_by_roles . | toRawJson }}'
     priority: 3
-    type: string
+    type: object
   - name: Phase
     pathTemplate: '{{ jp "{.status.phase}" . }}'
     priority: 3
     type: string
   - name: Total Resources
-    pathTemplate: '{{ jp "{$}" .  | kubedb_db_resources }}'
+    pathTemplate: '{{ k8s_total_resource_limits . | toRawJson }}'
     priority: 3
     type: object
+  - name: HTTPS
+    pathTemplate: '{{ jp "{.spec.enableSSL}" . }}'
+    priority: 3
+    type: string
   - name: Auth Secret
     pathTemplate: '{{ jp "{.spec.authSecret.name}" . }}'
     priority: 1
@@ -294,15 +294,6 @@ spec:
     name: elasticsearches
     scope: Namespaced
     version: v1alpha2
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
-  - resources: spec.topology.master.resources
-    units: spec.topology.master.replicas
-  - resources: spec.topology.data.resources
-    units: spec.topology.data.replicas
-  - resources: spec.topology.ingest.resources
-    units: spec.topology.ingest.replicas
   status:
     danger:
     - NotReady
@@ -2776,6 +2767,11 @@ spec:
                       type: string
                     type: array
                 type: object
+              type: object
+            secureConfigSecret:
+              properties:
+                name:
+                  type: string
               type: object
             serviceTemplates:
               items:

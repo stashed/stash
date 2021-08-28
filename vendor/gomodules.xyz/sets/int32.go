@@ -28,7 +28,7 @@ type Int32 map[int32]Empty
 
 // NewInt32 creates a Int32 from a list of values.
 func NewInt32(items ...int32) Int32 {
-	ss := Int32{}
+	ss := make(Int32, len(items))
 	ss.Insert(items...)
 	return ss
 }

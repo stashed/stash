@@ -17,68 +17,82 @@ limitations under the License.
 package queue
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
 	meta_util "kmodules.xyz/client-go/meta"
 
+	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	// NamespaceDemo means the object is in the demo namespace
+	NamespaceDemo string = "demo"
 )
 
 // QueueingEventHandler queues the key for the object on add and update events
 type QueueingEventHandler struct {
-	queue         workqueue.RateLimitingInterface
-	enqueueAdd    func(obj interface{}) bool
-	enqueueUpdate func(oldObj, newObj interface{}) bool
-	enqueueDelete bool
+	queue               workqueue.RateLimitingInterface
+	enqueueAdd          func(obj interface{}) bool
+	enqueueUpdate       func(oldObj, newObj interface{}) bool
+	enqueueDelete       bool
+	restrictToNamespace string
 }
 
 var _ cache.ResourceEventHandler = &QueueingEventHandler{}
 
-func DefaultEventHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+func DefaultEventHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
-		queue:         queue,
-		enqueueAdd:    nil,
-		enqueueUpdate: nil,
-		enqueueDelete: true,
+		queue:               queue,
+		enqueueAdd:          nil,
+		enqueueUpdate:       nil,
+		enqueueDelete:       true,
+		restrictToNamespace: restrictToNamespace,
 	}
 }
 
-func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(oldObj, newObj interface{}) bool) cache.ResourceEventHandler {
+func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(oldObj, newObj interface{}) bool, restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
-		queue:         queue,
-		enqueueAdd:    nil,
-		enqueueUpdate: enqueueUpdate,
-		enqueueDelete: true,
+		queue:               queue,
+		enqueueAdd:          nil,
+		enqueueUpdate:       enqueueUpdate,
+		enqueueDelete:       true,
+		restrictToNamespace: restrictToNamespace,
 	}
 }
 
-func NewUpsertHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+func NewUpsertHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
-		queue:         queue,
-		enqueueAdd:    nil,
-		enqueueUpdate: nil,
-		enqueueDelete: false,
+		queue:               queue,
+		enqueueAdd:          nil,
+		enqueueUpdate:       nil,
+		enqueueDelete:       false,
+		restrictToNamespace: restrictToNamespace,
 	}
 }
 
-func NewDeleteHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+func NewDeleteHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
-		queue:         queue,
-		enqueueAdd:    func(_ interface{}) bool { return false },
-		enqueueUpdate: func(_, _ interface{}) bool { return false },
-		enqueueDelete: true,
+		queue:               queue,
+		enqueueAdd:          func(_ interface{}) bool { return false },
+		enqueueUpdate:       func(_, _ interface{}) bool { return false },
+		enqueueDelete:       true,
+		restrictToNamespace: restrictToNamespace,
 	}
 }
 
-func NewReconcilableHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+func NewReconcilableHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue: queue,
 		enqueueAdd: func(o interface{}) bool {
@@ -87,11 +101,12 @@ func NewReconcilableHandler(queue workqueue.RateLimitingInterface) cache.Resourc
 		enqueueUpdate: func(old, nu interface{}) bool {
 			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil || !meta_util.MustAlreadyReconciled(nu)
 		},
-		enqueueDelete: true,
+		enqueueDelete:       true,
+		restrictToNamespace: restrictToNamespace,
 	}
 }
 
-func NewChangeHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+func NewChangeHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:      queue,
 		enqueueAdd: nil,
@@ -104,11 +119,12 @@ func NewChangeHandler(queue workqueue.RateLimitingInterface) cache.ResourceEvent
 				!reflect.DeepEqual(oldObj.GetAnnotations(), nuObj.GetAnnotations()) ||
 				!meta_util.StatusConditionAwareEqual(old, nu)
 		},
-		enqueueDelete: true,
+		enqueueDelete:       true,
+		restrictToNamespace: restrictToNamespace,
 	}
 }
 
-func NewSpecStatusChangeHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+func NewSpecStatusChangeHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:      queue,
 		enqueueAdd: nil,
@@ -118,7 +134,8 @@ func NewSpecStatusChangeHandler(queue workqueue.RateLimitingInterface) cache.Res
 				!meta_util.MustAlreadyReconciled(nu) ||
 				!meta_util.StatusConditionAwareEqual(old, nu)
 		},
-		enqueueDelete: true,
+		enqueueDelete:       true,
+		restrictToNamespace: restrictToNamespace,
 	}
 }
 
@@ -143,6 +160,17 @@ func EnqueueAfter(queue workqueue.RateLimitingInterface, obj interface{}, durati
 func (h *QueueingEventHandler) OnAdd(obj interface{}) {
 	klog.V(6).Infof("Add event for %+v\n", obj)
 	if h.enqueueAdd == nil || h.enqueueAdd(obj) {
+		if h.restrictToNamespace != core.NamespaceAll {
+			o, ok := obj.(client.Object)
+			if !ok {
+				return
+			}
+			if o.GetNamespace() != "" && o.GetNamespace() != h.restrictToNamespace {
+				klog.Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", o.GetObjectKind().GroupVersionKind(), o.GetNamespace(), o.GetName(), h.restrictToNamespace)
+				return
+			}
+		}
+
 		Enqueue(h.queue, obj)
 	}
 }
@@ -150,6 +178,17 @@ func (h *QueueingEventHandler) OnAdd(obj interface{}) {
 func (h *QueueingEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	klog.V(6).Infof("Update event for %+v\n", newObj)
 	if h.enqueueUpdate == nil || h.enqueueUpdate(oldObj, newObj) {
+		if h.restrictToNamespace != core.NamespaceAll {
+			o, ok := newObj.(client.Object)
+			if !ok {
+				return
+			}
+			if o.GetNamespace() != "" && o.GetNamespace() != h.restrictToNamespace {
+				klog.Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", o.GetObjectKind().GroupVersionKind(), o.GetNamespace(), o.GetName(), h.restrictToNamespace)
+				return
+			}
+		}
+
 		Enqueue(h.queue, newObj)
 	}
 }
@@ -157,6 +196,28 @@ func (h *QueueingEventHandler) OnUpdate(oldObj, newObj interface{}) {
 func (h *QueueingEventHandler) OnDelete(obj interface{}) {
 	klog.V(6).Infof("Delete event for %+v\n", obj)
 	if h.enqueueDelete {
+		if h.restrictToNamespace != core.NamespaceAll {
+			var o client.Object
+			var ok bool
+			if o, ok = obj.(client.Object); !ok {
+				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+				if !ok {
+					klog.V(5).Info("error decoding object, invalid type")
+					return
+				}
+				o, ok = tombstone.Obj.(client.Object)
+				if !ok {
+					utilruntime.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
+					return
+				}
+				klog.V(5).Infof("Recovered deleted object '%v' from tombstone", tombstone.Obj.(metav1.Object).GetName())
+			}
+			if o.GetNamespace() != "" && o.GetNamespace() != h.restrictToNamespace {
+				klog.Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", o.GetObjectKind().GroupVersionKind(), o.GetNamespace(), o.GetName(), h.restrictToNamespace)
+				return
+			}
+		}
+
 		Enqueue(h.queue, obj)
 	}
 }

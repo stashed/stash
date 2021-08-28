@@ -25,9 +25,6 @@ spec:
     name: certificaterequests
     scope: Namespaced
     version: v1
-  resourceRequirements:
-  - resources: spec.podTemplate.spec.resources
-    units: spec.replicas
   ui:
     editor:
       name: certmanagerio-certificaterequest-editor
