@@ -19,6 +19,7 @@ package queue
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	meta_util "kmodules.xyz/client-go/meta"
@@ -30,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
@@ -40,6 +42,27 @@ const (
 	// NamespaceDemo means the object is in the demo namespace
 	NamespaceDemo string = "demo"
 )
+
+var (
+	appsCodeAPIGroups = sets.NewString(
+		"appscode.com",
+		"kubedb.com",
+		"kubevault.com",
+		"kubeform.com",
+	)
+)
+
+func logLevel(apiGroup string) klog.Level {
+	if appsCodeAPIGroups.Has(apiGroup) {
+		return 3
+	}
+	for g := range appsCodeAPIGroups {
+		if strings.HasSuffix(apiGroup, "."+g) {
+			return 3
+		}
+	}
+	return 8
+}
 
 // QueueingEventHandler queues the key for the object on add and update events
 type QueueingEventHandler struct {
@@ -166,7 +189,10 @@ func (h *QueueingEventHandler) OnAdd(obj interface{}) {
 				return
 			}
 			if o.GetNamespace() != "" && o.GetNamespace() != h.restrictToNamespace {
-				klog.Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", o.GetObjectKind().GroupVersionKind(), o.GetNamespace(), o.GetName(), h.restrictToNamespace)
+				gvk := o.GetObjectKind().GroupVersionKind()
+				klog.
+					V(logLevel(gvk.Group)).
+					Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", gvk, o.GetNamespace(), o.GetName(), h.restrictToNamespace)
 				return
 			}
 		}
@@ -184,7 +210,10 @@ func (h *QueueingEventHandler) OnUpdate(oldObj, newObj interface{}) {
 				return
 			}
 			if o.GetNamespace() != "" && o.GetNamespace() != h.restrictToNamespace {
-				klog.Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", o.GetObjectKind().GroupVersionKind(), o.GetNamespace(), o.GetName(), h.restrictToNamespace)
+				gvk := o.GetObjectKind().GroupVersionKind()
+				klog.
+					V(logLevel(gvk.Group)).
+					Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", gvk, o.GetNamespace(), o.GetName(), h.restrictToNamespace)
 				return
 			}
 		}
@@ -213,7 +242,10 @@ func (h *QueueingEventHandler) OnDelete(obj interface{}) {
 				klog.V(5).Infof("Recovered deleted object '%v' from tombstone", tombstone.Obj.(metav1.Object).GetName())
 			}
 			if o.GetNamespace() != "" && o.GetNamespace() != h.restrictToNamespace {
-				klog.Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", o.GetObjectKind().GroupVersionKind(), o.GetNamespace(), o.GetName(), h.restrictToNamespace)
+				gvk := o.GetObjectKind().GroupVersionKind()
+				klog.
+					V(logLevel(gvk.Group)).
+					Infof("Skipping %v %s/%s. Only %s namespace is supported for Community Edition. Please upgrade to Enterprise to use any namespace.", gvk, o.GetNamespace(), o.GetName(), h.restrictToNamespace)
 				return
 			}
 		}

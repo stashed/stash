@@ -121,6 +121,18 @@ message Condition {
   optional string message = 6;
 }
 
+// ObjectReference contains enough information to let you inspect or modify the referred object.
+message ObjectReference {
+  // Namespace of the referent.
+  // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+  // +optional
+  optional string namespace = 1;
+
+  // Name of the referent.
+  // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+  optional string name = 2;
+}
+
 // ResourceID identifies a resource
 message ResourceID {
   optional string group = 1;
