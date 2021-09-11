@@ -18,11 +18,14 @@ package exec
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
 
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -59,7 +62,27 @@ func TTY(enable bool) func(*Options) {
 	}
 }
 
+func Exec(config *rest.Config, pod types.NamespacedName, options ...func(*Options)) (string, error) {
+	kc, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+	p, err := kc.CoreV1().Pods(pod.Namespace).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return execIntoPod(config, kc, p, options...)
+}
+
 func ExecIntoPod(config *rest.Config, pod *core.Pod, options ...func(*Options)) (string, error) {
+	kc, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+	return execIntoPod(config, kc, pod, options...)
+}
+
+func execIntoPod(config *rest.Config, kc kubernetes.Interface, pod *core.Pod, options ...func(*Options)) (string, error) {
 	var (
 		execOut bytes.Buffer
 		execErr bytes.Buffer
@@ -78,8 +101,6 @@ func ExecIntoPod(config *rest.Config, pod *core.Pod, options ...func(*Options)) 
 	for _, option := range options {
 		option(opts)
 	}
-
-	kc := kubernetes.NewForConfigOrDie(config)
 
 	req := kc.CoreV1().RESTClient().Post().
 		Resource("pods").

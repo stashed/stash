@@ -517,7 +517,7 @@ gomodules.xyz/flags
 # gomodules.xyz/go-sh v0.1.0
 ## explicit
 gomodules.xyz/go-sh
-# gomodules.xyz/homedir v0.0.0-20201104190528-bcd4d5d94b84
+# gomodules.xyz/homedir v0.1.0
 gomodules.xyz/homedir
 # gomodules.xyz/jsonpatch/v2 v2.2.0
 gomodules.xyz/jsonpatch/v2
@@ -551,7 +551,7 @@ gomodules.xyz/stow/swift
 gomodules.xyz/sync
 # gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545
 gomodules.xyz/wait
-# gomodules.xyz/x v0.0.7
+# gomodules.xyz/x v0.0.8
 ## explicit
 gomodules.xyz/x/analytics
 gomodules.xyz/x/arrays
@@ -1269,7 +1269,7 @@ k8s.io/utils/pointer
 k8s.io/utils/trace
 # kmodules.xyz/apiversion v0.2.0
 kmodules.xyz/apiversion
-# kmodules.xyz/client-go v0.0.0-20210827153326-54ead9c6225f
+# kmodules.xyz/client-go v0.0.0-20210909114628-15cac6c74063
 ## explicit
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -1303,7 +1303,7 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/custom-resources v0.0.0-20210824055127-e5a3d2d6c161
+# kmodules.xyz/custom-resources v0.0.0-20210829135624-c63be82e13c0
 ## explicit
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
@@ -1317,7 +1317,7 @@ kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alph
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/auditor/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/metrics/v1alpha1
 kmodules.xyz/custom-resources/crds
-# kmodules.xyz/objectstore-api v0.0.0-20210817052835-df749235585e
+# kmodules.xyz/objectstore-api v0.0.0-20210829122106-d39859fc2d56
 ## explicit
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
@@ -1351,7 +1351,7 @@ kmodules.xyz/prober/probe
 kmodules.xyz/prober/probe/exec
 kmodules.xyz/prober/probe/http
 kmodules.xyz/prober/probe/tcp
-# kmodules.xyz/resource-metadata v0.5.8-0.20210827075808-ed8d9b48f916
+# kmodules.xyz/resource-metadata v0.5.8-0.20210829123359-8f6a3d706da5
 ## explicit
 kmodules.xyz/resource-metadata/apis/meta
 kmodules.xyz/resource-metadata/apis/meta/v1alpha1
@@ -1360,7 +1360,7 @@ kmodules.xyz/resource-metadata/hub
 kmodules.xyz/resource-metadata/hub/resourceclasses
 kmodules.xyz/resource-metadata/hub/resourcedescriptors
 kmodules.xyz/resource-metadata/pkg/graph
-# kmodules.xyz/webhook-runtime v0.0.0-20210804101750-5c602fd5cf06
+# kmodules.xyz/webhook-runtime v0.0.0-20210829120758-f6ab57afa7e4
 ## explicit
 kmodules.xyz/webhook-runtime/admission
 kmodules.xyz/webhook-runtime/admission/v1beta1

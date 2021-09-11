@@ -26,7 +26,7 @@ require (
 	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/runtime v0.2.0
 	gomodules.xyz/stow v0.2.4
-	gomodules.xyz/x v0.0.7
+	gomodules.xyz/x v0.0.8
 	gopkg.in/ini.v1 v1.51.0
 	k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver v0.21.1
@@ -36,15 +36,15 @@ require (
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kubernetes v1.21.1
-	kmodules.xyz/client-go v0.0.0-20210827153326-54ead9c6225f
+	kmodules.xyz/client-go v0.0.0-20210909114628-15cac6c74063
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
-	kmodules.xyz/custom-resources v0.0.0-20210824055127-e5a3d2d6c161
-	kmodules.xyz/objectstore-api v0.0.0-20210817052835-df749235585e
+	kmodules.xyz/custom-resources v0.0.0-20210829135624-c63be82e13c0
+	kmodules.xyz/objectstore-api v0.0.0-20210829122106-d39859fc2d56
 	kmodules.xyz/offshoot-api v0.0.0-20210804100837-d0388be3e60d
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
-	kmodules.xyz/resource-metadata v0.5.8-0.20210827075808-ed8d9b48f916 // indirect
-	kmodules.xyz/webhook-runtime v0.0.0-20210804101750-5c602fd5cf06
+	kmodules.xyz/resource-metadata v0.5.8-0.20210829123359-8f6a3d706da5 // indirect
+	kmodules.xyz/webhook-runtime v0.0.0-20210829120758-f6ab57afa7e4
 	stash.appscode.dev/apimachinery v0.15.0
 )
 
