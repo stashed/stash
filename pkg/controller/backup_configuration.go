@@ -355,7 +355,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 		// ServiceAccount has been specified, so use it.
 		serviceAccountName = inv.RuntimeSettings.Pod.ServiceAccountName
 	} else {
-		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object prefixed with stash-backup.
+		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object prefixed with stash-trigger.
 		serviceAccountName = meta.Name
 
 		_, _, err := core_util.CreateOrPatchServiceAccount(
@@ -404,7 +404,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 			in.Spec.JobTemplate.Spec.Template.Labels = core_util.UpsertMap(in.Spec.JobTemplate.Spec.Template.Labels, inv.Labels)
 
 			container := core.Container{
-				Name:            apis.StashContainer,
+				Name:            apis.StashCronJobContainer,
 				ImagePullPolicy: core.PullIfNotPresent,
 				Image:           image.ToContainerImage(),
 				Args: []string{
@@ -469,7 +469,7 @@ func (c *StashController) EnsureBackupTriggeringCronJobDeleted(inv invoker.Backu
 }
 
 func getBackupCronJobName(name string) string {
-	return meta2.ValidCronJobNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(name, ".", "-"))
+	return meta2.ValidCronJobNameWithPrefix(apis.PrefixStashTrigger, strings.ReplaceAll(name, ".", "-"))
 }
 
 func (c *StashController) handleCronJobCreationFailure(ref *core.ObjectReference, err error) error {
