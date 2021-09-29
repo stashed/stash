@@ -370,6 +370,10 @@ message BackupTarget {
   // Supported only for "Restic" driver
   // +optional
   repeated string exclude = 7;
+
+  // Args specifies a list of arguments to pass to the backup driver.
+  // +optional
+  repeated string args = 8;
 }
 
 message BackupTargetStatus {
@@ -766,6 +770,10 @@ message RestoreTarget {
   // Rules specifies different restore options for different hosts
   // +optional
   repeated Rule rules = 6;
+
+  // Args specifies a list of arguments to pass to the restore driver.
+  // +optional
+  repeated string args = 7;
 }
 
 message RestoreTargetSpec {

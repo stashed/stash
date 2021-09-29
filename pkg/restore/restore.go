@@ -206,7 +206,9 @@ func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.Re
 	// We will execute postRestore hook even if the restore failed.
 	// Reason: https://github.com/stashed/stash/issues/986
 	var restoreErr, hookErr error
-	output, restoreErr := w.RunRestore(util.RestoreOptionsForHost(opt.Host, targetInfo.Target.Rules), targetInfo.Target.Ref)
+	restoreOptions := util.RestoreOptionsForHost(opt.Host, targetInfo.Target.Rules)
+	restoreOptions.Args = targetInfo.Target.Args
+	output, restoreErr := w.RunRestore(restoreOptions, targetInfo.Target.Ref)
 
 	// If postRestore hook is specified, then execute those hooks
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {

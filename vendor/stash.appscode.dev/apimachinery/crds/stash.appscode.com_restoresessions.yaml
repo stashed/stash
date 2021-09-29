@@ -2761,6 +2761,12 @@ spec:
                       data in the repository. This will be used as `sourceHost` and
                       `targetHosts` or will be used to generate them.
                     type: string
+                  args:
+                    description: Args specifies a list of arguments to pass to the
+                      restore driver.
+                    items:
+                      type: string
+                    type: array
                   ref:
                     description: Ref refers to the restore,target
                     properties:

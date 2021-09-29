@@ -3175,6 +3175,12 @@ spec:
                             or will be used to generate the `hostname` for the restic
                             repository.
                           type: string
+                        args:
+                          description: Args specifies a list of arguments to pass
+                            to the backup driver.
+                          items:
+                            type: string
+                          type: array
                         exclude:
                           description: Exclude specifies a list of patterns for the
                             files to ignore during backup. Stash will ignore those

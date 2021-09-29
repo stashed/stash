@@ -75,6 +75,9 @@ type BackupTarget struct {
 	// Supported only for "Restic" driver
 	// +optional
 	Exclude []string `json:"exclude,omitempty" protobuf:"bytes,7,rep,name=exclude"`
+	// Args specifies a list of arguments to pass to the backup driver.
+	// +optional
+	Args []string `json:"args,omitempty" protobuf:"bytes,8,rep,name=args"`
 }
 
 type RestoreTarget struct {
@@ -100,6 +103,9 @@ type RestoreTarget struct {
 	// Rules specifies different restore options for different hosts
 	// +optional
 	Rules []Rule `json:"rules,omitempty" protobuf:"bytes,6,rep,name=rules"`
+	// Args specifies a list of arguments to pass to the restore driver.
+	// +optional
+	Args []string `json:"args,omitempty" protobuf:"bytes,7,rep,name=args"`
 }
 
 type Rule struct {

@@ -233,6 +233,7 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 				snapshotId:  snapshot,
 				excludes:    restoreOptions.Exclude,
 				includes:    restoreOptions.Include,
+				args:        restoreOptions.Args,
 			}
 			if _, err := w.restore(params); err != nil {
 				return err
@@ -246,6 +247,7 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 				destination: restoreOptions.Destination,
 				excludes:    restoreOptions.Exclude,
 				includes:    restoreOptions.Include,
+				args:        restoreOptions.Args,
 			}
 			if _, err := w.restore(params); err != nil {
 				return err
