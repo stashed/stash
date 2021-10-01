@@ -83,7 +83,7 @@ type RestoreInvoker struct {
 	SetCondition            func(*v1beta1.TargetRef, kmapi.Condition) error
 	IsConditionTrue         func(*v1beta1.TargetRef, string) (bool, error)
 	NextInOrder             func(v1beta1.TargetRef, []v1beta1.RestoreMemberStatus) bool
-	EnsureKubeDBIntegration func(appClient appcatalog_cs.Interface) error
+	EnsureKubeDBIntegration func(appClient appcatalog_cs.Interface) (map[string]string, error)
 
 	UpdateRestoreInvokerStatus func(status RestoreInvokerStatus) (RestoreInvokerStatus, error)
 	CreateEvent                func(eventType, source, reason, message string) error
@@ -258,7 +258,7 @@ func ExtractRestoreInvokerInfo(kubeClient kubernetes.Interface, stashClient cs.I
 			}, metav1.CreateOptions{})
 			return err
 		}
-		invoker.EnsureKubeDBIntegration = func(appClient appcatalog_cs.Interface) error {
+		invoker.EnsureKubeDBIntegration = func(appClient appcatalog_cs.Interface) (map[string]string, error) {
 			for i := range restoreBatch.Spec.Members {
 				target := restoreBatch.Spec.Members[i].Target
 				// Don't do anything if the target is not an AppBinding
@@ -272,7 +272,7 @@ func ExtractRestoreInvokerInfo(kubeClient kubernetes.Interface, stashClient cs.I
 					if kerr.IsNotFound(err) {
 						continue
 					}
-					return err
+					return nil, err
 				}
 				// If the AppBinding is not managed by KubeDB, then don't do anything
 				if manager, err := meta.GetStringValue(appBinding.Labels, meta.ManagedByLabelKey); err != nil || manager != "kubedb.com" {
@@ -281,17 +281,20 @@ func ExtractRestoreInvokerInfo(kubeClient kubernetes.Interface, stashClient cs.I
 				// Extract the name, and managed-by labels. We are not passing "instance" label because there could be multiple AppBindings.
 				appLabels, err := extractLabels(appBinding.Labels, meta.ManagedByLabelKey, meta.NameLabelKey)
 				if err != nil {
-					return err
+					return nil, err
 				}
 
 				// Add the labels to the invoker
-				_, _, err = v1beta1_util.PatchRestoreBatch(context.TODO(), stashClient.StashV1beta1(), restoreBatch, func(in *v1beta1.RestoreBatch) *v1beta1.RestoreBatch {
+				restoreBatch, _, err := v1beta1_util.PatchRestoreBatch(context.TODO(), stashClient.StashV1beta1(), restoreBatch, func(in *v1beta1.RestoreBatch) *v1beta1.RestoreBatch {
 					in.Labels = meta.OverwriteKeys(in.Labels, appLabels)
 					return in
 				}, metav1.PatchOptions{})
-				return err
+				if err != nil {
+					return nil, err
+				}
+				return restoreBatch.Labels, nil
 			}
-			return nil
+			return nil, nil
 		}
 	case v1beta1.ResourceKindRestoreSession:
 		// get RestoreSession
@@ -449,36 +452,39 @@ func ExtractRestoreInvokerInfo(kubeClient kubernetes.Interface, stashClient cs.I
 			}, metav1.CreateOptions{})
 			return err
 		}
-		invoker.EnsureKubeDBIntegration = func(appClient appcatalog_cs.Interface) error {
+		invoker.EnsureKubeDBIntegration = func(appClient appcatalog_cs.Interface) (map[string]string, error) {
 			// Don't do anything if the target is not an AppBinding
 			if restoreSession.Spec.Target == nil || !TargetOfGroupKind(restoreSession.Spec.Target.Ref, appcat.SchemeGroupVersion.Group, appcat.ResourceKindApp) {
-				return nil
+				return nil, nil
 			}
 			// Get the AppBinding
 			appBinding, err := appClient.AppcatalogV1alpha1().AppBindings(restoreSession.Namespace).Get(context.TODO(), restoreSession.Spec.Target.Ref.Name, metav1.GetOptions{})
 			if err != nil {
 				// If the AppBinding does not exist, then don't do anything.
 				if kerr.IsNotFound(err) {
-					return nil
+					return nil, nil
 				}
-				return err
+				return nil, err
 			}
 			// If the AppBinding is not managed by KubeDB, then don't do anything
 			if manager, err := meta.GetStringValue(appBinding.Labels, meta.ManagedByLabelKey); err != nil || manager != "kubedb.com" {
-				return nil
+				return nil, nil
 			}
 			// Extract the name, instance, and managed-by labels.
 			appLabels, err := extractLabels(appBinding.Labels, meta.InstanceLabelKey, meta.ManagedByLabelKey, meta.NameLabelKey)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			// Add the labels to the invoker
-			_, _, err = v1beta1_util.PatchRestoreSession(context.TODO(), stashClient.StashV1beta1(), restoreSession, func(in *v1beta1.RestoreSession) *v1beta1.RestoreSession {
+			restoreSession, _, err = v1beta1_util.PatchRestoreSession(context.TODO(), stashClient.StashV1beta1(), restoreSession, func(in *v1beta1.RestoreSession) *v1beta1.RestoreSession {
 				in.Labels = meta.OverwriteKeys(in.Labels, appLabels)
 				return in
 			}, metav1.PatchOptions{})
-			return err
+			if err != nil {
+				return nil, err
+			}
+			return restoreSession.Labels, nil
 		}
 	default:
 		return invoker, fmt.Errorf("failed to extract invoker info. Reason: unknown invoker")
