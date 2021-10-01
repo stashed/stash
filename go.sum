@@ -1220,7 +1220,6 @@ kmodules.xyz/client-go v0.0.0-20210617233340-13d22e91512b/go.mod h1:A6GAK6xP5zBu
 kmodules.xyz/client-go v0.0.0-20210715065708-d4f0cc74ead1/go.mod h1:E/vGngai00UtVwP8R4PWpPUBF/EZa6Ub9WS5+tVcs4M=
 kmodules.xyz/client-go v0.0.0-20210719120358-dd0503cf99cf/go.mod h1:E/vGngai00UtVwP8R4PWpPUBF/EZa6Ub9WS5+tVcs4M=
 kmodules.xyz/client-go v0.0.0-20210822203828-5e9cebbf1dfa/go.mod h1:0gkPeALtYjB27OHt4rd6+ZmMgoVTHVLtEJQeU23/gtA=
-kmodules.xyz/client-go v0.0.0-20210909114628-15cac6c74063/go.mod h1:0gkPeALtYjB27OHt4rd6+ZmMgoVTHVLtEJQeU23/gtA=
 kmodules.xyz/client-go v0.0.0-20210921150324-f005c6dfcb32 h1:ZXVJStHHjppRoaUw5JQ5KzMjK+EiY1GkcPigPHfkvSg=
 kmodules.xyz/client-go v0.0.0-20210921150324-f005c6dfcb32/go.mod h1:0gkPeALtYjB27OHt4rd6+ZmMgoVTHVLtEJQeU23/gtA=
 kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278 h1:sFmqh4EaiZ4K2FkkGvrDFddstq8GSf6ogH24IAsuKew=
@@ -1270,5 +1269,5 @@ sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
 sigs.k8s.io/yaml v1.2.0 h1:kr/MCeFWJWTwyaHoR9c8EjH9OumOmoF9YGiZd7lFm/Q=
 sigs.k8s.io/yaml v1.2.0/go.mod h1:yfXDCHCao9+ENCvLSE62v9VSji2MKu5jeNfTrofGhJc=
 sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0/go.mod h1:hI742Nqp5OhwiqlzhgfbWU4mW4yO10fP+LoT9WOswdU=
-stash.appscode.dev/apimachinery v0.15.1-0.20210916061209-8cbe8b9ddbfb h1:npmpqegjv1Wuf7WPqhp2p9AAp8zXrBmGacq7318qmWg=
-stash.appscode.dev/apimachinery v0.15.1-0.20210916061209-8cbe8b9ddbfb/go.mod h1:iyBZuC+pUvE9q0ZH2UsvDHEhxLBjOh7/LuhQYccClcg=
+stash.appscode.dev/apimachinery v0.15.1-0.20210928153358-908628b7da73 h1:+vNRTaCe4F9DSx70HQkiu+soW7Z9jWXY5wOfO+O0NFY=
+stash.appscode.dev/apimachinery v0.15.1-0.20210928153358-908628b7da73/go.mod h1:5xXk6R6QXc1qklFuQCWpHZEU2vRTf7mhD0fcTAYISIk=

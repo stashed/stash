@@ -56,6 +56,7 @@ const (
 
 	InvokerKind = "INVOKER_KIND"
 	InvokerName = "INVOKER_NAME"
+	AddonImage  = "ADDON_IMAGE"
 
 	ExcludePatterns = "EXCLUDE_PATTERNS"
 	IncludePatterns = "INCLUDE_PATTERNS"

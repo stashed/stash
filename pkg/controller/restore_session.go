@@ -156,10 +156,11 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 	}
 
 	// Apply any modification requires for smooth KubeDB integration
-	err = inv.EnsureKubeDBIntegration(c.appCatalogClient)
+	newLabels, err := inv.EnsureKubeDBIntegration(c.appCatalogClient)
 	if err != nil {
 		return err
 	}
+	inv.Labels = newLabels
 
 	return c.applyRestoreInvokerReconciliationLogic(inv, key)
 }
