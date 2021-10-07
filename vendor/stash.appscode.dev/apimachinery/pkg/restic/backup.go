@@ -148,6 +148,7 @@ func (w *ResticWrapper) runBackup(backupOption BackupOptions) (api_v1beta1.HostB
 			path:     path,
 			host:     backupOption.Host,
 			excludes: backupOption.Exclude,
+			args:     backupOption.Args,
 		}
 		out, err := w.backup(params)
 		if err != nil {

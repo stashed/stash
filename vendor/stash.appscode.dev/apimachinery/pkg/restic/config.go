@@ -54,6 +54,7 @@ type BackupOptions struct {
 	StdinFileName     string // default "stdin"
 	RetentionPolicy   v1alpha1.RetentionPolicy
 	Exclude           []string
+	Args              []string
 }
 
 // RestoreOptions specifies restore information
@@ -65,6 +66,7 @@ type RestoreOptions struct {
 	Destination  string   // destination path where snapshot will be restored, used in cli
 	Exclude      []string
 	Include      []string
+	Args         []string
 }
 
 type DumpOptions struct {

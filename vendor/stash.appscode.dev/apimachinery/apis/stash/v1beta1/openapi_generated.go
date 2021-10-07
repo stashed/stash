@@ -20048,6 +20048,21 @@ func schema_apimachinery_apis_stash_v1beta1_BackupTarget(ref common.ReferenceCal
 							},
 						},
 					},
+					"args": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Args specifies a list of arguments to pass to the backup driver.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -21216,6 +21231,21 @@ func schema_apimachinery_apis_stash_v1beta1_RestoreTarget(ref common.ReferenceCa
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
 										Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.Rule"),
+									},
+								},
+							},
+						},
+					},
+					"args": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Args specifies a list of arguments to pass to the restore driver.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
 									},
 								},
 							},

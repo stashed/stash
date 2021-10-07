@@ -41,6 +41,7 @@ func BackupOptionsForBackupTarget(backupTarget *api.BackupTarget, retentionPolic
 	if backupTarget != nil {
 		backupOpt.BackupPaths = backupTarget.Paths
 		backupOpt.Exclude = backupTarget.Exclude
+		backupOpt.Args = backupTarget.Args
 	}
 	return backupOpt
 }

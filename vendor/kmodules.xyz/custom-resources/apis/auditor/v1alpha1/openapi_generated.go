@@ -16119,8 +16119,7 @@ func schema_custom_resources_apis_auditor_v1alpha1_SiteInfo(ref common.Reference
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "SiteInfo captures information of a product deployment site.",
-				Type:        []string{"object"},
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
