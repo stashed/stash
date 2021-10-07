@@ -24,7 +24,7 @@ spec:
     editor:
       name: enginekubevaultcom-awsrole-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:
@@ -94,10 +94,6 @@ spec:
                 are capped to max_sts_ttl). Valid only when credential_type is one
                 of assumed_role or federation_token
               type: string
-            path:
-              description: 'Path defines the path of the AWS secret engine default:
-                aws More info: https://www.vaultproject.io/docs/auth/aws.html#via-the-cli'
-              type: string
             policy:
               description: Specifies the IAM policy in JSON format.
               type: object
@@ -125,9 +121,8 @@ spec:
               items:
                 type: string
               type: array
-            vaultRef:
-              description: VaultRef is the name of a AppBinding referencing to a Vault
-                Server
+            secretEngineRef:
+              description: SecretEngineRef is the name of a Secret Engine
               properties:
                 name:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -136,6 +131,6 @@ spec:
               type: object
           required:
           - credentialType
-          - vaultRef
+          - secretEngineRef
           type: object
       type: object

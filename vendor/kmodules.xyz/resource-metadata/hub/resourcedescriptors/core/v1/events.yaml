@@ -57,7 +57,7 @@ spec:
     editor:
       name: core-event-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: Event is a report of an event somewhere in the cluster.  Events

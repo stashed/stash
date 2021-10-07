@@ -325,7 +325,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/util/intstr.IntOrString":                       schema_apimachinery_pkg_util_intstr_IntOrString(ref),
 		"k8s.io/apimachinery/pkg/version.Info":                                  schema_k8sio_apimachinery_pkg_version_Info(ref),
 		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.AuditRegistration": schema_custom_resources_apis_auditor_v1alpha1_AuditRegistration(ref),
+		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.ControlPlaneInfo":  schema_custom_resources_apis_auditor_v1alpha1_ControlPlaneInfo(ref),
 		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.GroupResources":    schema_custom_resources_apis_auditor_v1alpha1_GroupResources(ref),
+		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.KubernetesInfo":    schema_custom_resources_apis_auditor_v1alpha1_KubernetesInfo(ref),
+		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.NodeStats":         schema_custom_resources_apis_auditor_v1alpha1_NodeStats(ref),
+		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.ProductInfo":       schema_custom_resources_apis_auditor_v1alpha1_ProductInfo(ref),
+		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.SiteInfo":          schema_custom_resources_apis_auditor_v1alpha1_SiteInfo(ref),
+		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.SiteInfoList":      schema_custom_resources_apis_auditor_v1alpha1_SiteInfoList(ref),
+		"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.Version":           schema_custom_resources_apis_auditor_v1alpha1_Version(ref),
 	}
 }
 
@@ -15842,6 +15849,90 @@ func schema_custom_resources_apis_auditor_v1alpha1_AuditRegistration(ref common.
 	}
 }
 
+func schema_custom_resources_apis_auditor_v1alpha1_ControlPlaneInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "https://github.com/kmodules/client-go/blob/kubernetes-1.16.3/tools/analytics/analytics.go#L66",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"dnsNames": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"emailAddresses": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"ipAddresses": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"uris": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"notBefore": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"notAfter": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+				},
+				Required: []string{"notBefore", "notAfter"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
 func schema_custom_resources_apis_auditor_v1alpha1_GroupResources(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -15870,6 +15961,313 @@ func schema_custom_resources_apis_auditor_v1alpha1_GroupResources(ref common.Ref
 									},
 								},
 							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_custom_resources_apis_auditor_v1alpha1_KubernetesInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"clusterName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "https://github.com/kmodules/client-go/blob/master/tools/clusterid/lib.go",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"clusterUID": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/version.Info"),
+						},
+					},
+					"controlPlane": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kmodules.xyz/custom-resources/apis/auditor/v1alpha1.ControlPlaneInfo"),
+						},
+					},
+					"nodeStats": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("kmodules.xyz/custom-resources/apis/auditor/v1alpha1.NodeStats"),
+						},
+					},
+				},
+				Required: []string{"nodeStats"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/version.Info", "kmodules.xyz/custom-resources/apis/auditor/v1alpha1.ControlPlaneInfo", "kmodules.xyz/custom-resources/apis/auditor/v1alpha1.NodeStats"},
+	}
+}
+
+func schema_custom_resources_apis_auditor_v1alpha1_NodeStats(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"count": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"capacity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Capacity represents the total resources of a node. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+									},
+								},
+							},
+						},
+					},
+					"allocatable": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Allocatable represents the resources of a node that are available for scheduling. Defaults to Capacity.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/api/resource.Quantity"},
+	}
+}
+
+func schema_custom_resources_apis_auditor_v1alpha1_ProductInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("kmodules.xyz/custom-resources/apis/auditor/v1alpha1.Version"),
+						},
+					},
+					"licenseID": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"productOwnerName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"productOwnerUID": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"productName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "This has been renamed to Features",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"productUID": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"version"},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/custom-resources/apis/auditor/v1alpha1.Version"},
+	}
+}
+
+func schema_custom_resources_apis_auditor_v1alpha1_SiteInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SiteInfo captures information of a product deployment site.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"product": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kmodules.xyz/custom-resources/apis/auditor/v1alpha1.ProductInfo"),
+						},
+					},
+					"kubernetes": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("kmodules.xyz/custom-resources/apis/auditor/v1alpha1.KubernetesInfo"),
+						},
+					},
+				},
+				Required: []string{"kubernetes"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "kmodules.xyz/custom-resources/apis/auditor/v1alpha1.KubernetesInfo", "kmodules.xyz/custom-resources/apis/auditor/v1alpha1.ProductInfo"},
+	}
+}
+
+func schema_custom_resources_apis_auditor_v1alpha1_SiteInfoList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SiteInfoList is a list of SiteInfo",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kmodules.xyz/custom-resources/apis/auditor/v1alpha1.SiteInfo"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "kmodules.xyz/custom-resources/apis/auditor/v1alpha1.SiteInfo"},
+	}
+}
+
+func schema_custom_resources_apis_auditor_v1alpha1_Version(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"versionStrategy": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"commitHash": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"gitBranch": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"gitTag": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"commitTimestamp": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"goVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"compiler": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"platform": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
 				},

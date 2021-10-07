@@ -65,7 +65,7 @@ spec:
     editor:
       name: catalogkubedbcom-mongodbversion-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:

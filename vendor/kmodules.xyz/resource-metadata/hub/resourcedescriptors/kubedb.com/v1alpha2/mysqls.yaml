@@ -350,11 +350,11 @@ spec:
     editor:
       name: kubedbcom-mysql-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
     options:
       name: kubedbcom-mysql-editor-options
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:
@@ -406,6 +406,87 @@ spec:
               properties:
                 name:
                   type: string
+              type: object
+            coordinator:
+              properties:
+                resources:
+                  properties:
+                    limits:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      type: object
+                    requests:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      type: object
+                  type: object
+                securityContext:
+                  properties:
+                    allowPrivilegeEscalation:
+                      type: boolean
+                    capabilities:
+                      properties:
+                        add:
+                          items:
+                            type: string
+                          type: array
+                        drop:
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    privileged:
+                      type: boolean
+                    procMount:
+                      type: string
+                    readOnlyRootFilesystem:
+                      type: boolean
+                    runAsGroup:
+                      format: int64
+                      type: integer
+                    runAsNonRoot:
+                      type: boolean
+                    runAsUser:
+                      format: int64
+                      type: integer
+                    seLinuxOptions:
+                      properties:
+                        level:
+                          type: string
+                        role:
+                          type: string
+                        type:
+                          type: string
+                        user:
+                          type: string
+                      type: object
+                    seccompProfile:
+                      properties:
+                        localhostProfile:
+                          type: string
+                        type:
+                          type: string
+                      required:
+                      - type
+                      type: object
+                    windowsOptions:
+                      properties:
+                        gmsaCredentialSpec:
+                          type: string
+                        gmsaCredentialSpecName:
+                          type: string
+                        runAsUserName:
+                          type: string
+                      type: object
+                  type: object
               type: object
             halted:
               type: boolean

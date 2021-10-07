@@ -68,7 +68,7 @@ spec:
     editor:
       name: rbacauthorizationk8sio-rolebinding-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: RoleBinding references a role, but does not contain it.  It can

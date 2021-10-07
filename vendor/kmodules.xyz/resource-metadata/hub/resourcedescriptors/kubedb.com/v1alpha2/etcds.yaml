@@ -334,11 +334,11 @@ spec:
     editor:
       name: kubedbcom-etcd-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
     options:
       name: kubedbcom-etcd-editor-options
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:

@@ -24,7 +24,7 @@ spec:
     editor:
       name: enginekubevaultcom-gcprole-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:
@@ -87,6 +87,14 @@ spec:
               description: Name of the GCP project that this roleset's service account
                 will belong to. Cannot be updated.
               type: string
+            secretEngineRef:
+              description: SecretEngineRef is the name of a Secret Engine
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
             secretType:
               description: Specifies the type of secret generated for this role set
               enum:
@@ -99,19 +107,10 @@ spec:
               items:
                 type: string
               type: array
-            vaultRef:
-              description: VaultRef is the name of a AppBinding referencing to a Vault
-                Server
-              properties:
-                name:
-                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    TODO: Add other useful fields. apiVersion, kind, uid?'
-                  type: string
-              type: object
           required:
           - bindings
           - project
+          - secretEngineRef
           - secretType
-          - vaultRef
           type: object
       type: object

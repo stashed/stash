@@ -24,7 +24,7 @@ spec:
     editor:
       name: extensions-networkpolicy-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: DEPRECATED 1.9 - This group version of NetworkPolicy is deprecated

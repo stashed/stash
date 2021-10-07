@@ -29,7 +29,7 @@ spec:
     editor:
       name: acmecertmanagerio-challenge-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: Challenge is a type to represent a Challenge request with an ACME

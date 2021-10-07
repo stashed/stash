@@ -19,7 +19,7 @@ spec:
     editor:
       name: networkingk8sio-ingressclass-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: IngressClass represents the class of the Ingress, referenced by

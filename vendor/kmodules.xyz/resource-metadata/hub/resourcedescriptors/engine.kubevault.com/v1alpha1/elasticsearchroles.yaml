@@ -18,8 +18,8 @@ spec:
   ui:
     editor:
       name: enginekubevaultcom-elasticsearchrole-editor
-      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
-      version: v0.1.0
+      url: https://bundles.byte.builders/ui/
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:
@@ -77,33 +77,6 @@ spec:
               items:
                 type: string
               type: array
-            databaseName:
-              description: Specifies the database name under which the role will be
-                created
-              type: string
-            databaseRef:
-              description: DatabaseRef specifies the database appbinding reference
-                in any namespace
-              properties:
-                name:
-                  description: '`name` is the name of the app. Required'
-                  type: string
-                namespace:
-                  description: '`namespace` is the namespace of the app. Required'
-                  type: string
-                parameters:
-                  description: "Parameters is a set of the parameters to be used to
-                    override default parameters. The inline YAML/JSON payload to be
-                    translated into equivalent JSON object. \n The Parameters field
-                    is NOT secret or secured in any way and should NEVER be used to
-                    hold sensitive information."
-                  type: object
-                  x-kubernetes-embedded-resource: true
-                  x-kubernetes-preserve-unknown-fields: true
-              required:
-              - name
-              - namespace
-              type: object
             defaultTTL:
               description: Specifies the TTL for the leases associated with this role.
                 Accepts time suffixed strings ("1h") or an integer number of seconds.
@@ -114,18 +87,14 @@ spec:
                 this role. Accepts time suffixed strings ("1h") or an integer number
                 of seconds. Defaults to system/engine default TTL time.
               type: string
-            path:
-              description: Specifies the path where secret engine is enabled
-              type: string
             revocationStatements:
               description: https://www.vaultproject.io/api/secret/databases/elasticdb.html#revocation_statements
                 Specifies the database statements to be executed to revoke a user.
               items:
                 type: string
               type: array
-            vaultRef:
-              description: VaultRef is the name of a AppBinding referencing to a Vault
-                Server
+            secretEngineRef:
+              description: SecretEngineRef is the name of a Secret Engine
               properties:
                 name:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -134,6 +103,6 @@ spec:
               type: object
           required:
           - creationStatements
-          - vaultRef
+          - secretEngineRef
           type: object
       type: object

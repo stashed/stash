@@ -24,7 +24,7 @@ spec:
     editor:
       name: enginekubevaultcom-azurerole-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:
@@ -90,25 +90,20 @@ spec:
                 using this role. Accepts time suffixed strings ("1h") or an integer
                 number of seconds. Defaults to the system/engine max TTL time.
               type: string
-            path:
-              description: 'Path defines the path of the Azure secret engine default:
-                azure More info: https://www.vaultproject.io/docs/auth/azure.html#via-the-cli'
-              type: string
-            ttl:
-              description: Specifies the default TTL for service principals generated
-                using this role. Accepts time suffixed strings ("1h") or an integer
-                number of seconds. Defaults to the system/engine default TTL time.
-              type: string
-            vaultRef:
-              description: VaultRef is the name of a AppBinding referencing to a Vault
-                Server
+            secretEngineRef:
+              description: SecretEngineRef is the name of a Secret Engine
               properties:
                 name:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     TODO: Add other useful fields. apiVersion, kind, uid?'
                   type: string
               type: object
+            ttl:
+              description: Specifies the default TTL for service principals generated
+                using this role. Accepts time suffixed strings ("1h") or an integer
+                number of seconds. Defaults to the system/engine default TTL time.
+              type: string
           required:
-          - vaultRef
+          - secretEngineRef
           type: object
       type: object

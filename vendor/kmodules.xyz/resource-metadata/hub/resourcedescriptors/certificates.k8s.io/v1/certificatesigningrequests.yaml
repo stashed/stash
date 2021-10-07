@@ -24,7 +24,7 @@ spec:
     editor:
       name: certificatesk8sio-certificatesigningrequest-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: "CertificateSigningRequest objects provide a mechanism to obtain

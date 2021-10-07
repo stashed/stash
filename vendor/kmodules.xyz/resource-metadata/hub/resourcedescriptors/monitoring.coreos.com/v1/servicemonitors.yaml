@@ -81,7 +81,7 @@ spec:
     editor:
       name: monitoringcoreoscom-servicemonitor-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
     instanceLabelPaths:
     - spec.selector.matchLabels
   validation:

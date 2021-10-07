@@ -19,7 +19,7 @@ spec:
     editor:
       name: authorizationk8sio-selfsubjectrulesreview-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: SelfSubjectRulesReview enumerates the set of actions the current

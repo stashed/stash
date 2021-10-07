@@ -112,7 +112,7 @@ spec:
     editor:
       name: certmanagerio-certificate-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: "A Certificate resource should be created to ensure an up to date

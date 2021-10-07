@@ -282,7 +282,7 @@ spec:
     editor:
       name: apps-replicaset-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: ReplicaSet ensures that a specified number of pod replicas are

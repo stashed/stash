@@ -19,7 +19,7 @@ spec:
     editor:
       name: monitoringcoreoscom-probe-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: Probe defines monitoring for a set of static targets or ingresses.
