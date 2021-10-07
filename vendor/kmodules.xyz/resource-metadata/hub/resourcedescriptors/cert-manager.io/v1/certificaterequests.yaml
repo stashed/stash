@@ -29,7 +29,7 @@ spec:
     editor:
       name: certmanagerio-certificaterequest-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: "A CertificateRequest is used to request a signed certificate from

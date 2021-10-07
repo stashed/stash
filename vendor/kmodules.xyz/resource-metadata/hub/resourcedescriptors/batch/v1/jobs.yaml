@@ -218,7 +218,7 @@ spec:
     editor:
       name: batch-job-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: Job represents the configuration of a single job.

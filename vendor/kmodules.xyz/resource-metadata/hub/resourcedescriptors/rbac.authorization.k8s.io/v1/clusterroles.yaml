@@ -41,7 +41,7 @@ spec:
     editor:
       name: rbacauthorizationk8sio-clusterrole-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: ClusterRole is a cluster level, logical grouping of PolicyRules

@@ -297,11 +297,11 @@ spec:
     editor:
       name: kubedbcom-memcached-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
     options:
       name: kubedbcom-memcached-editor-options
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:

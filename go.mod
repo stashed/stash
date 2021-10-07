@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/gogo/protobuf v1.3.2
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.1.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
@@ -13,7 +14,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.7
+	go.bytebuilders.dev/audit v0.0.8
 	go.bytebuilders.dev/license-verifier v0.9.3
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.3
 	gomodules.xyz/blobfs v0.1.7
@@ -36,15 +37,14 @@ require (
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kubernetes v1.21.1
-	kmodules.xyz/client-go v0.0.0-20210921150324-f005c6dfcb32
+	kmodules.xyz/client-go v0.0.0-20210928133955-8df5bb467db6
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
-	kmodules.xyz/custom-resources v0.0.0-20210829135624-c63be82e13c0
-	kmodules.xyz/objectstore-api v0.0.0-20210829122106-d39859fc2d56
-	kmodules.xyz/offshoot-api v0.0.0-20210804100837-d0388be3e60d
+	kmodules.xyz/custom-resources v0.0.0-20211007064058-70fba50e58a4
+	kmodules.xyz/objectstore-api v0.0.0-20210928135706-fdf68f88ea6e
+	kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
-	kmodules.xyz/resource-metadata v0.5.8-0.20210829123359-8f6a3d706da5 // indirect
-	kmodules.xyz/webhook-runtime v0.0.0-20210829120758-f6ab57afa7e4
+	kmodules.xyz/webhook-runtime v0.0.0-20210928141616-7f73c2ab318a
 	stash.appscode.dev/apimachinery v0.15.1-0.20211001093145-5e773145f153
 )
 
@@ -153,3 +153,5 @@ replace k8s.io/utils => k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 replace sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20210427030912-90eeee3bc4ad
 
 replace github.com/satori/go.uuid => github.com/gofrs/uuid v4.0.0+incompatible
+
+replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.1+incompatible

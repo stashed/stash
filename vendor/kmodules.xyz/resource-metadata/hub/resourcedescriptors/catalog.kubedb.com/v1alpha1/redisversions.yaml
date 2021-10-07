@@ -24,7 +24,7 @@ spec:
     editor:
       name: catalogkubedbcom-redisversion-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:
@@ -59,6 +59,13 @@ spec:
           type: object
         spec:
           properties:
+            coordinator:
+              properties:
+                image:
+                  type: string
+              required:
+              - image
+              type: object
             db:
               properties:
                 image:
@@ -69,6 +76,13 @@ spec:
             deprecated:
               type: boolean
             exporter:
+              properties:
+                image:
+                  type: string
+              required:
+              - image
+              type: object
+            initContainer:
               properties:
                 image:
                   type: string

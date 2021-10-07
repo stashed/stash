@@ -55,7 +55,7 @@ BIN_PLATFORMS    := $(DOCKER_PLATFORMS)
 OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
-BASEIMAGE_PROD   ?= gcr.io/distroless/static:nonroot
+BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian10
 BASEIMAGE_DBG    ?= debian:buster
 
 GO_VERSION       ?= 1.17

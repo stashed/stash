@@ -24,7 +24,7 @@ spec:
     editor:
       name: kubevaultcom-vaultserver-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:
@@ -73,6 +73,116 @@ spec:
           type: object
         spec:
           properties:
+            allowedSecretEngines:
+              default:
+                namespaces:
+                  from: Same
+              description: "AllowedSecretEngines defines the types of Secret Engines
+                that MAY be attached to a Listener and the trusted namespaces where
+                those Route resources MAY be present. \n Although a client request
+                may match multiple route rules, only one rule may ultimately receive
+                the request. Matching precedence MUST be determined in order of the
+                following criteria: \n * The most specific match as defined by the
+                Route type. * The oldest Route based on creation timestamp. For example,
+                a Route with   a creation timestamp of \"2020-09-08 01:02:03\" is
+                given precedence over   a Route with a creation timestamp of \"2020-09-08
+                01:02:04\". * If everything else is equivalent, the Route appearing
+                first in   alphabetical order (namespace/name) should be given precedence.
+                For   example, foo/bar is given precedence over foo/baz. \n All valid
+                rules within a Route attached to this Listener should be implemented.
+                Invalid Route rules can be ignored (sometimes that will mean the full
+                Route). If a Route rule transitions from valid to invalid, support
+                for that Route rule should be dropped to ensure consistency. For example,
+                even if a filter specified by a Route rule is invalid, the rest of
+                the rules within that Route should still be supported. \n Support:
+                Core"
+              properties:
+                namespaces:
+                  default:
+                    from: Same
+                  description: Namespaces indicates namespaces from which Secret Engines
+                    may be attached to this Listener. This is restricted to the namespace
+                    of this VaultServer by default.
+                  properties:
+                    from:
+                      default: Same
+                      description: 'From indicates where Secret Engines will be selected
+                        for this VaultServer. Possible values are: * All: Secret Engines
+                        in all namespaces may be used by this VaultServer. * Selector:
+                        Secret Engines in namespaces selected by the selector may
+                        be used by   this VaultServer. * Same: Only Secret Engines
+                        in the same namespace may be used by this VaultServer.'
+                      enum:
+                      - All
+                      - Selector
+                      - Same
+                      type: string
+                    selector:
+                      description: Selector must be specified when From is set to
+                        "Selector". In that case, only Secret Engines in Namespaces
+                        matching this Selector will be selected by this VaultServer.
+                        This field is ignored for other values of "From".
+                      properties:
+                        matchExpressions:
+                          description: matchExpressions is a list of label selector
+                            requirements. The requirements are ANDed.
+                          items:
+                            description: A label selector requirement is a selector
+                              that contains values, a key, and an operator that relates
+                              the key and values.
+                            properties:
+                              key:
+                                description: key is the label key that the selector
+                                  applies to.
+                                type: string
+                              operator:
+                                description: operator represents a key's relationship
+                                  to a set of values. Valid operators are In, NotIn,
+                                  Exists and DoesNotExist.
+                                type: string
+                              values:
+                                description: values is an array of string values.
+                                  If the operator is In or NotIn, the values array
+                                  must be non-empty. If the operator is Exists or
+                                  DoesNotExist, the values array must be empty. This
+                                  array is replaced during a strategic merge patch.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - key
+                            - operator
+                            type: object
+                          type: array
+                        matchLabels:
+                          additionalProperties:
+                            type: string
+                          description: matchLabels is a map of {key,value} pairs.
+                            A single {key,value} in the matchLabels map is equivalent
+                            to an element of matchExpressions, whose key field is
+                            "key", the operator is "In", and the values array contains
+                            only "value". The requirements are ANDed.
+                          type: object
+                      type: object
+                  type: object
+                secretEngines:
+                  description: SecretEngines specifies the types of Secret Engines
+                    that are allowed to bind to this VaultServer. When unspecified
+                    or empty, all types of Secret Engines are allowed.
+                  items:
+                    enum:
+                    - kv
+                    - pki
+                    - aws
+                    - azure
+                    - gcp
+                    - postgres
+                    - mongodb
+                    - mysql
+                    - elasticsearch
+                    type: string
+                  type: array
+              type: object
             authMethods:
               description: Specifies the list of auth methods to enable
               items:

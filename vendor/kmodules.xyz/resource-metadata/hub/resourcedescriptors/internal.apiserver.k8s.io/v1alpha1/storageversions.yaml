@@ -19,7 +19,7 @@ spec:
     editor:
       name: internalapiserverk8sio-storageversion-editor
       url: https://bundles.byte.builders/ui/
-      version: v0.2.0-alpha.0
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       description: ' Storage version of a specific resource.'

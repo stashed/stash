@@ -19,6 +19,7 @@ package lib
 import (
 	"context"
 	"fmt"
+	gosync "sync"
 	"time"
 
 	api "go.bytebuilders.dev/audit/api/v1"
@@ -29,11 +30,18 @@ import (
 	"go.bytebuilders.dev/license-verifier/info"
 	"gomodules.xyz/sync"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/discovery"
+	auditorapi "kmodules.xyz/custom-resources/apis/auditor/v1alpha1"
+	"kmodules.xyz/custom-resources/util/siteinfo"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -48,6 +56,9 @@ type EventPublisher struct {
 	nats        *NatsConfig
 	mapper      discovery.ResourceMapper
 	createEvent EventCreator
+
+	siMutex gosync.Mutex
+	si      *auditorapi.SiteInfo
 }
 
 func NewEventPublisher(
@@ -160,6 +171,52 @@ func (p *EventPublisher) ForGVK(gvk schema.GroupVersionKind) cache.ResourceEvent
 			return ev, nil
 		},
 	}
+}
+
+func (p *EventPublisher) SetupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.Interface, factory informers.SharedInformerFactory) error {
+	var err error
+	p.si, err = siteinfo.GetSiteInfo(cfg, kc, nil, "")
+	if err != nil {
+		return err
+	}
+	if p.si.Product == nil {
+		p.si.Product = new(auditorapi.ProductInfo)
+	}
+
+	nodeInformer := factory.Core().V1().Nodes().Informer()
+	nodeLister := factory.Core().V1().Nodes().Lister()
+	nodeInformer.AddEventHandler(&ResourceEventPublisher{
+		p: p,
+		createEvent: func(_ client.Object) (*api.Event, error) {
+			nodes, err := nodeLister.List(labels.Everything())
+			if err != nil {
+				return nil, err
+			}
+			p.siMutex.Lock()
+			siteinfo.RefreshNodeStats(p.si, nodes)
+			p.siMutex.Unlock()
+
+			p.once.Do(p.connect)
+			if p.nats == nil {
+				return nil, fmt.Errorf("not connected to nats")
+			}
+
+			p.si.Product.LicenseID = p.nats.LicenseID
+			ev := &api.Event{
+				Resource: p.si,
+				ResourceID: kmapi.ResourceID{
+					Group:   auditorapi.SchemeGroupVersion.Group,
+					Version: auditorapi.SchemeGroupVersion.Version,
+					Name:    auditorapi.ResourceSiteInfos,
+					Kind:    auditorapi.ResourceKindSiteInfo,
+					Scope:   kmapi.ClusterScoped,
+				},
+				LicenseID: p.nats.LicenseID,
+			}
+			return ev, nil
+		},
+	})
+	return nil
 }
 
 func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr manager.Manager, gvk schema.GroupVersionKind) error {
