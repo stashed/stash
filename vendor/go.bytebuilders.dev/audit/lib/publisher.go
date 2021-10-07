@@ -202,6 +202,7 @@ func (p *EventPublisher) SetupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.
 			}
 
 			p.si.Product.LicenseID = p.nats.LicenseID
+			p.si.Name = fmt.Sprintf("%s.%s", p.nats.LicenseID, p.si.Product.ProductName)
 			ev := &api.Event{
 				Resource: p.si,
 				ResourceID: kmapi.ResourceID{

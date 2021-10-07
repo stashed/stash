@@ -771,8 +771,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yvasiyarov/go-metrics v0.0.0-20140926110328-57bccd1ccd43/go.mod h1:aX5oPXxHm3bOH+xeAttToC8pqch2ScQN/JoXYupl6xs=
 github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50/go.mod h1:NUSPSUX/bi6SeDMUh6brw0nXpxHnc96TguQh0+r/ssA=
 github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f/go.mod h1:GlGEuHIJweS1mbCqG+7vt2nvWLzLLnRHbXz5JKd/Qbg=
-go.bytebuilders.dev/audit v0.0.8 h1:Zcu+OPnyIJEWjWGbu7ZyVwk0UnRhvsaXMwhn4zUS/KM=
-go.bytebuilders.dev/audit v0.0.8/go.mod h1:EsnAMS2ehBznxHrEYx1LuEQfYZc9SYBxqrmWRJgZ4VI=
+go.bytebuilders.dev/audit v0.0.9 h1:mmwwcWinjqlmIeDeieEAOqU9eaJKkYmWNASFDwxuerA=
+go.bytebuilders.dev/audit v0.0.9/go.mod h1:IFioMRcGEAf/fzHmUKE98/Asconn9ec51rzPqCYnIJc=
 go.bytebuilders.dev/license-verifier v0.9.3 h1:foHyjil3Y2OesjUInQZeRl5kntWWCPkqqQOz1wSAmLo=
 go.bytebuilders.dev/license-verifier v0.9.3/go.mod h1:GpIW0o8O0wpiBVt7IIz4z7bcPuG8nza8/bCDkaupDn8=
 go.bytebuilders.dev/license-verifier/kubernetes v0.9.3 h1:rrgo72xtiEEyE0exFSQ8HMpQpxt+hpJW2a9QWOkk4n4=
@@ -1220,7 +1220,6 @@ kmodules.xyz/client-go v0.0.0-20210928133955-8df5bb467db6/go.mod h1:0gkPeALtYjB2
 kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278 h1:sFmqh4EaiZ4K2FkkGvrDFddstq8GSf6ogH24IAsuKew=
 kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20210618002152-fae23aef5fb4/go.mod h1:IIkUctlfoptoci0BOrsUf8ya+MOG5uaeh1PE4uzaIbA=
-kmodules.xyz/custom-resources v0.0.0-20211007064058-70fba50e58a4/go.mod h1:pGabego8q4oi/2sNjhdtFkgVaVw4AyGv14GO6VtAjTw=
 kmodules.xyz/custom-resources v0.0.0-20211007080833-72bd9e8cae6e h1:0IEUFAJPgwPx3+Zb1BMcHLywKhJtXMk6YCHNsjWJwYQ=
 kmodules.xyz/custom-resources v0.0.0-20211007080833-72bd9e8cae6e/go.mod h1:pGabego8q4oi/2sNjhdtFkgVaVw4AyGv14GO6VtAjTw=
 kmodules.xyz/objectstore-api v0.0.0-20210928135706-fdf68f88ea6e h1:2QZBUcUI6r7mLU5/9+Xxd1eDClEIEkZkJlyCU91UoY8=
@@ -1231,8 +1230,8 @@ kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f h1:V1lapZtGG7GntoUsOuE
 kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f/go.mod h1:8E5ckbd1KMNmR4hc7ScvmQnGfx1ULUUp+UTmoDdxRkc=
 kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027 h1:rtSPsruEkoBOLcbJkxMQjnPafpv8/vJnfWlTIj9yRBg=
 kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027/go.mod h1:H4NcvS1RQxeXtQONALbU6r9OT3Xa7cMhfamX/k9t9wo=
-kmodules.xyz/resource-metadata v0.6.3 h1:rs0hIj+77HkImXyV8WSWT8DI1Cu/y9/hT8h5KtPutbI=
-kmodules.xyz/resource-metadata v0.6.3/go.mod h1:KWf68Ado/hgYpb/msYNvhYSLWvS/bJcVAAHO1/q9nNg=
+kmodules.xyz/resource-metadata v0.6.4 h1:BkY0/7UKMJIMSyslRoBcONjvtXoGA0mEJl9+wFI0Xjk=
+kmodules.xyz/resource-metadata v0.6.4/go.mod h1:KWf68Ado/hgYpb/msYNvhYSLWvS/bJcVAAHO1/q9nNg=
 kmodules.xyz/resource-metrics v0.0.3/go.mod h1:6Dv63HDgp83DhA+lZNB7GIQR6PLjNrYW6ghQKioQzII=
 kmodules.xyz/resource-metrics v0.0.5 h1:an1eaxw8mWX5RfujUMTTkJPGiMlQQUDzT6aveSGNAq8=
 kmodules.xyz/resource-metrics v0.0.5/go.mod h1:6Dv63HDgp83DhA+lZNB7GIQR6PLjNrYW6ghQKioQzII=
