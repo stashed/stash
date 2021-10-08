@@ -1049,6 +1049,13 @@ func (c *StashController) getRestorePhase(status invoker.RestoreInvokerStatus) (
 		if target.Phase == api_v1beta1.TargetRestoreFailed {
 			errList = append(errList, fmt.Errorf("restore failed for target: %s/%s", target.Ref.Kind, target.Ref.Name))
 		}
+		if target.Phase == api_v1beta1.TargetRestoreRunning {
+			return api_v1beta1.RestoreRunning, nil
+		}
+	}
+
+	if errList != nil {
+		return api_v1beta1.RestoreFailed, errors.NewAggregate(errList)
 	}
 
 	// check if any of the target phase is "Unknown". if any of their phase is "Unknown", then consider entire restore process phase is unknown.
@@ -1060,10 +1067,6 @@ func (c *StashController) getRestorePhase(status invoker.RestoreInvokerStatus) (
 
 	if completedTargets != len(status.TargetStatus) {
 		return api_v1beta1.RestoreRunning, nil
-	}
-
-	if errList != nil {
-		return api_v1beta1.RestoreFailed, errors.NewAggregate(errList)
 	}
 
 	// Restore has been completed successfully for all targets.
@@ -1149,9 +1152,10 @@ func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) 
 			targetStats[i].Phase = api_v1beta1.TargetRestorePending
 			continue
 		}
-		// check if any host failed to restore or it's phase 'Unknown'
+		// check if any host failed to restore, running, or it's phase 'Unknown'
 		anyHostFailed := false
 		anyHostPhaseUnknown := false
+		anyHostRunning := false
 		for _, hostStats := range target.Stats {
 			if hostStats.Phase == api_v1beta1.HostRestoreFailed {
 				anyHostFailed = true
@@ -1159,6 +1163,10 @@ func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) 
 			}
 			if hostStats.Phase == api_v1beta1.HostRestoreUnknown {
 				anyHostPhaseUnknown = true
+				break
+			}
+			if hostStats.Phase == api_v1beta1.HostRestoreRunning {
+				anyHostRunning = true
 				break
 			}
 		}
@@ -1172,13 +1180,23 @@ func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) 
 			targetStats[i].Phase = api_v1beta1.TargetRestorePhaseUnknown
 			continue
 		}
+
+		// Restore should be succeeded only if all the conditions of this restore target are true
+		allConditionTrue := true
+		for _, c := range target.Conditions {
+			if c.Status == core.ConditionFalse {
+				allConditionTrue = false
+				break
+			}
+		}
+
 		// if some host hasn't completed their restore yet, phase should be "Running"
-		if target.TotalHosts != nil && *target.TotalHosts != int32(len(target.Stats)) {
-			targetStats[i].Phase = api_v1beta1.TargetRestoreRunning
+		if !anyHostRunning && *target.TotalHosts <= int32(len(target.Stats)) && allConditionTrue {
+			targetStats[i].Phase = api_v1beta1.TargetRestoreSucceeded
 			continue
 		}
 		// all host completed their restore process and none of them failed. so, phase should be "Succeeded".
-		targetStats[i].Phase = api_v1beta1.TargetRestoreSucceeded
+		targetStats[i].Phase = api_v1beta1.TargetRestoreRunning
 	}
 	return inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{TargetStatus: targetStats})
 }

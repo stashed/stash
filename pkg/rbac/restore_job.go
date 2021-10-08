@@ -24,6 +24,7 @@ import (
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
@@ -76,13 +77,28 @@ func ensureRestoreJobClusterRole(kc kubernetes.Interface, psps []string, labels 
 			},
 			{
 				APIGroups: []string{core.SchemeGroupVersion.Group},
-				Resources: []string{"secrets", "endpoints", "pods"},
+				Resources: []string{"secrets", "endpoints", "persistentvolumeclaims"},
 				Verbs:     []string{"get"},
 			},
 			{
 				APIGroups: []string{core.SchemeGroupVersion.Group},
-				Resources: []string{"pods/exec"},
-				Verbs:     []string{"get", "create"},
+				Resources: []string{"pods", "pods/exec"},
+				Verbs:     []string{"get", "create", "list"},
+			},
+			{
+				APIGroups: []string{core.SchemeGroupVersion.Group},
+				Resources: []string{"serviceaccounts"},
+				Verbs:     []string{"get", "create", "patch"},
+			},
+			{
+				APIGroups: []string{apps.SchemeGroupVersion.Group},
+				Resources: []string{"statefulsets"},
+				Verbs:     []string{"get", "patch"},
+			},
+			{
+				APIGroups: []string{rbac.SchemeGroupVersion.Group},
+				Resources: []string{"roles", "rolebindings"},
+				Verbs:     []string{"get", "create", "patch"},
 			},
 			{
 				APIGroups: []string{core.GroupName},

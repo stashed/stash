@@ -79,6 +79,11 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 		// merge/replace backup config inputs
 		inputs = core_util.UpsertMap(inputs, o.Inputs)
 
+		//Add addon image as input
+		inputs = core_util.UpsertMap(inputs, map[string]string{
+			apis.AddonImage: function.Spec.Image,
+		})
+
 		// resolve Function with inputs, modify in place
 		if err = resolveWithInputs(function, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("can't resolve Function %s for Task %s, reason: %s", fn.Name, task.Name, err)

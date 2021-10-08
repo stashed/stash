@@ -3833,6 +3833,7 @@ spec:
                             enum:
                             - Succeeded
                             - Failed
+                            - Running
                             - Unknown
                             type: string
                         type: object
