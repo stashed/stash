@@ -121,12 +121,13 @@ const (
 	RestorePhaseUnknown RestorePhase = "Unknown"
 )
 
-// +kubebuilder:validation:Enum=Succeeded;Failed;Unknown
+// +kubebuilder:validation:Enum=Succeeded;Failed;Running;Unknown
 type HostRestorePhase string
 
 const (
 	HostRestoreSucceeded HostRestorePhase = "Succeeded"
 	HostRestoreFailed    HostRestorePhase = "Failed"
+	HostRestoreRunning   HostRestorePhase = "Running"
 	HostRestoreUnknown   HostRestorePhase = "Unknown"
 )
 
