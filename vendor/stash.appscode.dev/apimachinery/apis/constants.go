@@ -204,6 +204,10 @@ const (
 	StashInitContainerInjected = "StashInitContainerInjected"
 	// RestoreJobCreated indicates whether the restore job was created
 	RestoreJobCreated = "RestoreJobCreated"
+	// RestoreCompleted condition indicates whether the restore process has been completed or not.
+	// This condition is particularly helpful when the restore addon require some additional operations to perform
+	// before marking the RestoreSession Succeeded/Failed.
+	RestoreCompleted = "RestoreCompleted"
 
 	// GlobalPreBackupHookSucceeded indicates whether the global PreBackupHook was executed successfully or not
 	GlobalPreBackupHookSucceeded = "GlobalPreBackupHookSucceeded"
