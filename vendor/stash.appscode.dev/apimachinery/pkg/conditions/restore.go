@@ -106,3 +106,21 @@ func SetInitContainerInjectedConditionToFalse(inv invoker.RestoreInvoker, tref a
 		Message: fmt.Sprintf("Failed to inject Stash init-container. Reason: %v", err.Error()),
 	})
 }
+
+func SetRestoreCompletedConditionToTrue(inv invoker.RestoreInvoker, tref api_v1beta1.TargetRef, msg string) error {
+	return inv.SetCondition(&tref, kmapi.Condition{
+		Type:    apis.RestoreCompleted,
+		Status:  core.ConditionTrue,
+		Reason:  "PostRestoreTasksExecuted",
+		Message: msg,
+	})
+}
+
+func SetRestoreCompletedConditionToFalse(inv invoker.RestoreInvoker, tref api_v1beta1.TargetRef, msg string) error {
+	return inv.SetCondition(&tref, kmapi.Condition{
+		Type:    apis.RestoreCompleted,
+		Status:  core.ConditionFalse,
+		Reason:  "PostRestoreTasksNotExecuted",
+		Message: msg,
+	})
+}
