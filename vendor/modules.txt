@@ -321,7 +321,7 @@ github.com/prometheus/procfs/internal/util
 github.com/robfig/cron/v3
 # github.com/russross/blackfriday/v2 v2.0.1
 github.com/russross/blackfriday/v2
-# github.com/satori/go.uuid v1.2.0 => github.com/gofrs/uuid v4.0.0+incompatible
+# github.com/satori/go.uuid v1.2.0 => github.com/gomodules/uuid v4.0.0+incompatible
 github.com/satori/go.uuid
 # github.com/sergi/go-diff v1.1.0
 github.com/sergi/go-diff/diffmatchpatch
@@ -1567,7 +1567,7 @@ stash.appscode.dev/apimachinery/pkg/util
 # k8s.io/kubernetes => github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20210617232219-a432af45d932
 # k8s.io/utils => k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 # sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20210427030912-90eeee3bc4ad
-# github.com/satori/go.uuid => github.com/gofrs/uuid v4.0.0+incompatible
+# github.com/satori/go.uuid => github.com/gomodules/uuid v4.0.0+incompatible
 # github.com/dgrijalva/jwt-go => github.com/gomodules/jwt v3.2.2+incompatible
 # github.com/golang-jwt/jwt => github.com/golang-jwt/jwt v3.2.2+incompatible
 # github.com/form3tech-oss/jwt-go => github.com/form3tech-oss/jwt-go v3.2.5+incompatible
