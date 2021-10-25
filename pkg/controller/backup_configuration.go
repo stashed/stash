@@ -45,6 +45,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta2 "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
+	ofst_util "kmodules.xyz/offshoot-api/util"
 	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
@@ -427,14 +428,9 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 
-			// only apply the pod level runtime settings that make sense for the CronJob
+			// apply all the pod level runtime settings even though they may make no sense in every context
 			if inv.RuntimeSettings.Pod != nil {
-				if len(inv.RuntimeSettings.Pod.ImagePullSecrets) != 0 {
-					in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = inv.RuntimeSettings.Pod.ImagePullSecrets
-				}
-				if inv.RuntimeSettings.Pod.SecurityContext != nil {
-					in.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = inv.RuntimeSettings.Pod.SecurityContext
-				}
+				ofst_util.ApplyPodRuntimeSettings(in.Spec.JobTemplate.Spec.Template.Spec, *inv.RuntimeSettings.Pod)
 			}
 
 			return in
