@@ -386,3 +386,16 @@ func ResourcesNotExists(
 	}
 	return true, nil
 }
+
+func ClusterUID(client dynamic.Interface) (string, error) {
+	ns, err := client.Resource(schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "namespaces",
+	}).Get(context.TODO(), "kube-system", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	clusterID, _, err := unstructured.NestedString(ns.UnstructuredContent(), "metadata", "uid")
+	return clusterID, err
+}

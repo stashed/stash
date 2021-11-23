@@ -27,8 +27,10 @@ import (
 	cloudeventssdk "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding/format"
 	cloudevents "github.com/cloudevents/sdk-go/v2/event"
+	"github.com/nats-io/nats.go"
 	"go.bytebuilders.dev/license-verifier/info"
 	"gomodules.xyz/sync"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -42,6 +44,7 @@ import (
 	"kmodules.xyz/client-go/discovery"
 	auditorapi "kmodules.xyz/custom-resources/apis/auditor/v1alpha1"
 	"kmodules.xyz/custom-resources/util/siteinfo"
+	cachex "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -95,6 +98,14 @@ func NewResilientEventPublisher(
 		return err
 	}
 	return p
+}
+
+func (p *EventPublisher) NatsClient() (*nats.Conn, error) {
+	p.once.Do(p.connect)
+	if p.nats == nil {
+		return nil, fmt.Errorf("not connected to nats")
+	}
+	return p.nats.Client, nil
 }
 
 func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
@@ -173,7 +184,41 @@ func (p *EventPublisher) ForGVK(gvk schema.GroupVersionKind) cache.ResourceEvent
 	}
 }
 
+type funcNodeLister func() ([]*core.Node, error)
+
 func (p *EventPublisher) SetupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.Interface, factory informers.SharedInformerFactory) error {
+	nodeInformer := factory.Core().V1().Nodes().Informer()
+	nodeLister := factory.Core().V1().Nodes().Lister()
+
+	return p.setupSiteInfoPublisher(cfg, kc, nodeInformer, func() ([]*core.Node, error) {
+		return nodeLister.List(labels.Everything())
+	})
+}
+
+func (p *EventPublisher) SetupSiteInfoPublisherWithManager(mgr manager.Manager) error {
+	cfg := mgr.GetConfig()
+	kc, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return err
+	}
+	nodeInformer, err := mgr.GetCache().GetInformer(context.TODO(), &core.Node{})
+	if err != nil {
+		return err
+	}
+	return p.setupSiteInfoPublisher(cfg, kc, nodeInformer, func() ([]*core.Node, error) {
+		var nodeList core.NodeList
+		if err := mgr.GetCache().List(context.TODO(), &nodeList); err != nil {
+			return nil, err
+		}
+		result := make([]*core.Node, len(nodeList.Items))
+		for i := range nodeList.Items {
+			result[i] = &nodeList.Items[i]
+		}
+		return result, nil
+	})
+}
+
+func (p *EventPublisher) setupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.Interface, nodeInformer cachex.Informer, listNodes funcNodeLister) error {
 	var err error
 	p.si, err = siteinfo.GetSiteInfo(cfg, kc, nil, "")
 	if err != nil {
@@ -183,12 +228,10 @@ func (p *EventPublisher) SetupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.
 		p.si.Product = new(auditorapi.ProductInfo)
 	}
 
-	nodeInformer := factory.Core().V1().Nodes().Informer()
-	nodeLister := factory.Core().V1().Nodes().Lister()
 	nodeInformer.AddEventHandler(&ResourceEventPublisher{
 		p: p,
 		createEvent: func(_ client.Object) (*api.Event, error) {
-			nodes, err := nodeLister.List(labels.Everything())
+			nodes, err := listNodes()
 			if err != nil {
 				return nil, err
 			}

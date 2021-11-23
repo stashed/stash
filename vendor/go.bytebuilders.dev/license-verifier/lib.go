@@ -102,6 +102,28 @@ func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 			license.PlanName = "stash-community"
 		}
 	}
+	if len(cert.Subject.Country) > 0 {
+		license.ProductLine = cert.Subject.Country[0]
+	}
+	if len(cert.Subject.Province) > 0 {
+		license.TierName = cert.Subject.Province[0]
+	}
+	if license.ProductLine == "" || license.TierName == "" {
+		parts := strings.SplitN(license.PlanName, "-", 2)
+		if len(parts) > 0 {
+			license.ProductLine = parts[0]
+		}
+		if len(parts) > 1 {
+			license.TierName = parts[1]
+		}
+	}
+	license.FeatureFlags = map[string]string{}
+	for _, ff := range cert.Subject.Locality {
+		parts := strings.SplitN(ff, "=", 2)
+		if len(parts) == 2 {
+			license.FeatureFlags[parts[0]] = parts[1]
+		}
+	}
 
 	var user *v1alpha1.User
 	for _, e := range cert.EmailAddresses {

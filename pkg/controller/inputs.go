@@ -27,7 +27,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/util"
 
-	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/pushgateway"
 )
 
@@ -35,7 +35,7 @@ func (c *StashController) inputsForBackupInvoker(inv invoker.BackupInvoker, targ
 	// get inputs for target
 	inputs := c.inputsForBackupTarget(targetInfo.Target)
 	// append inputs for RetentionPolicy
-	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(inv.RetentionPolicy))
+	inputs = meta_util.OverwriteKeys(inputs, c.inputsForRetentionPolicy(inv.RetentionPolicy))
 
 	// get host name for target
 	host, err := util.GetHostName(targetInfo.Target)
@@ -61,7 +61,7 @@ func (c *StashController) inputsForBackupInvoker(inv invoker.BackupInvoker, targ
 
 	// add PushgatewayURL as input
 	metricInputs := c.inputForMetrics(inv.ObjectMeta.Name)
-	inputs = core_util.UpsertMap(inputs, metricInputs)
+	inputs = meta_util.OverwriteKeys(inputs, metricInputs)
 
 	return inputs, nil
 }
@@ -104,7 +104,7 @@ func (c *StashController) inputsForRestoreInvoker(inv invoker.RestoreInvoker, in
 
 	// add PushgatewayURL as input
 	metricInputs := c.inputForMetrics(inv.ObjectMeta.Name)
-	inputs = core_util.UpsertMap(inputs, metricInputs)
+	inputs = meta_util.OverwriteKeys(inputs, metricInputs)
 
 	return inputs
 }

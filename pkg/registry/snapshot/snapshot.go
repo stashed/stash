@@ -36,7 +36,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/client-go/kubernetes"
 	restconfig "k8s.io/client-go/rest"
-	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 const (
@@ -142,7 +142,7 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 				KeyRepository: r.Name,
 			}
 			if r.Labels != nil {
-				repoLabels = core_util.UpsertMap(repoLabels, r.Labels)
+				repoLabels = meta_util.OverwriteKeys(repoLabels, r.Labels)
 			}
 			if options.LabelSelector.Matches(labels.Set(repoLabels)) {
 				selectedRepos = append(selectedRepos, r)

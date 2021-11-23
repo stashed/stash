@@ -27,7 +27,6 @@ import (
 	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
-	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/tools/pushgateway"
 	ofst_util "kmodules.xyz/offshoot-api/util"
@@ -44,7 +43,6 @@ func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedRe
 		"--image-tag=" + image.Tag,
 		"--pushgateway-url=" + pushgateway.URL(),
 		fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-		fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 	}
 	container.Args = append(container.Args, flags.LoggerOptions.ToFlags()...)
 
@@ -67,7 +65,6 @@ func NewRestoreInitContainer(inv invoker.RestoreInvoker, targetInfo invoker.Rest
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{

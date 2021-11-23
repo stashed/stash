@@ -2,4 +2,4 @@
 
 # wait
 
-This library has been forked from https://github.com/kubernetes/apimachinery/tree/v0.18.8/pkg/util/wait so that it can easily used in non-k8s related projects.
+This library has been forked from https://github.com/kubernetes/apimachinery/tree/v0.22.0-alpha.2/pkg/util/wait so that it can easily used in non-k8s related projects.

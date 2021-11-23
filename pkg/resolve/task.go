@@ -32,7 +32,7 @@ import (
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
@@ -74,13 +74,13 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 		for _, param := range fn.Params {
 			inputs[param.Name] = param.Value
 		}
-		taskParams = core_util.UpsertMap(taskParams, inputs)
+		taskParams = meta_util.OverwriteKeys(taskParams, inputs)
 
 		// merge/replace backup config inputs
-		inputs = core_util.UpsertMap(inputs, o.Inputs)
+		inputs = meta_util.OverwriteKeys(inputs, o.Inputs)
 
 		//Add addon image as input
-		inputs = core_util.UpsertMap(inputs, map[string]string{
+		inputs = meta_util.OverwriteKeys(inputs, map[string]string{
 			apis.AddonImage: function.Spec.Image,
 		})
 
@@ -133,8 +133,8 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 		// 1. Inputs from BackupConfiguration/RestoreSession
 		// 2. Inputs from Task params
 		// 3. Default hook specific inputs
-		inputs := core_util.UpsertMap(taskParams, o.Inputs)
-		inputs = core_util.UpsertMap(o.PreTaskHookInput, inputs)
+		inputs := meta_util.OverwriteKeys(taskParams, o.Inputs)
+		inputs = meta_util.OverwriteKeys(o.PreTaskHookInput, inputs)
 		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers, invokerType, invokerName, targetKind, targetName)
 
 		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
@@ -150,8 +150,8 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 	}
 
 	if o.PostTaskHookInput != nil {
-		inputs := core_util.UpsertMap(taskParams, o.Inputs)
-		inputs = core_util.UpsertMap(o.PostTaskHookInput, inputs)
+		inputs := meta_util.OverwriteKeys(taskParams, o.Inputs)
+		inputs = meta_util.OverwriteKeys(o.PostTaskHookInput, inputs)
 		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers, invokerType, invokerName, targetKind, targetName)
 
 		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {

@@ -18,13 +18,13 @@ package queue
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
 	meta_util "kmodules.xyz/client-go/meta"
 
 	core "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -139,8 +139,8 @@ func NewChangeHandler(queue workqueue.RateLimitingInterface, restrictToNamespace
 			nuObj := nu.(metav1.Object)
 			return nuObj.GetDeletionTimestamp() != nil ||
 				!meta_util.MustAlreadyReconciled(nu) ||
-				!reflect.DeepEqual(oldObj.GetLabels(), nuObj.GetLabels()) ||
-				!reflect.DeepEqual(oldObj.GetAnnotations(), nuObj.GetAnnotations()) ||
+				!apiequality.Semantic.DeepEqual(oldObj.GetLabels(), nuObj.GetLabels()) ||
+				!apiequality.Semantic.DeepEqual(oldObj.GetAnnotations(), nuObj.GetAnnotations()) ||
 				!meta_util.StatusConditionAwareEqual(old, nu)
 		},
 		enqueueDelete:       true,

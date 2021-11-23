@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"fmt"
 	"time"
 
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
@@ -26,13 +27,14 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	auditlib "go.bytebuilders.dev/audit/lib"
+	licenseapi "go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1"
 	"kmodules.xyz/client-go/discovery"
-	"kmodules.xyz/client-go/tools/cli"
+	"kmodules.xyz/client-go/tools/clusterid"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
@@ -45,6 +47,7 @@ const (
 
 type config struct {
 	LicenseFile             string
+	License                 licenseapi.License
 	LicenseApiService       string
 	StashImage              string
 	StashImageTag           string
@@ -87,16 +90,26 @@ func (c *Config) New() (*StashController, error) {
 		return nil, err
 	}
 
+	informerFactory := informers.NewSharedInformerFactoryWithOptions(c.KubeClient, c.ResyncPeriod)
+
 	// audit event publisher
 	// WARNING: https://stackoverflow.com/a/46275411/244009
 	var auditor *auditlib.EventPublisher
-	if c.LicenseFile != "" && cli.EnableAnalytics {
+	if c.LicenseFile != "" && !c.License.DisableAnalytics() {
 		fn := auditlib.BillingEventCreator{
 			Mapper: mapper,
 		}
+		cid, err := clusterid.ClusterUID(c.KubeClient.CoreV1().Namespaces())
+		if err != nil {
+			return nil, err
+		}
 		auditor = auditlib.NewResilientEventPublisher(func() (*auditlib.NatsConfig, error) {
-			return auditlib.NewNatsConfig(c.KubeClient.CoreV1().Namespaces(), c.LicenseFile)
+			return auditlib.NewNatsConfig(cid, c.LicenseFile)
 		}, mapper, fn.CreateEvent)
+		err = auditor.SetupSiteInfoPublisher(c.ClientConfig, c.KubeClient, informerFactory)
+		if err != nil {
+			return nil, fmt.Errorf("failed to setup site info publisher, reason: %v", err)
+		}
 	}
 
 	ctrl := &StashController{
@@ -107,7 +120,7 @@ func (c *Config) New() (*StashController, error) {
 		stashClient:          c.StashClient,
 		crdClient:            c.CRDClient,
 		appCatalogClient:     c.AppCatalogClient,
-		kubeInformerFactory:  informers.NewSharedInformerFactoryWithOptions(c.KubeClient, c.ResyncPeriod),
+		kubeInformerFactory:  informerFactory,
 		stashInformerFactory: stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
 		ocInformerFactory:    oc_informers.NewSharedInformerFactory(c.OcClient, c.ResyncPeriod),
 		recorder:             eventer.NewEventRecorder(c.KubeClient, "stash-operator"),

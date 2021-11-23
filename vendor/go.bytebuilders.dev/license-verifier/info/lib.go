@@ -16,7 +16,11 @@ limitations under the License.
 
 package info
 
-import "strconv"
+import (
+	"net/url"
+	"path"
+	"strconv"
+)
 
 var (
 	EnforceLicense string
@@ -28,8 +32,9 @@ var (
 	ProductName string // This has been renamed to Features
 	ProductUID  string
 
-	prodRegistrationAPIEndpoint string = "https://byte.builders/api/v1/register"
-	qaRegistrationAPIEndpoint   string = "https://appscode.ninja/api/v1/register"
+	prodAddress         = "https://byte.builders"
+	qaAddress           = "https://appscode.ninja"
+	registrationAPIPath = "api/v1/register"
 )
 
 func SkipLicenseVerification() bool {
@@ -38,8 +43,16 @@ func SkipLicenseVerification() bool {
 }
 
 func RegistrationAPIEndpoint() string {
+	u := APIServerAddress()
+	u.Path = path.Join(u.Path, registrationAPIPath)
+	return u.String()
+}
+
+func APIServerAddress() *url.URL {
 	if SkipLicenseVerification() {
-		return qaRegistrationAPIEndpoint
+		u, _ := url.Parse(qaAddress)
+		return u
 	}
-	return prodRegistrationAPIEndpoint
+	u, _ := url.Parse(prodAddress)
+	return u
 }

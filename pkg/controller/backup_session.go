@@ -55,6 +55,7 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
+	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -356,7 +357,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		return fmt.Errorf("cannot resolve implicit inputs for backup invoker  %s %s/%s, reason: %s", inv.ObjectRef.Kind, inv.ObjectRef.Namespace, inv.ObjectRef.Name, err)
 	}
 
-	implicitInputs := core_util.UpsertMap(repoInputs, bcInputs)
+	implicitInputs := meta_util.OverwriteKeys(repoInputs, bcInputs)
 	implicitInputs[apis.Namespace] = backupSession.Namespace
 	implicitInputs[apis.BackupSession] = backupSession.Name
 
@@ -370,7 +371,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
 		TaskName:        addon.BackupTask.Name,
-		Inputs:          core_util.UpsertMap(explicitInputs(addon.BackupTask.Params), implicitInputs), // TODO: reverse priority ???
+		Inputs:          meta_util.OverwriteKeys(explicitInputs(addon.BackupTask.Params), implicitInputs), // TODO: reverse priority ???
 		RuntimeSettings: targetInfo.RuntimeSettings,
 		TempDir:         targetInfo.TempDir,
 	}
@@ -408,7 +409,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 			// when the BackupSession gets deleted according to backupHistoryLimit
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 			// pass offshoot labels to job's pod
-			in.Spec.Template.Labels = core_util.UpsertMap(in.Spec.Template.Labels, inv.Labels)
+			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.Labels)
 
 			in.Spec.Template.Spec = podSpec
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
@@ -493,7 +494,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, 
 
 			in.Labels = inv.Labels
 			// pass offshoot labels to job's pod
-			in.Spec.Template.Labels = core_util.UpsertMap(in.Spec.Template.Labels, inv.Labels)
+			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.Labels)
 			in.Spec.Template = *jobTemplate
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName

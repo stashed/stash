@@ -15,6 +15,11 @@ spec:
     name: metricsconfigurations
     scope: Cluster
     version: v1alpha1
+  ui:
+    editor:
+      name: metricsappscodecom-metricsconfiguration-editor
+      url: https://raw.githubusercontent.com/bytebuilders/ui-wizards/master/stable
+      version: v0.1.0
   validation:
     openAPIV3Schema:
       properties:
