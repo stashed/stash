@@ -74,7 +74,7 @@ func NewLicenseEnforcer(config *rest.Config, licenseFile string) *LicenseEnforce
 		config:      config,
 		opts: &verifier.Options{
 			CACert:   []byte(info.LicenseCA),
-			Features: info.ProductName,
+			Features: info.Features(),
 		},
 	}
 }
@@ -227,7 +227,7 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 		config:      config,
 		opts: &verifier.Options{
 			CACert:   []byte(info.LicenseCA),
-			Features: info.ProductName,
+			Features: info.Features(),
 		},
 	}
 
@@ -286,7 +286,7 @@ func CheckLicenseFile(config *rest.Config, licenseFile string) error {
 		config:      config,
 		opts: &verifier.Options{
 			CACert:   []byte(info.LicenseCA),
-			Features: info.ProductName,
+			Features: info.Features(),
 		},
 	}
 

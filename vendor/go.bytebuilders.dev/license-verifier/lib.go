@@ -20,10 +20,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"strings"
-	"unicode"
-
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
+	"strings"
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +30,7 @@ import (
 
 type Options struct {
 	ClusterUID string `json:"clusterUID"`
-	Features   string `json:"features"`
+	Features   []string `json:"features"`
 	CACert     []byte `json:"caCert,omitempty"`
 	License    []byte `json:"license"`
 }
@@ -165,10 +163,7 @@ func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 		license.Reason = e2.Error()
 		return license, e2
 	}
-	features := strings.FieldsFunc(opts.Features, func(r rune) bool {
-		return unicode.IsSpace(r) || r == ',' || r == ';'
-	})
-	if !sets.NewString(cert.Subject.Organization...).HasAny(features...) {
+	if !sets.NewString(cert.Subject.Organization...).HasAny(opts.Features...) {
 		e2 := fmt.Errorf("license was not issued for %s", opts.Features)
 		license.Status = v1alpha1.LicenseExpired
 		license.Reason = e2.Error()

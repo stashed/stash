@@ -27,6 +27,7 @@ import (
 
 	"github.com/spf13/pflag"
 	licenseapi "go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
+	"go.bytebuilders.dev/license-verifier/info"
 	license "go.bytebuilders.dev/license-verifier/kubernetes"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -114,14 +115,14 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	cfg.RestoreJobPSPNames = s.RestoreJobPSPNames
 
 	if cfg.LicenseFile != "" {
-		info := license.NewLicenseEnforcer(cfg.ClientConfig, cfg.LicenseFile).LoadLicense()
-		if info.Status != licenseapi.LicenseActive {
-			return fmt.Errorf("license status %s, reason: %s", info.Status, info.Reason)
+		l := license.NewLicenseEnforcer(cfg.ClientConfig, cfg.LicenseFile).LoadLicense()
+		if l.Status != licenseapi.LicenseActive {
+			return fmt.Errorf("license status %s, reason: %s", l.Status, l.Reason)
 		}
-		if !sets.NewString(info.Features...).HasAny("stash-community", "kubedb-ext-stash") {
+		if !sets.NewString(l.Features...).HasAny(info.Features()...) {
 			return fmt.Errorf("not a valid license for this product")
 		}
-		cfg.License = info
+		cfg.License = l
 	}
 
 	if cfg.KubeClient, err = kubernetes.NewForConfig(cfg.ClientConfig); err != nil {

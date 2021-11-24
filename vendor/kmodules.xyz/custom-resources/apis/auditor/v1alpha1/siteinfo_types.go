@@ -38,8 +38,8 @@ const (
 type SiteInfo struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Product           *ProductInfo   `json:"product,omitempty"`
-	Kubernetes        KubernetesInfo `json:"kubernetes"`
+	Product           *ProductInfo    `json:"product,omitempty"`
+	Kubernetes        *KubernetesInfo `json:"kubernetes,omitempty"`
 }
 
 type Version struct {
