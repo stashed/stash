@@ -169,8 +169,6 @@ spec:
             required:
             - version
             type: object
-        required:
-        - kubernetes
         type: object
     served: true
     storage: true

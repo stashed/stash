@@ -61,7 +61,7 @@ func NewNatsConfig(clusterID string, LicenseFile string) (*NatsConfig, error) {
 
 	opts := verifier.Options{
 		ClusterUID: clusterID,
-		Features:   info.ProductName,
+		Features:   info.Features(),
 		CACert:     []byte(info.LicenseCA),
 		License:    licenseBytes,
 	}

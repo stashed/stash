@@ -202,7 +202,11 @@ func (in *SiteInfo) DeepCopyInto(out *SiteInfo) {
 		*out = new(ProductInfo)
 		**out = **in
 	}
-	in.Kubernetes.DeepCopyInto(&out.Kubernetes)
+	if in.Kubernetes != nil {
+		in, out := &in.Kubernetes, &out.Kubernetes
+		*out = new(KubernetesInfo)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

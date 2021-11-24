@@ -41,6 +41,7 @@ func GetSiteInfo(cfg *rest.Config, kc kubernetes.Interface, nodes []*core.Node, 
 			APIVersion: auditorapi.SchemeGroupVersion.String(),
 			Kind:       "SiteInfo",
 		},
+		Kubernetes: &auditorapi.KubernetesInfo{},
 	}
 
 	if info.ProductName != "" || v.Version.Version != "" || licenseID != "" {

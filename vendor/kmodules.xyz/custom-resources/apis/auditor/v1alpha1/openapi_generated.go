@@ -16148,12 +16148,10 @@ func schema_custom_resources_apis_auditor_v1alpha1_SiteInfo(ref common.Reference
 					},
 					"kubernetes": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("kmodules.xyz/custom-resources/apis/auditor/v1alpha1.KubernetesInfo"),
+							Ref: ref("kmodules.xyz/custom-resources/apis/auditor/v1alpha1.KubernetesInfo"),
 						},
 					},
 				},
-				Required: []string{"kubernetes"},
 			},
 		},
 		Dependencies: []string{

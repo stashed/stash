@@ -61,8 +61,8 @@ BIN_PLATFORMS    := $(DOCKER_PLATFORMS) windows/amd64 darwin/amd64
 OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
-BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian10
-BASEIMAGE_DBG    ?= debian:buster
+BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian11
+BASEIMAGE_DBG    ?= debian:bullseye
 
 GO_VERSION       ?= 1.17
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)

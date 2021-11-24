@@ -14,9 +14,9 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.12
-	go.bytebuilders.dev/license-verifier v0.9.5
-	go.bytebuilders.dev/license-verifier/kubernetes v0.9.5
+	go.bytebuilders.dev/audit v0.0.13
+	go.bytebuilders.dev/license-verifier v0.9.6
+	go.bytebuilders.dev/license-verifier/kubernetes v0.9.6
 	gomodules.xyz/blobfs v0.1.7
 	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/encoding v0.0.2
@@ -39,7 +39,7 @@ require (
 	k8s.io/kubernetes v1.21.1
 	kmodules.xyz/client-go v0.0.0-20211122091731-6c471b24a4ea
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
-	kmodules.xyz/custom-resources v0.0.0-20211007080833-72bd9e8cae6e
+	kmodules.xyz/custom-resources v0.0.0-20211122142737-3bf3dbd8ac52
 	kmodules.xyz/objectstore-api v0.0.0-20210928135706-fdf68f88ea6e
 	kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
