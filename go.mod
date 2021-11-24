@@ -14,9 +14,9 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.13
-	go.bytebuilders.dev/license-verifier v0.9.6
-	go.bytebuilders.dev/license-verifier/kubernetes v0.9.6
+	go.bytebuilders.dev/audit v0.0.14
+	go.bytebuilders.dev/license-verifier v0.9.7
+	go.bytebuilders.dev/license-verifier/kubernetes v0.9.7
 	gomodules.xyz/blobfs v0.1.7
 	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/encoding v0.0.2

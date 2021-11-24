@@ -341,17 +341,17 @@ github.com/yudai/gojsondiff
 github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 github.com/yudai/golcs
-# go.bytebuilders.dev/audit v0.0.13
+# go.bytebuilders.dev/audit v0.0.14
 ## explicit
 go.bytebuilders.dev/audit/api/v1
 go.bytebuilders.dev/audit/lib
-# go.bytebuilders.dev/license-verifier v0.9.6
+# go.bytebuilders.dev/license-verifier v0.9.7
 ## explicit
 go.bytebuilders.dev/license-verifier
 go.bytebuilders.dev/license-verifier/apis/licenses
 go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1
 go.bytebuilders.dev/license-verifier/info
-# go.bytebuilders.dev/license-verifier/kubernetes v0.9.6
+# go.bytebuilders.dev/license-verifier/kubernetes v0.9.7
 ## explicit
 go.bytebuilders.dev/license-verifier/kubernetes
 # go.etcd.io/etcd v0.5.0-alpha.5.0.20200910180754-dd1b699fc489 => go.etcd.io/etcd v0.5.0-alpha.5.0.20200910180754-dd1b699fc489
