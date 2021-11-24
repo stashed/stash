@@ -40,11 +40,11 @@ require (
 	kmodules.xyz/client-go v0.0.0-20211122091731-6c471b24a4ea
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
 	kmodules.xyz/custom-resources v0.0.0-20211122142737-3bf3dbd8ac52
-	kmodules.xyz/objectstore-api v0.0.0-20210928135706-fdf68f88ea6e
+	kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7
 	kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
-	kmodules.xyz/webhook-runtime v0.0.0-20210928141616-7f73c2ab318a
+	kmodules.xyz/webhook-runtime v0.0.0-20211116181908-909a755cc9d1
 	stash.appscode.dev/apimachinery v0.16.0
 )
 
