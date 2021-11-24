@@ -40,7 +40,11 @@ var (
 )
 
 func Features() []string {
-	return strings.FieldsFunc(ProductName, func(r rune) bool {
+	return ParseFeatures(ProductName)
+}
+
+func ParseFeatures(features string) []string {
+	return strings.FieldsFunc(features, func(r rune) bool {
 		return unicode.IsSpace(r) || r == ',' || r == ';'
 	})
 }
