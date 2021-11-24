@@ -1231,8 +1231,9 @@ kmodules.xyz/crd-schema-fuzz v0.0.0-20210618002152-fae23aef5fb4/go.mod h1:IIkUct
 kmodules.xyz/custom-resources v0.0.0-20211007080833-72bd9e8cae6e/go.mod h1:pGabego8q4oi/2sNjhdtFkgVaVw4AyGv14GO6VtAjTw=
 kmodules.xyz/custom-resources v0.0.0-20211122142737-3bf3dbd8ac52 h1:UWVpU7y5znTUusU+JhPB+ojh26f6K2v8sNb37U1DolQ=
 kmodules.xyz/custom-resources v0.0.0-20211122142737-3bf3dbd8ac52/go.mod h1:yHLFe4wVYxepTnN00CFUf29xH+jEHDokq6d2fbp9pks=
-kmodules.xyz/objectstore-api v0.0.0-20210928135706-fdf68f88ea6e h1:2QZBUcUI6r7mLU5/9+Xxd1eDClEIEkZkJlyCU91UoY8=
 kmodules.xyz/objectstore-api v0.0.0-20210928135706-fdf68f88ea6e/go.mod h1:Tkcf9uTplnrJ6C8o0zlw2kpgS1SaWAiMO5P2YgLjTo8=
+kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7 h1:JIAEFjN3GDhLEG1Fh1zYpy/QFyyN337mJTM+ODEGosg=
+kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7/go.mod h1:IICnDdPFOEeGXdaPVHOGYfdwD1cyh/p1I/TWMkyNTIE=
 kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61 h1:J56UGmRFddu6tERRd8BELmP5QbXxievzb+6vAjFptiM=
 kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61/go.mod h1:3LECbAL3FgbyK80NP3V3Pmiuo/a3hFWg/PR6SPFhTns=
 kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f h1:V1lapZtGG7GntoUsOuEz2kWPXv6scMzJxS+3NaHIUzc=
@@ -1243,8 +1244,8 @@ kmodules.xyz/resource-metadata v0.6.7 h1:a8yosjST8+GsdgCB4i8WrT9ayEqf3jwzbcoPqRD
 kmodules.xyz/resource-metadata v0.6.7/go.mod h1:BGy9IyQG13z6ArdexZ7gguVrNspLxa1fSPd/I7fdpI0=
 kmodules.xyz/resource-metrics v0.0.5 h1:an1eaxw8mWX5RfujUMTTkJPGiMlQQUDzT6aveSGNAq8=
 kmodules.xyz/resource-metrics v0.0.5/go.mod h1:6Dv63HDgp83DhA+lZNB7GIQR6PLjNrYW6ghQKioQzII=
-kmodules.xyz/webhook-runtime v0.0.0-20210928141616-7f73c2ab318a h1:kSTJu+yNGkQ4tdBeR0yMXZopI4CAMJh5uFafaE1Cr9k=
-kmodules.xyz/webhook-runtime v0.0.0-20210928141616-7f73c2ab318a/go.mod h1:MFZFmJk9IXNHwq8JlF/mukwBDbopFQj4swaB2MWHc/U=
+kmodules.xyz/webhook-runtime v0.0.0-20211116181908-909a755cc9d1 h1:yqQdFNjCmAolD0/ER0KizY5efbGj7lyXx2Q0SqsflYo=
+kmodules.xyz/webhook-runtime v0.0.0-20211116181908-909a755cc9d1/go.mod h1:+iqfWTb9yfnhLKPKIPsX/UBTc0yxZItLY2UpYaoNEsg=
 modernc.org/cc v1.0.0/go.mod h1:1Sk4//wdnYJiUIxnW8ddKpaOJCF37yAdqYnkxUpaYxw=
 modernc.org/golex v1.0.0/go.mod h1:b/QX9oBD/LhixY6NDh+IdGv17hgB+51fET1i2kPSmvk=
 modernc.org/mathutil v1.0.0/go.mod h1:wU0vUrJsVWBZ4P6e7xtFJEhFSNsfRLJ8H458uRjg03k=

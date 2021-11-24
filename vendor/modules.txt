@@ -1313,7 +1313,7 @@ kmodules.xyz/custom-resources/client/clientset/versioned/typed/auditor/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/metrics/v1alpha1
 kmodules.xyz/custom-resources/crds
 kmodules.xyz/custom-resources/util/siteinfo
-# kmodules.xyz/objectstore-api v0.0.0-20210928135706-fdf68f88ea6e
+# kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7
 ## explicit
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
@@ -1357,7 +1357,7 @@ kmodules.xyz/resource-metadata/hub/resourcedescriptors
 kmodules.xyz/resource-metadata/pkg/graph
 # kmodules.xyz/resource-metrics v0.0.5
 kmodules.xyz/resource-metrics/api
-# kmodules.xyz/webhook-runtime v0.0.0-20210928141616-7f73c2ab318a
+# kmodules.xyz/webhook-runtime v0.0.0-20211116181908-909a755cc9d1
 ## explicit
 kmodules.xyz/webhook-runtime/admission
 kmodules.xyz/webhook-runtime/admission/v1beta1
