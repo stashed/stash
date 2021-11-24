@@ -51,6 +51,7 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
+	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -570,7 +571,7 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 			return err
 		}
 		// pass offshoot labels to job's pod
-		jobTemplate.Labels = core_util.UpsertMap(jobTemplate.Labels, inv.Labels)
+		jobTemplate.Labels = meta_util.OverwriteKeys(jobTemplate.Labels, inv.Labels)
 		jobTemplate.Spec.ImagePullSecrets = imagePullSecrets
 		jobTemplate.Spec.ServiceAccountName = serviceAccountName
 
@@ -678,7 +679,7 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 	}
 	rsInputs := c.inputsForRestoreInvoker(inv, index)
 
-	implicitInputs := core_util.UpsertMap(repoInputs, rsInputs)
+	implicitInputs := meta_util.OverwriteKeys(repoInputs, rsInputs)
 	implicitInputs[apis.Namespace] = inv.ObjectMeta.Namespace
 	implicitInputs[apis.RestoreSession] = inv.ObjectMeta.Name
 
@@ -692,7 +693,7 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
 		TaskName:        targetInfo.Task.Name,
-		Inputs:          core_util.UpsertMap(explicitInputs(addon.RestoreTask.Params), implicitInputs),
+		Inputs:          meta_util.OverwriteKeys(explicitInputs(addon.RestoreTask.Params), implicitInputs),
 		RuntimeSettings: targetInfo.RuntimeSettings,
 		TempDir:         targetInfo.TempDir,
 	}
@@ -818,7 +819,7 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 
 			in.Labels = inv.Labels
 			// pass offshoot labels to job's pod
-			in.Spec.Template.Labels = core_util.UpsertMap(in.Spec.Template.Labels, inv.Labels)
+			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.Labels)
 			in.Spec.Template = *jobTemplate
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName

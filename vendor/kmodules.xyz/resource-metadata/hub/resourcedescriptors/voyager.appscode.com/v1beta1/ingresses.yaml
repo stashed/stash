@@ -903,6 +903,12 @@ spec:
                   items:
                     type: string
                   type: array
+                headerRules:
+                  description: "Header rules to modifies the header. \n Deprecated:
+                    Use backendRule, will be removed."
+                  items:
+                    type: string
+                  type: array
                 hostNames:
                   description: Host names to forward traffic to. If empty traffic
                     will be forwarded to all subsets instance. If set only matched
@@ -924,6 +930,12 @@ spec:
                   description: HTTP protocol to use If the Proto contains "h2",  "option
                     http-use-htx" will be added to enable HTX mode https://www.haproxy.com/blog/haproxy-1-9-2-adds-grpc-support/
                   type: string
+                rewriteRules:
+                  description: "Path rewrite rules with haproxy formatted regex. \n
+                    Deprecated: Use backendRule, will be removed."
+                  items:
+                    type: string
+                  type: array
                 serviceName:
                   description: Specifies the name of the referenced service.
                   type: string
@@ -1992,6 +2004,12 @@ spec:
                                   items:
                                     type: string
                                   type: array
+                                headerRules:
+                                  description: "Header rules to modifies the header.
+                                    \n Deprecated: Use backendRule, will be removed."
+                                  items:
+                                    type: string
+                                  type: array
                                 hostNames:
                                   description: Host names to forward traffic to. If
                                     empty traffic will be forwarded to all subsets
@@ -2016,6 +2034,13 @@ spec:
                                     "h2",  "option http-use-htx" will be added to
                                     enable HTX mode https://www.haproxy.com/blog/haproxy-1-9-2-adds-grpc-support/
                                   type: string
+                                rewriteRules:
+                                  description: "Path rewrite rules with haproxy formatted
+                                    regex. \n Deprecated: Use backendRule, will be
+                                    removed."
+                                  items:
+                                    type: string
+                                  type: array
                                 serviceName:
                                   description: Specifies the name of the referenced
                                     service.

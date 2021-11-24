@@ -27,8 +27,6 @@ import (
 	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
-	"kmodules.xyz/client-go/tools/analytics"
-	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/tools/pushgateway"
 	store "kmodules.xyz/objectstore-api/api/v1"
@@ -54,7 +52,6 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			"--run-via-cron=true",
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
@@ -72,10 +69,6 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 						FieldPath: "metadata.name",
 					},
 				},
-			},
-			{
-				Name:  analytics.Key,
-				Value: cli.AnalyticsClientID,
 			},
 		},
 		Resources: r.Spec.Resources,
@@ -124,7 +117,6 @@ func NewBackupSidecarContainer(inv invoker.BackupInvoker, targetInfo invoker.Bac
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + pushgateway.URL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{

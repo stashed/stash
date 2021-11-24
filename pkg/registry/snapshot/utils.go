@@ -41,8 +41,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/klog/v2"
-	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 const (
@@ -96,7 +96,7 @@ func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) 
 			"repository": repository.Name,
 		}
 		if repository.Labels != nil {
-			snapshot.Labels = core_util.UpsertMap(snapshot.Labels, repository.Labels)
+			snapshot.Labels = meta_util.OverwriteKeys(snapshot.Labels, repository.Labels)
 		}
 
 		snapshot.CreationTimestamp.Time = result.Time
@@ -328,7 +328,7 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 			"hostname":   result.Hostname,
 		}
 		if repository.Labels != nil {
-			snapshot.Labels = core_util.UpsertMap(snapshot.Labels, repository.Labels)
+			snapshot.Labels = meta_util.OverwriteKeys(snapshot.Labels, repository.Labels)
 		}
 
 		snapshot.CreationTimestamp.Time = result.Time

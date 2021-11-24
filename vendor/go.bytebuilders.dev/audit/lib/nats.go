@@ -30,9 +30,7 @@ import (
 	"github.com/nats-io/nats.go"
 	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/info"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/klog/v2"
-	"kmodules.xyz/client-go/tools/clusterid"
 )
 
 const (
@@ -55,18 +53,14 @@ type NatsCredential struct {
 	Credential []byte `json:"credential"`
 }
 
-func NewNatsConfig(client corev1.NamespaceInterface, LicenseFile string) (*NatsConfig, error) {
-	cid, err := clusterid.ClusterUID(client)
-	if err != nil {
-		return nil, err
-	}
+func NewNatsConfig(clusterID string, LicenseFile string) (*NatsConfig, error) {
 	licenseBytes, err := ioutil.ReadFile(LicenseFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read license, reason: %v", err)
 	}
 
 	opts := verifier.Options{
-		ClusterUID: cid,
+		ClusterUID: clusterID,
 		Features:   info.ProductName,
 		CACert:     []byte(info.LicenseCA),
 		License:    licenseBytes,
@@ -113,7 +107,7 @@ func NewConnection(natscred NatsCredential) (nc *nats.Conn, err error) {
 	servers := natscred.Server
 
 	opts := []nats.Option{
-		nats.Name("Auditor"),
+		nats.Name(fmt.Sprintf("%s.%s", natscred.LicenseID, info.ProductName)),
 		nats.MaxReconnects(-1),
 		nats.ErrorHandler(errorHandler),
 		nats.ReconnectHandler(reconnectHandler),

@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/fatih/structs"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/klog/v2"
@@ -36,7 +37,7 @@ func StatusEqual(old, new interface{}) bool {
 	oldStatus, oldExists := extractStatusFromObject(old)
 	newStatus, newExists := extractStatusFromObject(new)
 	if oldExists && newExists {
-		result := reflect.DeepEqual(oldStatus, newStatus)
+		result := apiequality.Semantic.DeepEqual(oldStatus, newStatus)
 		if !result && klog.V(8).Enabled() {
 			if diff, err := JsonDiff(oldStatus, newStatus); err == nil {
 				klog.V(8).Infoln(diff)
@@ -139,7 +140,7 @@ func statusMapEqual(old, nu map[string]interface{}) bool {
 			if !conditionsEqual(oldCond, nuCond) {
 				return false
 			}
-		} else if !reflect.DeepEqual(oldVal, newVal) {
+		} else if !apiequality.Semantic.DeepEqual(oldVal, newVal) {
 			return false
 		}
 	}

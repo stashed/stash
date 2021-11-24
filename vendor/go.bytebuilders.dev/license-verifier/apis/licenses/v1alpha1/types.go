@@ -26,16 +26,19 @@ import (
 type License struct {
 	metav1.TypeMeta `json:",inline,omitempty"`
 
-	Issuer    string        `json:"issuer,omitempty"` // byte.builders
-	Features  []string      `json:"features,omitempty"`
-	PlanName  string        `json:"planName,omitempty"`
-	Clusters  []string      `json:"clusters,omitempty"` // cluster_id ?
-	User      *User         `json:"user,omitempty"`
-	NotBefore *metav1.Time  `json:"notBefore,omitempty"` // start of subscription start
-	NotAfter  *metav1.Time  `json:"notAfter,omitempty"`  // if set, use this
-	ID        string        `json:"id,omitempty"`        // license ID
-	Status    LicenseStatus `json:"status"`
-	Reason    string        `json:"reason"`
+	Issuer       string            `json:"issuer,omitempty"` // byte.builders
+	ProductLine  string            `json:"productLine,omitempty"`
+	TierName     string            `json:"tierName,omitempty"`
+	PlanName     string            `json:"planName,omitempty"`
+	Features     []string          `json:"features,omitempty"`
+	FeatureFlags map[string]string `json:"featureFlags,omitempty"`
+	Clusters     []string          `json:"clusters,omitempty"` // cluster_id ?
+	User         *User             `json:"user,omitempty"`
+	NotBefore    *metav1.Time      `json:"notBefore,omitempty"` // start of subscription start
+	NotAfter     *metav1.Time      `json:"notAfter,omitempty"`  // if set, use this
+	ID           string            `json:"id,omitempty"`        // license ID
+	Status       LicenseStatus     `json:"status"`
+	Reason       string            `json:"reason"`
 }
 
 type User struct {

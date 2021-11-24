@@ -27,7 +27,6 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/pushgateway"
 	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
 )
@@ -39,8 +38,6 @@ func NewRootCmd() *cobra.Command {
 		Long:              `Stash is a Kubernetes operator for restic. For more information, visit here: https://appscode.com/products/stash`,
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
-			cli.SendAnalytics(c, v.Version.Version)
-
 			utilruntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))
 			utilruntime.Must(scheme.AddToScheme(legacyscheme.Scheme))
 			utilruntime.Must(ocscheme.AddToScheme(clientsetscheme.Scheme))
@@ -48,7 +45,6 @@ func NewRootCmd() *cobra.Command {
 		},
 	}
 	rootCmd.PersistentFlags().StringVar(&pushgateway.ServiceName, "service-name", "stash-operator", "Stash service name.")
-	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
 
 	rootCmd.AddCommand(v.NewCmdVersion())
 	stopCh := genericapiserver.SetupSignalHandler()

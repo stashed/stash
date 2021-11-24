@@ -24,7 +24,6 @@ import (
 	"github.com/spf13/cobra"
 	v "gomodules.xyz/x/version"
 	"k8s.io/klog/v2"
-	"kmodules.xyz/client-go/tools/cli"
 )
 
 func NewCmdRun(out, errOut io.Writer, stopCh <-chan struct{}) *cobra.Command {
@@ -35,9 +34,6 @@ func NewCmdRun(out, errOut io.Writer, stopCh <-chan struct{}) *cobra.Command {
 		Short:             "Launch Stash Controller",
 		Long:              "Launch Stash Controller",
 		DisableAutoGenTag: true,
-		PreRun: func(c *cobra.Command, args []string) {
-			cli.SendAnalytics(c, v.Version.Version)
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			klog.Infof("Starting operator version %s+%s ...", v.Version.Version, v.Version.CommitHash)
 

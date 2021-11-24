@@ -26,7 +26,10 @@ import (
 	"stash.appscode.dev/stash/pkg/controller"
 
 	"github.com/spf13/pflag"
+	licenseapi "go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
+	license "go.bytebuilders.dev/license-verifier/kubernetes"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"kmodules.xyz/client-go/discovery"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -109,6 +112,17 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	cfg.CronJobPSPNames = s.CronJobPSPNames
 	cfg.BackupJobPSPNames = s.BackupJobPSPNames
 	cfg.RestoreJobPSPNames = s.RestoreJobPSPNames
+
+	if cfg.LicenseFile != "" {
+		info := license.NewLicenseEnforcer(cfg.ClientConfig, cfg.LicenseFile).LoadLicense()
+		if info.Status != licenseapi.LicenseActive {
+			return fmt.Errorf("license status %s, reason: %s", info.Status, info.Reason)
+		}
+		if !sets.NewString(info.Features...).HasAny("stash-community", "kubedb-ext-stash") {
+			return fmt.Errorf("not a valid license for this product")
+		}
+		cfg.License = info
+	}
 
 	if cfg.KubeClient, err = kubernetes.NewForConfig(cfg.ClientConfig); err != nil {
 		return err

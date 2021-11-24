@@ -44,6 +44,7 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta2 "kmodules.xyz/client-go/meta"
+	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -398,11 +399,11 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 
 			in.Spec.Schedule = inv.Schedule
 			in.Spec.Suspend = pointer.BoolP(inv.Paused) // this ensure that the CronJob is suspended when the backup invoker is paused.
-			in.Spec.JobTemplate.Labels = core_util.UpsertMap(in.Labels, inv.Labels)
+			in.Spec.JobTemplate.Labels = meta_util.OverwriteKeys(in.Labels, inv.Labels)
 			// ensure that job gets deleted on completion
 			in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
 			// pass offshoot labels to the CronJob's pod
-			in.Spec.JobTemplate.Spec.Template.Labels = core_util.UpsertMap(in.Spec.JobTemplate.Spec.Template.Labels, inv.Labels)
+			in.Spec.JobTemplate.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.JobTemplate.Spec.Template.Labels, inv.Labels)
 
 			container := core.Container{
 				Name:            apis.StashCronJobContainer,

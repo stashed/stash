@@ -14,16 +14,16 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.10
-	go.bytebuilders.dev/license-verifier v0.9.3
-	go.bytebuilders.dev/license-verifier/kubernetes v0.9.3
+	go.bytebuilders.dev/audit v0.0.12
+	go.bytebuilders.dev/license-verifier v0.9.5
+	go.bytebuilders.dev/license-verifier/kubernetes v0.9.5
 	gomodules.xyz/blobfs v0.1.7
 	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/encoding v0.0.2
 	gomodules.xyz/envsubst v0.1.0
-	gomodules.xyz/flags v0.1.2
+	gomodules.xyz/flags v0.1.3
 	gomodules.xyz/go-sh v0.1.0
-	gomodules.xyz/logs v0.0.4
+	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/runtime v0.2.0
 	gomodules.xyz/stow v0.2.4
@@ -37,7 +37,7 @@ require (
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kubernetes v1.21.1
-	kmodules.xyz/client-go v0.0.0-20210928133955-8df5bb467db6
+	kmodules.xyz/client-go v0.0.0-20211122091731-6c471b24a4ea
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
 	kmodules.xyz/custom-resources v0.0.0-20211007080833-72bd9e8cae6e
 	kmodules.xyz/objectstore-api v0.0.0-20210928135706-fdf68f88ea6e

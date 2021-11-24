@@ -25,6 +25,10 @@ spec:
       name: kubevaultcom-vaultserver-editor
       url: https://bundles.byte.builders/ui/
       version: v0.2.0
+    options:
+      name: kubevaultcom-vaultserver-editor-options
+      url: https://bundles.byte.builders/ui/
+      version: v0.2.0
   validation:
     openAPIV3Schema:
       properties:

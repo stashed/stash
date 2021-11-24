@@ -29,12 +29,10 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/spf13/cobra"
-	v "gomodules.xyz/x/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
-	"kmodules.xyz/client-go/tools/cli"
 )
 
 func NewCmdBackup() *cobra.Command {
@@ -58,9 +56,6 @@ func NewCmdBackup() *cobra.Command {
 		Use:               "backup",
 		Short:             "Run Stash Backup",
 		DisableAutoGenTag: true,
-		PreRun: func(c *cobra.Command, args []string) {
-			cli.SendAnalytics(c, v.Version.Version)
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
