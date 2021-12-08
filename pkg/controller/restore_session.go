@@ -692,7 +692,7 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
-		TaskName:        targetInfo.Task.Name,
+		TaskName:        addon.RestoreTask.Name,
 		Inputs:          meta_util.OverwriteKeys(explicitInputs(addon.RestoreTask.Params), implicitInputs),
 		RuntimeSettings: targetInfo.RuntimeSettings,
 		TempDir:         targetInfo.TempDir,
