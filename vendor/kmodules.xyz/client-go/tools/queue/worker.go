@@ -17,6 +17,7 @@ limitations under the License.
 package queue
 
 import (
+	"fmt"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -81,7 +82,7 @@ func (w *Worker) processNextEntry() bool {
 	defer w.queue.Done(key)
 
 	// Invoke the method containing the business logic
-	err := w.reconcile(key.(string))
+	paniced, err := w.panicSafeReconcile(key.(string))
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -92,7 +93,7 @@ func (w *Worker) processNextEntry() bool {
 	klog.Errorf("Failed to process key %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if w.queue.NumRequeues(key) < w.maxRetries {
+	if !paniced && w.queue.NumRequeues(key) < w.maxRetries {
 		klog.Infof("Error syncing key %v: %v", key, err)
 
 		// Re-enqueue the key rate limited. Based on the rate limiter on the
@@ -103,7 +104,25 @@ func (w *Worker) processNextEntry() bool {
 
 	w.queue.Forget(key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
-	runtime.HandleError(err)
+	if !paniced {
+		runtime.HandleError(err)
+	}
 	klog.Infof("Dropping key %q out of the queue: %v", key, err)
 	return true
+}
+
+func (w *Worker) panicSafeReconcile(key string) (paniced bool, err error) {
+	// xref: https://github.com/kubernetes-sigs/controller-runtime/blob/v0.10.0/pkg/internal/controller/controller.go#L102-L111
+	defer func() {
+		if r := recover(); r != nil {
+			for _, fn := range runtime.PanicHandlers {
+				fn(r)
+			}
+			paniced = true
+			err = fmt.Errorf("panic: %v [recovered]", r)
+		}
+	}()
+	err = w.reconcile(key)
+
+	return
 }

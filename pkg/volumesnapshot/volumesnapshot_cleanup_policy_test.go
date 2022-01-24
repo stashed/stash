@@ -27,7 +27,7 @@ import (
 
 	crdv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
 	vsfake "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/fake"
-	"gomodules.xyz/pointer"
+	type_util "gomodules.xyz/pointer"
 	"gomodules.xyz/x/strings"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -196,14 +196,14 @@ func newSnapshot(snapMeta snapInfo) (*crdv1.VolumeSnapshot, error) {
 			CreationTimestamp: metav1.Time{Time: creationTimestamp},
 		},
 		Spec: crdv1.VolumeSnapshotSpec{
-			VolumeSnapshotClassName: pointer.StringP("standard"),
+			VolumeSnapshotClassName: type_util.StringP("standard"),
 			Source: crdv1.VolumeSnapshotSource{
 				PersistentVolumeClaimName: &snapMeta.pvcName,
 				VolumeSnapshotContentName: &snapshotContentName,
 			},
 		},
 		Status: &crdv1.VolumeSnapshotStatus{
-			ReadyToUse: pointer.TrueP(),
+			ReadyToUse: type_util.TrueP(),
 			Error:      nil,
 		},
 	}, nil

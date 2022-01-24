@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -31,7 +30,6 @@ import (
 
 	stringz "gomodules.xyz/x/strings"
 	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -39,6 +37,7 @@ import (
 )
 
 func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, caller string) error {
+	invMeta := inv.GetObjectMeta()
 	// if RBAC is enabled then ensure ServiceAccount and respective ClusterRole and RoleBinding
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 
@@ -48,7 +47,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 		if err != nil {
 			return err
 		}
-		err = stash_rbac.EnsureRestoreInitContainerRBAC(c.kubeClient, owner, inv.ObjectMeta.Namespace, sa, inv.Labels)
+		err = stash_rbac.EnsureRestoreInitContainerRBAC(c.kubeClient, owner, invMeta.Namespace, sa, inv.GetLabels())
 		if err != nil {
 			return err
 		}
@@ -57,27 +56,16 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 	// if the Stash is using a private registry, then ensure the image pull secrets
 	if c.ImagePullSecrets != nil {
 		var imagePullSecrets []core.LocalObjectReference
-		imagePullSecrets, err := c.ensureImagePullSecrets(inv.ObjectMeta, inv.OwnerRef)
+		imagePullSecrets, err := c.ensureImagePullSecrets(invMeta, inv.GetOwnerRef())
 		if err != nil {
 			return err
 		}
 		w.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 	}
 
-	repository, err := c.stashClient.StashV1alpha1().Repositories(inv.ObjectMeta.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
+	repository, err := inv.GetRepository()
 	if err != nil {
-		klog.Errorf("unable to get Repository %s/%s: Reason: %v", inv.ObjectMeta.Namespace, inv.Repository, err)
-		return err
-	}
-
-	if repository.Spec.Backend.StorageSecretName == "" {
-		err := fmt.Errorf("missing repository secret name  %s/%s", repository.Namespace, repository.Name)
-		return err
-	}
-
-	// check if secret exist
-	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
+		klog.Errorf("unable to get Repository %s/%s: Reason: %v", inv.GetRepoRef().Namespace, inv.GetRepoRef().Name, err)
 		return err
 	}
 
@@ -86,7 +74,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 	}
 
 	// mark pods with restore Invoker spec hash. used to force restart pods for rc/rs
-	w.Spec.Template.Annotations[api_v1beta1.AppliedRestoreInvokerSpecHash] = inv.Hash
+	w.Spec.Template.Annotations[api_v1beta1.AppliedRestoreInvokerSpecHash] = inv.GetHash()
 
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
@@ -103,15 +91,17 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 
 	// add an emptyDir volume for holding temporary files
 	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, targetInfo.TempDir)
-	// add storage secret as volume to the workload. this is mounted on the restore init container
-	w.Spec.Template.Spec.Volumes = util.UpsertSecretVolume(w.Spec.Template.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
 
 	// add RestoreSession definition as annotation of the workload
 	if w.Annotations == nil {
 		w.Annotations = make(map[string]string)
 	}
-	w.Annotations[api_v1beta1.KeyLastAppliedRestoreInvoker] = string(inv.ObjectJson)
-	w.Annotations[api_v1beta1.KeyLastAppliedRestoreInvokerKind] = inv.TypeMeta.Kind
+	jsonObj, err := inv.GetObjectJSON()
+	if err != nil {
+		return err
+	}
+	w.Annotations[api_v1beta1.KeyLastAppliedRestoreInvoker] = jsonObj
+	w.Annotations[api_v1beta1.KeyLastAppliedRestoreInvokerKind] = inv.GetTypeMeta().Kind
 
 	return nil
 }
@@ -129,7 +119,6 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) {
 	if !util.HasStashContainer(w) {
 		// remove the helpers volumes added for init-container
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.StashSecretVolume)
 	}
 
 	// remove respective annotations

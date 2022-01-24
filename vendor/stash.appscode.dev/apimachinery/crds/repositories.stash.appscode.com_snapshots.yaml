@@ -21,6 +21,9 @@ spec:
     - jsonPath: .status.hostname
       name: Hostname
       type: string
+    - jsonPath: .uid
+      name: ID
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:

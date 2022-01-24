@@ -32,34 +32,16 @@ import (
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
 
-func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedReference, image docker.Docker) core.Container {
-	container := NewSidecarContainer(r, workload, image)
-	container.Args = []string{
-		"backup",
-		"--restic-name=" + r.Name,
-		"--workload-kind=" + workload.Kind,
-		"--workload-name=" + workload.Name,
-		"--docker-registry=" + image.Registry,
-		"--image-tag=" + image.Tag,
-		"--pushgateway-url=" + pushgateway.URL(),
-		fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-	}
-	container.Args = append(container.Args, flags.LoggerOptions.ToFlags()...)
-
-	return container
-}
-
 func NewRestoreInitContainer(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, repository *v1alpha1_api.Repository, image docker.Docker) core.Container {
 	initContainer := core.Container{
 		Name:  apis.StashInitContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore",
-			"--invoker-kind=" + inv.TypeMeta.Kind,
-			"--invoker-name=" + inv.ObjectMeta.Name,
+			"--invoker-kind=" + inv.GetTypeMeta().Kind,
+			"--invoker-name=" + inv.GetObjectMeta().Name,
 			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
-			"--secret-dir=" + apis.StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),
 			"--metrics-enabled=true",
@@ -82,12 +64,6 @@ func NewRestoreInitContainer(inv invoker.RestoreInvoker, targetInfo invoker.Rest
 						FieldPath: "metadata.name",
 					},
 				},
-			},
-		},
-		VolumeMounts: []core.VolumeMount{
-			{
-				Name:      apis.StashSecretVolume,
-				MountPath: apis.StashSecretMountDir,
 			},
 		},
 	}

@@ -17,7 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -58,7 +57,7 @@ type RestoreSessionSpec struct {
 	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,2,opt,name=driver,casttype=Snapshotter"`
 	// Repository refer to the Repository crd that hold backend information
 	// +optional
-	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,3,opt,name=repository"`
+	Repository kmapi.ObjectReference `json:"repository,omitempty" protobuf:"bytes,3,opt,name=repository"`
 	// Rules specifies different restore options for different hosts
 	// +optional
 	// Deprecated. Use rules section inside `target`.

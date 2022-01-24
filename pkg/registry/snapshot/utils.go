@@ -32,7 +32,6 @@ import (
 	"stash.appscode.dev/apimachinery/apis/repositories"
 	stash "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/pkg/restic"
-	"stash.appscode.dev/stash/pkg/cli"
 	"stash.appscode.dev/stash/pkg/util"
 
 	core "k8s.io/api/core/v1"
@@ -41,47 +40,64 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/klog/v2"
-	"kmodules.xyz/client-go/meta"
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
-const (
-	ExecStash      = "/stash"
-	scratchDirName = "scratch"
-	secretDirName  = "secret"
-)
+const ExecStash = "/stash-enterprise"
 
-func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
-	backend := repository.Spec.Backend.DeepCopy()
+func (r *REST) GetSnapshotsFromBackned(repository *stash.Repository, snapshotIDs []string, inCluster bool) ([]repositories.Snapshot, error) {
+	if repository.Spec.Backend.Local != nil && !inCluster {
+		return r.getSnapshotsFromLocalBackend(repository, snapshotIDs)
+	}
+	return r.getSnapshotsFromBackend(repository, snapshotIDs)
+}
+func (r *REST) getSnapshotsFromBackend(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
+	tempDir, err := ioutil.TempDir("", "stash")
+	if err != nil {
+		return nil, err
+	}
+	// cleanup whole tempDir dir at the end
+	defer os.RemoveAll(tempDir)
 
-	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
+	// get source repository secret
+	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	workload := &stash.LocalTypedReference{
-		Kind: info.WorkloadKind,
-		Name: info.WorkloadName,
+	// configure restic wrapper
+	extraOpt := &util.ExtraOptions{
+		StorageSecret: secret,
+		EnableCache:   false,
+		ScratchDir:    tempDir,
 	}
-	hostName, smartPrefix, err := workload.HostnamePrefix(info.PodName, info.NodeName)
+	// configure setupOption
+	setupOpt, err := util.SetupOptionsForRepository(*repository, *extraOpt)
+	if err != nil {
+		return nil, fmt.Errorf("setup option for repository failed, reason: %s", err)
+	}
+	if repository.LocalNetworkVolume() {
+		setupOpt.Bucket = filepath.Join(setupOpt.Bucket, repository.LocalNetworkVolumePath())
+	}
+	// init restic wrapper
+	resticWrapper, err := restic.NewResticWrapper(setupOpt)
 	if err != nil {
 		return nil, err
 	}
-
-	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
+	// if repository does not exist in the backend, then nothing to list. Just return.
+	if !resticWrapper.RepositoryAlreadyExist() {
+		klog.Infof("unable to verify whether repository exist or not in the backend for Repository: %s/%s", repository.Namespace, repository.Name)
+		return nil, nil
 	}
-
-	backend = util.FixBackendPrefix(backend, smartPrefix)
-
-	wrapper := cli.New("/tmp", false, hostName)
-	if _, err = wrapper.SetupEnv(*backend, secret, smartPrefix); err != nil {
-		return nil, err
-	}
-
-	results, err := wrapper.ListSnapshots(snapshotIDs)
+	// list snapshots, returns all snapshots for empty snapshotIDs
+	// if there is no restic repository in the backend, this will return error.
+	// in this case, we have to return empty snapshot list.
+	results, err := resticWrapper.ListSnapshots(snapshotIDs)
 	if err != nil {
+		// check if the error is happening because of not having restic repository in the backend.
+		if repoNotFound(resticWrapper.GetRepo(), err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -89,11 +105,12 @@ func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) 
 	snapshot := &repositories.Snapshot{}
 	for _, result := range results {
 		snapshot.Namespace = repository.Namespace
-		snapshot.Name = meta.NameWithSuffix(repository.Name, result.ID[0:apis.SnapshotIDLength]) // snapshotName = repositoryName-first8CharacterOfSnapshotId
+		snapshot.Name = meta_util.NameWithSuffix(repository.Name, result.ID[0:apis.SnapshotIDLength]) // snapshotName = repositoryName-first8CharacterOfSnapshotId
 		snapshot.UID = types.UID(result.ID)
 
 		snapshot.Labels = map[string]string{
 			"repository": repository.Name,
+			"hostname":   result.Hostname,
 		}
 		if repository.Labels != nil {
 			snapshot.Labels = meta_util.OverwriteKeys(snapshot.Labels, repository.Labels)
@@ -107,49 +124,12 @@ func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) 
 		snapshot.Status.Tree = result.Tree
 		snapshot.Status.Username = result.Username
 		snapshot.Status.Tags = result.Tags
+		snapshot.Status.Repository = repository.Name
 
 		snapshots = append(snapshots, *snapshot)
 	}
 	return snapshots, nil
 }
-
-func (r *REST) forgetSnapshots(repository *stash.Repository, snapshotIDs []string) error {
-	backend := repository.Spec.Backend.DeepCopy()
-
-	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
-	if err != nil {
-		return err
-	}
-
-	workload := &stash.LocalTypedReference{
-		Kind: info.WorkloadKind,
-		Name: info.WorkloadName,
-	}
-	hostName, smartPrefix, err := workload.HostnamePrefix(info.PodName, info.NodeName)
-	if err != nil {
-		return err
-	}
-
-	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	backend = util.FixBackendPrefix(backend, smartPrefix)
-
-	wrapper := cli.New("/tmp", false, hostName)
-	if _, err = wrapper.SetupEnv(*backend, secret, smartPrefix); err != nil {
-		return err
-	}
-
-	err = wrapper.DeleteSnapshots(snapshotIDs)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (r *REST) getSnapshotsFromLocalBackend(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
 	response, err := r.execOnBackendMountingPod(repository, "snapshots", snapshotIDs)
 	if err != nil {
@@ -165,8 +145,51 @@ func (r *REST) getSnapshotsFromLocalBackend(repository *stash.Repository, snapsh
 	return snapshots, nil
 }
 
-func (r *REST) forgetSnapshotsFromSidecar(repository *stash.Repository, snapshotIDs []string) error {
+func (r *REST) ForgetSnapshotsFromBackend(repository *stash.Repository, snapshotIDs []string, inCluster bool) error {
+	if repository.Spec.Backend.Local != nil && !inCluster {
+		return r.forgetSnapshotsFromLocalBackend(repository, snapshotIDs)
+	}
+	return r.forgetSnapshotsFromBackend(repository, snapshotIDs)
+}
+func (r *REST) forgetSnapshotsFromLocalBackend(repository *stash.Repository, snapshotIDs []string) error {
 	_, err := r.execOnBackendMountingPod(repository, "forget", snapshotIDs)
+	return err
+}
+func (r *REST) forgetSnapshotsFromBackend(repository *stash.Repository, snapshotIDs []string) error {
+	tempDir, err := ioutil.TempDir("", "stash")
+	if err != nil {
+		return err
+	}
+	// cleanup whole tempDir dir at the end
+	defer os.RemoveAll(tempDir)
+
+	// get source repository secret
+	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	// configure restic wrapper
+	extraOpt := util.ExtraOptions{
+		StorageSecret: secret,
+		EnableCache:   false,
+		ScratchDir:    tempDir,
+	}
+	// configure setupOption
+	setupOpt, err := util.SetupOptionsForRepository(*repository, extraOpt)
+	if err != nil {
+		return fmt.Errorf("setup option for repository failed, reason: %s", err)
+	}
+	if repository.LocalNetworkVolume() {
+		setupOpt.Bucket = filepath.Join(setupOpt.Bucket, repository.LocalNetworkVolumePath())
+	}
+	// init restic wrapper
+	resticWrapper, err := restic.NewResticWrapper(setupOpt)
+	if err != nil {
+		return err
+	}
+	// delete snapshots
+	_, err = resticWrapper.DeleteSnapshots(snapshotIDs)
 	return err
 }
 
@@ -177,7 +200,10 @@ func (r *REST) execOnBackendMountingPod(repository *stash.Repository, cmd string
 		return nil, err
 	}
 
-	command := []string{ExecStash, cmd, "--repo-name=" + repository.Name}
+	command := []string{ExecStash, cmd}
+	command = append(command, "--repo-name="+repository.Name)
+	command = append(command, "--repo-namespace="+repository.Namespace)
+
 	if snapshotIDs != nil {
 		command = append(command, snapshotIDs...)
 	}
@@ -251,177 +277,6 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 	}
 
 	return execOut.Bytes(), nil
-}
-
-func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
-	tempDir, err := ioutil.TempDir("", "stash")
-	if err != nil {
-		return nil, err
-	}
-	// cleanup whole tempDir dir at the end
-	defer os.RemoveAll(tempDir)
-
-	scratchDir := filepath.Join(tempDir, scratchDirName)
-	secretDir := filepath.Join(tempDir, secretDirName)
-
-	// get source repository secret
-	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	// write repository secrets in a temp dir
-	if err := os.MkdirAll(secretDir, 0755); err != nil {
-		return nil, err
-	}
-	for key, value := range secret.Data {
-		if err := ioutil.WriteFile(filepath.Join(secretDir, key), value, 0755); err != nil {
-			return nil, err
-		}
-	}
-
-	// configure restic wrapper
-	extraOpt := util.ExtraOptions{
-		SecretDir:   secretDir,
-		EnableCache: false,
-		ScratchDir:  scratchDir,
-	}
-	// configure setupOption
-	setupOpt, err := util.SetupOptionsForRepository(*repository, extraOpt)
-	if err != nil {
-		return nil, fmt.Errorf("setup option for repository failed, reason: %s", err)
-	}
-	if repository.LocalNetworkVolume() {
-		setupOpt.Bucket = filepath.Join(setupOpt.Bucket, repository.LocalNetworkVolumePath())
-	}
-	// init restic wrapper
-	resticWrapper, err := restic.NewResticWrapper(setupOpt)
-	if err != nil {
-		return nil, err
-	}
-	// if repository does not exist in the backend, then nothing to list. Just return.
-	if !resticWrapper.RepositoryAlreadyExist() {
-		klog.Infof("unable to verify whether repository exist or not in the backend for Repository: %s/%s", repository.Namespace, repository.Name)
-		return nil, nil
-	}
-	// list snapshots, returns all snapshots for empty snapshotIDs
-	// if there is no restic repository in the backend, this will return error.
-	// in this case, we have to return empty snapshot list.
-	results, err := resticWrapper.ListSnapshots(snapshotIDs)
-	if err != nil {
-		// check if the error is happening because of not having restic repository in the backend.
-		if repoNotFound(resticWrapper.GetRepo(), err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	snapshots := make([]repositories.Snapshot, 0)
-	snapshot := &repositories.Snapshot{}
-	for _, result := range results {
-		snapshot.Namespace = repository.Namespace
-		snapshot.Name = repository.Name + "-" + result.ID[0:apis.SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
-		snapshot.UID = types.UID(result.ID)
-
-		snapshot.Labels = map[string]string{
-			"repository": repository.Name,
-			"hostname":   result.Hostname,
-		}
-		if repository.Labels != nil {
-			snapshot.Labels = meta_util.OverwriteKeys(snapshot.Labels, repository.Labels)
-		}
-
-		snapshot.CreationTimestamp.Time = result.Time
-		snapshot.Status.UID = result.UID
-		snapshot.Status.Gid = result.Gid
-		snapshot.Status.Hostname = result.Hostname
-		snapshot.Status.Paths = result.Paths
-		snapshot.Status.Tree = result.Tree
-		snapshot.Status.Username = result.Username
-		snapshot.Status.Tags = result.Tags
-		snapshot.Status.Repository = repository.Name
-
-		snapshots = append(snapshots, *snapshot)
-	}
-	return snapshots, nil
-}
-
-func (r *REST) forgetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []string) error {
-	tempDir, err := ioutil.TempDir("", "stash")
-	if err != nil {
-		return err
-	}
-	// cleanup whole tempDir dir at the end
-	defer os.RemoveAll(tempDir)
-
-	scratchDir := filepath.Join(tempDir, scratchDirName)
-	secretDir := filepath.Join(tempDir, secretDirName)
-
-	// get source repository secret
-	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	// write repository secrets in a temp dir
-	if err := os.MkdirAll(secretDir, 0755); err != nil {
-		return err
-	}
-	for key, value := range secret.Data {
-		if err := ioutil.WriteFile(filepath.Join(secretDir, key), value, 0755); err != nil {
-			return err
-		}
-	}
-
-	// configure restic wrapper
-	extraOpt := util.ExtraOptions{
-		SecretDir:   secretDir,
-		EnableCache: false,
-		ScratchDir:  scratchDir,
-	}
-	// configure setupOption
-	setupOpt, err := util.SetupOptionsForRepository(*repository, extraOpt)
-	if err != nil {
-		return fmt.Errorf("setup option for repository failed, reason: %s", err)
-	}
-	if repository.LocalNetworkVolume() {
-		setupOpt.Bucket = filepath.Join(setupOpt.Bucket, repository.LocalNetworkVolumePath())
-	}
-	// init restic wrapper
-	resticWrapper, err := restic.NewResticWrapper(setupOpt)
-	if err != nil {
-		return err
-	}
-	// delete snapshots
-	_, err = resticWrapper.DeleteSnapshots(snapshotIDs)
-	return err
-}
-
-func (r *REST) GetVersionedSnapshots(repository *stash.Repository, snapshotIDs []string, inCluster bool) ([]repositories.Snapshot, error) {
-	if repository.Spec.Backend.Local != nil && !inCluster {
-		return r.getSnapshotsFromLocalBackend(repository, snapshotIDs)
-	} else if isV1Alpha1Repository(*repository) {
-		return r.getSnapshots(repository, snapshotIDs)
-	}
-	return r.getV1Beta1Snapshots(repository, snapshotIDs)
-}
-
-func (r *REST) ForgetVersionedSnapshots(repository *stash.Repository, snapshotIDs []string, inCluster bool) error {
-	if repository.Spec.Backend.Local != nil && !inCluster {
-		return r.forgetSnapshotsFromSidecar(repository, snapshotIDs)
-	} else if isV1Alpha1Repository(*repository) {
-		return r.forgetSnapshots(repository, snapshotIDs)
-	}
-	return r.forgetV1Beta1Snapshots(repository, snapshotIDs)
-}
-
-// v1alpha1 repositories should have 'restic' label
-func isV1Alpha1Repository(repository stash.Repository) bool {
-	if repository.Labels == nil {
-		return false
-	}
-	_, ok := repository.Labels["restic"]
-	return ok
 }
 
 func repoNotFound(repo string, err error) bool {

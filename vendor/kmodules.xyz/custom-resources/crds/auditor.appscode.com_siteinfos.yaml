@@ -34,11 +34,32 @@ spec:
             type: string
           kubernetes:
             properties:
-              clusterName:
-                description: https://github.com/kmodules/client-go/blob/master/tools/clusterid/lib.go
-                type: string
-              clusterUID:
-                type: string
+              cluster:
+                properties:
+                  displayName:
+                    type: string
+                  name:
+                    type: string
+                  provider:
+                    enum:
+                    - Aws
+                    - Azure
+                    - DigitalOcean
+                    - GoogleCloud
+                    - Linode
+                    - Packet
+                    - Scaleway
+                    - Vultr
+                    - BareMetal
+                    - KIND
+                    - Generic
+                    - Private
+                    type: string
+                  uid:
+                    type: string
+                required:
+                - uid
+                type: object
               controlPlane:
                 description: https://github.com/kmodules/client-go/blob/kubernetes-1.16.3/tools/analytics/analytics.go#L66
                 properties:

@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 
@@ -58,11 +57,6 @@ func (f *Framework) CheckLeaderElection(meta metav1.ObjectMeta, kind string, mod
 func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta, kind string, modifier string) (string, error) {
 	var configMapLockName string
 	switch modifier {
-	case api.ResourceKindRestic:
-		configMapLockName = util.GetConfigmapLockName(api.LocalTypedReference{
-			Kind: kind,
-			Name: meta.Name,
-		})
 	case v1beta1.ResourceKindBackupConfiguration:
 		configMapLockName = util.GetBackupConfigmapLockName(v1beta1.TargetRef{
 			Kind: kind,

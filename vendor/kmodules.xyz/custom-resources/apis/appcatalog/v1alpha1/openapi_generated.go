@@ -15861,14 +15861,14 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_AddKeysFromTransform(ref c
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The reference to the Secret that should be merged into the credentials Secret.",
-							Ref:         ref("kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.ObjectReference"),
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.ObjectReference"},
+			"k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -16260,6 +16260,13 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_ServiceReference(ref commo
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies which scheme to use, for example: http, https If specified, then it will applied as prefix in this format: scheme:// If not specified, then nothing will be prefixed",
 							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "`namespace` is the namespace of the service.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

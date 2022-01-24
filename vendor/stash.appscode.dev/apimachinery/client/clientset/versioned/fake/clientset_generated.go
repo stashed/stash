@@ -26,6 +26,8 @@ import (
 	fakestashv1alpha1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/fake"
 	stashv1beta1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1"
 	fakestashv1beta1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/fake"
+	uiv1alpha1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/ui/v1alpha1"
+	fakeuiv1alpha1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/ui/v1alpha1/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -94,4 +96,9 @@ func (c *Clientset) StashV1alpha1() stashv1alpha1.StashV1alpha1Interface {
 // StashV1beta1 retrieves the StashV1beta1Client
 func (c *Clientset) StashV1beta1() stashv1beta1.StashV1beta1Interface {
 	return &fakestashv1beta1.FakeStashV1beta1{Fake: &c.Fake}
+}
+
+// UiV1alpha1 retrieves the UiV1alpha1Client
+func (c *Clientset) UiV1alpha1() uiv1alpha1.UiV1alpha1Interface {
+	return &fakeuiv1alpha1.FakeUiV1alpha1{Fake: &c.Fake}
 }

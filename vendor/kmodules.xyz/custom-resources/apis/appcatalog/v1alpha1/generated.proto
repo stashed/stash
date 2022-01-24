@@ -60,7 +60,7 @@ message AddKeyTransform {
 // the credentials Secret.
 message AddKeysFromTransform {
   // The reference to the Secret that should be merged into the credentials Secret.
-  optional ObjectReference secretRef = 1;
+  optional k8s.io.api.core.v1.LocalObjectReference secretRef = 1;
 }
 
 // +kubebuilder:object:root=true
@@ -258,22 +258,26 @@ message ServiceReference {
   // If not specified, then nothing will be prefixed
   optional string scheme = 1;
 
+  // `namespace` is the namespace of the service.
+  // +optional
+  optional string namespace = 2;
+
   // `name` is the name of the service.
   // Required
-  optional string name = 2;
+  optional string name = 3;
 
   // The port that will be exposed by this app.
-  optional int32 port = 3;
+  optional int32 port = 4;
 
   // `path` is an optional URL path which will be sent in any request to
   // this service.
   // +optional
-  optional string path = 4;
+  optional string path = 5;
 
   // `query` is optional encoded query string, without '?' which will be
   // sent in any request to this service.
   // +optional
-  optional string query = 5;
+  optional string query = 6;
 }
 
 message StashAddon {

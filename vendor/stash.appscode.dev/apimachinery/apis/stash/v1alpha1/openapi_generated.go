@@ -338,7 +338,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/version.Info":                                        schema_k8sio_apimachinery_pkg_version_Info(ref),
 		"kmodules.xyz/client-go/api/v1.CertificatePrivateKey":                         schema_kmodulesxyz_client_go_api_v1_CertificatePrivateKey(ref),
 		"kmodules.xyz/client-go/api/v1.CertificateSpec":                               schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref),
+		"kmodules.xyz/client-go/api/v1.ClusterMetadata":                               schema_kmodulesxyz_client_go_api_v1_ClusterMetadata(ref),
 		"kmodules.xyz/client-go/api/v1.Condition":                                     schema_kmodulesxyz_client_go_api_v1_Condition(ref),
+		"kmodules.xyz/client-go/api/v1.ObjectID":                                      schema_kmodulesxyz_client_go_api_v1_ObjectID(ref),
+		"kmodules.xyz/client-go/api/v1.ObjectInfo":                                    schema_kmodulesxyz_client_go_api_v1_ObjectInfo(ref),
 		"kmodules.xyz/client-go/api/v1.ObjectReference":                               schema_kmodulesxyz_client_go_api_v1_ObjectReference(ref),
 		"kmodules.xyz/client-go/api/v1.ResourceID":                                    schema_kmodulesxyz_client_go_api_v1_ResourceID(ref),
 		"kmodules.xyz/client-go/api/v1.TLSConfig":                                     schema_kmodulesxyz_client_go_api_v1_TLSConfig(ref),
@@ -385,21 +388,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/prober/api/v1.FormEntry":                                        schema_kmodulesxyz_prober_api_v1_FormEntry(ref),
 		"kmodules.xyz/prober/api/v1.HTTPPostAction":                                   schema_kmodulesxyz_prober_api_v1_HTTPPostAction(ref),
 		"kmodules.xyz/prober/api/v1.Handler":                                          schema_kmodulesxyz_prober_api_v1_Handler(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.FileGroup":               schema_apimachinery_apis_stash_v1alpha1_FileGroup(ref),
+		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.AllowedNamespaces":       schema_apimachinery_apis_stash_v1alpha1_AllowedNamespaces(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.LocalTypedReference":     schema_apimachinery_apis_stash_v1alpha1_LocalTypedReference(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.Recovery":                schema_apimachinery_apis_stash_v1alpha1_Recovery(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RecoveryList":            schema_apimachinery_apis_stash_v1alpha1_RecoveryList(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RecoverySpec":            schema_apimachinery_apis_stash_v1alpha1_RecoverySpec(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RecoveryStatus":          schema_apimachinery_apis_stash_v1alpha1_RecoveryStatus(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.Repository":              schema_apimachinery_apis_stash_v1alpha1_Repository(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RepositoryList":          schema_apimachinery_apis_stash_v1alpha1_RepositoryList(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RepositorySpec":          schema_apimachinery_apis_stash_v1alpha1_RepositorySpec(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RepositoryStatus":        schema_apimachinery_apis_stash_v1alpha1_RepositoryStatus(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.Restic":                  schema_apimachinery_apis_stash_v1alpha1_Restic(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.ResticList":              schema_apimachinery_apis_stash_v1alpha1_ResticList(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.ResticSpec":              schema_apimachinery_apis_stash_v1alpha1_ResticSpec(ref),
-		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RestoreStats":            schema_apimachinery_apis_stash_v1alpha1_RestoreStats(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy":         schema_apimachinery_apis_stash_v1alpha1_RetentionPolicy(ref),
+		"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.UsagePolicy":             schema_apimachinery_apis_stash_v1alpha1_UsagePolicy(ref),
 	}
 }
 
@@ -16640,6 +16636,44 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 	}
 }
 
+func schema_kmodulesxyz_client_go_api_v1_ClusterMetadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"uid": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"displayName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"provider": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"uid"},
+			},
+		},
+	}
+}
+
 func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -16698,6 +16732,69 @@ func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_kmodulesxyz_client_go_api_v1_ObjectID(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"group": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_kmodulesxyz_client_go_api_v1_ObjectInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"resource": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("kmodules.xyz/client-go/api/v1.ResourceID"),
+						},
+					},
+					"ref": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("kmodules.xyz/client-go/api/v1.ObjectReference"),
+						},
+					},
+				},
+				Required: []string{"resource", "ref"},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/client-go/api/v1.ResourceID"},
 	}
 }
 
@@ -16996,14 +17093,14 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_AddKeysFromTransform(ref c
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The reference to the Secret that should be merged into the credentials Secret.",
-							Ref:         ref("kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.ObjectReference"),
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.ObjectReference"},
+			"k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -17395,6 +17492,13 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_ServiceReference(ref commo
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies which scheme to use, for example: http, https If specified, then it will applied as prefix in this format: scheme:// If not specified, then nothing will be prefixed",
 							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "`namespace` is the namespace of the service.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -19029,44 +19133,31 @@ func schema_kmodulesxyz_prober_api_v1_Handler(ref common.ReferenceCallback) comm
 	}
 }
 
-func schema_apimachinery_apis_stash_v1alpha1_FileGroup(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_apimachinery_apis_stash_v1alpha1_AllowedNamespaces(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "AllowedNamespaces indicate which namespaces the resource should be selected from.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"path": {
+					"from": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Source of the backup volumeName:path",
+							Description: "From indicates how to select the namespaces that are allowed to use this resource. Possible values are: * All: All namespaces can use this resource. * Selector: Namespaces that matches the selector can use this resource. * Same: Only current namespace can use the resource.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"tags": {
+					"selector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Tags of a snapshots",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"retentionPolicyName": {
-						SchemaProps: spec.SchemaProps{
-							Description: "retention policy of snapshots",
-							Type:        []string{"string"},
-							Format:      "",
+							Description: "Selector must be specified when From is set to \"Selector\". In that case, only the selected namespaces are allowed to use this resource. This field is ignored for other values of \"From\".",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
 						},
 					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
 	}
 }
 
@@ -19101,223 +19192,6 @@ func schema_apimachinery_apis_stash_v1alpha1_LocalTypedReference(ref common.Refe
 				},
 			},
 		},
-	}
-}
-
-func schema_apimachinery_apis_stash_v1alpha1_Recovery(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RecoverySpec"),
-						},
-					},
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RecoveryStatus"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RecoverySpec", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RecoveryStatus"},
-	}
-}
-
-func schema_apimachinery_apis_stash_v1alpha1_RecoveryList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.Recovery"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.Recovery"},
-	}
-}
-
-func schema_apimachinery_apis_stash_v1alpha1_RecoverySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"repository": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/api/core/v1.ObjectReference"),
-						},
-					},
-					"snapshot": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Snapshot to recover. Default is latest snapshot.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"paths": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"recoveredVolumes": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("kmodules.xyz/objectstore-api/api/v1.LocalSpec"),
-									},
-								},
-							},
-						},
-					},
-					"imagePullSecrets": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("k8s.io/api/core/v1.LocalObjectReference"),
-									},
-								},
-							},
-						},
-					},
-					"nodeSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"repository"},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ObjectReference", "kmodules.xyz/objectstore-api/api/v1.LocalSpec"},
-	}
-}
-
-func schema_apimachinery_apis_stash_v1alpha1_RecoveryStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"observedGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-					"phase": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"stats": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RestoreStats"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RestoreStats"},
 	}
 }
 
@@ -19434,11 +19308,17 @@ func schema_apimachinery_apis_stash_v1alpha1_RepositorySpec(ref common.Reference
 							Format:      "",
 						},
 					},
+					"usagePolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UsagePolicy specifies a policy of how this Repository will be used. For example, you can use `allowedNamespaces` policy to restrict the usage of this Repository to particular namespaces. This field is optional. If you don't provide the usagePolicy, then it can be used only from the current namespace.",
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.UsagePolicy"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/objectstore-api/api/v1.Backend"},
+			"kmodules.xyz/objectstore-api/api/v1.Backend", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.UsagePolicy"},
 	}
 }
 
@@ -19495,255 +19375,11 @@ func schema_apimachinery_apis_stash_v1alpha1_RepositoryStatus(ref common.Referen
 							Format:      "int64",
 						},
 					},
-					"lastSuccessfulBackupTime": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Deprecated",
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
-						},
-					},
-					"lastBackupDuration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Deprecated",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"backupCount": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Deprecated",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-	}
-}
-
-func schema_apimachinery_apis_stash_v1alpha1_Restic(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.ResticSpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.ResticSpec"},
-	}
-}
-
-func schema_apimachinery_apis_stash_v1alpha1_ResticList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.Restic"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.Restic"},
-	}
-}
-
-func schema_apimachinery_apis_stash_v1alpha1_ResticSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"selector": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
-						},
-					},
-					"fileGroups": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.FileGroup"),
-									},
-								},
-							},
-						},
-					},
-					"backend": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("kmodules.xyz/objectstore-api/api/v1.Backend"),
-						},
-					},
-					"schedule": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"volumeMounts": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Pod volumes to mount into the sidecar container's filesystem.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
-									},
-								},
-							},
-						},
-					},
-					"resources": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Compute Resources required by the sidecar container.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
-						},
-					},
-					"retentionPolicies": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy"),
-									},
-								},
-							},
-						},
-					},
-					"type": {
-						SchemaProps: spec.SchemaProps{
-							Description: "https://github.com/stashed/stash/issues/225",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"paused": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Indicates that the Restic is paused from taking backup. Default value is 'false'",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"imagePullSecrets": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. If specified, these secrets will be passed to individual puller implementations for them to use. For example, in the case of docker, only DockerConfig type secrets are honored. More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("k8s.io/api/core/v1.LocalObjectReference"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "kmodules.xyz/objectstore-api/api/v1.Backend", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.FileGroup", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy"},
-	}
-}
-
-func schema_apimachinery_apis_stash_v1alpha1_RestoreStats(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"path": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"phase": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"duration": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-				},
-			},
-		},
 	}
 }
 
@@ -19827,5 +19463,27 @@ func schema_apimachinery_apis_stash_v1alpha1_RetentionPolicy(ref common.Referenc
 				Required: []string{"name", "prune"},
 			},
 		},
+	}
+}
+
+func schema_apimachinery_apis_stash_v1alpha1_UsagePolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "UsagePolicy specifies a policy that restrict the usage of a resource across namespaces.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"allowedNamespaces": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AllowedNamespaces specifies which namespaces are allowed to use the resource",
+							Default:     map[string]interface{}{},
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1alpha1.AllowedNamespaces"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"stash.appscode.dev/apimachinery/apis/stash/v1alpha1.AllowedNamespaces"},
 	}
 }

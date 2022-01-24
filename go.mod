@@ -3,18 +3,16 @@ module stash.appscode.dev/stash
 go 1.15
 
 require (
-	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.1.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
-	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.14
+	go.bytebuilders.dev/audit v0.0.15
 	go.bytebuilders.dev/license-verifier v0.9.7
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.7
 	gomodules.xyz/blobfs v0.1.7
@@ -22,13 +20,11 @@ require (
 	gomodules.xyz/encoding v0.0.2
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/flags v0.1.3
-	gomodules.xyz/go-sh v0.1.0
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/runtime v0.2.0
 	gomodules.xyz/stow v0.2.4
 	gomodules.xyz/x v0.0.8
-	gopkg.in/ini.v1 v1.51.0
 	k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery v0.21.1
@@ -37,15 +33,15 @@ require (
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kubernetes v1.21.1
-	kmodules.xyz/client-go v0.0.0-20211122091731-6c471b24a4ea
+	kmodules.xyz/client-go v0.0.0-20220108081101-27afc2ac4ebe
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
-	kmodules.xyz/custom-resources v0.0.0-20211122142737-3bf3dbd8ac52
+	kmodules.xyz/custom-resources v0.0.0-20220104123914-3c036dd7c1cd
 	kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7
 	kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
 	kmodules.xyz/webhook-runtime v0.0.0-20211116181908-909a755cc9d1
-	stash.appscode.dev/apimachinery v0.17.0
+	stash.appscode.dev/apimachinery v0.17.1-0.20220121124417-69f0bb1ecd9f
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

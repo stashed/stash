@@ -29,7 +29,7 @@ import (
 )
 
 func SetRestoreTargetFoundConditionToTrue(inv invoker.RestoreInvoker, index int) error {
-	target := inv.TargetsInfo[index].Target
+	target := inv.GetTargetInfo()[index].Target
 	return inv.SetCondition(&target.Ref, kmapi.Condition{
 		Type:   apis.RestoreTargetFound,
 		Status: core.ConditionTrue,
@@ -43,7 +43,7 @@ func SetRestoreTargetFoundConditionToTrue(inv invoker.RestoreInvoker, index int)
 }
 
 func SetRestoreTargetFoundConditionToFalse(inv invoker.RestoreInvoker, index int) error {
-	target := inv.TargetsInfo[index].Target
+	target := inv.GetTargetInfo()[index].Target
 	return inv.SetCondition(&target.Ref, kmapi.Condition{
 		Type:   apis.RestoreTargetFound,
 		Status: core.ConditionFalse,
@@ -57,7 +57,7 @@ func SetRestoreTargetFoundConditionToFalse(inv invoker.RestoreInvoker, index int
 }
 
 func SetRestoreTargetFoundConditionToUnknown(inv invoker.RestoreInvoker, index int, err error) error {
-	target := inv.TargetsInfo[index].Target
+	target := inv.GetTargetInfo()[index].Target
 	return inv.SetCondition(&target.Ref, kmapi.Condition{
 		Type:   apis.RestoreTargetFound,
 		Status: core.ConditionUnknown,

@@ -72,16 +72,16 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
 
-			inv, err := invoker.ExtractRestoreInvokerInfo(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+			inv, err := invoker.NewRestoreInvoker(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 			if err != nil {
 				return err
 			}
 
-			opt.metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name)
+			opt.metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), inv.GetObjectMeta().Namespace, inv.GetObjectMeta().Name)
 
-			for _, targetInfo := range inv.TargetsInfo {
+			for _, targetInfo := range inv.GetTargetInfo() {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-					restoreOutput, err := opt.restoreVolumeSnapshot(inv, targetInfo)
+					restoreOutput, err := opt.restoreVolumeSnapshot(targetInfo)
 					if err != nil {
 						return err
 					}
@@ -109,18 +109,18 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 	return cmd
 }
 
-func (opt *VSoption) restoreVolumeSnapshot(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
+func (opt *VSoption) restoreVolumeSnapshot(targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
 	// start clock to measure the time takes to restore the volumes
 	startTime := time.Now()
 
 	// If preRestore hook is specified, then execute those hooks first
-	if inv.Hooks != nil && inv.Hooks.PreRestore != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PreRestore != nil {
 		klog.Infoln("Executing preRestore hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, inv.Hooks.PreRestore, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, targetInfo.Hooks.PreRestore, podName, opt.namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -240,13 +240,13 @@ func (opt *VSoption) restoreVolumeSnapshot(inv invoker.RestoreInvoker, targetInf
 		})
 	}
 	// If postRestore hook is specified, then execute those hooks after restore
-	if inv.Hooks != nil && inv.Hooks.PostRestore != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {
 		klog.Infoln("Executing postRestore hooks........")
 		podName := os.Getenv(apis.KeyPodName)
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, inv.Hooks.PostRestore, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, targetInfo.Hooks.PostRestore, podName, opt.namespace)
 		if err != nil {
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual restore process may be succeeded." +
 				"Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")

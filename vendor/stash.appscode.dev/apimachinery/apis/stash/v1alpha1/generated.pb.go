@@ -28,10 +28,7 @@ import (
 	strings "strings"
 
 	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
-	v11 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v12 "kmodules.xyz/objectstore-api/api/v1"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -45,15 +42,15 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-func (m *FileGroup) Reset()      { *m = FileGroup{} }
-func (*FileGroup) ProtoMessage() {}
-func (*FileGroup) Descriptor() ([]byte, []int) {
+func (m *AllowedNamespaces) Reset()      { *m = AllowedNamespaces{} }
+func (*AllowedNamespaces) ProtoMessage() {}
+func (*AllowedNamespaces) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc80b893ee731d0e, []int{0}
 }
-func (m *FileGroup) XXX_Unmarshal(b []byte) error {
+func (m *AllowedNamespaces) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *FileGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AllowedNamespaces) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	b = b[:cap(b)]
 	n, err := m.MarshalToSizedBuffer(b)
 	if err != nil {
@@ -61,17 +58,17 @@ func (m *FileGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	}
 	return b[:n], nil
 }
-func (m *FileGroup) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FileGroup.Merge(m, src)
+func (m *AllowedNamespaces) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AllowedNamespaces.Merge(m, src)
 }
-func (m *FileGroup) XXX_Size() int {
+func (m *AllowedNamespaces) XXX_Size() int {
 	return m.Size()
 }
-func (m *FileGroup) XXX_DiscardUnknown() {
-	xxx_messageInfo_FileGroup.DiscardUnknown(m)
+func (m *AllowedNamespaces) XXX_DiscardUnknown() {
+	xxx_messageInfo_AllowedNamespaces.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_FileGroup proto.InternalMessageInfo
+var xxx_messageInfo_AllowedNamespaces proto.InternalMessageInfo
 
 func (m *LocalTypedReference) Reset()      { *m = LocalTypedReference{} }
 func (*LocalTypedReference) ProtoMessage() {}
@@ -101,122 +98,10 @@ func (m *LocalTypedReference) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_LocalTypedReference proto.InternalMessageInfo
 
-func (m *Recovery) Reset()      { *m = Recovery{} }
-func (*Recovery) ProtoMessage() {}
-func (*Recovery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{2}
-}
-func (m *Recovery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Recovery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *Recovery) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Recovery.Merge(m, src)
-}
-func (m *Recovery) XXX_Size() int {
-	return m.Size()
-}
-func (m *Recovery) XXX_DiscardUnknown() {
-	xxx_messageInfo_Recovery.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Recovery proto.InternalMessageInfo
-
-func (m *RecoveryList) Reset()      { *m = RecoveryList{} }
-func (*RecoveryList) ProtoMessage() {}
-func (*RecoveryList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{3}
-}
-func (m *RecoveryList) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RecoveryList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *RecoveryList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RecoveryList.Merge(m, src)
-}
-func (m *RecoveryList) XXX_Size() int {
-	return m.Size()
-}
-func (m *RecoveryList) XXX_DiscardUnknown() {
-	xxx_messageInfo_RecoveryList.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RecoveryList proto.InternalMessageInfo
-
-func (m *RecoverySpec) Reset()      { *m = RecoverySpec{} }
-func (*RecoverySpec) ProtoMessage() {}
-func (*RecoverySpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{4}
-}
-func (m *RecoverySpec) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RecoverySpec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *RecoverySpec) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RecoverySpec.Merge(m, src)
-}
-func (m *RecoverySpec) XXX_Size() int {
-	return m.Size()
-}
-func (m *RecoverySpec) XXX_DiscardUnknown() {
-	xxx_messageInfo_RecoverySpec.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RecoverySpec proto.InternalMessageInfo
-
-func (m *RecoveryStatus) Reset()      { *m = RecoveryStatus{} }
-func (*RecoveryStatus) ProtoMessage() {}
-func (*RecoveryStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{5}
-}
-func (m *RecoveryStatus) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RecoveryStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *RecoveryStatus) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RecoveryStatus.Merge(m, src)
-}
-func (m *RecoveryStatus) XXX_Size() int {
-	return m.Size()
-}
-func (m *RecoveryStatus) XXX_DiscardUnknown() {
-	xxx_messageInfo_RecoveryStatus.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RecoveryStatus proto.InternalMessageInfo
-
 func (m *Repository) Reset()      { *m = Repository{} }
 func (*Repository) ProtoMessage() {}
 func (*Repository) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{6}
+	return fileDescriptor_fc80b893ee731d0e, []int{2}
 }
 func (m *Repository) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -244,7 +129,7 @@ var xxx_messageInfo_Repository proto.InternalMessageInfo
 func (m *RepositoryList) Reset()      { *m = RepositoryList{} }
 func (*RepositoryList) ProtoMessage() {}
 func (*RepositoryList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{7}
+	return fileDescriptor_fc80b893ee731d0e, []int{3}
 }
 func (m *RepositoryList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -272,7 +157,7 @@ var xxx_messageInfo_RepositoryList proto.InternalMessageInfo
 func (m *RepositorySpec) Reset()      { *m = RepositorySpec{} }
 func (*RepositorySpec) ProtoMessage() {}
 func (*RepositorySpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{8}
+	return fileDescriptor_fc80b893ee731d0e, []int{4}
 }
 func (m *RepositorySpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -300,7 +185,7 @@ var xxx_messageInfo_RepositorySpec proto.InternalMessageInfo
 func (m *RepositoryStatus) Reset()      { *m = RepositoryStatus{} }
 func (*RepositoryStatus) ProtoMessage() {}
 func (*RepositoryStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{9}
+	return fileDescriptor_fc80b893ee731d0e, []int{5}
 }
 func (m *RepositoryStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -325,122 +210,10 @@ func (m *RepositoryStatus) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RepositoryStatus proto.InternalMessageInfo
 
-func (m *Restic) Reset()      { *m = Restic{} }
-func (*Restic) ProtoMessage() {}
-func (*Restic) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{10}
-}
-func (m *Restic) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Restic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *Restic) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Restic.Merge(m, src)
-}
-func (m *Restic) XXX_Size() int {
-	return m.Size()
-}
-func (m *Restic) XXX_DiscardUnknown() {
-	xxx_messageInfo_Restic.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Restic proto.InternalMessageInfo
-
-func (m *ResticList) Reset()      { *m = ResticList{} }
-func (*ResticList) ProtoMessage() {}
-func (*ResticList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{11}
-}
-func (m *ResticList) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ResticList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *ResticList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ResticList.Merge(m, src)
-}
-func (m *ResticList) XXX_Size() int {
-	return m.Size()
-}
-func (m *ResticList) XXX_DiscardUnknown() {
-	xxx_messageInfo_ResticList.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ResticList proto.InternalMessageInfo
-
-func (m *ResticSpec) Reset()      { *m = ResticSpec{} }
-func (*ResticSpec) ProtoMessage() {}
-func (*ResticSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{12}
-}
-func (m *ResticSpec) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ResticSpec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *ResticSpec) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ResticSpec.Merge(m, src)
-}
-func (m *ResticSpec) XXX_Size() int {
-	return m.Size()
-}
-func (m *ResticSpec) XXX_DiscardUnknown() {
-	xxx_messageInfo_ResticSpec.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ResticSpec proto.InternalMessageInfo
-
-func (m *RestoreStats) Reset()      { *m = RestoreStats{} }
-func (*RestoreStats) ProtoMessage() {}
-func (*RestoreStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{13}
-}
-func (m *RestoreStats) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RestoreStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *RestoreStats) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RestoreStats.Merge(m, src)
-}
-func (m *RestoreStats) XXX_Size() int {
-	return m.Size()
-}
-func (m *RestoreStats) XXX_DiscardUnknown() {
-	xxx_messageInfo_RestoreStats.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RestoreStats proto.InternalMessageInfo
-
 func (m *RetentionPolicy) Reset()      { *m = RetentionPolicy{} }
 func (*RetentionPolicy) ProtoMessage() {}
 func (*RetentionPolicy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc80b893ee731d0e, []int{14}
+	return fileDescriptor_fc80b893ee731d0e, []int{6}
 }
 func (m *RetentionPolicy) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -465,23 +238,43 @@ func (m *RetentionPolicy) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RetentionPolicy proto.InternalMessageInfo
 
+func (m *UsagePolicy) Reset()      { *m = UsagePolicy{} }
+func (*UsagePolicy) ProtoMessage() {}
+func (*UsagePolicy) Descriptor() ([]byte, []int) {
+	return fileDescriptor_fc80b893ee731d0e, []int{7}
+}
+func (m *UsagePolicy) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UsagePolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *UsagePolicy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UsagePolicy.Merge(m, src)
+}
+func (m *UsagePolicy) XXX_Size() int {
+	return m.Size()
+}
+func (m *UsagePolicy) XXX_DiscardUnknown() {
+	xxx_messageInfo_UsagePolicy.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UsagePolicy proto.InternalMessageInfo
+
 func init() {
-	proto.RegisterType((*FileGroup)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.FileGroup")
+	proto.RegisterType((*AllowedNamespaces)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.AllowedNamespaces")
 	proto.RegisterType((*LocalTypedReference)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.LocalTypedReference")
-	proto.RegisterType((*Recovery)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.Recovery")
-	proto.RegisterType((*RecoveryList)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RecoveryList")
-	proto.RegisterType((*RecoverySpec)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RecoverySpec")
-	proto.RegisterMapType((map[string]string)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RecoverySpec.NodeSelectorEntry")
-	proto.RegisterType((*RecoveryStatus)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RecoveryStatus")
 	proto.RegisterType((*Repository)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.Repository")
 	proto.RegisterType((*RepositoryList)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RepositoryList")
 	proto.RegisterType((*RepositorySpec)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RepositorySpec")
 	proto.RegisterType((*RepositoryStatus)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RepositoryStatus")
-	proto.RegisterType((*Restic)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.Restic")
-	proto.RegisterType((*ResticList)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.ResticList")
-	proto.RegisterType((*ResticSpec)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.ResticSpec")
-	proto.RegisterType((*RestoreStats)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RestoreStats")
 	proto.RegisterType((*RetentionPolicy)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.RetentionPolicy")
+	proto.RegisterType((*UsagePolicy)(nil), "stash.appscode.dev.apimachinery.apis.stash.v1alpha1.UsagePolicy")
 }
 
 func init() {
@@ -489,117 +282,79 @@ func init() {
 }
 
 var fileDescriptor_fc80b893ee731d0e = []byte{
-	// 1705 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x58, 0xcd, 0x6f, 0x23, 0x49,
-	0x15, 0x4f, 0xc7, 0x1f, 0xb1, 0xcb, 0xf9, 0xac, 0x2c, 0x52, 0x13, 0x76, 0xed, 0x91, 0x57, 0xa0,
-	0x00, 0xd9, 0x36, 0xe3, 0x59, 0xd0, 0x8a, 0x15, 0x8c, 0xd6, 0xc9, 0xee, 0x12, 0x92, 0x6c, 0xa2,
-	0x72, 0x34, 0xa3, 0x41, 0x48, 0x6c, 0xb9, 0xfb, 0xc5, 0x6e, 0xdc, 0xee, 0x6e, 0xba, 0xaa, 0x0d,
-	0xde, 0x13, 0x07, 0xae, 0x23, 0x71, 0xe0, 0xc4, 0x1f, 0xc3, 0x05, 0x0e, 0x73, 0x00, 0x69, 0x0e,
-	0x1c, 0xe6, 0x80, 0x22, 0xc6, 0x9c, 0xb9, 0xa3, 0x39, 0xa1, 0xaa, 0xae, 0xfe, 0xb2, 0xe3, 0x21,
-	0x93, 0x0c, 0x39, 0x58, 0x72, 0xbd, 0xf7, 0xea, 0xf7, 0x3e, 0xfa, 0xd5, 0xaf, 0x5e, 0x37, 0xda,
-	0x67, 0x9c, 0xb2, 0x81, 0x41, 0x7d, 0x9f, 0x99, 0x9e, 0x05, 0x86, 0x05, 0xe3, 0x16, 0xf5, 0xed,
-	0x11, 0x35, 0x07, 0xb6, 0x0b, 0xc1, 0x44, 0x2c, 0x58, 0x4b, 0x1a, 0xb5, 0xc6, 0xf7, 0xa9, 0xe3,
-	0x0f, 0xe8, 0xfd, 0x56, 0x1f, 0x5c, 0x08, 0x28, 0x07, 0xcb, 0xf0, 0x03, 0x8f, 0x7b, 0xf8, 0xc1,
-	0x3c, 0x88, 0x91, 0x05, 0x11, 0x0b, 0x66, 0x44, 0x46, 0x31, 0xc8, 0xce, 0x07, 0x7d, 0x9b, 0x0f,
-	0xc2, 0x9e, 0x61, 0x7a, 0xa3, 0x56, 0xdf, 0xeb, 0x7b, 0x2d, 0x89, 0xd5, 0x0b, 0x2f, 0xe4, 0x4a,
-	0x2e, 0xe4, 0xbf, 0xc8, 0xc7, 0x4e, 0x73, 0xf8, 0x11, 0x33, 0x6c, 0x4f, 0xc4, 0xd3, 0x32, 0xbd,
-	0x00, 0x5a, 0xe3, 0xb9, 0x38, 0x76, 0x3e, 0x4c, 0x6d, 0xd2, 0x04, 0xfc, 0x61, 0x3f, 0x4a, 0x62,
-	0x04, 0x9c, 0x5e, 0xb5, 0xab, 0xb5, 0x68, 0x57, 0x10, 0xba, 0xdc, 0x1e, 0xc1, 0xdc, 0x86, 0x1f,
-	0xfc, 0xaf, 0x0d, 0xcc, 0x1c, 0xc0, 0x88, 0xce, 0xed, 0x7b, 0x30, 0x1c, 0x79, 0x56, 0xe8, 0x00,
-	0x33, 0x7e, 0x33, 0xf9, 0xaa, 0xe5, 0xf5, 0x7e, 0x09, 0x26, 0x67, 0xdc, 0x0b, 0xe0, 0x03, 0x91,
-	0x94, 0xf8, 0xcd, 0x47, 0xd7, 0xfc, 0xa3, 0x86, 0xaa, 0x9f, 0xd9, 0x0e, 0x7c, 0x1e, 0x78, 0xa1,
-	0x8f, 0xef, 0xa1, 0xa2, 0x4f, 0xf9, 0x40, 0xd7, 0xee, 0x69, 0xbb, 0xd5, 0xce, 0xea, 0xb3, 0xcb,
-	0xc6, 0xd2, 0xf4, 0xb2, 0x51, 0x3c, 0xa3, 0x7c, 0x40, 0xa4, 0x06, 0xbf, 0x8b, 0x8a, 0x9c, 0xf6,
-	0x99, 0xbe, 0x7c, 0xaf, 0xb0, 0x5b, 0xed, 0x54, 0x84, 0xf6, 0x9c, 0xf6, 0x19, 0x91, 0x52, 0x7c,
-	0x82, 0xb6, 0x03, 0xe0, 0xe0, 0x72, 0xdb, 0x73, 0xcf, 0x3c, 0xc7, 0x36, 0x27, 0x5f, 0xd0, 0x11,
-	0xe8, 0x05, 0x09, 0xf7, 0x0d, 0x05, 0xb7, 0x4d, 0xe6, 0x4d, 0xc8, 0x55, 0xfb, 0x9a, 0x4f, 0x35,
-	0xb4, 0x7d, 0xec, 0x99, 0xd4, 0x39, 0x9f, 0xf8, 0x60, 0x11, 0xb8, 0x80, 0x00, 0x5c, 0x13, 0x44,
-	0x98, 0x43, 0xdb, 0xb5, 0x66, 0xc3, 0x3c, 0xb2, 0x5d, 0x8b, 0x48, 0x8d, 0xb0, 0x70, 0x85, 0xe7,
-	0xe5, 0xbc, 0x85, 0x74, 0x25, 0x35, 0xb8, 0x8d, 0x10, 0xf5, 0xed, 0x47, 0x10, 0x30, 0xdb, 0x73,
-	0x55, 0x84, 0x58, 0xd9, 0xa1, 0x4f, 0xce, 0x0e, 0x95, 0x86, 0x64, 0xac, 0x9a, 0x7f, 0x5a, 0x46,
-	0x15, 0x02, 0xa6, 0x37, 0x86, 0x60, 0x82, 0xbf, 0x44, 0x15, 0xf1, 0xc8, 0x2d, 0xca, 0xa9, 0x0c,
-	0xa4, 0xd6, 0xfe, 0x9e, 0x11, 0x3d, 0xb9, 0x7c, 0x73, 0xfa, 0xc3, 0x7e, 0xd4, 0xa0, 0xc2, 0xda,
-	0x18, 0xdf, 0x37, 0x4e, 0xe5, 0x93, 0x39, 0x01, 0x4e, 0x53, 0x87, 0xa9, 0x8c, 0x24, 0xa8, 0xd8,
-	0x44, 0x45, 0xe6, 0x83, 0x29, 0x93, 0xa8, 0xb5, 0x3f, 0x31, 0x6e, 0x70, 0x0c, 0x8c, 0x38, 0xdc,
-	0xae, 0x0f, 0x66, 0x5a, 0x07, 0xb1, 0x22, 0x12, 0x1c, 0x0f, 0x51, 0x99, 0x71, 0xca, 0x43, 0x26,
-	0x6b, 0x50, 0x6b, 0xef, 0xdf, 0xce, 0x8d, 0x84, 0xea, 0xac, 0x2b, 0x47, 0xe5, 0x68, 0x4d, 0x94,
-	0x8b, 0xe6, 0x73, 0x0d, 0xad, 0xc6, 0xa6, 0xc7, 0x36, 0xe3, 0xf8, 0xe7, 0x73, 0x45, 0x34, 0xae,
-	0x57, 0x44, 0xb1, 0x5b, 0x96, 0x70, 0x53, 0xb9, 0xaa, 0xc4, 0x92, 0x4c, 0x01, 0x7b, 0xa8, 0x64,
-	0x73, 0x18, 0x45, 0xdd, 0x5a, 0x6b, 0xff, 0xe8, 0x56, 0xa9, 0x75, 0xd6, 0x94, 0xa7, 0xd2, 0xa1,
-	0xc0, 0x24, 0x11, 0x74, 0xf3, 0xdf, 0xc5, 0x34, 0x25, 0x51, 0x56, 0xfc, 0x18, 0xa1, 0x00, 0x7c,
-	0x8f, 0xd9, 0xdc, 0x0b, 0x26, 0x2a, 0xa9, 0xf7, 0x33, 0x49, 0x19, 0x82, 0x5e, 0xd2, 0x3e, 0x48,
-	0xba, 0x3a, 0x6d, 0x06, 0x92, 0x6c, 0x27, 0x19, 0x28, 0xbc, 0x87, 0x2a, 0xcc, 0xa5, 0x3e, 0x1b,
-	0x78, 0x5c, 0xf5, 0x75, 0x92, 0x7b, 0x57, 0xc9, 0x49, 0x62, 0x81, 0x1b, 0xa8, 0x24, 0x0e, 0xac,
-	0x78, 0xac, 0xe2, 0xa4, 0x56, 0x45, 0xe0, 0xe2, 0x1c, 0x33, 0x12, 0xc9, 0x31, 0x47, 0x9b, 0x41,
-	0x14, 0x37, 0x58, 0x8f, 0x3c, 0x27, 0x1c, 0x01, 0xd3, 0x8b, 0xb2, 0x4e, 0x86, 0x91, 0x65, 0x12,
-	0x23, 0xc3, 0x24, 0xbf, 0x10, 0xf1, 0x8b, 0x9f, 0x78, 0x02, 0xe2, 0x60, 0xca, 0xb6, 0xd2, 0x55,
-	0x18, 0x9b, 0x64, 0x06, 0x8f, 0xcc, 0x79, 0xc0, 0x2e, 0xda, 0xb4, 0x47, 0xb4, 0x0f, 0x67, 0xa1,
-	0xe3, 0x74, 0xc1, 0x0c, 0x80, 0x33, 0xbd, 0x24, 0xbd, 0xee, 0x5e, 0x55, 0x23, 0xe9, 0x64, 0xb6,
-	0x50, 0x89, 0xbf, 0xc3, 0x19, 0x24, 0x32, 0x87, 0x8d, 0x9f, 0x6a, 0x68, 0xd5, 0xf5, 0x2c, 0xe8,
-	0x82, 0x03, 0x26, 0xf7, 0x02, 0xbd, 0x2c, 0x9d, 0x75, 0x6f, 0x7d, 0x98, 0x8c, 0x2f, 0x32, 0xa8,
-	0x9f, 0xba, 0x3c, 0x98, 0x74, 0xde, 0x51, 0x71, 0xad, 0x66, 0x55, 0x24, 0xe7, 0x7e, 0xe7, 0x21,
-	0xda, 0x9a, 0xdb, 0x88, 0x37, 0x51, 0x61, 0x08, 0x51, 0xaf, 0x54, 0x89, 0xf8, 0x8b, 0xdf, 0x41,
-	0xa5, 0x31, 0x75, 0x42, 0x45, 0x60, 0x24, 0x5a, 0xfc, 0x70, 0xf9, 0x23, 0xad, 0xf9, 0x4a, 0x43,
-	0xeb, 0xf9, 0xd3, 0x86, 0x7f, 0x8a, 0xb0, 0xd7, 0x63, 0x10, 0x8c, 0xc1, 0xfa, 0x3c, 0xa2, 0x77,
-	0x41, 0x69, 0x02, 0xad, 0xd0, 0xd9, 0x51, 0x31, 0xe1, 0xd3, 0x39, 0x0b, 0x72, 0xc5, 0x2e, 0xfc,
-	0x21, 0x2a, 0xf9, 0x03, 0xca, 0x62, 0xe6, 0xac, 0xc7, 0x3d, 0x7f, 0x26, 0x84, 0xaf, 0x2e, 0x1b,
-	0x6b, 0xb1, 0x6f, 0x29, 0x20, 0x91, 0x31, 0xbe, 0x40, 0x25, 0x71, 0xc2, 0xa3, 0x66, 0xbb, 0x39,
-	0x55, 0xc9, 0x1e, 0x13, 0x49, 0xb1, 0xf4, 0xb0, 0xc9, 0x25, 0x89, 0xe0, 0x9b, 0x7f, 0x59, 0x46,
-	0x99, 0xd3, 0x71, 0x07, 0x14, 0x0c, 0x39, 0x0a, 0xbe, 0x29, 0x37, 0xc6, 0x01, 0x2f, 0x24, 0xe1,
-	0xd1, 0x0c, 0x09, 0x7f, 0x7a, 0x5b, 0x47, 0xaf, 0xa7, 0xe1, 0xbf, 0xcb, 0x1e, 0x8a, 0x8d, 0xef,
-	0x80, 0x88, 0xad, 0x3c, 0x11, 0x3f, 0xbc, 0x65, 0x7a, 0x0b, 0xa8, 0xf8, 0x0f, 0xb9, 0xb4, 0x14,
-	0x19, 0xaf, 0xf4, 0xa8, 0x39, 0x04, 0x35, 0x2c, 0xd4, 0xda, 0x7b, 0xd7, 0xe2, 0xb6, 0x4e, 0xb4,
-	0xa7, 0xb3, 0xa1, 0xfc, 0xac, 0x28, 0x01, 0x89, 0xd1, 0xf0, 0xb7, 0xd1, 0xca, 0xaf, 0x6d, 0x1f,
-	0x4e, 0xc3, 0x88, 0x8b, 0x2b, 0xa9, 0xe9, 0xe3, 0x48, 0x4c, 0x62, 0x7d, 0xf3, 0xcf, 0x65, 0xb4,
-	0x39, 0xfb, 0x68, 0xde, 0xea, 0x99, 0xb5, 0xd1, 0xc6, 0x85, 0x1d, 0x30, 0x2e, 0x82, 0x0c, 0xfd,
-	0x73, 0x5b, 0xcd, 0x3d, 0xb5, 0xf6, 0x77, 0xae, 0xf7, 0x08, 0xc5, 0x8e, 0xce, 0xf6, 0xf4, 0xb2,
-	0xb1, 0xf1, 0x59, 0x1e, 0x86, 0xcc, 0xe2, 0xe2, 0x0b, 0xb4, 0xee, 0xd0, 0x9c, 0xa7, 0xc2, 0x1b,
-	0x7b, 0xc2, 0xd3, 0xcb, 0xc6, 0xfa, 0x71, 0x0e, 0x85, 0xcc, 0xa0, 0xe2, 0xef, 0xa2, 0xaa, 0xed,
-	0x72, 0xe8, 0x07, 0x36, 0x9f, 0xe8, 0x45, 0x59, 0xe0, 0xb5, 0xe9, 0x65, 0xa3, 0x7a, 0x18, 0x0b,
-	0x49, 0xaa, 0xc7, 0x2d, 0x54, 0xe5, 0x1e, 0xa7, 0x4e, 0xd7, 0xfe, 0x0a, 0xf4, 0x9a, 0xe4, 0xad,
-	0x2d, 0x55, 0xc2, 0xea, 0x79, 0xac, 0x20, 0xa9, 0x0d, 0xfe, 0x18, 0xad, 0xc5, 0xf7, 0xe4, 0xbe,
-	0x17, 0xba, 0x5c, 0x2f, 0xcb, 0xba, 0x7f, 0x4d, 0x6d, 0x5a, 0xeb, 0x66, 0x95, 0x24, 0x6f, 0x8b,
-	0x87, 0xe8, 0xbd, 0x58, 0xc0, 0x08, 0x8c, 0xbc, 0x31, 0x58, 0xa7, 0xae, 0x48, 0x67, 0xdf, 0x01,
-	0xea, 0x86, 0xbe, 0xbe, 0x22, 0xc1, 0xbe, 0xa9, 0xc0, 0xde, 0xeb, 0xbe, 0xce, 0x98, 0xbc, 0x1e,
-	0x0b, 0xff, 0x4e, 0x43, 0xba, 0x28, 0x4d, 0x37, 0x34, 0x4d, 0x60, 0xec, 0x22, 0x74, 0x32, 0xa5,
-	0xaf, 0xbc, 0x71, 0xe9, 0xdf, 0x9d, 0x5e, 0x36, 0xf4, 0xe3, 0x05, 0x78, 0x64, 0xa1, 0x27, 0xd1,
-	0xad, 0xe9, 0x03, 0x3a, 0x08, 0x55, 0xb7, 0x56, 0x65, 0xa9, 0x93, 0x6e, 0x3d, 0x9e, 0xb3, 0x20,
-	0x57, 0xec, 0xc2, 0xdf, 0x47, 0xb5, 0x9e, 0x94, 0x44, 0xa5, 0x47, 0xb2, 0x5a, 0xdb, 0x0a, 0xa4,
-	0xd6, 0x49, 0x55, 0x24, 0x6b, 0xd7, 0xfc, 0x9b, 0x86, 0xca, 0xe2, 0x86, 0xb0, 0xcd, 0x3b, 0xa0,
-	0x7d, 0x9a, 0xa3, 0xfd, 0x87, 0x37, 0xbe, 0xce, 0x6c, 0x73, 0x11, 0xe5, 0x37, 0xff, 0xaa, 0x89,
-	0xab, 0x4c, 0x98, 0xdc, 0x01, 0xff, 0x7e, 0x99, 0xe7, 0xdf, 0x8f, 0x6f, 0x91, 0xd0, 0x02, 0xee,
-	0xfd, 0x4f, 0x39, 0x4e, 0x47, 0xf2, 0x2e, 0x45, 0x15, 0x16, 0x4f, 0x5c, 0x51, 0x3a, 0x0f, 0xae,
-	0x99, 0x0e, 0xed, 0x81, 0x13, 0x4f, 0x47, 0x99, 0x01, 0x37, 0x9e, 0xa6, 0x12, 0x58, 0x1c, 0x20,
-	0x74, 0x11, 0xbf, 0xb8, 0xc6, 0x89, 0xfd, 0xf8, 0x46, 0x89, 0x25, 0xef, 0xbf, 0x69, 0x57, 0x24,
-	0x22, 0x46, 0x32, 0x5e, 0xb2, 0xd7, 0x49, 0xe1, 0xad, 0x5e, 0x27, 0x62, 0xb6, 0x37, 0x07, 0x20,
-	0x90, 0x24, 0xdd, 0x65, 0x67, 0x7b, 0x25, 0x27, 0x89, 0x05, 0x7e, 0x82, 0x56, 0xc7, 0x72, 0x9e,
-	0x3e, 0x11, 0x47, 0x23, 0x1e, 0xa0, 0x1b, 0x57, 0x0d, 0xd0, 0x8f, 0x52, 0xbb, 0x74, 0x3e, 0xcd,
-	0x08, 0x19, 0xc9, 0x41, 0xe1, 0x27, 0xa8, 0x1a, 0x00, 0xf3, 0xc2, 0xc0, 0x04, 0x26, 0x69, 0x71,
-	0xc1, 0x60, 0x4e, 0x94, 0x11, 0x81, 0x5f, 0x85, 0x76, 0x00, 0x23, 0x70, 0x39, 0x4b, 0x59, 0x37,
-	0xd6, 0x32, 0x92, 0xa2, 0x89, 0x51, 0x7c, 0x2b, 0xff, 0x96, 0x6f, 0x03, 0xd3, 0x57, 0x64, 0xec,
-	0x07, 0x37, 0xec, 0xc8, 0xdc, 0x37, 0x83, 0xce, 0xd7, 0x95, 0xff, 0x2d, 0x32, 0xeb, 0x86, 0xcc,
-	0x7b, 0xc6, 0x06, 0x2a, 0xf2, 0x89, 0x1f, 0xd1, 0x68, 0x4a, 0x63, 0xc5, 0xf3, 0x89, 0x2f, 0x06,
-	0x5d, 0xa4, 0xe8, 0x6f, 0xe2, 0x03, 0x91, 0x76, 0xf8, 0x5b, 0xa8, 0xec, 0xd3, 0x90, 0x81, 0x25,
-	0x89, 0xaf, 0x92, 0x4e, 0x57, 0x67, 0x52, 0x4a, 0x94, 0xf6, 0xca, 0x57, 0x1c, 0xf4, 0xff, 0x7b,
-	0xc5, 0x11, 0x63, 0xcf, 0x6a, 0x76, 0x76, 0xbe, 0xc6, 0x57, 0x9c, 0x9b, 0x4d, 0xf9, 0x7b, 0xa8,
-	0x62, 0xc5, 0xdc, 0x5f, 0xc8, 0x37, 0x69, 0xc2, 0xf8, 0x89, 0x45, 0xf3, 0x1f, 0x05, 0xb4, 0x31,
-	0xf3, 0x80, 0x92, 0xcf, 0x32, 0xda, 0xc2, 0xcf, 0x32, 0x7b, 0xa8, 0x32, 0x04, 0xf0, 0xc5, 0x5d,
-	0x22, 0x83, 0x2b, 0xa4, 0x3e, 0x8e, 0x94, 0x9c, 0x24, 0x16, 0xb8, 0x8d, 0x90, 0xf8, 0xff, 0x13,
-	0x2f, 0x0c, 0x9c, 0x89, 0x8c, 0xa9, 0x90, 0x9e, 0xe1, 0xa3, 0x44, 0x43, 0x32, 0x56, 0x62, 0x5a,
-	0x10, 0xab, 0x03, 0x6a, 0x3b, 0xd1, 0x68, 0x51, 0x48, 0xfb, 0xf6, 0x28, 0x56, 0x90, 0xd4, 0x26,
-	0x76, 0xf2, 0x18, 0x60, 0xe8, 0x4c, 0xf4, 0xd2, 0xbc, 0x93, 0x48, 0x43, 0x32, 0x56, 0xe2, 0x92,
-	0x13, 0xab, 0x13, 0xcf, 0xe5, 0x03, 0x67, 0xa2, 0xe6, 0x8b, 0xe4, 0x92, 0x3b, 0x4a, 0x55, 0x24,
-	0x6b, 0x17, 0xbb, 0x7a, 0x02, 0x54, 0xe4, 0xb3, 0x32, 0xef, 0x2a, 0xd2, 0x90, 0x8c, 0x15, 0xde,
-	0x8d, 0x2a, 0x76, 0x4e, 0xfb, 0x4c, 0xaf, 0xc8, 0x77, 0xfd, 0xd5, 0xb8, 0x5a, 0xf2, 0xcb, 0x5c,
-	0xa2, 0xc5, 0xef, 0xa3, 0x92, 0x1f, 0x84, 0x2e, 0xa8, 0xfe, 0x4d, 0x88, 0xfc, 0x4c, 0x08, 0x49,
-	0xa4, 0x13, 0x5d, 0x6e, 0x05, 0x13, 0x12, 0xba, 0xf2, 0x66, 0xce, 0x74, 0xf9, 0x81, 0x94, 0x12,
-	0xa5, 0xed, 0x18, 0xcf, 0x5e, 0xd6, 0x97, 0x9e, 0xbf, 0xac, 0x2f, 0xbd, 0x78, 0x59, 0x5f, 0xfa,
-	0xed, 0xb4, 0xae, 0x3d, 0x9b, 0xd6, 0xb5, 0xe7, 0xd3, 0xba, 0xf6, 0x62, 0x5a, 0xd7, 0xfe, 0x39,
-	0xad, 0x6b, 0xbf, 0xff, 0x57, 0x7d, 0xe9, 0x67, 0x95, 0xf8, 0xac, 0xfe, 0x37, 0x00, 0x00, 0xff,
-	0xff, 0x63, 0xa4, 0xd5, 0xf5, 0x0a, 0x16, 0x00, 0x00,
+	// 1104 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x56, 0x41, 0x6f, 0x1b, 0x45,
+	0x14, 0xce, 0xc6, 0x4e, 0x62, 0x8f, 0x9b, 0xa4, 0x9d, 0x0a, 0x69, 0x89, 0x54, 0x3b, 0x32, 0x02,
+	0x05, 0x68, 0xd7, 0xd4, 0x05, 0x84, 0xc4, 0x01, 0xea, 0x94, 0x42, 0x49, 0x4a, 0xa2, 0x49, 0x20,
+	0x02, 0x81, 0x60, 0xbc, 0xfb, 0x62, 0x0f, 0xde, 0xdd, 0x59, 0xed, 0xcc, 0xba, 0xb8, 0x27, 0xae,
+	0x1c, 0x10, 0xfc, 0x03, 0x24, 0xfe, 0x05, 0x77, 0x0e, 0x39, 0xf6, 0xc0, 0xa1, 0x07, 0x64, 0x11,
+	0xf3, 0x2f, 0x38, 0xa1, 0x99, 0x9d, 0xf5, 0xae, 0xe3, 0xb6, 0x84, 0xf4, 0x64, 0xcf, 0x7b, 0xdf,
+	0xfb, 0xbe, 0x37, 0xdf, 0xcc, 0x3c, 0x2d, 0xda, 0x16, 0x92, 0x8a, 0xbe, 0x43, 0xa3, 0x48, 0xb8,
+	0xdc, 0x03, 0xc7, 0x83, 0x61, 0x8b, 0x46, 0x2c, 0xa0, 0x6e, 0x9f, 0x85, 0x10, 0x8f, 0xd4, 0x42,
+	0xb4, 0x34, 0xa8, 0x35, 0xbc, 0x49, 0xfd, 0xa8, 0x4f, 0x6f, 0xb6, 0x7a, 0x10, 0x42, 0x4c, 0x25,
+	0x78, 0x4e, 0x14, 0x73, 0xc9, 0xf1, 0xad, 0x79, 0x12, 0xa7, 0x48, 0xa2, 0x16, 0xc2, 0x49, 0x41,
+	0x19, 0xc9, 0xc6, 0x8d, 0x1e, 0x93, 0xfd, 0xa4, 0xeb, 0xb8, 0x3c, 0x68, 0xf5, 0x78, 0x8f, 0xb7,
+	0x34, 0x57, 0x37, 0x39, 0xd6, 0x2b, 0xbd, 0xd0, 0xff, 0x52, 0x8d, 0x8d, 0x37, 0x07, 0xef, 0x08,
+	0x87, 0xf1, 0xd9, 0xe6, 0xa2, 0x41, 0x2f, 0x6d, 0x30, 0x00, 0x49, 0x5b, 0xc3, 0xb9, 0xce, 0x36,
+	0x5a, 0x4f, 0xab, 0x8a, 0x93, 0x50, 0xb2, 0x00, 0xe6, 0x0a, 0xde, 0xfe, 0xaf, 0x02, 0xe1, 0xf6,
+	0x21, 0xa0, 0x73, 0x75, 0xb7, 0x06, 0x01, 0xf7, 0x12, 0x1f, 0x84, 0xf3, 0xdd, 0xe8, 0x61, 0x8b,
+	0x77, 0xbf, 0x05, 0x57, 0x0a, 0xc9, 0x63, 0xb8, 0x41, 0x23, 0xa6, 0xd8, 0x9e, 0xd0, 0x5d, 0xf3,
+	0x57, 0x0b, 0x5d, 0xb9, 0xed, 0xfb, 0xfc, 0x01, 0x78, 0x9f, 0xd0, 0x00, 0x44, 0x44, 0x5d, 0x10,
+	0xd8, 0x41, 0xe5, 0xe3, 0x98, 0x07, 0xb6, 0xb5, 0x69, 0x6d, 0x55, 0x3b, 0x1b, 0x93, 0x71, 0xa3,
+	0x7c, 0x37, 0xe6, 0xc1, 0x3f, 0xe3, 0xc6, 0x9a, 0xfa, 0xcd, 0x91, 0x44, 0xe3, 0xf0, 0x57, 0xa8,
+	0x22, 0xc0, 0x07, 0x57, 0xf2, 0xd8, 0x5e, 0xdc, 0xb4, 0xb6, 0x6a, 0xed, 0x5b, 0x4e, 0xba, 0x8b,
+	0xd9, 0x43, 0x88, 0x06, 0xbd, 0xf4, 0x20, 0x94, 0x59, 0xce, 0xf0, 0xa6, 0xb3, 0x4b, 0xbb, 0xe0,
+	0x1f, 0x98, 0xd2, 0xce, 0xa5, 0xc9, 0xb8, 0x51, 0xc9, 0x56, 0x64, 0x4a, 0xd9, 0xfc, 0xd1, 0x42,
+	0x57, 0x77, 0xb9, 0x4b, 0xfd, 0xc3, 0x51, 0x04, 0x1e, 0x81, 0x63, 0x88, 0x21, 0x74, 0x01, 0x6f,
+	0xa2, 0xf2, 0x80, 0x85, 0x9e, 0x69, 0xf3, 0xd2, 0xc9, 0xb8, 0xb1, 0xa0, 0x5a, 0xdd, 0x61, 0xa1,
+	0x47, 0x74, 0x46, 0x21, 0x42, 0x1a, 0x80, 0x6e, 0xaa, 0x80, 0x50, 0x1b, 0x20, 0x3a, 0x83, 0xdb,
+	0x08, 0xd1, 0x88, 0x7d, 0x06, 0xb1, 0x60, 0x3c, 0xb4, 0x4b, 0x1a, 0x87, 0x0d, 0x0e, 0xdd, 0xde,
+	0xbf, 0x67, 0x32, 0xa4, 0x80, 0x6a, 0xfe, 0xbe, 0x88, 0x10, 0x81, 0x88, 0x0b, 0x26, 0x79, 0x3c,
+	0xc2, 0xdf, 0xa0, 0x8a, 0xda, 0x8f, 0x47, 0x25, 0xd5, 0xad, 0xd4, 0xda, 0x6f, 0x9c, 0x6f, 0xf7,
+	0x7b, 0xfa, 0x8c, 0xee, 0x83, 0xa4, 0xb9, 0x64, 0x1e, 0x23, 0x53, 0x56, 0x0c, 0xa8, 0x2c, 0x22,
+	0x70, 0x8d, 0xb7, 0xdb, 0xce, 0x05, 0x2e, 0xbb, 0x93, 0x37, 0x7c, 0x10, 0x81, 0x9b, 0x7b, 0xa1,
+	0x56, 0x44, 0xd3, 0xe3, 0x00, 0x2d, 0x0b, 0x49, 0x65, 0x22, 0xb4, 0x0f, 0xb5, 0xf6, 0x07, 0xcf,
+	0x2b, 0xa4, 0xc9, 0x3a, 0x6b, 0x46, 0x6a, 0x39, 0x5d, 0x13, 0x23, 0xd2, 0xfc, 0xc3, 0x42, 0x6b,
+	0x39, 0x78, 0x97, 0x09, 0x89, 0xbf, 0x9c, 0xb3, 0xd2, 0x39, 0xe7, 0x45, 0x62, 0x22, 0x35, 0xf2,
+	0xb2, 0x11, 0xab, 0x64, 0x91, 0x82, 0x8d, 0x1e, 0x5a, 0x62, 0x12, 0x02, 0x61, 0x2f, 0x6e, 0x96,
+	0xb6, 0x6a, 0xed, 0xf7, 0x9e, 0x73, 0x7b, 0x9d, 0x55, 0xa3, 0xb5, 0x74, 0x4f, 0xb1, 0x92, 0x94,
+	0xbc, 0xf9, 0xc3, 0x62, 0x71, 0x5b, 0xca, 0x5e, 0x7c, 0x84, 0x56, 0xba, 0xd4, 0x1d, 0x80, 0xb9,
+	0xab, 0xb5, 0xf6, 0x75, 0xa7, 0xf8, 0x58, 0x9d, 0xc2, 0x63, 0xfd, 0x9a, 0x46, 0x4c, 0xe9, 0xaa,
+	0x4d, 0x75, 0xd2, 0x9a, 0xce, 0xba, 0xd1, 0x59, 0x31, 0x01, 0x92, 0xb1, 0xe1, 0x57, 0xd1, 0xca,
+	0x03, 0x16, 0xc1, 0x5e, 0x22, 0xf5, 0xdd, 0xa8, 0xe4, 0xd0, 0xa3, 0x34, 0x4c, 0xb2, 0x3c, 0x16,
+	0xa8, 0x96, 0x08, 0xda, 0x83, 0x7d, 0xee, 0x33, 0x77, 0x64, 0x4e, 0xf8, 0xfd, 0x0b, 0x59, 0xf0,
+	0x69, 0xce, 0xd3, 0x59, 0x9f, 0x8c, 0x1b, 0xb5, 0x42, 0x80, 0x14, 0x55, 0x9a, 0xbf, 0x95, 0xd1,
+	0xe5, 0xb3, 0xf7, 0x01, 0x7f, 0x8c, 0x30, 0xef, 0x0a, 0x88, 0x87, 0xe0, 0x7d, 0x98, 0x8e, 0x23,
+	0xf5, 0xf4, 0x94, 0x31, 0xa5, 0xce, 0x86, 0xe9, 0x1f, 0xef, 0xcd, 0x21, 0xc8, 0x13, 0xaa, 0x30,
+	0x43, 0xeb, 0xc7, 0x2c, 0x16, 0x52, 0x39, 0x93, 0x44, 0x87, 0xcc, 0xbc, 0xf5, 0x5a, 0xfb, 0xb5,
+	0xf3, 0xdd, 0x1b, 0x55, 0xd1, 0xb9, 0x3a, 0x19, 0x37, 0xd6, 0xef, 0xce, 0xd2, 0x90, 0xb3, 0xbc,
+	0xf8, 0x18, 0xad, 0xf9, 0x74, 0x46, 0xa9, 0xf4, 0xbf, 0x95, 0xf0, 0x64, 0xdc, 0x58, 0xdb, 0x9d,
+	0x61, 0x21, 0x67, 0x58, 0xf1, 0xeb, 0xa8, 0xca, 0x42, 0x09, 0xbd, 0x98, 0xc9, 0x91, 0x5d, 0xd6,
+	0xa7, 0xba, 0x3a, 0x19, 0x37, 0xaa, 0xf7, 0xb2, 0x20, 0xc9, 0xf3, 0xb8, 0x85, 0xaa, 0x92, 0x4b,
+	0xea, 0x1f, 0xb0, 0x87, 0x60, 0xd7, 0xf4, 0xf4, 0xba, 0x62, 0x2c, 0xac, 0x1e, 0x66, 0x09, 0x92,
+	0x63, 0xf0, 0xbb, 0x68, 0x55, 0x84, 0x34, 0x12, 0x7d, 0x2e, 0xb7, 0x79, 0x12, 0x4a, 0x7b, 0x59,
+	0xfb, 0xfe, 0x82, 0x29, 0x5a, 0x3d, 0x28, 0x26, 0xc9, 0x2c, 0x16, 0x0f, 0xd0, 0xb5, 0x2c, 0x20,
+	0x08, 0x04, 0x7c, 0x08, 0xde, 0x5e, 0xa8, 0xb6, 0xb3, 0xed, 0x03, 0x0d, 0x93, 0xc8, 0x5e, 0xd1,
+	0x64, 0x2f, 0x1b, 0xb2, 0x6b, 0x07, 0xcf, 0x02, 0x93, 0x67, 0x73, 0x35, 0xff, 0x2c, 0xa1, 0x75,
+	0x02, 0x12, 0x42, 0x75, 0xd0, 0xe9, 0x7d, 0x9a, 0xce, 0x73, 0xeb, 0xa9, 0xf3, 0xfc, 0x3a, 0xaa,
+	0x0c, 0x00, 0x22, 0x45, 0xa4, 0x6f, 0x42, 0x29, 0x9f, 0x08, 0x3b, 0x26, 0x4e, 0xa6, 0x08, 0x35,
+	0xfd, 0xd5, 0xff, 0x8f, 0x78, 0x12, 0xfb, 0xe9, 0x9b, 0x28, 0xe5, 0xa3, 0x78, 0x67, 0x9a, 0x21,
+	0x05, 0x94, 0xb2, 0x5c, 0xad, 0xee, 0x50, 0xe6, 0xa7, 0xe7, 0x53, 0xca, 0x2d, 0xdf, 0xc9, 0x12,
+	0x24, 0xc7, 0x64, 0x22, 0x47, 0x00, 0x03, 0x7f, 0x64, 0x2f, 0xcd, 0x8b, 0xa4, 0x19, 0x52, 0x40,
+	0xe1, 0xb7, 0x50, 0x4d, 0xad, 0xee, 0xf3, 0x50, 0xf6, 0xfd, 0x91, 0x39, 0xa4, 0xab, 0xa6, 0xa8,
+	0xb6, 0x93, 0xa7, 0x48, 0x11, 0x97, 0x49, 0x7d, 0x0e, 0x54, 0xed, 0x67, 0x65, 0x5e, 0x2a, 0xcd,
+	0x90, 0x02, 0x0a, 0x6f, 0xa5, 0x8e, 0x1d, 0xd2, 0x9e, 0xb0, 0x2b, 0x9b, 0x25, 0xe5, 0x6b, 0xe6,
+	0x96, 0x8a, 0x91, 0x69, 0x16, 0xbf, 0x84, 0x96, 0xa2, 0x38, 0x09, 0xc1, 0xae, 0xa6, 0xb7, 0x32,
+	0x1b, 0x7f, 0xfb, 0x2a, 0x48, 0xd2, 0x1c, 0x7e, 0x05, 0x2d, 0x7b, 0xf1, 0x88, 0x24, 0xa1, 0x8d,
+	0x34, 0x6a, 0x3a, 0xfd, 0xef, 0xe8, 0x28, 0x31, 0xd9, 0xe6, 0x2f, 0x16, 0x2a, 0xce, 0x0d, 0xfc,
+	0x93, 0x85, 0xae, 0xd0, 0xb3, 0x5f, 0x22, 0x66, 0x5c, 0xde, 0xbd, 0xd0, 0x98, 0x9a, 0xfb, 0xae,
+	0xe9, 0xbc, 0x68, 0x7a, 0x99, 0xff, 0xe4, 0x21, 0xf3, 0xda, 0x1d, 0xe7, 0xe4, 0xb4, 0xbe, 0xf0,
+	0xe8, 0xb4, 0xbe, 0xf0, 0xf8, 0xb4, 0xbe, 0xf0, 0xfd, 0xa4, 0x6e, 0x9d, 0x4c, 0xea, 0xd6, 0xa3,
+	0x49, 0xdd, 0x7a, 0x3c, 0xa9, 0x5b, 0x7f, 0x4d, 0xea, 0xd6, 0xcf, 0x7f, 0xd7, 0x17, 0xbe, 0xa8,
+	0x64, 0x7a, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0xae, 0xf6, 0xee, 0x14, 0xc9, 0x0a, 0x00, 0x00,
 }
 
-func (m *FileGroup) Marshal() (dAtA []byte, err error) {
+func (m *AllowedNamespaces) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -609,35 +364,35 @@ func (m *FileGroup) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *FileGroup) MarshalTo(dAtA []byte) (int, error) {
+func (m *AllowedNamespaces) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *FileGroup) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *AllowedNamespaces) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	i -= len(m.RetentionPolicyName)
-	copy(dAtA[i:], m.RetentionPolicyName)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.RetentionPolicyName)))
-	i--
-	dAtA[i] = 0x1a
-	if len(m.Tags) > 0 {
-		for iNdEx := len(m.Tags) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Tags[iNdEx])
-			copy(dAtA[i:], m.Tags[iNdEx])
-			i = encodeVarintGenerated(dAtA, i, uint64(len(m.Tags[iNdEx])))
-			i--
-			dAtA[i] = 0x12
+	if m.Selector != nil {
+		{
+			size, err := m.Selector.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0x12
 	}
-	i -= len(m.Path)
-	copy(dAtA[i:], m.Path)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Path)))
-	i--
-	dAtA[i] = 0xa
+	if m.From != nil {
+		i -= len(*m.From)
+		copy(dAtA[i:], *m.From)
+		i = encodeVarintGenerated(dAtA, i, uint64(len(*m.From)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -676,250 +431,6 @@ func (m *LocalTypedReference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Kind)))
 	i--
 	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *Recovery) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Recovery) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Recovery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.Status.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1a
-	{
-		size, err := m.Spec.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	{
-		size, err := m.ObjectMeta.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *RecoveryList) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RecoveryList) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RecoveryList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Items) > 0 {
-		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	{
-		size, err := m.ListMeta.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *RecoverySpec) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RecoverySpec) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RecoverySpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.NodeSelector) > 0 {
-		keysForNodeSelector := make([]string, 0, len(m.NodeSelector))
-		for k := range m.NodeSelector {
-			keysForNodeSelector = append(keysForNodeSelector, string(k))
-		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForNodeSelector)
-		for iNdEx := len(keysForNodeSelector) - 1; iNdEx >= 0; iNdEx-- {
-			v := m.NodeSelector[string(keysForNodeSelector[iNdEx])]
-			baseI := i
-			i -= len(v)
-			copy(dAtA[i:], v)
-			i = encodeVarintGenerated(dAtA, i, uint64(len(v)))
-			i--
-			dAtA[i] = 0x12
-			i -= len(keysForNodeSelector[iNdEx])
-			copy(dAtA[i:], keysForNodeSelector[iNdEx])
-			i = encodeVarintGenerated(dAtA, i, uint64(len(keysForNodeSelector[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-			i = encodeVarintGenerated(dAtA, i, uint64(baseI-i))
-			i--
-			dAtA[i] = 0x32
-		}
-	}
-	if len(m.ImagePullSecrets) > 0 {
-		for iNdEx := len(m.ImagePullSecrets) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.ImagePullSecrets[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.RecoveredVolumes) > 0 {
-		for iNdEx := len(m.RecoveredVolumes) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.RecoveredVolumes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x22
-		}
-	}
-	if len(m.Paths) > 0 {
-		for iNdEx := len(m.Paths) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Paths[iNdEx])
-			copy(dAtA[i:], m.Paths[iNdEx])
-			i = encodeVarintGenerated(dAtA, i, uint64(len(m.Paths[iNdEx])))
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
-	i -= len(m.Snapshot)
-	copy(dAtA[i:], m.Snapshot)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Snapshot)))
-	i--
-	dAtA[i] = 0x12
-	{
-		size, err := m.Repository.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *RecoveryStatus) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RecoveryStatus) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RecoveryStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Stats) > 0 {
-		for iNdEx := len(m.Stats) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Stats[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
-	i -= len(m.Phase)
-	copy(dAtA[i:], m.Phase)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Phase)))
-	i--
-	dAtA[i] = 0x12
-	i = encodeVarintGenerated(dAtA, i, uint64(m.ObservedGeneration))
-	i--
-	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
 
@@ -1043,6 +554,18 @@ func (m *RepositorySpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.UsagePolicy != nil {
+		{
+			size, err := m.UsagePolicy.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
 	i--
 	if m.WipeOut {
 		dAtA[i] = 1
@@ -1089,26 +612,6 @@ func (m *RepositoryStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TotalSize)))
 	i--
 	dAtA[i] = 0x5a
-	i = encodeVarintGenerated(dAtA, i, uint64(m.BackupCount))
-	i--
-	dAtA[i] = 0x50
-	i -= len(m.LastBackupDuration)
-	copy(dAtA[i:], m.LastBackupDuration)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LastBackupDuration)))
-	i--
-	dAtA[i] = 0x4a
-	if m.LastSuccessfulBackupTime != nil {
-		{
-			size, err := m.LastSuccessfulBackupTime.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintGenerated(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x42
-	}
 	i = encodeVarintGenerated(dAtA, i, uint64(m.SnapshotsRemovedOnLastCleanup))
 	i--
 	dAtA[i] = 0x38
@@ -1152,261 +655,6 @@ func (m *RepositoryStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(m.ObservedGeneration))
 	i--
 	dAtA[i] = 0x8
-	return len(dAtA) - i, nil
-}
-
-func (m *Restic) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Restic) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Restic) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.Spec.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	{
-		size, err := m.ObjectMeta.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *ResticList) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ResticList) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ResticList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Items) > 0 {
-		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	{
-		size, err := m.ListMeta.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *ResticSpec) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ResticSpec) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ResticSpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.ImagePullSecrets) > 0 {
-		for iNdEx := len(m.ImagePullSecrets) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.ImagePullSecrets[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x52
-		}
-	}
-	i--
-	if m.Paused {
-		dAtA[i] = 1
-	} else {
-		dAtA[i] = 0
-	}
-	i--
-	dAtA[i] = 0x48
-	i -= len(m.Type)
-	copy(dAtA[i:], m.Type)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Type)))
-	i--
-	dAtA[i] = 0x42
-	if len(m.RetentionPolicies) > 0 {
-		for iNdEx := len(m.RetentionPolicies) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.RetentionPolicies[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x3a
-		}
-	}
-	{
-		size, err := m.Resources.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x32
-	if len(m.VolumeMounts) > 0 {
-		for iNdEx := len(m.VolumeMounts) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.VolumeMounts[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	i -= len(m.Schedule)
-	copy(dAtA[i:], m.Schedule)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Schedule)))
-	i--
-	dAtA[i] = 0x22
-	{
-		size, err := m.Backend.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1a
-	if len(m.FileGroups) > 0 {
-		for iNdEx := len(m.FileGroups) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.FileGroups[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	{
-		size, err := m.Selector.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenerated(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *RestoreStats) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RestoreStats) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RestoreStats) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	i -= len(m.Duration)
-	copy(dAtA[i:], m.Duration)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Duration)))
-	i--
-	dAtA[i] = 0x1a
-	i -= len(m.Phase)
-	copy(dAtA[i:], m.Phase)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Phase)))
-	i--
-	dAtA[i] = 0x12
-	i -= len(m.Path)
-	copy(dAtA[i:], m.Path)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Path)))
-	i--
-	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -1481,6 +729,39 @@ func (m *RetentionPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *UsagePolicy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UsagePolicy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UsagePolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.AllowedNamespaces.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenerated(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	offset -= sovGenerated(v)
 	base := offset
@@ -1492,22 +773,20 @@ func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *FileGroup) Size() (n int) {
+func (m *AllowedNamespaces) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Path)
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.Tags) > 0 {
-		for _, s := range m.Tags {
-			l = len(s)
-			n += 1 + l + sovGenerated(uint64(l))
-		}
+	if m.From != nil {
+		l = len(*m.From)
+		n += 1 + l + sovGenerated(uint64(l))
 	}
-	l = len(m.RetentionPolicyName)
-	n += 1 + l + sovGenerated(uint64(l))
+	if m.Selector != nil {
+		l = m.Selector.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
 	return n
 }
 
@@ -1523,95 +802,6 @@ func (m *LocalTypedReference) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.APIVersion)
 	n += 1 + l + sovGenerated(uint64(l))
-	return n
-}
-
-func (m *Recovery) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.ObjectMeta.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.Spec.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.Status.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	return n
-}
-
-func (m *RecoveryList) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.ListMeta.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.Items) > 0 {
-		for _, e := range m.Items {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *RecoverySpec) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.Repository.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.Snapshot)
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.Paths) > 0 {
-		for _, s := range m.Paths {
-			l = len(s)
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	if len(m.RecoveredVolumes) > 0 {
-		for _, e := range m.RecoveredVolumes {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	if len(m.ImagePullSecrets) > 0 {
-		for _, e := range m.ImagePullSecrets {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	if len(m.NodeSelector) > 0 {
-		for k, v := range m.NodeSelector {
-			_ = k
-			_ = v
-			mapEntrySize := 1 + len(k) + sovGenerated(uint64(len(k))) + 1 + len(v) + sovGenerated(uint64(len(v)))
-			n += mapEntrySize + 1 + sovGenerated(uint64(mapEntrySize))
-		}
-	}
-	return n
-}
-
-func (m *RecoveryStatus) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + sovGenerated(uint64(m.ObservedGeneration))
-	l = len(m.Phase)
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.Stats) > 0 {
-		for _, e := range m.Stats {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
 	return n
 }
 
@@ -1656,6 +846,10 @@ func (m *RepositorySpec) Size() (n int) {
 	l = m.Backend.Size()
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 2
+	if m.UsagePolicy != nil {
+		l = m.UsagePolicy.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
 	return n
 }
 
@@ -1679,103 +873,7 @@ func (m *RepositoryStatus) Size() (n int) {
 	}
 	n += 1 + sovGenerated(uint64(m.SnapshotCount))
 	n += 1 + sovGenerated(uint64(m.SnapshotsRemovedOnLastCleanup))
-	if m.LastSuccessfulBackupTime != nil {
-		l = m.LastSuccessfulBackupTime.Size()
-		n += 1 + l + sovGenerated(uint64(l))
-	}
-	l = len(m.LastBackupDuration)
-	n += 1 + l + sovGenerated(uint64(l))
-	n += 1 + sovGenerated(uint64(m.BackupCount))
 	l = len(m.TotalSize)
-	n += 1 + l + sovGenerated(uint64(l))
-	return n
-}
-
-func (m *Restic) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.ObjectMeta.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = m.Spec.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	return n
-}
-
-func (m *ResticList) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.ListMeta.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.Items) > 0 {
-		for _, e := range m.Items {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *ResticSpec) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.Selector.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.FileGroups) > 0 {
-		for _, e := range m.FileGroups {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	l = m.Backend.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.Schedule)
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.VolumeMounts) > 0 {
-		for _, e := range m.VolumeMounts {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	l = m.Resources.Size()
-	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.RetentionPolicies) > 0 {
-		for _, e := range m.RetentionPolicies {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	l = len(m.Type)
-	n += 1 + l + sovGenerated(uint64(l))
-	n += 2
-	if len(m.ImagePullSecrets) > 0 {
-		for _, e := range m.ImagePullSecrets {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *RestoreStats) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Path)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.Phase)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.Duration)
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -1805,20 +903,30 @@ func (m *RetentionPolicy) Size() (n int) {
 	return n
 }
 
+func (m *UsagePolicy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.AllowedNamespaces.Size()
+	n += 1 + l + sovGenerated(uint64(l))
+	return n
+}
+
 func sovGenerated(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozGenerated(x uint64) (n int) {
 	return sovGenerated(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (this *FileGroup) String() string {
+func (this *AllowedNamespaces) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&FileGroup{`,
-		`Path:` + fmt.Sprintf("%v", this.Path) + `,`,
-		`Tags:` + fmt.Sprintf("%v", this.Tags) + `,`,
-		`RetentionPolicyName:` + fmt.Sprintf("%v", this.RetentionPolicyName) + `,`,
+	s := strings.Join([]string{`&AllowedNamespaces{`,
+		`From:` + valueToStringGenerated(this.From) + `,`,
+		`Selector:` + strings.Replace(fmt.Sprintf("%v", this.Selector), "LabelSelector", "v1.LabelSelector", 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1831,86 +939,6 @@ func (this *LocalTypedReference) String() string {
 		`Kind:` + fmt.Sprintf("%v", this.Kind) + `,`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`APIVersion:` + fmt.Sprintf("%v", this.APIVersion) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *Recovery) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&Recovery{`,
-		`ObjectMeta:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.ObjectMeta), "ObjectMeta", "v1.ObjectMeta", 1), `&`, ``, 1) + `,`,
-		`Spec:` + strings.Replace(strings.Replace(this.Spec.String(), "RecoverySpec", "RecoverySpec", 1), `&`, ``, 1) + `,`,
-		`Status:` + strings.Replace(strings.Replace(this.Status.String(), "RecoveryStatus", "RecoveryStatus", 1), `&`, ``, 1) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *RecoveryList) String() string {
-	if this == nil {
-		return "nil"
-	}
-	repeatedStringForItems := "[]Recovery{"
-	for _, f := range this.Items {
-		repeatedStringForItems += strings.Replace(strings.Replace(f.String(), "Recovery", "Recovery", 1), `&`, ``, 1) + ","
-	}
-	repeatedStringForItems += "}"
-	s := strings.Join([]string{`&RecoveryList{`,
-		`ListMeta:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.ListMeta), "ListMeta", "v1.ListMeta", 1), `&`, ``, 1) + `,`,
-		`Items:` + repeatedStringForItems + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *RecoverySpec) String() string {
-	if this == nil {
-		return "nil"
-	}
-	repeatedStringForRecoveredVolumes := "[]LocalSpec{"
-	for _, f := range this.RecoveredVolumes {
-		repeatedStringForRecoveredVolumes += fmt.Sprintf("%v", f) + ","
-	}
-	repeatedStringForRecoveredVolumes += "}"
-	repeatedStringForImagePullSecrets := "[]LocalObjectReference{"
-	for _, f := range this.ImagePullSecrets {
-		repeatedStringForImagePullSecrets += fmt.Sprintf("%v", f) + ","
-	}
-	repeatedStringForImagePullSecrets += "}"
-	keysForNodeSelector := make([]string, 0, len(this.NodeSelector))
-	for k := range this.NodeSelector {
-		keysForNodeSelector = append(keysForNodeSelector, k)
-	}
-	github_com_gogo_protobuf_sortkeys.Strings(keysForNodeSelector)
-	mapStringForNodeSelector := "map[string]string{"
-	for _, k := range keysForNodeSelector {
-		mapStringForNodeSelector += fmt.Sprintf("%v: %v,", k, this.NodeSelector[k])
-	}
-	mapStringForNodeSelector += "}"
-	s := strings.Join([]string{`&RecoverySpec{`,
-		`Repository:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Repository), "ObjectReference", "v11.ObjectReference", 1), `&`, ``, 1) + `,`,
-		`Snapshot:` + fmt.Sprintf("%v", this.Snapshot) + `,`,
-		`Paths:` + fmt.Sprintf("%v", this.Paths) + `,`,
-		`RecoveredVolumes:` + repeatedStringForRecoveredVolumes + `,`,
-		`ImagePullSecrets:` + repeatedStringForImagePullSecrets + `,`,
-		`NodeSelector:` + mapStringForNodeSelector + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *RecoveryStatus) String() string {
-	if this == nil {
-		return "nil"
-	}
-	repeatedStringForStats := "[]RestoreStats{"
-	for _, f := range this.Stats {
-		repeatedStringForStats += strings.Replace(strings.Replace(f.String(), "RestoreStats", "RestoreStats", 1), `&`, ``, 1) + ","
-	}
-	repeatedStringForStats += "}"
-	s := strings.Join([]string{`&RecoveryStatus{`,
-		`ObservedGeneration:` + fmt.Sprintf("%v", this.ObservedGeneration) + `,`,
-		`Phase:` + fmt.Sprintf("%v", this.Phase) + `,`,
-		`Stats:` + repeatedStringForStats + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1948,8 +976,9 @@ func (this *RepositorySpec) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&RepositorySpec{`,
-		`Backend:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Backend), "Backend", "v12.Backend", 1), `&`, ``, 1) + `,`,
+		`Backend:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Backend), "Backend", "v11.Backend", 1), `&`, ``, 1) + `,`,
 		`WipeOut:` + fmt.Sprintf("%v", this.WipeOut) + `,`,
+		`UsagePolicy:` + strings.Replace(this.UsagePolicy.String(), "UsagePolicy", "UsagePolicy", 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1965,88 +994,7 @@ func (this *RepositoryStatus) String() string {
 		`Integrity:` + valueToStringGenerated(this.Integrity) + `,`,
 		`SnapshotCount:` + fmt.Sprintf("%v", this.SnapshotCount) + `,`,
 		`SnapshotsRemovedOnLastCleanup:` + fmt.Sprintf("%v", this.SnapshotsRemovedOnLastCleanup) + `,`,
-		`LastSuccessfulBackupTime:` + strings.Replace(fmt.Sprintf("%v", this.LastSuccessfulBackupTime), "Time", "v1.Time", 1) + `,`,
-		`LastBackupDuration:` + fmt.Sprintf("%v", this.LastBackupDuration) + `,`,
-		`BackupCount:` + fmt.Sprintf("%v", this.BackupCount) + `,`,
 		`TotalSize:` + fmt.Sprintf("%v", this.TotalSize) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *Restic) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&Restic{`,
-		`ObjectMeta:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.ObjectMeta), "ObjectMeta", "v1.ObjectMeta", 1), `&`, ``, 1) + `,`,
-		`Spec:` + strings.Replace(strings.Replace(this.Spec.String(), "ResticSpec", "ResticSpec", 1), `&`, ``, 1) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *ResticList) String() string {
-	if this == nil {
-		return "nil"
-	}
-	repeatedStringForItems := "[]Restic{"
-	for _, f := range this.Items {
-		repeatedStringForItems += strings.Replace(strings.Replace(f.String(), "Restic", "Restic", 1), `&`, ``, 1) + ","
-	}
-	repeatedStringForItems += "}"
-	s := strings.Join([]string{`&ResticList{`,
-		`ListMeta:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.ListMeta), "ListMeta", "v1.ListMeta", 1), `&`, ``, 1) + `,`,
-		`Items:` + repeatedStringForItems + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *ResticSpec) String() string {
-	if this == nil {
-		return "nil"
-	}
-	repeatedStringForFileGroups := "[]FileGroup{"
-	for _, f := range this.FileGroups {
-		repeatedStringForFileGroups += strings.Replace(strings.Replace(f.String(), "FileGroup", "FileGroup", 1), `&`, ``, 1) + ","
-	}
-	repeatedStringForFileGroups += "}"
-	repeatedStringForVolumeMounts := "[]VolumeMount{"
-	for _, f := range this.VolumeMounts {
-		repeatedStringForVolumeMounts += fmt.Sprintf("%v", f) + ","
-	}
-	repeatedStringForVolumeMounts += "}"
-	repeatedStringForRetentionPolicies := "[]RetentionPolicy{"
-	for _, f := range this.RetentionPolicies {
-		repeatedStringForRetentionPolicies += strings.Replace(strings.Replace(f.String(), "RetentionPolicy", "RetentionPolicy", 1), `&`, ``, 1) + ","
-	}
-	repeatedStringForRetentionPolicies += "}"
-	repeatedStringForImagePullSecrets := "[]LocalObjectReference{"
-	for _, f := range this.ImagePullSecrets {
-		repeatedStringForImagePullSecrets += fmt.Sprintf("%v", f) + ","
-	}
-	repeatedStringForImagePullSecrets += "}"
-	s := strings.Join([]string{`&ResticSpec{`,
-		`Selector:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Selector), "LabelSelector", "v1.LabelSelector", 1), `&`, ``, 1) + `,`,
-		`FileGroups:` + repeatedStringForFileGroups + `,`,
-		`Backend:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Backend), "Backend", "v12.Backend", 1), `&`, ``, 1) + `,`,
-		`Schedule:` + fmt.Sprintf("%v", this.Schedule) + `,`,
-		`VolumeMounts:` + repeatedStringForVolumeMounts + `,`,
-		`Resources:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Resources), "ResourceRequirements", "v11.ResourceRequirements", 1), `&`, ``, 1) + `,`,
-		`RetentionPolicies:` + repeatedStringForRetentionPolicies + `,`,
-		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
-		`Paused:` + fmt.Sprintf("%v", this.Paused) + `,`,
-		`ImagePullSecrets:` + repeatedStringForImagePullSecrets + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *RestoreStats) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&RestoreStats{`,
-		`Path:` + fmt.Sprintf("%v", this.Path) + `,`,
-		`Phase:` + fmt.Sprintf("%v", this.Phase) + `,`,
-		`Duration:` + fmt.Sprintf("%v", this.Duration) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -2070,6 +1018,16 @@ func (this *RetentionPolicy) String() string {
 	}, "")
 	return s
 }
+func (this *UsagePolicy) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&UsagePolicy{`,
+		`AllowedNamespaces:` + strings.Replace(strings.Replace(this.AllowedNamespaces.String(), "AllowedNamespaces", "AllowedNamespaces", 1), `&`, ``, 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
 func valueToStringGenerated(v interface{}) string {
 	rv := reflect.ValueOf(v)
 	if rv.IsNil() {
@@ -2078,7 +1036,7 @@ func valueToStringGenerated(v interface{}) string {
 	pv := reflect.Indirect(rv).Interface()
 	return fmt.Sprintf("*%v", pv)
 }
-func (m *FileGroup) Unmarshal(dAtA []byte) error {
+func (m *AllowedNamespaces) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2101,15 +1059,15 @@ func (m *FileGroup) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: FileGroup: wiretype end group for non-group")
+			return fmt.Errorf("proto: AllowedNamespaces: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: FileGroup: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AllowedNamespaces: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field From", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -2137,13 +1095,14 @@ func (m *FileGroup) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Path = string(dAtA[iNdEx:postIndex])
+			s := FromNamespaces(dAtA[iNdEx:postIndex])
+			m.From = &s
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Selector", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenerated
@@ -2153,55 +1112,27 @@ func (m *FileGroup) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthGenerated
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthGenerated
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Tags = append(m.Tags, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RetentionPolicyName", wireType)
+			if m.Selector == nil {
+				m.Selector = &v1.LabelSelector{}
 			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
+			if err := m.Selector.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RetentionPolicyName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2348,749 +1279,6 @@ func (m *LocalTypedReference) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.APIVersion = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Recovery) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Recovery: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Recovery: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ObjectMeta", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ObjectMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Spec", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Spec.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Status.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RecoveryList) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RecoveryList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RecoveryList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListMeta", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Items = append(m.Items, Recovery{})
-			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RecoverySpec) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RecoverySpec: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RecoverySpec: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Repository", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Repository.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Snapshot", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Snapshot = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Paths", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Paths = append(m.Paths, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RecoveredVolumes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RecoveredVolumes = append(m.RecoveredVolumes, v12.LocalSpec{})
-			if err := m.RecoveredVolumes[len(m.RecoveredVolumes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImagePullSecrets", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ImagePullSecrets = append(m.ImagePullSecrets, v11.LocalObjectReference{})
-			if err := m.ImagePullSecrets[len(m.ImagePullSecrets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NodeSelector", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.NodeSelector == nil {
-				m.NodeSelector = make(map[string]string)
-			}
-			var mapkey string
-			var mapvalue string
-			for iNdEx < postIndex {
-				entryPreIndex := iNdEx
-				var wire uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowGenerated
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					wire |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				fieldNum := int32(wire >> 3)
-				if fieldNum == 1 {
-					var stringLenmapkey uint64
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowGenerated
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						stringLenmapkey |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					intStringLenmapkey := int(stringLenmapkey)
-					if intStringLenmapkey < 0 {
-						return ErrInvalidLengthGenerated
-					}
-					postStringIndexmapkey := iNdEx + intStringLenmapkey
-					if postStringIndexmapkey < 0 {
-						return ErrInvalidLengthGenerated
-					}
-					if postStringIndexmapkey > l {
-						return io.ErrUnexpectedEOF
-					}
-					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
-					iNdEx = postStringIndexmapkey
-				} else if fieldNum == 2 {
-					var stringLenmapvalue uint64
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowGenerated
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						stringLenmapvalue |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					intStringLenmapvalue := int(stringLenmapvalue)
-					if intStringLenmapvalue < 0 {
-						return ErrInvalidLengthGenerated
-					}
-					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
-					if postStringIndexmapvalue < 0 {
-						return ErrInvalidLengthGenerated
-					}
-					if postStringIndexmapvalue > l {
-						return io.ErrUnexpectedEOF
-					}
-					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
-					iNdEx = postStringIndexmapvalue
-				} else {
-					iNdEx = entryPreIndex
-					skippy, err := skipGenerated(dAtA[iNdEx:])
-					if err != nil {
-						return err
-					}
-					if (skippy < 0) || (iNdEx+skippy) < 0 {
-						return ErrInvalidLengthGenerated
-					}
-					if (iNdEx + skippy) > postIndex {
-						return io.ErrUnexpectedEOF
-					}
-					iNdEx += skippy
-				}
-			}
-			m.NodeSelector[mapkey] = mapvalue
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RecoveryStatus) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RecoveryStatus: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RecoveryStatus: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ObservedGeneration", wireType)
-			}
-			m.ObservedGeneration = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ObservedGeneration |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Phase", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Phase = RecoveryPhase(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Stats", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Stats = append(m.Stats, RestoreStats{})
-			if err := m.Stats[len(m.Stats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3461,6 +1649,42 @@ func (m *RepositorySpec) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.WipeOut = bool(v != 0)
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UsagePolicy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.UsagePolicy == nil {
+				m.UsagePolicy = &UsagePolicy{}
+			}
+			if err := m.UsagePolicy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -3661,93 +1885,6 @@ func (m *RepositoryStatus) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastSuccessfulBackupTime", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.LastSuccessfulBackupTime == nil {
-				m.LastSuccessfulBackupTime = &v1.Time{}
-			}
-			if err := m.LastSuccessfulBackupTime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastBackupDuration", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.LastBackupDuration = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 10:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BackupCount", wireType)
-			}
-			m.BackupCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.BackupCount |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		case 11:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TotalSize", wireType)
@@ -3779,754 +1916,6 @@ func (m *RepositoryStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.TotalSize = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Restic) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Restic: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Restic: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ObjectMeta", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ObjectMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Spec", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Spec.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ResticList) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ResticList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ResticList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListMeta", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Items = append(m.Items, Restic{})
-			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ResticSpec) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ResticSpec: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ResticSpec: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Selector", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Selector.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FileGroups", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.FileGroups = append(m.FileGroups, FileGroup{})
-			if err := m.FileGroups[len(m.FileGroups)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Backend", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Backend.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Schedule", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Schedule = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field VolumeMounts", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.VolumeMounts = append(m.VolumeMounts, v11.VolumeMount{})
-			if err := m.VolumeMounts[len(m.VolumeMounts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Resources", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Resources.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RetentionPolicies", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RetentionPolicies = append(m.RetentionPolicies, RetentionPolicy{})
-			if err := m.RetentionPolicies[len(m.RetentionPolicies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Type = BackupType(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 9:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Paused", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Paused = bool(v != 0)
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImagePullSecrets", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ImagePullSecrets = append(m.ImagePullSecrets, v11.LocalObjectReference{})
-			if err := m.ImagePullSecrets[len(m.ImagePullSecrets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RestoreStats) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RestoreStats: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RestoreStats: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Path = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Phase", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Phase = RecoveryPhase(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Duration", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Duration = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4796,6 +2185,89 @@ func (m *RetentionPolicy) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.DryRun = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UsagePolicy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UsagePolicy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UsagePolicy: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllowedNamespaces", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AllowedNamespaces.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

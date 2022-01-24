@@ -52,6 +52,12 @@ type RepositorySpec struct {
 	// If true, delete respective restic repository
 	// +optional
 	WipeOut bool `json:"wipeOut,omitempty" protobuf:"varint,2,opt,name=wipeOut"`
+
+	// UsagePolicy specifies a policy of how this Repository will be used. For example, you can use `allowedNamespaces`
+	// policy to restrict the usage of this Repository to particular namespaces.
+	// This field is optional. If you don't provide the usagePolicy, then it can be used only from the current namespace.
+	// +optional
+	UsagePolicy *UsagePolicy `json:"usagePolicy,omitempty" protobuf:"bytes,3,opt,name=usagePolicy"`
 }
 
 type RepositoryStatus struct {
@@ -71,13 +77,75 @@ type RepositoryStatus struct {
 	SnapshotCount int64 `json:"snapshotCount,omitempty" protobuf:"varint,6,opt,name=snapshotCount"`
 	// SnapshotsRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session
 	SnapshotsRemovedOnLastCleanup int64 `json:"snapshotsRemovedOnLastCleanup,omitempty" protobuf:"varint,7,opt,name=snapshotsRemovedOnLastCleanup"`
+}
 
-	// Deprecated
-	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty" protobuf:"bytes,8,opt,name=lastSuccessfulBackupTime"`
-	// Deprecated
-	LastBackupDuration string `json:"lastBackupDuration,omitempty" protobuf:"bytes,9,opt,name=lastBackupDuration"`
-	// Deprecated
-	BackupCount int64 `json:"backupCount,omitempty" protobuf:"varint,10,opt,name=backupCount"`
+// UsagePolicy specifies a policy that restrict the usage of a resource across namespaces.
+type UsagePolicy struct {
+	// AllowedNamespaces specifies which namespaces are allowed to use the resource
+	// +optional
+	AllowedNamespaces AllowedNamespaces `json:"allowedNamespaces,omitempty" protobuf:"bytes,1,opt,name=allowedNamespaces"`
+}
+
+// AllowedNamespaces indicate which namespaces the resource should be selected from.
+type AllowedNamespaces struct {
+	// From indicates how to select the namespaces that are allowed to use this resource.
+	// Possible values are:
+	// * All: All namespaces can use this resource.
+	// * Selector: Namespaces that matches the selector can use this resource.
+	// * Same: Only current namespace can use the resource.
+	//
+	// +optional
+	// +kubebuilder:default=Same
+	From *FromNamespaces `json:"from,omitempty" protobuf:"bytes,1,opt,name=from,casttype=FromNamespaces"`
+
+	// Selector must be specified when From is set to "Selector". In that case,
+	// only the selected namespaces are allowed to use this resource.
+	// This field is ignored for other values of "From".
+	//
+	// +optional
+	Selector *metav1.LabelSelector `json:"selector,omitempty" protobuf:"bytes,2,opt,name=selector"`
+}
+
+// FromNamespaces specifies namespace from which namespaces are allowed to use the resource.
+//
+// +kubebuilder:validation:Enum=All;Selector;Same
+type FromNamespaces string
+
+const (
+	// NamespacesFromAll specifies that all namespaces can use the resource.
+	NamespacesFromAll FromNamespaces = "All"
+
+	// NamespacesFromSelector specifies that only the namespace that matches the selector can use the resource.
+	NamespacesFromSelector FromNamespaces = "Selector"
+
+	// NamespacesFromSame specifies that only the current namespace can use the resource.
+	NamespacesFromSame FromNamespaces = "Same"
+)
+
+// +kubebuilder:validation:Enum=--keep-last;--keep-hourly;--keep-daily;--keep-weekly;--keep-monthly;--keep-yearly;--keep-tag
+type RetentionStrategy string
+
+const (
+	KeepLast    RetentionStrategy = "--keep-last"
+	KeepHourly  RetentionStrategy = "--keep-hourly"
+	KeepDaily   RetentionStrategy = "--keep-daily"
+	KeepWeekly  RetentionStrategy = "--keep-weekly"
+	KeepMonthly RetentionStrategy = "--keep-monthly"
+	KeepYearly  RetentionStrategy = "--keep-yearly"
+	KeepTag     RetentionStrategy = "--keep-tag"
+)
+
+type RetentionPolicy struct {
+	Name        string   `json:"name" protobuf:"bytes,1,opt,name=name"`
+	KeepLast    int64    `json:"keepLast,omitempty" protobuf:"varint,2,opt,name=keepLast"`
+	KeepHourly  int64    `json:"keepHourly,omitempty" protobuf:"varint,3,opt,name=keepHourly"`
+	KeepDaily   int64    `json:"keepDaily,omitempty" protobuf:"varint,4,opt,name=keepDaily"`
+	KeepWeekly  int64    `json:"keepWeekly,omitempty" protobuf:"varint,5,opt,name=keepWeekly"`
+	KeepMonthly int64    `json:"keepMonthly,omitempty" protobuf:"varint,6,opt,name=keepMonthly"`
+	KeepYearly  int64    `json:"keepYearly,omitempty" protobuf:"varint,7,opt,name=keepYearly"`
+	KeepTags    []string `json:"keepTags,omitempty" protobuf:"bytes,8,rep,name=keepTags"`
+	Prune       bool     `json:"prune" protobuf:"varint,9,opt,name=prune"`
+	DryRun      bool     `json:"dryRun,omitempty" protobuf:"varint,10,opt,name=dryRun"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -65,16 +65,16 @@ func NewCmdRestore() *cobra.Command {
 			opt.StashClient = cs.NewForConfigOrDie(config)
 			opt.Metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(opt.InvokerKind), opt.Namespace, opt.InvokerName)
 
-			inv, err := invoker.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
+			inv, err := invoker.NewRestoreInvoker(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range inv.TargetsInfo {
+			for _, targetInfo := range inv.GetTargetInfo() {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.TargetKind, opt.TargetName) {
 
 					// Ensure restore order
-					if inv.ExecutionOrder == v1beta1_api.Sequential {
+					if inv.GetExecutionOrder() == v1beta1_api.Sequential {
 						err = waitUntilAllPreviousTargetsExecuted(opt, targetInfo.Target.Ref)
 						if err != nil {
 							return err
@@ -111,7 +111,6 @@ func NewCmdRestore() *cobra.Command {
 	cmd.Flags().DurationVar(&opt.BackoffMaxWait, "backoff-max-wait", 0, "Maximum wait for initial response from kube apiserver; 0 disables the timeout")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
-	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
 
 	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.Metrics.PushgatewayURL, "pushgateway-url", opt.Metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
@@ -123,10 +122,10 @@ func NewCmdRestore() *cobra.Command {
 func waitUntilAllPreviousTargetsExecuted(opt *restore.Options, tref v1beta1_api.TargetRef) error {
 	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (bool, error) {
 		klog.Infof("Waiting for all previous targets to complete their restore process...")
-		inv, err := invoker.ExtractRestoreInvokerInfo(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
+		inv, err := invoker.NewRestoreInvoker(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 		if err != nil {
 			return false, err
 		}
-		return inv.NextInOrder(tref, inv.Status.TargetStatus), nil
+		return inv.NextInOrder(tref, inv.GetStatus().TargetStatus), nil
 	})
 }

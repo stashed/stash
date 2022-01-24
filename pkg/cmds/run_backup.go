@@ -74,12 +74,12 @@ func NewCmdRunBackup() *cobra.Command {
 			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
 			opt.Metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(opt.InvokerKind), opt.Namespace, opt.InvokerName)
 
-			inv, err := invoker.ExtractBackupInvokerInfo(opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
+			inv, err := invoker.NewBackupInvoker(opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range inv.TargetsInfo {
+			for _, targetInfo := range inv.GetTargetInfo() {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.BackupTargetKind, opt.BackupTargetName) {
 
 					opt.Host, err = util.GetHostName(targetInfo.Target)
@@ -88,9 +88,13 @@ func NewCmdRunBackup() *cobra.Command {
 					}
 
 					// run backup
-					err = opt.RunBackup(targetInfo, inv.ObjectRef)
+					objRef, err := inv.GetObjectRef()
 					if err != nil {
-						return opt.HandleBackupSetupFailure(inv.ObjectRef, err)
+						return err
+					}
+					err = opt.RunBackup(targetInfo, objRef)
+					if err != nil {
+						return opt.HandleBackupSetupFailure(objRef, err)
 					}
 				}
 			}
@@ -105,7 +109,6 @@ func NewCmdRunBackup() *cobra.Command {
 	cmd.Flags().StringVar(&opt.BackupTargetKind, "target-kind", opt.BackupTargetKind, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.BackupTargetName, "target-name", opt.BackupTargetName, "Name of the Target")
 	cmd.Flags().StringVar(&opt.Host, "host", opt.Host, "Name of the host that will be backed up")
-	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
 	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify whether to export Prometheus metrics")

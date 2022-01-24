@@ -66,19 +66,6 @@ type StashController struct {
 	ocInformerFactory    oc_informers.SharedInformerFactory
 	stashInformerFactory stashinformers.SharedInformerFactory
 
-	// Namespace
-	nsInformer cache.SharedIndexInformer
-
-	// Restic
-	rstQueue    *queue.Worker
-	rstInformer cache.SharedIndexInformer
-	rstLister   stash_listers.ResticLister
-
-	// Recovery
-	recQueue    *queue.Worker
-	recInformer cache.SharedIndexInformer
-	recLister   stash_listers.RecoveryLister
-
 	// Repository
 	repoQueue    *queue.Worker
 	repoInformer cache.SharedIndexInformer
@@ -137,8 +124,6 @@ type StashController struct {
 
 func (c *StashController) ensureCustomResourceDefinitions() error {
 	crds := []*apiextensions.CustomResourceDefinition{
-		api.Restic{}.CustomResourceDefinition(),
-		api.Recovery{}.CustomResourceDefinition(),
 		api.Repository{}.CustomResourceDefinition(),
 		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
 		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
@@ -221,8 +206,6 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 
 	// start v1alpha1 resources queue
 	c.repoQueue.Run(stopCh)
-	c.rstQueue.Run(stopCh)
-	c.recQueue.Run(stopCh)
 
 	// start v1beta1 resources queue
 	c.bcQueue.Run(stopCh)

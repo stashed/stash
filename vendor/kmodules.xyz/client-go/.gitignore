@@ -33,3 +33,4 @@ coverage.txt
 /.go
 
 apiserver.local.config/**
+.DS_Store

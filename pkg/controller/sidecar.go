@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
-	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
@@ -37,123 +36,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1alpha1.Restic, caller string) error {
-	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
-	owner, err := ownerWorkload(w)
-	if err != nil {
-		return err
-	}
-	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
-	if caller != apis.CallerWebhook {
-		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, w.Namespace, sa, nil)
-		if err != nil {
-			return err
-		}
-	}
-
-	if restic.Spec.Backend.StorageSecretName == "" {
-		err := fmt.Errorf("missing repository secret name for Restic %s/%s", restic.Namespace, restic.Name)
-		return err
-	}
-
-	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(context.TODO(), restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	if w.Spec.Template.Annotations == nil {
-		w.Spec.Template.Annotations = map[string]string{}
-	}
-	// mark pods with Restic resource version, used to force restart pods for rc/rs
-	w.Spec.Template.Annotations[api_v1alpha1.ResourceHash] = restic.GetSpecHash()
-
-	image := docker.Docker{
-		Registry: c.DockerRegistry,
-		Image:    c.StashImage,
-		Tag:      c.StashImageTag,
-	}
-	localRef := api_v1alpha1.LocalTypedReference{
-		Kind: w.Kind,
-		Name: w.Name,
-	}
-
-	if restic.Spec.Type == api_v1alpha1.BackupOffline {
-		w.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
-			w.Spec.Template.Spec.InitContainers,
-			util.NewInitContainer(restic, localRef, image),
-		)
-	} else {
-		w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			w.Spec.Template.Spec.Containers,
-			util.NewSidecarContainer(restic, localRef, image),
-		)
-	}
-
-	// keep existing image pull secrets
-	w.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
-		w.Spec.Template.Spec.ImagePullSecrets,
-		restic.Spec.ImagePullSecrets,
-	)
-
-	w.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(w.Spec.Template.Spec.Volumes)
-	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
-	// if repository backend is local backend, mount this inside sidecar container
-	w.Spec.Template.Spec.Volumes = util.MergeLocalVolume(w.Spec.Template.Spec.Volumes, &restic.Spec.Backend, apis.LocalVolumeName)
-
-	if w.Annotations == nil {
-		w.Annotations = make(map[string]string)
-	}
-	r := &api_v1alpha1.Restic{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: api.SchemeGroupVersion.String(),
-			Kind:       api_v1alpha1.ResourceKindRestic,
-		},
-		ObjectMeta: restic.ObjectMeta,
-		Spec:       restic.Spec,
-	}
-	data, _ := meta.MarshalToJson(r, api_v1alpha1.SchemeGroupVersion)
-	w.Annotations[api_v1alpha1.LastAppliedConfiguration] = string(data)
-	w.Annotations[apis.VersionTag] = c.StashImageTag
-
-	return nil
-}
-
-func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic *api_v1alpha1.Restic) {
-
-	if w.Spec.Template.Annotations != nil {
-		// mark pods with restic resource version, used to force restart pods for rc/rs
-		delete(w.Spec.Template.Annotations, api_v1alpha1.ResourceHash)
-	}
-
-	if restic.Spec.Type == api_v1alpha1.BackupOffline {
-		w.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.InitContainers, apis.StashContainer)
-	} else {
-		w.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.Containers, apis.StashContainer)
-	}
-	// backup sidecar/init-container has been removed but workload still may have restore init-container
-	// so removed respective volumes that were added to the workload only if the workload does not have restore init-container
-	if !util.HasStashContainer(w) {
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.PodinfoVolumeName)
-
-		if restic.Spec.Backend.Local != nil {
-			w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.LocalVolumeName)
-		}
-	}
-	if w.Annotations != nil {
-		delete(w.Annotations, api_v1alpha1.LastAppliedConfiguration)
-		delete(w.Annotations, apis.VersionTag)
-	}
-}
-
 func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, caller string) error {
+	invMeta := inv.GetObjectMeta()
+
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	owner, err := ownerWorkload(w)
 	if err != nil {
@@ -162,7 +52,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.Back
 
 	// Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != apis.CallerWebhook {
-		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, inv.ObjectMeta.Namespace, sa, inv.Labels)
+		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, invMeta.Namespace, sa, inv.GetLabels())
 		if err != nil {
 			return err
 		}
@@ -171,26 +61,16 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.Back
 	// if the Stash is using a private registry, then ensure the image pull secrets
 	if c.ImagePullSecrets != nil {
 		var imagePullSecrets []core.LocalObjectReference
-		imagePullSecrets, err = c.ensureImagePullSecrets(inv.ObjectMeta, inv.OwnerRef)
+		imagePullSecrets, err = c.ensureImagePullSecrets(invMeta, inv.GetOwnerRef())
 		if err != nil {
 			return err
 		}
 		w.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 	}
 
-	repository, err := c.stashClient.StashV1alpha1().Repositories(inv.ObjectMeta.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
+	repository, err := inv.GetRepository()
 	if err != nil {
-		klog.Errorf("unable to get repository %s/%s: Reason: %v", inv.ObjectMeta.Namespace, inv.Repository, err)
-		return err
-	}
-
-	if repository.Spec.Backend.StorageSecretName == "" {
-		return fmt.Errorf("missing repository secret name  %s/%s", repository.Namespace, repository.Name)
-	}
-
-	// check if secret exist
-	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
+		klog.Errorf("unable to get repository %s/%s: Reason: %v", inv.GetRepoRef().Namespace, inv.GetRepoRef().Name, err)
 		return err
 	}
 
@@ -198,7 +78,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.Back
 		w.Spec.Template.Annotations = map[string]string{}
 	}
 	// mark pods with BackupConfiguration spec hash. used to force restart pods for rc/rs
-	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupInvokerSpecHash] = inv.Hash
+	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupInvokerSpecHash] = inv.GetHash()
 
 	if targetInfo.Target == nil {
 		return fmt.Errorf("target is nil")
@@ -215,13 +95,16 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.Back
 	)
 
 	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, targetInfo.TempDir)
-	w.Spec.Template.Spec.Volumes = util.UpsertSecretVolume(w.Spec.Template.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
 
 	if w.Annotations == nil {
 		w.Annotations = make(map[string]string)
 	}
-	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvoker] = string(inv.ObjectJson)
-	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvokerKind] = inv.ObjectRef.Kind
+	jsonObj, err := inv.GetObjectJSON()
+	if err != nil {
+		return err
+	}
+	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvoker] = jsonObj
+	w.Annotations[api_v1beta1.KeyLastAppliedBackupInvokerKind] = inv.GetTypeMeta().Kind
 
 	return nil
 }
@@ -239,7 +122,6 @@ func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload) {
 	if !util.HasStashContainer(w) {
 		// remove the helpers volumes that were added for sidecar
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.ScratchDirVolumeName)
-		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, apis.StashSecretVolume)
 	}
 
 	// remove respective annotations
@@ -271,7 +153,6 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 		workloadSidecarState := util.HasStashSidecar(w.Spec.Template.Spec.Containers)
 		workloadInitContainerState := util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers)
 		workloadBackupInvokerResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupInvokerSpecHash)
-		workloadResticResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1alpha1.ResourceHash)
 		workloadRestoreInvokerResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreInvokerSpecHash)
 
 		// identify the pods that does not have latest update.
@@ -284,13 +165,11 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 			podSidecarState := util.HasStashSidecar(pod.Spec.Containers)
 			podInitContainerState := util.HasStashInitContainer(pod.Spec.InitContainers)
 			podBackupInvokerResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupInvokerSpecHash)
-			podResticResourceHash := util.GetString(pod.Annotations, api_v1alpha1.ResourceHash)
 			podRestoreInvokerResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedRestoreInvokerSpecHash)
 
 			if workloadSidecarState != podSidecarState ||
 				workloadInitContainerState != podInitContainerState ||
 				workloadBackupInvokerResourceHash != podBackupInvokerResourceHash ||
-				workloadResticResourceHash != podResticResourceHash ||
 				workloadRestoreInvokerResourceHash != podRestoreInvokerResourceHash {
 
 				podsToRestart = append(podsToRestart, pod)

@@ -28,11 +28,11 @@ import (
 	"gomodules.xyz/x/arrays"
 	"gomodules.xyz/x/crypto/rand"
 	batchv1 "k8s.io/api/batch/v1"
-	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
@@ -43,7 +43,7 @@ func (fi *Invocation) GetRestoreSession(repoName string, transformFuncs ...func(
 			Namespace: fi.namespace,
 		},
 		Spec: v1beta1.RestoreSessionSpec{
-			Repository: core.LocalObjectReference{
+			Repository: kmapi.ObjectReference{
 				Name: repoName,
 			},
 		},

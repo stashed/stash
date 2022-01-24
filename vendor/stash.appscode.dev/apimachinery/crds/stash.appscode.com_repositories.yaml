@@ -1578,16 +1578,85 @@ spec:
                         type: string
                     type: object
                 type: object
+              usagePolicy:
+                description: UsagePolicy specifies a policy of how this Repository
+                  will be used. For example, you can use `allowedNamespaces` policy
+                  to restrict the usage of this Repository to particular namespaces.
+                  This field is optional. If you don't provide the usagePolicy, then
+                  it can be used only from the current namespace.
+                properties:
+                  allowedNamespaces:
+                    description: AllowedNamespaces specifies which namespaces are
+                      allowed to use the resource
+                    properties:
+                      from:
+                        default: Same
+                        description: 'From indicates how to select the namespaces
+                          that are allowed to use this resource. Possible values are:
+                          * All: All namespaces can use this resource. * Selector:
+                          Namespaces that matches the selector can use this resource.
+                          * Same: Only current namespace can use the resource.'
+                        enum:
+                        - All
+                        - Selector
+                        - Same
+                        type: string
+                      selector:
+                        description: Selector must be specified when From is set to
+                          "Selector". In that case, only the selected namespaces are
+                          allowed to use this resource. This field is ignored for
+                          other values of "From".
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                    type: object
+                type: object
               wipeOut:
                 description: If true, delete respective restic repository
                 type: boolean
             type: object
           status:
             properties:
-              backupCount:
-                description: Deprecated
-                format: int64
-                type: integer
               firstBackupTime:
                 description: FirstBackupTime indicates the timestamp when the first
                   backup was taken
@@ -1597,16 +1666,9 @@ spec:
                 description: Integrity shows result of repository integrity check
                   after last backup
                 type: boolean
-              lastBackupDuration:
-                description: Deprecated
-                type: string
               lastBackupTime:
                 description: LastBackupTime indicates the timestamp when the latest
                   backup was taken
-                format: date-time
-                type: string
-              lastSuccessfulBackupTime:
-                description: Deprecated
                 format: date-time
                 type: string
               observedGeneration:

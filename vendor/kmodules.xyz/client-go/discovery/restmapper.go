@@ -102,7 +102,8 @@ type ResourceMapper interface {
 	GVR(gvk schema.GroupVersionKind) (schema.GroupVersionResource, error)
 	TypeMeta(gvr schema.GroupVersionResource) (metav1.TypeMeta, error)
 	GVK(gvr schema.GroupVersionResource) (schema.GroupVersionKind, error)
-	IsNamespaced(gvr schema.GroupVersionResource) (bool, error)
+	IsGVRNamespaced(gvr schema.GroupVersionResource) (bool, error)
+	IsGVKNamespaced(gvk schema.GroupVersionKind) (bool, error)
 	IsPreferred(gvr schema.GroupVersionResource) (bool, error)
 	Preferred(gvr schema.GroupVersionResource) (schema.GroupVersionResource, error)
 	ExistsGVR(gvr schema.GroupVersionResource) (bool, error)
@@ -144,17 +145,7 @@ func (m *resourcemapper) ResourceIDForGVK(gvk schema.GroupVersionKind) (*kmapi.R
 	if err != nil {
 		return nil, err
 	}
-	scope := kmapi.ClusterScoped
-	if mapping.Scope == meta.RESTScopeNamespace {
-		scope = kmapi.NamespaceScoped
-	}
-	rid = &kmapi.ResourceID{
-		Group:   gvk.Group,
-		Version: gvk.Version,
-		Name:    mapping.Resource.Resource,
-		Kind:    gvk.Kind,
-		Scope:   scope,
-	}
+	rid = kmapi.NewResourceID(mapping)
 	m.lock.Lock()
 	m.cache[gvk] = rid
 	m.lock.Unlock()
@@ -178,17 +169,7 @@ func (m *resourcemapper) ResourceIDForGVR(gvr schema.GroupVersionResource) (*kma
 	if err != nil {
 		return nil, err
 	}
-	scope := kmapi.ClusterScoped
-	if mapping.Scope == meta.RESTScopeNamespace {
-		scope = kmapi.NamespaceScoped
-	}
-	rid = &kmapi.ResourceID{
-		Group:   gvr.Group,
-		Version: gvr.Version,
-		Name:    gvr.Resource,
-		Kind:    gvk.Kind,
-		Scope:   scope,
-	}
+	rid = kmapi.NewResourceID(mapping)
 	m.lock.Lock()
 	m.cache[gvk] = rid
 	m.lock.Unlock()
@@ -222,11 +203,15 @@ func (m *resourcemapper) GVK(gvr schema.GroupVersionResource) (schema.GroupVersi
 	return gvk, nil
 }
 
-func (m *resourcemapper) IsNamespaced(gvr schema.GroupVersionResource) (bool, error) {
+func (m *resourcemapper) IsGVRNamespaced(gvr schema.GroupVersionResource) (bool, error) {
 	gvk, err := m.mapper.KindFor(gvr)
 	if err != nil {
 		return false, err
 	}
+	return m.IsGVKNamespaced(gvk)
+}
+
+func (m *resourcemapper) IsGVKNamespaced(gvk schema.GroupVersionKind) (bool, error) {
 	mapping, err := m.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
 		return false, err

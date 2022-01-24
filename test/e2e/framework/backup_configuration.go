@@ -28,10 +28,9 @@ import (
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/x/crypto/rand"
 	batchv1 "k8s.io/api/batch/v1"
-	batch_v1beta1 "k8s.io/api/batch/v1beta1"
-	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
@@ -42,7 +41,7 @@ func (fi *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...
 			Namespace: fi.namespace,
 		},
 		Spec: v1beta1.BackupConfigurationSpec{
-			Repository: core.LocalObjectReference{
+			Repository: kmapi.ObjectReference{
 				Name: repoName,
 			},
 			// some workloads such as StatefulSet or DaemonSet may take long to complete backup. so, giving a fixed short interval is not always feasible.
@@ -93,8 +92,8 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 	)
 }
 
-func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batch_v1beta1.CronJob, error) {
-	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
+func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batchv1.CronJob, error) {
+	return f.KubeClient.BatchV1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 }
 
 func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -144,7 +143,7 @@ func (f *Framework) GetBackupJob(backupSessionName string) (*batchv1.Job, error)
 }
 
 func getBackupCronJobName(objMeta metav1.ObjectMeta) string {
-	return meta_util.ValidCronJobNameWithPrefix(apis.PrefixStashBackup, strings.ReplaceAll(objMeta.Name, ".", "-"))
+	return meta_util.ValidCronJobNameWithPrefix(apis.PrefixStashTrigger, strings.ReplaceAll(objMeta.Name, ".", "-"))
 }
 
 func getBackupJobName(backupSessionName string, index string) string {

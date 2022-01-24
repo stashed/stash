@@ -98,14 +98,14 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			}
 
 			// get backup Invoker
-			inv, err := invoker.ExtractBackupInvokerInfo(opt.stashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
+			inv, err := invoker.NewBackupInvoker(opt.stashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
 			if err != nil {
 				return err
 			}
 
-			opt.metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name)
+			opt.metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), inv.GetObjectMeta().Namespace, inv.GetObjectMeta().Name)
 
-			for _, targetInfo := range inv.TargetsInfo {
+			for _, targetInfo := range inv.GetTargetInfo() {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
 					backupOutput, err := opt.createVolumeSnapshot(backupSession.ObjectMeta, inv, targetInfo)
 					if err != nil {
@@ -173,7 +173,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 	for _, pvcName := range pvcNames {
 		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
 		parts := strings.Split(bsMeta.Name, "-")
-		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, inv.ObjectMeta.Namespace, pvcName, parts[len(parts)-1])
+		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, inv.GetObjectMeta().Namespace, pvcName, parts[len(parts)-1])
 		snapshot, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Create(context.TODO(), &volumeSnapshot, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
@@ -205,7 +205,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 		}
 
 	}
-	err = volumesnapshot.CleanupSnapshots(inv.RetentionPolicy, backupOutput.BackupTargetStatus.Stats, bsMeta.Namespace, opt.snapshotClient)
+	err = volumesnapshot.CleanupSnapshots(inv.GetRetentionPolicy(), backupOutput.BackupTargetStatus.Stats, bsMeta.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
 	}

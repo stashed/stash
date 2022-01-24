@@ -171,6 +171,9 @@ func ResourceLimits(rr core.ResourceRequirements) core.ResourceList {
 }
 
 func ResourceRequests(rr core.ResourceRequirements) core.ResourceList {
+	if rr.Requests == nil {
+		return core.ResourceList{}
+	}
 	return rr.Requests
 }
 

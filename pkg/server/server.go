@@ -139,8 +139,6 @@ func (c completedConfig) New() (*StashServer, error) {
 	var admissionHooks []hooks.AdmissionHook
 	if c.ExtraConfig.EnableValidatingWebhook {
 		admissionHooks = append(admissionHooks,
-			ctrl.NewResticWebhook(),
-			ctrl.NewRecoveryWebhook(),
 			ctrl.NewRepositoryWebhook(),
 			// ctrl.NewBackupSessionWebhook(),
 			ctrl.NewRestoreSessionWebhook(),

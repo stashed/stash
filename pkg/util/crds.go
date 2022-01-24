@@ -107,13 +107,13 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--secret-dir=/etc/repository/secret",
 				"--scratch-dir=/tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--namespace=${NAMESPACE:=default}",
 				"--backupsession=${BACKUP_SESSION:=}",
-				"--repository=${REPOSITORY_NAME:=}",
+				"--repo-name=${REPOSITORY_NAME:=}",
+				"--repo-namespace=${REPOSITORY_NAMESPACE:=}",
 				"--invoker-kind=${INVOKER_KIND:=}",
 				"--invoker-name=${INVOKER_NAME:=}",
 				"--target-kind=${TARGET_KIND:=}",
@@ -121,12 +121,6 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",
 				fmt.Sprintf("--metrics-pushgateway-url=%s", pushgateway.URL()),
-			},
-			VolumeMounts: []core.VolumeMount{
-				{
-					Name:      "${secretVolume}",
-					MountPath: "/etc/repository/secret",
-				},
 			},
 		},
 	}
@@ -146,7 +140,6 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--secret-dir=/etc/repository/secret",
 				"--scratch-dir=/tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
@@ -155,6 +148,8 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--exclude=${EXCLUDE_PATTERNS:=}",
 				"--invoker-kind=${INVOKER_KIND:=}",
 				"--invoker-name=${INVOKER_NAME:=}",
+				"--storage-secret-name=${REPOSITORY_SECRET_NAME}",
+				"--storage-secret-namespace=${REPOSITORY_SECRET_NAMESPACE}",
 				"--target-kind=${TARGET_KIND:=}",
 				"--target-name=${TARGET_NAME:=}",
 				"--backupsession=${BACKUP_SESSION:=}",
@@ -173,10 +168,6 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				{
 					Name:      "${targetVolume}",
 					MountPath: "${TARGET_MOUNT_PATH}",
-				},
-				{
-					Name:      "${secretVolume}",
-					MountPath: "/etc/repository/secret",
 				},
 			},
 		},
@@ -197,7 +188,6 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--secret-dir=/etc/repository/secret",
 				"--scratch-dir=/tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
@@ -209,6 +199,8 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--output-dir=${outputDir:=}",
 				"--invoker-kind=${INVOKER_KIND:=}",
 				"--invoker-name=${INVOKER_NAME:=}",
+				"--storage-secret-name=${REPOSITORY_SECRET_NAME}",
+				"--storage-secret-namespace=${REPOSITORY_SECRET_NAMESPACE}",
 				"--target-kind=${TARGET_KIND:=}",
 				"--target-name=${TARGET_NAME:=}",
 			},
@@ -216,10 +208,6 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				{
 					Name:      "${targetVolume}",
 					MountPath: "${TARGET_MOUNT_PATH}",
-				},
-				{
-					Name:      "${secretVolume}",
-					MountPath: "/etc/repository/secret",
 				},
 			},
 		},
@@ -244,10 +232,6 @@ func pvcBackupTask() *api_v1beta1.Task {
 							Name:  "targetVolume",
 							Value: apis.StashDefaultVolume,
 						},
-						{
-							Name:  "secretVolume",
-							Value: "secret-volume",
-						},
 					},
 				},
 				{
@@ -256,10 +240,6 @@ func pvcBackupTask() *api_v1beta1.Task {
 						{
 							Name:  "outputDir",
 							Value: "/tmp/output",
-						},
-						{
-							Name:  "secretVolume",
-							Value: "secret-volume",
 						},
 					},
 				},
@@ -270,14 +250,6 @@ func pvcBackupTask() *api_v1beta1.Task {
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: "${TARGET_NAME}",
-						},
-					},
-				},
-				{
-					Name: "secret-volume",
-					VolumeSource: core.VolumeSource{
-						Secret: &core.SecretVolumeSource{
-							SecretName: "${REPOSITORY_SECRET_NAME}",
 						},
 					},
 				},
@@ -304,10 +276,6 @@ func pvcRestoreTask() *api_v1beta1.Task {
 							Name:  "targetVolume",
 							Value: apis.StashDefaultVolume,
 						},
-						{
-							Name:  "secretVolume",
-							Value: "secret-volume",
-						},
 					},
 				},
 				{
@@ -316,10 +284,6 @@ func pvcRestoreTask() *api_v1beta1.Task {
 						{
 							Name:  "outputDir",
 							Value: "/tmp/output",
-						},
-						{
-							Name:  "secretVolume",
-							Value: "secret-volume",
 						},
 					},
 				},
@@ -330,14 +294,6 @@ func pvcRestoreTask() *api_v1beta1.Task {
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: "${TARGET_NAME}",
-						},
-					},
-				},
-				{
-					Name: "secret-volume",
-					VolumeSource: core.VolumeSource{
-						Secret: &core.SecretVolumeSource{
-							SecretName: "${REPOSITORY_SECRET_NAME}",
 						},
 					},
 				},

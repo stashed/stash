@@ -144,87 +144,83 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 
 	restoreSession := obj.(*api_v1beta1.RestoreSession)
 	klog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
+
 	// process sync/add/update event
-	inv, err := invoker.ExtractRestoreInvokerInfo(
-		c.kubeClient,
-		c.stashClient,
-		api_v1beta1.ResourceKindRestoreSession,
-		restoreSession.Name,
-		restoreSession.Namespace,
-	)
-	if err != nil {
-		return err
-	}
+	inv := invoker.NewRestoreSessionInvoker(c.kubeClient, c.stashClient, restoreSession)
 
 	// Apply any modification requires for smooth KubeDB integration
-	newLabels, err := inv.EnsureKubeDBIntegration(c.appCatalogClient)
+	err = inv.EnsureKubeDBIntegration(c.appCatalogClient)
 	if err != nil {
 		return err
 	}
-	inv.Labels = newLabels
 
 	return c.applyRestoreInvokerReconciliationLogic(inv, key)
 }
 
-func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.RestoreInvoker, key string) error {
+func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.RestoreInvoker, key string) error {
 	// if the restore invoker is being deleted then remove respective init-container
-	if in.ObjectMeta.DeletionTimestamp != nil {
+	invMeta := inv.GetObjectMeta()
+	invokerRef, err := inv.GetObjectRef()
+	if err != nil {
+		return err
+	}
+	if invMeta.DeletionTimestamp != nil {
 		// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
 		// remove respective init-container and finally remove finalizer
-		if core_util.HasFinalizer(in.ObjectMeta, api_v1beta1.StashKey) {
-			for i := range in.TargetsInfo {
-				target := in.TargetsInfo[i].Target
+		if core_util.HasFinalizer(invMeta, api_v1beta1.StashKey) {
+			for _, targetInfo := range inv.GetTargetInfo() {
+				target := targetInfo.Target
 				if target != nil && util.RestoreModel(target.Ref.Kind) == apis.ModelSidecar {
 					// send event to workload controller. workload controller will take care of removing restore init-container
 					err := c.sendEventToWorkloadQueue(
 						target.Ref.Kind,
-						in.ObjectMeta.Namespace,
+						invMeta.Namespace,
 						target.Ref.Name,
 					)
 					if err != nil {
-						return c.handleWorkloadControllerTriggerFailure(in.ObjectRef, err)
+						return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
 					}
 				}
 			}
 			// Ensure that the ClusterRoleBindings for this restore invoker has been deleted
-			if err := stash_rbac.EnsureClusterRoleBindingDeleted(c.kubeClient, in.ObjectMeta, in.Labels); err != nil {
+			if err := stash_rbac.EnsureClusterRoleBindingDeleted(c.kubeClient, invMeta, inv.GetLabels()); err != nil {
 				return err
 			}
 			// remove finalizer
-			return in.RemoveFinalizer()
+			return inv.RemoveFinalizer()
 		}
 		return nil
 	}
 
 	// add finalizer
-	err := in.AddFinalizer()
+	err = inv.AddFinalizer()
 	if err != nil {
 		return err
 	}
 
 	// ======================== Set Global Conditions ============================
-	if in.Driver == "" || in.Driver == api_v1beta1.ResticSnapshotter {
+	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
 		// Check whether Repository exist or not
-		repository, err := c.stashClient.StashV1alpha1().Repositories(in.ObjectMeta.Namespace).Get(context.TODO(), in.Repository, metav1.GetOptions{})
+		repository, err := inv.GetRepository()
 		if err != nil {
 			if kerr.IsNotFound(err) {
 				klog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
-					in.ObjectMeta.Namespace,
-					in.Repository,
-					in.TypeMeta.Kind,
-					in.ObjectMeta.Namespace,
-					in.ObjectMeta.Name,
+					inv.GetRepoRef().Namespace,
+					inv.GetRepoRef().Name,
+					inv.GetTypeMeta().Kind,
+					invMeta.Namespace,
+					invMeta.Name,
 				)
-				err2 := conditions.SetRepositoryFoundConditionToFalse(in)
+				err2 := conditions.SetRepositoryFoundConditionToFalse(inv)
 				if err2 != nil {
 					return err2
 				}
-				return c.requeueRestoreInvoker(in, key, 5*time.Second)
+				return c.requeueRestoreInvoker(inv, key, 5*time.Second)
 			}
-			err2 := conditions.SetRepositoryFoundConditionToUnknown(in, err)
+			err2 := conditions.SetRepositoryFoundConditionToUnknown(inv, err)
 			return errors.NewAggregate([]error{err, err2})
 		}
-		err = conditions.SetRepositoryFoundConditionToTrue(in)
+		err = conditions.SetRepositoryFoundConditionToTrue(inv)
 		if err != nil {
 			return err
 		}
@@ -239,52 +235,53 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 					repository.Namespace,
 					repository.Name,
 				)
-				err2 := conditions.SetBackendSecretFoundConditionToFalse(in, secret.Name)
+				err2 := conditions.SetBackendSecretFoundConditionToFalse(inv, secret.Name)
 				if err2 != nil {
 					return err2
 				}
-				return c.requeueRestoreInvoker(in, key, 5*time.Second)
+				return c.requeueRestoreInvoker(inv, key, 5*time.Second)
 			}
-			err2 := conditions.SetBackendSecretFoundConditionToUnknown(in, secret.Name, err)
+			err2 := conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
 			return errors.NewAggregate([]error{err, err2})
 		}
-		err = conditions.SetBackendSecretFoundConditionToTrue(in, secret.Name)
+		err = conditions.SetBackendSecretFoundConditionToTrue(inv, secret.Name)
 		if err != nil {
 			return err
 		}
 	}
 
 	// ================= Don't Process Completed Invoker ===========================
-	if in.Status.Phase == api_v1beta1.RestoreFailed ||
-		in.Status.Phase == api_v1beta1.RestoreSucceeded ||
-		in.Status.Phase == api_v1beta1.RestorePhaseUnknown {
+	status := inv.GetStatus()
+	if status.Phase == api_v1beta1.RestoreFailed ||
+		status.Phase == api_v1beta1.RestoreSucceeded ||
+		status.Phase == api_v1beta1.RestorePhaseUnknown {
 		klog.Infof("Skipping processing %s %s/%s. Reason: phase is %q.",
-			in.TypeMeta.Kind,
-			in.ObjectMeta.Namespace,
-			in.ObjectMeta.Name,
-			in.Status.Phase,
+			inv.GetTypeMeta().Kind,
+			invMeta.Namespace,
+			invMeta.Name,
+			status.Phase,
 		)
 		return nil
 	}
 
-	// ensure that target phases are up to date
-	in.Status, err = c.ensureRestoreTargetPhases(in)
+	// ensure that target phases are up-to-date
+	err = c.ensureRestoreTargetPhases(inv)
 	if err != nil {
 		return err
 	}
 	// check whether restore process has completed or running and set it's phase accordingly
-	phase, err := c.getRestorePhase(in.Status)
+	phase, err := c.getRestorePhase(inv.GetStatus())
 
 	// ==================== Execute Global PostRestore Hooks ===========================
 	// if the restore process has completed(Failed or Succeeded or Unknown), then execute global postRestore hook if not yet executed
-	if restoreCompleted(phase) && !globalPostRestoreHookExecuted(in) {
-		hookErr := util.ExecuteHook(c.clientConfig, in.Hooks, apis.PostRestoreHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
+	if restoreCompleted(phase) && !globalPostRestoreHookExecuted(inv) {
+		hookErr := util.ExecuteHook(c.clientConfig, inv.GetGlobalHooks(), apis.PostRestoreHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
 		if hookErr != nil {
-			condErr := conditions.SetGlobalPostRestoreHookSucceededConditionToFalse(in, hookErr)
+			condErr := conditions.SetGlobalPostRestoreHookSucceededConditionToFalse(inv, hookErr)
 			// set restore phase failed
-			return c.setRestorePhaseFailed(in, errors.NewAggregate([]error{err, hookErr, condErr}))
+			return c.setRestorePhaseFailed(inv, errors.NewAggregate([]error{err, hookErr, condErr}))
 		}
-		condErr := conditions.SetGlobalPostRestoreHookSucceededConditionToTrue(in)
+		condErr := conditions.SetGlobalPostRestoreHookSucceededConditionToTrue(inv)
 		if condErr != nil {
 			return condErr
 		}
@@ -295,42 +292,42 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 		// one or more target has failed to complete their restore process.
 		// mark entire restore process as failure.
 		// now, set restore phase "Failed", create an event. and send respective metrics.
-		return c.setRestorePhaseFailed(in, err)
+		return c.setRestorePhaseFailed(inv, err)
 	} else if phase == api_v1beta1.RestorePhaseUnknown {
-		return c.setRestorePhaseUnknown(in, err)
+		return c.setRestorePhaseUnknown(inv, err)
 	} else if phase == api_v1beta1.RestoreSucceeded {
 		// all targets has completed their restore process successfully.
 		// now, set restore phase "Succeeded", create an event, and send respective metrics .
-		return c.setRestorePhaseSucceeded(in)
+		return c.setRestorePhaseSucceeded(inv)
 	}
 
 	// ==================== Execute Global PreRestore Hook =====================
 	// if global preRestore hook exist and not executed yet, then execute the preRestoreHook
-	if !globalPreRestoreHookExecuted(in) {
-		hookErr := util.ExecuteHook(c.clientConfig, in.Hooks, apis.PreBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
+	if !globalPreRestoreHookExecuted(inv) {
+		hookErr := util.ExecuteHook(c.clientConfig, inv.GetGlobalHooks(), apis.PreBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
 		if hookErr != nil {
-			condErr := conditions.SetGlobalPreRestoreHookSucceededConditionToFalse(in, hookErr)
-			return c.setRestorePhaseFailed(in, errors.NewAggregate([]error{hookErr, condErr}))
+			condErr := conditions.SetGlobalPreRestoreHookSucceededConditionToFalse(inv, hookErr)
+			return c.setRestorePhaseFailed(inv, errors.NewAggregate([]error{hookErr, condErr}))
 		}
-		condErr := conditions.SetGlobalPreRestoreHookSucceededConditionToTrue(in)
+		condErr := conditions.SetGlobalPreRestoreHookSucceededConditionToTrue(inv)
 		if condErr != nil {
 			return condErr
 		}
 	}
 
 	// ===================== Run Restore for the Individual Targets ============================
-	for i, targetInfo := range in.TargetsInfo {
+	for i, targetInfo := range inv.GetTargetInfo() {
 		if targetInfo.Target != nil {
 			// Skip processing if the restore process has been already initiated before for this target
-			if targetRestoreInitiated(in, targetInfo.Target.Ref) {
+			if targetRestoreInitiated(inv, targetInfo.Target.Ref) {
 				continue
 			}
 			// ----------------- Ensure Execution Order -------------------
-			if in.ExecutionOrder == api_v1beta1.Sequential &&
-				!in.NextInOrder(targetInfo.Target.Ref, in.Status.TargetStatus) {
+			if inv.GetExecutionOrder() == api_v1beta1.Sequential &&
+				!inv.NextInOrder(targetInfo.Target.Ref, inv.GetStatus().TargetStatus) {
 				// restore order is sequential and the current target is not yet to be executed.
 				// so, set its phase to "Pending".
-				err = c.setRestoreTargetPhasePending(in, i)
+				err = c.setRestoreTargetPhasePending(inv, i)
 				if err != nil {
 					return err
 				}
@@ -347,17 +344,17 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 					CRDClient:        c.crdClient,
 					AppCatalogClient: c.appCatalogClient,
 				}
-				targetExist, err := wc.IsTargetExist(tref, in.ObjectMeta.Namespace)
+				targetExist, err := wc.IsTargetExist(tref, invMeta.Namespace)
 				if err != nil {
 					klog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
 						tref.APIVersion,
 						tref.Kind,
-						in.ObjectMeta.Namespace,
+						invMeta.Namespace,
 						tref.Name,
 						err.Error(),
 					)
 					// Set the "RestoreTargetFound" condition to "Unknown"
-					cerr := conditions.SetRestoreTargetFoundConditionToUnknown(in, i, err)
+					cerr := conditions.SetRestoreTargetFoundConditionToUnknown(inv, i, err)
 					return errors.NewAggregate([]error{err, cerr})
 				}
 
@@ -366,25 +363,25 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 					klog.Infof("Restore target %s %s %s/%s does not exist.",
 						tref.APIVersion,
 						tref.Kind,
-						in.ObjectMeta.Namespace,
+						invMeta.Namespace,
 						tref.Name)
 					// Set the "RestoreTargetFound" condition to "False"
-					err = conditions.SetRestoreTargetFoundConditionToFalse(in, i)
+					err = conditions.SetRestoreTargetFoundConditionToFalse(inv, i)
 					if err != nil {
 						return err
 					}
 					// Now retry after 5 seconds
 					klog.Infof("Requeueing Restore Invoker %s %s/%s after 5 seconds....",
-						in.TypeMeta.Kind,
-						in.ObjectMeta.Namespace,
-						in.ObjectMeta.Name,
+						inv.GetTypeMeta().Kind,
+						invMeta.Namespace,
+						invMeta.Name,
 					)
 					c.restoreSessionQueue.GetQueue().AddAfter(key, 5*time.Second)
 					return nil
 				}
 
 				// Restore target exist. So, set "RestoreTargetFound" condition to "True"
-				err = conditions.SetRestoreTargetFoundConditionToTrue(in, i)
+				err = conditions.SetRestoreTargetFoundConditionToTrue(inv, i)
 				if err != nil {
 					return err
 				}
@@ -392,41 +389,41 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 
 			// -------------- Ensure Restore Process for the Target ------------------
 			// Take appropriate step to restore based on restore model
-			switch c.restorerEntity(tref, in.Driver) {
+			switch c.restorerEntity(tref, inv.GetDriver()) {
 			case RestorerInitContainer:
 				// The target is kubernetes workload i.e. Deployment, StatefulSet etc.
 				// Send event to the respective workload controller. The workload controller will take care of injecting restore init-container.
 				err := c.sendEventToWorkloadQueue(
 					tref.Kind,
-					in.ObjectMeta.Namespace,
+					invMeta.Namespace,
 					tref.Name,
 				)
 				if err != nil {
-					return c.handleWorkloadControllerTriggerFailure(in.ObjectRef, err)
+					return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
 				}
 			case RestorerCSIDriver:
 				// VolumeSnapshotter driver has been used. So, ensure VolumeRestorer job
-				err := c.ensureVolumeRestorerJob(in, i)
+				err := c.ensureVolumeRestorerJob(inv, i)
 				if err != nil {
 					// Failed to ensure VolumeRestorer job. So, set "RestoreJobCreated" condition to "False"
-					cerr := conditions.SetRestoreJobCreatedConditionToFalse(in, &tref, err)
-					return c.handleRestoreJobCreationFailure(in, errors.NewAggregate([]error{err, cerr}))
+					cerr := conditions.SetRestoreJobCreatedConditionToFalse(inv, &tref, err)
+					return c.handleRestoreJobCreationFailure(inv, errors.NewAggregate([]error{err, cerr}))
 				}
 				// Successfully created VolumeRestorer job. So, set "RestoreJobCreated" condition to "True"
-				cerr := conditions.SetRestoreJobCreatedConditionToTrue(in, &tref)
+				cerr := conditions.SetRestoreJobCreatedConditionToTrue(inv, &tref)
 				if cerr != nil {
 					return cerr
 				}
 			case RestorerJob:
 				// Restic driver has been used. Ensure restore job.
-				err = c.ensureRestoreJob(in, i)
+				err = c.ensureRestoreJob(inv, i)
 				if err != nil {
 					// Failed to ensure restorer job. So, set "RestoreJobCreated" condition to "False"
-					cerr := conditions.SetRestoreJobCreatedConditionToFalse(in, &tref, err)
+					cerr := conditions.SetRestoreJobCreatedConditionToFalse(inv, &tref, err)
 					// Set RestoreSession phase "Failed" and send prometheus metrics.
-					return c.handleRestoreJobCreationFailure(in, errors.NewAggregate([]error{err, cerr}))
+					return c.handleRestoreJobCreationFailure(inv, errors.NewAggregate([]error{err, cerr}))
 				}
-				err = conditions.SetRestoreJobCreatedConditionToTrue(in, &tref)
+				err = conditions.SetRestoreJobCreatedConditionToTrue(inv, &tref)
 				if err != nil {
 					return err
 				}
@@ -434,7 +431,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 				return fmt.Errorf("unable to idenitfy restorer entity")
 			}
 			// Set target phase "Running"
-			err = c.setRestoreTargetPhaseRunning(in, i)
+			err = c.setRestoreTargetPhaseRunning(inv, i)
 			if err != nil {
 				return err
 			}
@@ -442,9 +439,10 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(in invoker.Rest
 	}
 
 	// Restorer entity has been ensured. Set RestoreSession phase to "Running".
-	return c.setRestorePhaseRunning(in)
+	return c.setRestorePhaseRunning(inv)
 }
 func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int) error {
+	invMeta := inv.GetObjectMeta()
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    c.StashImage,
@@ -452,12 +450,12 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 	}
 
 	jobMeta := metav1.ObjectMeta{
-		Name:      getRestoreJobName(inv.ObjectMeta, strconv.Itoa(index)),
-		Namespace: inv.ObjectMeta.Namespace,
-		Labels:    inv.Labels,
+		Name:      getRestoreJobName(invMeta, strconv.Itoa(index)),
+		Namespace: invMeta.Namespace,
+		Labels:    inv.GetLabels(),
 	}
 
-	targetInfo := inv.TargetsInfo[index]
+	targetInfo := inv.GetTargetInfo()[index]
 
 	// Ensure respective RBAC and PSP stuff.
 	var serviceAccountName string
@@ -467,19 +465,19 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one with name generated from the invoker name.
-		serviceAccountName = getRestoreJobServiceAccountName(inv.ObjectMeta.Name, strconv.Itoa(index))
+		serviceAccountName = getRestoreJobServiceAccountName(invMeta.Name, strconv.Itoa(index))
 		saMeta := metav1.ObjectMeta{
 			Name:      serviceAccountName,
-			Namespace: inv.ObjectMeta.Namespace,
-			Labels:    inv.Labels,
+			Namespace: invMeta.Namespace,
+			Labels:    inv.GetLabels(),
 		}
 		_, _, err := core_util.CreateOrPatchServiceAccount(
 			context.TODO(),
 			c.kubeClient,
 			saMeta,
 			func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, inv.OwnerRef)
-				in.Labels = inv.Labels
+				core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
+				in.Labels = inv.GetLabels()
 				return in
 			},
 			metav1.PatchOptions{},
@@ -496,17 +494,17 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 
 	err = stash_rbac.EnsureRestoreJobRBAC(
 		c.kubeClient,
-		inv.OwnerRef,
-		inv.ObjectMeta.Namespace,
+		inv.GetOwnerRef(),
+		invMeta.Namespace,
 		serviceAccountName,
 		psps,
-		inv.Labels,
+		inv.GetLabels(),
 	)
 	if err != nil {
 		return err
 	}
 	// Give the ServiceAccount permission to send request to the license handler
-	err = stash_rbac.EnsureLicenseReaderClusterRoleBinding(c.kubeClient, inv.OwnerRef, inv.ObjectMeta.Namespace, serviceAccountName, inv.Labels)
+	err = stash_rbac.EnsureLicenseReaderClusterRoleBinding(c.kubeClient, inv.GetOwnerRef(), invMeta.Namespace, serviceAccountName, inv.GetLabels())
 	if err != nil {
 		return err
 	}
@@ -514,24 +512,18 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 	// if the Stash is using a private registry, then ensure the image pull secrets
 	var imagePullSecrets []core.LocalObjectReference
 	if c.ImagePullSecrets != nil {
-		imagePullSecrets, err = c.ensureImagePullSecrets(inv.ObjectMeta, inv.OwnerRef)
+		imagePullSecrets, err = c.ensureImagePullSecrets(invMeta, inv.GetOwnerRef())
 		if err != nil {
 			return err
 		}
 	}
 
 	// get repository for RestoreSession
-	repository, err := c.stashClient.StashV1alpha1().Repositories(inv.ObjectMeta.Namespace).Get(
-		context.TODO(),
-		inv.Repository,
-		metav1.GetOptions{},
-	)
+	repository, err := inv.GetRepository()
 	if err != nil {
 		return err
 	}
-
-	// read the addon information
-	addon, err := api_util.ExtractAddonInfo(c.appCatalogClient, targetInfo.Task, targetInfo.Target.Ref, inv.ObjectMeta.Namespace)
+	addon, err := api_util.ExtractAddonInfo(c.appCatalogClient, targetInfo.Task, targetInfo.Target.Ref, invMeta.Namespace)
 	if err != nil {
 		return err
 	}
@@ -564,18 +556,18 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 			c.kubeClient,
 			jobTemplate.Spec,
 			targetInfo.InterimVolumeTemplate.ToCorePVC(),
-			inv.ObjectMeta.Namespace,
-			inv.OwnerRef,
+			invMeta.Namespace,
+			inv.GetOwnerRef(),
 		)
 		if err != nil {
 			return err
 		}
 		// pass offshoot labels to job's pod
-		jobTemplate.Labels = meta_util.OverwriteKeys(jobTemplate.Labels, inv.Labels)
+		jobTemplate.Labels = meta_util.OverwriteKeys(jobTemplate.Labels, inv.GetLabels())
 		jobTemplate.Spec.ImagePullSecrets = imagePullSecrets
 		jobTemplate.Spec.ServiceAccountName = serviceAccountName
 
-		return c.createRestoreJob(jobTemplate, jobMeta, inv.OwnerRef)
+		return c.createRestoreJob(jobTemplate, jobMeta, inv.GetOwnerRef())
 	}
 
 	// volumeClaimTemplate has been specified. Now, we have to do the following for each replica:
@@ -596,7 +588,7 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		}
 
 		// create the PVCs
-		err = util.CreateBatchPVC(c.kubeClient, inv.ObjectMeta.Namespace, pvcList)
+		err = util.CreateBatchPVC(c.kubeClient, invMeta.Namespace, pvcList)
 		if err != nil {
 			return err
 		}
@@ -642,7 +634,7 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		restoreJobTemplate.Spec.ServiceAccountName = serviceAccountName
 
 		// create restore job
-		err = c.createRestoreJob(restoreJobTemplate, *restoreJobMeta, inv.OwnerRef)
+		err = c.createRestoreJob(restoreJobTemplate, *restoreJobMeta, inv.GetOwnerRef())
 		if err != nil {
 			return err
 		}
@@ -670,8 +662,9 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 
 // resolveRestoreTask resolves Functions and Tasks then returns a job definition to restore the target.
 func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, repository *api_v1alpha1.Repository, index int, addon *appcat.StashTaskSpec) (*core.PodTemplateSpec, error) {
+	invMeta := inv.GetObjectMeta()
+	targetInfo := inv.GetTargetInfo()[index]
 
-	targetInfo := inv.TargetsInfo[index]
 	// resolve task template
 	repoInputs, err := c.inputsForRepository(repository)
 	if err != nil {
@@ -680,8 +673,8 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 	rsInputs := c.inputsForRestoreInvoker(inv, index)
 
 	implicitInputs := meta_util.OverwriteKeys(repoInputs, rsInputs)
-	implicitInputs[apis.Namespace] = inv.ObjectMeta.Namespace
-	implicitInputs[apis.RestoreSession] = inv.ObjectMeta.Name
+	implicitInputs[apis.Namespace] = invMeta.Namespace
+	implicitInputs[apis.RestoreSession] = invMeta.Name
 
 	// add docker image specific input
 	implicitInputs[apis.StashDockerRegistry] = c.DockerRegistry
@@ -727,7 +720,7 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 		targetKind = targetInfo.Target.Ref.Kind
 		targetName = targetInfo.Target.Ref.Name
 	}
-	podSpec, err := taskResolver.GetPodSpec(inv.TypeMeta.Kind, inv.ObjectMeta.Name, targetKind, targetName)
+	podSpec, err := taskResolver.GetPodSpec(inv.GetTypeMeta().Kind, invMeta.Name, targetKind, targetName)
 	if err != nil {
 		return nil, err
 	}
@@ -739,13 +732,14 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 }
 
 func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, index int) error {
+	invMeta := inv.GetObjectMeta()
 	jobMeta := metav1.ObjectMeta{
-		Name:      getVolumeRestorerJobName(inv.ObjectMeta, strconv.Itoa(index)),
-		Namespace: inv.ObjectMeta.Namespace,
-		Labels:    inv.Labels,
+		Name:      getVolumeRestorerJobName(invMeta, strconv.Itoa(index)),
+		Namespace: invMeta.Namespace,
+		Labels:    inv.GetLabels(),
 	}
 
-	targetInfo := inv.TargetsInfo[index]
+	targetInfo := inv.GetTargetInfo()[index]
 
 	// ensure respective RBAC stuffs
 	var serviceAccountName string
@@ -754,11 +748,11 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 		// ServiceAccount has been specified, so use it.
 		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
 	} else {
-		serviceAccountName = getVolumeRestorerServiceAccountName(inv.ObjectMeta.Name, strconv.Itoa(index))
+		serviceAccountName = getVolumeRestorerServiceAccountName(invMeta.Name, strconv.Itoa(index))
 		saMeta := metav1.ObjectMeta{
 			Name:      serviceAccountName,
-			Namespace: inv.ObjectMeta.Namespace,
-			Labels:    inv.Labels,
+			Namespace: invMeta.Namespace,
+			Labels:    inv.GetLabels(),
 		}
 
 		_, _, err := core_util.CreateOrPatchServiceAccount(
@@ -766,8 +760,8 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 			c.kubeClient,
 			saMeta,
 			func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, inv.OwnerRef)
-				in.Labels = inv.Labels
+				core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
+				in.Labels = inv.GetLabels()
 				return in
 			},
 			metav1.PatchOptions{},
@@ -779,10 +773,10 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 
 	err := stash_rbac.EnsureVolumeSnapshotRestorerJobRBAC(
 		c.kubeClient,
-		inv.OwnerRef,
-		inv.ObjectMeta.Namespace,
+		inv.GetOwnerRef(),
+		invMeta.Namespace,
 		serviceAccountName,
-		inv.Labels,
+		inv.GetLabels(),
 	)
 	if err != nil {
 		return err
@@ -791,7 +785,7 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 	// if the Stash is using a private registry, then ensure the image pull secrets
 	var imagePullSecrets []core.LocalObjectReference
 	if c.ImagePullSecrets != nil {
-		imagePullSecrets, err = c.ensureImagePullSecrets(inv.ObjectMeta, inv.OwnerRef)
+		imagePullSecrets, err = c.ensureImagePullSecrets(invMeta, inv.GetOwnerRef())
 		if err != nil {
 			return err
 		}
@@ -815,11 +809,11 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 		jobMeta,
 		func(in *batchv1.Job) *batchv1.Job {
 			// set restore invoker as owner of this Job
-			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.OwnerRef)
+			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
 
-			in.Labels = inv.Labels
+			in.Labels = inv.GetLabels()
 			// pass offshoot labels to job's pod
-			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.Labels)
+			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template = *jobTemplate
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
@@ -833,7 +827,7 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 
 func (c *StashController) setRestorePhaseRunning(inv invoker.RestoreInvoker) error {
 	// update restore invoker status
-	_, err := inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
+	err := inv.UpdateStatus(invoker.RestoreInvokerStatus{
 		Phase: api_v1beta1.RestoreRunning,
 	})
 	if err != nil {
@@ -846,9 +840,9 @@ func (c *StashController) setRestorePhaseRunning(inv invoker.RestoreInvoker) err
 		"",
 		eventer.EventReasonRestoreRunning,
 		fmt.Sprintf("restore has been started for %s %s/%s",
-			inv.TypeMeta.Kind,
-			inv.ObjectMeta.Namespace,
-			inv.ObjectMeta.Name,
+			inv.GetTypeMeta().Kind,
+			inv.GetObjectMeta().Namespace,
+			inv.GetObjectMeta().Name,
 		),
 	)
 	return err
@@ -856,11 +850,11 @@ func (c *StashController) setRestorePhaseRunning(inv invoker.RestoreInvoker) err
 
 func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) error {
 	var err error
+	invMeta := inv.GetObjectMeta()
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
-	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time)
-
+	sessionDuration := time.Since(invMeta.CreationTimestamp.Time)
 	// update restore invoker status
-	inv.Status, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
+	err = inv.UpdateStatus(invoker.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestoreSucceeded,
 		SessionDuration: sessionDuration.Round(time.Second).String(),
 	})
@@ -879,9 +873,9 @@ func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) e
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
 		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
-			inv.TypeMeta.Kind,
-			inv.ObjectMeta.Namespace,
-			inv.ObjectMeta.Name,
+			inv.GetTypeMeta().Kind,
+			invMeta.Namespace,
+			invMeta.Name,
 			err,
 		)
 	}
@@ -889,10 +883,10 @@ func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) e
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name),
+		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), invMeta.Namespace, invMeta.Name),
 	}
 	// send target specific metrics
-	for _, target := range inv.Status.TargetStatus {
+	for _, target := range inv.GetStatus().TargetStatus {
 		metricErr := metricsOpt.SendRestoreTargetMetrics(c.clientConfig, inv, target.Ref)
 		if err != nil {
 			return metricErr
@@ -904,11 +898,12 @@ func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) e
 
 func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, restoreErr error) error {
 	var err error
+	invMeta := inv.GetObjectMeta()
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
-	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time)
+	sessionDuration := time.Since(invMeta.CreationTimestamp.Time)
 
 	// update restore invoker status
-	inv.Status, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
+	err = inv.UpdateStatus(invoker.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestoreFailed,
 		SessionDuration: sessionDuration.Round(time.Second).String(),
 	})
@@ -927,9 +922,9 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
 		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
-			inv.TypeMeta.Kind,
-			inv.ObjectMeta.Namespace,
-			inv.ObjectMeta.Name,
+			inv.GetTypeMeta().Kind,
+			invMeta.Namespace,
+			invMeta.Name,
 			err,
 		)
 	}
@@ -937,10 +932,10 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name),
+		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), invMeta.Namespace, invMeta.Name),
 	}
 	// send target specific metrics
-	for _, target := range inv.Status.TargetStatus {
+	for _, target := range inv.GetStatus().TargetStatus {
 		metricErr := metricsOpt.SendRestoreTargetMetrics(c.clientConfig, inv, target.Ref)
 		if err != nil {
 			return errors.NewAggregate([]error{restoreErr, metricErr})
@@ -953,11 +948,12 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 
 func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, restoreErr error) error {
 	var err error
+	invMeta := inv.GetObjectMeta()
 	// total restore session duration is the difference between the time when restore invoker was created and when it completed
-	sessionDuration := time.Since(inv.ObjectMeta.CreationTimestamp.Time)
+	sessionDuration := time.Since(invMeta.CreationTimestamp.Time)
 
 	// update restore invoker status
-	inv.Status, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
+	err = inv.UpdateStatus(invoker.RestoreInvokerStatus{
 		Phase:           api_v1beta1.RestorePhaseUnknown,
 		SessionDuration: sessionDuration.Round(time.Second).String(),
 	})
@@ -976,9 +972,9 @@ func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, res
 	// if there is any error during writing the event, log i. we have to send metrics even if we fail to write the event.
 	if err != nil {
 		klog.Errorf("failed to write event in %s %s/%s. Reason: %v",
-			inv.TypeMeta.Kind,
-			inv.ObjectMeta.Namespace,
-			inv.ObjectMeta.Name,
+			inv.GetTypeMeta().Kind,
+			invMeta.Namespace,
+			invMeta.Name,
 			err,
 		)
 	}
@@ -986,10 +982,10 @@ func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, res
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: apis.PushgatewayLocalURL,
-		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.TypeMeta.Kind), inv.ObjectMeta.Namespace, inv.ObjectMeta.Name),
+		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), invMeta.Namespace, invMeta.Name),
 	}
 	// send target specific metrics
-	for _, target := range inv.Status.TargetStatus {
+	for _, target := range inv.GetStatus().TargetStatus {
 		metricErr := metricsOpt.SendRestoreTargetMetrics(c.clientConfig, inv, target.Ref)
 		if err != nil {
 			return errors.NewAggregate([]error{restoreErr, metricErr})
@@ -1001,8 +997,8 @@ func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, res
 }
 
 func (c *StashController) setRestoreTargetPhasePending(inv invoker.RestoreInvoker, index int) error {
-	targetInfo := inv.TargetsInfo[index]
-	_, err := inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
+	targetInfo := inv.GetTargetInfo()[index]
+	err := inv.UpdateStatus(invoker.RestoreInvokerStatus{
 		TargetStatus: []api_v1beta1.RestoreMemberStatus{
 			{
 				Ref:   targetInfo.Target.Ref,
@@ -1014,12 +1010,12 @@ func (c *StashController) setRestoreTargetPhasePending(inv invoker.RestoreInvoke
 }
 
 func (c *StashController) setRestoreTargetPhaseRunning(inv invoker.RestoreInvoker, index int) error {
-	targetInfo := inv.TargetsInfo[index]
-	totalHosts, err := c.getTotalHosts(targetInfo.Target, inv.ObjectMeta.Namespace, inv.Driver)
+	targetInfo := inv.GetTargetInfo()[index]
+	totalHosts, err := c.getTotalHosts(targetInfo.Target, inv.GetObjectMeta().Namespace, inv.GetDriver())
 	if err != nil {
 		return err
 	}
-	_, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
+	err = inv.UpdateStatus(invoker.RestoreInvokerStatus{
 		TargetStatus: []api_v1beta1.RestoreMemberStatus{
 			{
 				Ref:        targetInfo.Target.Ref,
@@ -1075,10 +1071,11 @@ func (c *StashController) getRestorePhase(status invoker.RestoreInvokerStatus) (
 }
 
 func (c *StashController) handleRestoreJobCreationFailure(inv invoker.RestoreInvoker, restoreErr error) error {
+	invMeta := inv.GetObjectMeta()
 	klog.Errorf("failed to ensure restore job for %s %s/%s. Reason: %v",
-		inv.TypeMeta.Kind,
-		inv.ObjectMeta.Namespace,
-		inv.ObjectMeta.Name,
+		inv.GetTypeMeta().Kind,
+		invMeta.Namespace,
+		invMeta.Name,
 		restoreErr,
 	)
 
@@ -1091,9 +1088,9 @@ func (c *StashController) handleRestoreJobCreationFailure(inv invoker.RestoreInv
 	)
 	if err != nil {
 		klog.Errorf("failed to write event for %s %s/%s. Reason: ",
-			inv.TypeMeta.Kind,
-			inv.ObjectMeta.Namespace,
-			inv.ObjectMeta.Name,
+			inv.GetTypeMeta().Kind,
+			invMeta.Namespace,
+			invMeta.Name,
 		)
 	}
 
@@ -1134,21 +1131,23 @@ func restoreCompleted(phase api_v1beta1.RestorePhase) bool {
 }
 
 func (c *StashController) requeueRestoreInvoker(inv invoker.RestoreInvoker, key string, delay time.Duration) error {
-	switch inv.TypeMeta.Kind {
+	invTypeMeta := inv.GetTypeMeta()
+	switch invTypeMeta.Kind {
 	case api_v1beta1.ResourceKindRestoreSession:
 		c.rsQueue.GetQueue().AddAfter(key, delay)
 	default:
 		return fmt.Errorf("unable to requeue. Reason: Restore invoker %s %s is not supported",
-			inv.TypeMeta.APIVersion,
-			inv.TypeMeta.Kind,
+			invTypeMeta.APIVersion,
+			invTypeMeta.Kind,
 		)
 	}
 	return nil
 }
 
-func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) (invoker.RestoreInvokerStatus, error) {
-	targetStats := inv.Status.TargetStatus
-	for i, target := range inv.Status.TargetStatus {
+func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) error {
+	status := inv.GetStatus()
+	targetStats := status.TargetStatus
+	for i, target := range status.TargetStatus {
 		if target.TotalHosts == nil {
 			targetStats[i].Phase = api_v1beta1.TargetRestorePending
 			continue
@@ -1181,7 +1180,6 @@ func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) 
 			targetStats[i].Phase = api_v1beta1.TargetRestorePhaseUnknown
 			continue
 		}
-
 		// Restore should be succeeded only if all the conditions of this restore target are true
 		allConditionTrue := true
 		for _, c := range target.Conditions {
@@ -1190,7 +1188,6 @@ func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) 
 				break
 			}
 		}
-
 		// if some host hasn't completed their restore yet, phase should be "Running"
 		if !anyHostRunning && *target.TotalHosts <= int32(len(target.Stats)) && allConditionTrue {
 			targetStats[i].Phase = api_v1beta1.TargetRestoreSucceeded
@@ -1199,27 +1196,27 @@ func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) 
 		// all host completed their restore process and none of them failed. so, phase should be "Succeeded".
 		targetStats[i].Phase = api_v1beta1.TargetRestoreRunning
 	}
-	return inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{TargetStatus: targetStats})
+	return inv.UpdateStatus(invoker.RestoreInvokerStatus{TargetStatus: targetStats})
 }
 
 func globalPostRestoreHookExecuted(inv invoker.RestoreInvoker) bool {
-	if inv.Hooks == nil || inv.Hooks.PostRestore == nil {
+	if inv.GetGlobalHooks() == nil || inv.GetGlobalHooks().PostRestore == nil {
 		return true
 	}
-	return kmapi.HasCondition(inv.Status.Conditions, apis.GlobalPostRestoreHookSucceeded) &&
-		kmapi.IsConditionTrue(inv.Status.Conditions, apis.GlobalPostRestoreHookSucceeded)
+	return kmapi.HasCondition(inv.GetStatus().Conditions, apis.GlobalPostRestoreHookSucceeded) &&
+		kmapi.IsConditionTrue(inv.GetStatus().Conditions, apis.GlobalPostRestoreHookSucceeded)
 }
 
 func globalPreRestoreHookExecuted(inv invoker.RestoreInvoker) bool {
-	if inv.Hooks == nil || inv.Hooks.PreRestore == nil {
+	if inv.GetGlobalHooks() == nil || inv.GetGlobalHooks().PreRestore == nil {
 		return true
 	}
-	return kmapi.HasCondition(inv.Status.Conditions, apis.GlobalPreRestoreHookSucceeded) &&
-		kmapi.IsConditionTrue(inv.Status.Conditions, apis.GlobalPreRestoreHookSucceeded)
+	return kmapi.HasCondition(inv.GetStatus().Conditions, apis.GlobalPreRestoreHookSucceeded) &&
+		kmapi.IsConditionTrue(inv.GetStatus().Conditions, apis.GlobalPreRestoreHookSucceeded)
 }
 
 func targetRestoreInitiated(inv invoker.RestoreInvoker, targetRef api_v1beta1.TargetRef) bool {
-	for _, target := range inv.Status.TargetStatus {
+	for _, target := range inv.GetStatus().TargetStatus {
 		if invoker.TargetMatched(target.Ref, targetRef) {
 			return target.Phase == api_v1beta1.TargetRestoreRunning ||
 				target.Phase == api_v1beta1.TargetRestoreSucceeded ||

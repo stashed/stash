@@ -87,6 +87,16 @@ message CertificateSpec {
   optional CertificatePrivateKey privateKey = 11;
 }
 
+message ClusterMetadata {
+  optional string uid = 1;
+
+  optional string name = 2;
+
+  optional string displayName = 3;
+
+  optional string provider = 4;
+}
+
 message Condition {
   // Type of condition in CamelCase or in foo.example.com/CamelCase.
   // Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
@@ -119,6 +129,22 @@ message Condition {
   // This field may be empty.
   // +required
   optional string message = 6;
+}
+
+message ObjectID {
+  optional string group = 1;
+
+  optional string kind = 2;
+
+  optional string namespace = 3;
+
+  optional string name = 4;
+}
+
+message ObjectInfo {
+  optional ResourceID resource = 1;
+
+  optional ObjectReference ref = 2;
 }
 
 // ObjectReference contains enough information to let you inspect or modify the referred object.
