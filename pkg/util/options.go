@@ -22,15 +22,16 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/restic"
 
 	go_str "gomodules.xyz/x/strings"
+	core "k8s.io/api/core/v1"
 )
 
 // options that don't come from repository, backup-config, backup-session, restore-session
 type ExtraOptions struct {
-	Host        string
-	SecretDir   string
-	CacertFile  string
-	ScratchDir  string
-	EnableCache bool
+	Host          string
+	CacertFile    string
+	ScratchDir    string
+	EnableCache   bool
+	StorageSecret *core.Secret
 }
 
 func BackupOptionsForBackupTarget(backupTarget *api.BackupTarget, retentionPolicy api_v1alpha1.RetentionPolicy, extraOpt ExtraOptions) restic.BackupOptions {
@@ -102,7 +103,7 @@ func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt Extr
 		Endpoint:       endpoint,
 		Region:         region,
 		CacertFile:     extraOpt.CacertFile,
-		SecretDir:      extraOpt.SecretDir,
+		StorageSecret:  extraOpt.StorageSecret,
 		ScratchDir:     extraOpt.ScratchDir,
 		EnableCache:    extraOpt.EnableCache,
 		MaxConnections: repository.Spec.Backend.MaxConnections(),

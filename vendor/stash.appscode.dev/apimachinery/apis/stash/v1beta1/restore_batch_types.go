@@ -17,7 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
@@ -54,7 +53,7 @@ type RestoreBatchSpec struct {
 	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,1,opt,name=driver,casttype=Snapshotter"`
 	// Repository refer to the Repository crd that holds backend information
 	// +optional
-	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,2,opt,name=repository"`
+	Repository kmapi.ObjectReference `json:"repository,omitempty" protobuf:"bytes,2,opt,name=repository"`
 	// Members is a list of restore targets and their configuration that are part of this batch
 	// +optional
 	Members []RestoreTargetSpec `json:"members,omitempty" protobuf:"bytes,3,rep,name=members"`

@@ -512,7 +512,7 @@ func (metricOpt *MetricsOptions) SendBackupTargetMetrics(config *rest.Config, i 
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, i.ObjectMeta.Namespace)
+	targetLabels, err := targetLabels(config, targetRef, i.GetObjectMeta().Namespace)
 	if err != nil {
 		return err
 	}
@@ -570,7 +570,7 @@ func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, i in
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, i.ObjectMeta.Namespace)
+	targetLabels, err := targetLabels(config, targetRef, i.GetObjectMeta().Namespace)
 	if err != nil {
 		return err
 	}
@@ -662,19 +662,19 @@ func (metricOpt *MetricsOptions) SendRestoreSessionMetrics(inv invoker.RestoreIn
 	// create metrics
 	metrics := newRestoreSessionMetrics(labels)
 
-	if inv.Status.Phase == api_v1beta1.RestoreSucceeded {
+	if inv.GetStatus().Phase == api_v1beta1.RestoreSucceeded {
 		// mark the entire restore session as succeeded
 		metrics.RestoreSessionMetrics.SessionSuccess.Set(1)
 
 		// set total time taken to complete the restore session
-		duration, err := time.ParseDuration(inv.Status.SessionDuration)
+		duration, err := time.ParseDuration(inv.GetStatus().SessionDuration)
 		if err != nil {
 			return err
 		}
 		metrics.RestoreSessionMetrics.SessionDuration.Set(duration.Seconds())
 
 		// set total number of target that was restored in this restore session
-		metrics.RestoreSessionMetrics.TargetCount.Set(float64(len(inv.Status.TargetStatus)))
+		metrics.RestoreSessionMetrics.TargetCount.Set(float64(len(inv.GetStatus().TargetStatus)))
 
 		// register metrics to the registry
 		registry.MustRegister(
@@ -703,7 +703,7 @@ func (metricOpt *MetricsOptions) SendRestoreTargetMetrics(config *rest.Config, i
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, i.ObjectMeta.Namespace)
+	targetLabels, err := targetLabels(config, targetRef, i.GetObjectMeta().Namespace)
 	if err != nil {
 		return err
 	}
@@ -713,7 +713,7 @@ func (metricOpt *MetricsOptions) SendRestoreTargetMetrics(config *rest.Config, i
 	metrics := newRestoreTargetMetrics(labels)
 
 	// only send the metric of the target specified by targetRef
-	for _, targetStatus := range i.Status.TargetStatus {
+	for _, targetStatus := range i.GetStatus().TargetStatus {
 		if invoker.TargetMatched(targetStatus.Ref, targetRef) {
 			if targetStatus.Phase == api_v1beta1.TargetRestoreSucceeded {
 				// mark entire restore target as succeeded
@@ -757,7 +757,7 @@ func (metricOpt *MetricsOptions) SendRestoreHostMetrics(config *rest.Config, i i
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, i.ObjectMeta.Namespace)
+	targetLabels, err := targetLabels(config, targetRef, i.GetObjectMeta().Namespace)
 	if err != nil {
 		return err
 	}
@@ -895,16 +895,16 @@ func backupInvokerLabels(inv invoker.BackupInvoker, userProvidedLabels []string)
 	promLabels := parseUserProvidedLabels(userProvidedLabels)
 
 	// add invoker information
-	promLabels[MetricLabelInvokerKind] = inv.TypeMeta.Kind
-	promLabels[MetricLabelInvokerName] = inv.ObjectMeta.Name
-	promLabels[MetricsLabelNamespace] = inv.ObjectMeta.Namespace
+	promLabels[MetricLabelInvokerKind] = inv.GetTypeMeta().Kind
+	promLabels[MetricLabelInvokerName] = inv.GetObjectMeta().Name
+	promLabels[MetricsLabelNamespace] = inv.GetObjectMeta().Namespace
 
 	// insert target information as metrics label
-	if inv.Driver == api_v1beta1.VolumeSnapshotter {
+	if inv.GetDriver() == api_v1beta1.VolumeSnapshotter {
 		promLabels = upsertLabel(promLabels, volumeSnapshotterLabels())
 	} else {
 		promLabels[MetricsLabelDriver] = string(api_v1beta1.ResticSnapshotter)
-		promLabels[MetricsLabelRepository] = inv.Repository
+		promLabels[MetricsLabelRepository] = inv.GetRepoRef().Name
 	}
 
 	return promLabels, nil
@@ -916,16 +916,16 @@ func restoreInvokerLabels(inv invoker.RestoreInvoker, userProvidedLabels []strin
 	promLabels := parseUserProvidedLabels(userProvidedLabels)
 
 	// add invoker information
-	promLabels[MetricLabelInvokerKind] = inv.TypeMeta.Kind
-	promLabels[MetricLabelInvokerName] = inv.ObjectMeta.Name
-	promLabels[MetricsLabelNamespace] = inv.ObjectMeta.Namespace
+	promLabels[MetricLabelInvokerKind] = inv.GetTypeMeta().Kind
+	promLabels[MetricLabelInvokerName] = inv.GetObjectMeta().Name
+	promLabels[MetricsLabelNamespace] = inv.GetObjectMeta().Namespace
 
 	// insert target information as metrics label
-	if inv.Driver == api_v1beta1.VolumeSnapshotter {
+	if inv.GetDriver() == api_v1beta1.VolumeSnapshotter {
 		promLabels = upsertLabel(promLabels, volumeSnapshotterLabels())
 	} else {
 		promLabels[MetricsLabelDriver] = string(api_v1beta1.ResticSnapshotter)
-		promLabels[MetricsLabelRepository] = inv.Repository
+		promLabels[MetricsLabelRepository] = inv.GetRepoRef().Name
 	}
 
 	return promLabels, nil
@@ -940,7 +940,7 @@ func repoMetricLabels(clientConfig *rest.Config, i invoker.BackupInvoker, userPr
 	if err != nil {
 		return nil, err
 	}
-	repository, err := stashClient.StashV1alpha1().Repositories(i.ObjectMeta.Namespace).Get(context.TODO(), i.Repository, metav1.GetOptions{})
+	repository, err := stashClient.StashV1alpha1().Repositories(i.GetRepoRef().Namespace).Get(context.TODO(), i.GetRepoRef().Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -35,7 +35,7 @@ func (c *StashController) inputsForBackupInvoker(inv invoker.BackupInvoker, targ
 	// get inputs for target
 	inputs := c.inputsForBackupTarget(targetInfo.Target)
 	// append inputs for RetentionPolicy
-	inputs = meta_util.OverwriteKeys(inputs, c.inputsForRetentionPolicy(inv.RetentionPolicy))
+	inputs = meta_util.OverwriteKeys(inputs, c.inputsForRetentionPolicy(inv.GetRetentionPolicy()))
 
 	// get host name for target
 	host, err := util.GetHostName(targetInfo.Target)
@@ -45,8 +45,8 @@ func (c *StashController) inputsForBackupInvoker(inv invoker.BackupInvoker, targ
 	inputs[apis.Hostname] = host
 
 	// invoker information
-	inputs[apis.InvokerKind] = inv.TypeMeta.Kind
-	inputs[apis.InvokerName] = inv.ObjectMeta.Name
+	inputs[apis.InvokerKind] = inv.GetTypeMeta().Kind
+	inputs[apis.InvokerName] = inv.GetObjectMeta().Name
 
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!targetInfo.TempDir.DisableCaching)
@@ -60,14 +60,14 @@ func (c *StashController) inputsForBackupInvoker(inv invoker.BackupInvoker, targ
 	}
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics(inv.ObjectMeta.Name)
+	metricInputs := c.inputForMetrics(inv.GetObjectMeta().Name)
 	inputs = meta_util.OverwriteKeys(inputs, metricInputs)
 
 	return inputs, nil
 }
 
 func (c *StashController) inputsForRestoreInvoker(inv invoker.RestoreInvoker, index int) map[string]string {
-	targetInfo := inv.TargetsInfo[index]
+	targetInfo := inv.GetTargetInfo()[index]
 	// get inputs for target
 	inputs := c.inputsForRestoreTarget(targetInfo.Target)
 
@@ -81,8 +81,8 @@ func (c *StashController) inputsForRestoreInvoker(inv invoker.RestoreInvoker, in
 	inputs[apis.ExcludePatterns] = strings.Join(restoreOptions.Exclude, ",")
 
 	// invoker information
-	inputs[apis.InvokerKind] = inv.TypeMeta.Kind
-	inputs[apis.InvokerName] = inv.ObjectMeta.Name
+	inputs[apis.InvokerKind] = inv.GetTypeMeta().Kind
+	inputs[apis.InvokerName] = inv.GetObjectMeta().Name
 
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!targetInfo.TempDir.DisableCaching)
@@ -103,7 +103,7 @@ func (c *StashController) inputsForRestoreInvoker(inv invoker.RestoreInvoker, in
 	}
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics(inv.ObjectMeta.Name)
+	metricInputs := c.inputForMetrics(inv.GetObjectMeta().Name)
 	inputs = meta_util.OverwriteKeys(inputs, metricInputs)
 
 	return inputs
@@ -114,9 +114,10 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository == nil {
 		return
 	}
-	if repository.Name != "" {
-		inputs[apis.RepositoryName] = repository.Name
-	}
+
+	inputs[apis.RepositoryName] = repository.Name
+	inputs[apis.RepositoryNamespace] = repository.Namespace
+
 	if inputs[apis.RepositoryProvider], err = repository.Spec.Backend.Provider(); err != nil {
 		return
 	}
@@ -128,6 +129,7 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	}
 	if repository.Spec.Backend.StorageSecretName != "" {
 		inputs[apis.RepositorySecretName] = repository.Spec.Backend.StorageSecretName
+		inputs[apis.RepositorySecretNamespace] = repository.Namespace
 	}
 	if repository.Spec.Backend.S3 != nil && repository.Spec.Backend.S3.Endpoint != "" {
 		inputs[apis.RepositoryEndpoint] = repository.Spec.Backend.S3.Endpoint

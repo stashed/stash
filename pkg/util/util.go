@@ -33,9 +33,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/reference"
 	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -352,19 +350,6 @@ func HasStashInitContainer(containers []core.Container) bool {
 		}
 	}
 	return false
-}
-
-// GetWorkloadReference return reference of the workload.
-func GetWorkloadReference(w *wapi.Workload) (*core.ObjectReference, error) {
-	ref, err := reference.GetReference(scheme.Scheme, w)
-	if err != nil && err != reference.ErrNilObject {
-		return &core.ObjectReference{
-			Name:       w.Name,
-			Namespace:  w.Namespace,
-			APIVersion: w.APIVersion,
-		}, nil
-	}
-	return ref, err
 }
 
 // UpsertInterimVolume create a PVC according to InterimVolumeTemplate and attach it to the respective pod

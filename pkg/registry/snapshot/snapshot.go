@@ -106,7 +106,7 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 		}
 	}
 
-	snapshots, err := r.GetVersionedSnapshots(repo, []string{snapshotId}, false)
+	snapshots, err := r.GetSnapshotsFromBackned(repo, []string{snapshotId}, false)
 	if err != nil {
 		return nil, apierrors.NewInternalError(err)
 	}
@@ -156,7 +156,7 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 		Items: make([]repositories.Snapshot, 0),
 	}
 	for _, repo := range selectedRepos {
-		snapshots, err := r.GetVersionedSnapshots(&repo, nil, false)
+		snapshots, err := r.GetSnapshotsFromBackned(&repo, nil, false)
 		if err != nil {
 			return nil, apierrors.NewInternalError(err)
 		}
@@ -203,14 +203,14 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 	}
 
 	// first, check if the snapshot exist
-	snapshots, err := r.GetVersionedSnapshots(repo, []string{snapshotId}, false)
+	snapshots, err := r.GetSnapshotsFromBackned(repo, []string{snapshotId}, false)
 	if err != nil {
 		return nil, false, apierrors.NewInternalError(err)
 	} else if len(snapshots) == 0 {
 		return nil, false, apierrors.NewNotFound(repositories.Resource(repov1alpha1.ResourceSingularSnapshot), name)
 	}
 	// delete snapshot
-	if err = r.ForgetVersionedSnapshots(repo, []string{snapshotId}, false); err != nil {
+	if err = r.ForgetSnapshotsFromBackend(repo, []string{snapshotId}, false); err != nil {
 		return nil, false, apierrors.NewInternalError(err)
 	}
 	return nil, true, nil

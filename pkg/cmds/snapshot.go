@@ -27,14 +27,14 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
-	"kmodules.xyz/client-go/meta"
+	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
 func NewCmdSnapshots() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
-		repositoryName string
+		repo           kmapi.ObjectReference
 	)
 
 	cmd := &cobra.Command{
@@ -49,16 +49,16 @@ func NewCmdSnapshots() *cobra.Command {
 
 			stashClient := cs.NewForConfigOrDie(config)
 
-			if repositoryName == "" {
+			if repo.Name == "" {
 				return fmt.Errorf("repository name not found")
 			}
-			repo, err := stashClient.Repositories(meta.Namespace()).Get(context.TODO(), repositoryName, metav1.GetOptions{})
+			repo, err := stashClient.Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
 			r := snapshot.NewREST(config)
-			snapshots, err := r.GetVersionedSnapshots(repo, args, true)
+			snapshots, err := r.GetSnapshotsFromBackned(repo, args, true)
 			if err != nil {
 				return err
 			}
@@ -72,7 +72,8 @@ func NewCmdSnapshots() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&repositoryName, "repo-name", repositoryName, "Name of the Repository CRD.")
+	cmd.Flags().StringVar(&repo.Name, "repo-name", repo.Name, "Name of the Repository CRD.")
+	cmd.Flags().StringVar(&repo.Namespace, "repo-namespace", repo.Namespace, "Namespace of the Repository CRD.")
 
 	return cmd
 }

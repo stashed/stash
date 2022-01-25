@@ -1,0 +1,319 @@
+/*
+Copyright AppsCode Inc. and Contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package invoker
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	stash_scheme "stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
+	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
+
+	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/reference"
+	kmapi "kmodules.xyz/client-go/api/v1"
+	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/meta"
+	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
+)
+
+type RestoreSessionInvoker struct {
+	kubeClient     kubernetes.Interface
+	stashClient    cs.Interface
+	restoreSession *v1beta1.RestoreSession
+}
+
+func NewRestoreSessionInvoker(kubeClient kubernetes.Interface, stashClient cs.Interface, restoreSession *v1beta1.RestoreSession) RestoreInvoker {
+	return &RestoreSessionInvoker{
+		kubeClient:     kubeClient,
+		stashClient:    stashClient,
+		restoreSession: restoreSession,
+	}
+}
+
+func (inv *RestoreSessionInvoker) GetObjectMeta() metav1.ObjectMeta {
+	return inv.restoreSession.ObjectMeta
+}
+
+func (inv *RestoreSessionInvoker) GetTypeMeta() metav1.TypeMeta {
+	return metav1.TypeMeta{
+		Kind:       v1beta1.ResourceKindRestoreSession,
+		APIVersion: v1beta1.SchemeGroupVersion.String(),
+	}
+}
+
+func (inv *RestoreSessionInvoker) GetObjectRef() (*core.ObjectReference, error) {
+	return reference.GetReference(stash_scheme.Scheme, inv.restoreSession)
+}
+
+func (inv *RestoreSessionInvoker) GetOwnerRef() *metav1.OwnerReference {
+	return metav1.NewControllerRef(inv.restoreSession, v1beta1.SchemeGroupVersion.WithKind(v1beta1.ResourceKindRestoreSession))
+}
+
+func (inv *RestoreSessionInvoker) GetLabels() map[string]string {
+	return inv.restoreSession.OffshootLabels()
+}
+
+func (inv *RestoreSessionInvoker) AddFinalizer() error {
+	updatedRestoreSession, _, err := v1beta1_util.PatchRestoreSession(context.TODO(), inv.stashClient.StashV1beta1(), inv.restoreSession, func(in *v1beta1.RestoreSession) *v1beta1.RestoreSession {
+		in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, v1beta1.StashKey)
+		return in
+	}, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+	inv.restoreSession = updatedRestoreSession
+	return nil
+}
+
+func (inv *RestoreSessionInvoker) RemoveFinalizer() error {
+	updatedRestoreSession, _, err := v1beta1_util.PatchRestoreSession(context.TODO(), inv.stashClient.StashV1beta1(), inv.restoreSession, func(in *v1beta1.RestoreSession) *v1beta1.RestoreSession {
+		in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, v1beta1.StashKey)
+		return in
+	}, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+	inv.restoreSession = updatedRestoreSession
+	return nil
+}
+
+func (inv *RestoreSessionInvoker) HasCondition(target *v1beta1.TargetRef, conditionType string) (bool, error) {
+	restoreSession, err := inv.stashClient.StashV1beta1().RestoreSessions(inv.restoreSession.Namespace).Get(context.TODO(), inv.restoreSession.Name, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	return kmapi.HasCondition(restoreSession.Status.Conditions, conditionType), nil
+}
+
+func (inv *RestoreSessionInvoker) GetCondition(target *v1beta1.TargetRef, conditionType string) (int, *kmapi.Condition, error) {
+	restoreSession, err := inv.stashClient.StashV1beta1().RestoreSessions(inv.restoreSession.Namespace).Get(context.TODO(), inv.restoreSession.Name, metav1.GetOptions{})
+	if err != nil {
+		return -1, nil, err
+	}
+	idx, cond := kmapi.GetCondition(restoreSession.Status.Conditions, conditionType)
+	return idx, cond, nil
+}
+
+func (inv *RestoreSessionInvoker) SetCondition(target *v1beta1.TargetRef, newCondition kmapi.Condition) error {
+	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(context.TODO(), inv.stashClient.StashV1beta1(), inv.restoreSession.ObjectMeta, func(in *v1beta1.RestoreSessionStatus) (types.UID, *v1beta1.RestoreSessionStatus) {
+		in.Conditions = kmapi.SetCondition(in.Conditions, newCondition)
+		return inv.restoreSession.UID, in
+	}, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	inv.restoreSession = updatedRestoreSession
+	return nil
+}
+
+func (inv *RestoreSessionInvoker) IsConditionTrue(target *v1beta1.TargetRef, conditionType string) (bool, error) {
+	restoreSession, err := inv.stashClient.StashV1beta1().RestoreSessions(inv.restoreSession.Namespace).Get(context.TODO(), inv.restoreSession.Name, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	return kmapi.IsConditionTrue(restoreSession.Status.Conditions, conditionType), nil
+}
+
+func (inv *RestoreSessionInvoker) GetTargetInfo() []RestoreTargetInfo {
+	return []RestoreTargetInfo{
+		{
+			Task:                  inv.restoreSession.Spec.Task,
+			Target:                inv.restoreSession.Spec.Target,
+			RuntimeSettings:       inv.restoreSession.Spec.RuntimeSettings,
+			TempDir:               inv.restoreSession.Spec.TempDir,
+			InterimVolumeTemplate: inv.restoreSession.Spec.InterimVolumeTemplate,
+			Hooks:                 inv.restoreSession.Spec.Hooks,
+		},
+	}
+}
+
+func (inv *RestoreSessionInvoker) GetDriver() v1beta1.Snapshotter {
+	driver := inv.restoreSession.Spec.Driver
+	if driver == "" {
+		driver = v1beta1.ResticSnapshotter
+	}
+	return driver
+}
+
+func (inv *RestoreSessionInvoker) GetRepoRef() kmapi.ObjectReference {
+	var repo kmapi.ObjectReference
+	repo.Name = inv.restoreSession.Spec.Repository.Name
+	repo.Namespace = inv.restoreSession.Spec.Repository.Namespace
+	if repo.Namespace == "" {
+		repo.Namespace = inv.restoreSession.Namespace
+	}
+	return repo
+}
+
+func (inv *RestoreSessionInvoker) GetRepository() (*v1alpha1.Repository, error) {
+	repo := inv.GetRepoRef()
+	return inv.stashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
+}
+
+func (inv *RestoreSessionInvoker) GetGlobalHooks() *v1beta1.RestoreHooks {
+	return nil
+}
+
+func (inv *RestoreSessionInvoker) GetExecutionOrder() v1beta1.ExecutionOrder {
+	return v1beta1.Sequential
+}
+
+func (inv *RestoreSessionInvoker) NextInOrder(curTarget v1beta1.TargetRef, targetStatus []v1beta1.RestoreMemberStatus) bool {
+	for _, t := range inv.GetTargetInfo() {
+		if t.Target != nil {
+			if TargetMatched(t.Target.Ref, curTarget) {
+				return true
+			}
+			if !TargetRestoreCompleted(t.Target.Ref, targetStatus) {
+				return false
+			}
+		}
+	}
+	// By default, return true so that nil target(i.e. cluster restore) does not get stuck here.
+	return true
+}
+
+func (inv *RestoreSessionInvoker) GetHash() string {
+	return inv.restoreSession.GetSpecHash()
+}
+
+func (inv *RestoreSessionInvoker) GetObjectJSON() (string, error) {
+	jsonObj, err := meta.MarshalToJson(inv.restoreSession, v1beta1.SchemeGroupVersion)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonObj), nil
+}
+
+func (inv *RestoreSessionInvoker) UpdateStatus(status RestoreInvokerStatus) error {
+	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(
+		context.TODO(),
+		inv.stashClient.StashV1beta1(),
+		inv.restoreSession.ObjectMeta,
+		func(in *v1beta1.RestoreSessionStatus) (types.UID, *v1beta1.RestoreSessionStatus) {
+			if status.Phase != "" {
+				in.Phase = status.Phase
+			}
+			if status.SessionDuration != "" {
+				in.SessionDuration = status.SessionDuration
+			}
+			if len(status.Conditions) > 0 {
+				in.Conditions = upsertConditions(in.Conditions, status.Conditions)
+			}
+			if len(status.TargetStatus) > 0 {
+				targetStatus := status.TargetStatus[0]
+				if targetStatus.TotalHosts != nil {
+					in.TotalHosts = targetStatus.TotalHosts
+				}
+				if targetStatus.Conditions != nil {
+					in.Conditions = upsertConditions(in.Conditions, targetStatus.Conditions)
+				}
+				if targetStatus.Stats != nil {
+					in.Stats = upsertRestoreHostStatus(in.Stats, targetStatus.Stats)
+				}
+				if targetStatus.Phase != "" {
+					in.Phase = v1beta1.RestorePhase(targetStatus.Phase)
+				}
+			}
+			return inv.restoreSession.ObjectMeta.UID, in
+		},
+		metav1.UpdateOptions{},
+	)
+	if err != nil {
+		return err
+	}
+	inv.restoreSession = updatedRestoreSession
+	return nil
+}
+
+func (inv *RestoreSessionInvoker) CreateEvent(eventType, source, reason, message string) error {
+	objRef, err := inv.GetObjectRef()
+	if err != nil {
+		return err
+	}
+
+	t := metav1.Time{Time: time.Now()}
+	if source == "" {
+		source = EventSourceRestoreSessionController
+	}
+	_, err = inv.kubeClient.CoreV1().Events(inv.restoreSession.Namespace).Create(context.TODO(), &core.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%v.%x", inv.restoreSession.Name, t.UnixNano()),
+			Namespace: inv.restoreSession.Namespace,
+		},
+		InvolvedObject: *objRef,
+		Reason:         reason,
+		Message:        message,
+		FirstTimestamp: t,
+		LastTimestamp:  t,
+		Count:          1,
+		Type:           eventType,
+		Source:         core.EventSource{Component: source},
+	}, metav1.CreateOptions{})
+	return err
+}
+
+func (inv *RestoreSessionInvoker) EnsureKubeDBIntegration(appClient appcatalog_cs.Interface) error {
+	target := inv.restoreSession.Spec.Target
+	// Don't do anything if the target is not an AppBinding
+	if target == nil || !TargetOfGroupKind(target.Ref, appcat.SchemeGroupVersion.Group, appcat.ResourceKindApp) {
+		return nil
+	}
+
+	appBinding, err := appClient.AppcatalogV1alpha1().AppBindings(inv.restoreSession.Namespace).Get(context.TODO(), target.Ref.Name, metav1.GetOptions{})
+	if err != nil {
+		// If the AppBinding does not exist, then don't do anything.
+		if kerr.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	// If the AppBinding is not managed by KubeDB, then don't do anything
+	if manager, err := meta.GetStringValue(appBinding.Labels, meta.ManagedByLabelKey); err != nil || manager != "kubedb.com" {
+		return nil
+	}
+	// Extract the name, instance, and managed-by labels.
+	appLabels, err := extractLabels(appBinding.Labels, meta.InstanceLabelKey, meta.ManagedByLabelKey, meta.NameLabelKey)
+	if err != nil {
+		return err
+	}
+
+	// Add the labels to the invoker
+	updatedRestoreSession, _, err := v1beta1_util.PatchRestoreSession(context.TODO(), inv.stashClient.StashV1beta1(), inv.restoreSession, func(in *v1beta1.RestoreSession) *v1beta1.RestoreSession {
+		in.Labels = meta.OverwriteKeys(in.Labels, appLabels)
+		return in
+	}, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+	inv.restoreSession = updatedRestoreSession
+	return nil
+}
+
+func (inv *RestoreSessionInvoker) GetStatus() RestoreInvokerStatus {
+	return getInvokerStatusFromRestoreSession(inv.restoreSession)
+}

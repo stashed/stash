@@ -57,7 +57,7 @@ func (in *AddKeysFromTransform) DeepCopyInto(out *AddKeysFromTransform) {
 	*out = *in
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		*out = new(ObjectReference)
+		*out = new(v1.LocalObjectReference)
 		**out = **in
 	}
 	return

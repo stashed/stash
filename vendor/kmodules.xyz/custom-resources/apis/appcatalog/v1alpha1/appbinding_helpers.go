@@ -41,9 +41,13 @@ func (a AppBinding) URL() (string, error) {
 	if c.URL != nil {
 		return *c.URL, nil
 	} else if c.Service != nil {
+		ns := a.Namespace
+		if c.Service.Namespace != "" {
+			ns = c.Service.Namespace
+		}
 		u := url.URL{
 			Scheme:   c.Service.Scheme,
-			Host:     fmt.Sprintf("%s.%s.svc:%d", c.Service.Name, a.Namespace, c.Service.Port),
+			Host:     fmt.Sprintf("%s.%s.svc:%d", c.Service.Name, ns, c.Service.Port),
 			Path:     c.Service.Path,
 			RawQuery: c.Service.Query,
 		}
@@ -69,7 +73,11 @@ func (a AppBinding) URLTemplate() (string, error) {
 func (a AppBinding) Host() (string, error) {
 	c := a.Spec.ClientConfig
 	if c.Service != nil { // preferred source for MYSQL app binding
-		return fmt.Sprintf("%s.%s.svc:%d", c.Service.Name, a.Namespace, c.Service.Port), nil
+		ns := a.Namespace
+		if c.Service.Namespace != "" {
+			ns = c.Service.Namespace
+		}
+		return fmt.Sprintf("%s.%s.svc:%d", c.Service.Name, ns, c.Service.Port), nil
 	} else if c.URL != nil {
 		u, err := url.Parse(*c.URL)
 		if err != nil {
@@ -83,7 +91,11 @@ func (a AppBinding) Host() (string, error) {
 func (a AppBinding) Hostname() (string, error) {
 	c := a.Spec.ClientConfig
 	if c.Service != nil { // preferred source for MYSQL app binding
-		return fmt.Sprintf("%s.%s.svc", c.Service.Name, a.Namespace), nil
+		ns := a.Namespace
+		if c.Service.Namespace != "" {
+			ns = c.Service.Namespace
+		}
+		return fmt.Sprintf("%s.%s.svc", c.Service.Name, ns), nil
 	} else if c.URL != nil {
 		u, err := url.Parse(*c.URL)
 		if err != nil {
@@ -138,7 +150,7 @@ func (a AppBinding) TransformSecret(kc kubernetes.Interface, credentials map[str
 			}
 		case t.AddKeysFrom != nil:
 			secret, err := kc.CoreV1().
-				Secrets(t.AddKeysFrom.SecretRef.Namespace).
+				Secrets(a.Namespace).
 				Get(context.Background(), t.AddKeysFrom.SecretRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return err

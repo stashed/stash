@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
-	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/util"
 
@@ -36,16 +35,7 @@ import (
 func (c *StashController) applyBackupLogic(w *wapi.Workload, caller string) (bool, error) {
 	// check if any BackupConfiguration exist for this workload.
 	// if exist then inject sidecar container
-	modified, err := c.applyBackupConfigurationLogic(w, caller)
-	if err != nil {
-		return false, err
-	}
-
-	// if no BackupConfiguration is configured then check if Restic is configured (backward compatibility)
-	if !modified {
-		return c.applyResticLogic(w, caller)
-	}
-	return modified, nil
+	return c.applyBackupConfigurationLogic(w, caller)
 }
 
 func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller string) (bool, error) {
@@ -63,11 +53,8 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 	// this means BackupConfiguration has been newly created/updated.
 	// in this case, we have to add/update sidecar container accordingly.
 	if newbc != nil && !util.BackupConfigurationEqual(oldbc, newbc) {
-		inv, err := invoker.ExtractBackupInvokerInfo(c.stashClient, api_v1beta1.ResourceKindBackupConfiguration, newbc.Name, newbc.Namespace)
-		if err != nil {
-			return true, err
-		}
-		for _, targetInfo := range inv.TargetsInfo {
+		inv := invoker.NewBackupConfigurationInvoker(c.stashClient, newbc)
+		for _, targetInfo := range inv.GetTargetInfo() {
 			if targetInfo.Target != nil &&
 				targetInfo.Target.Ref.Kind == w.Kind &&
 				targetInfo.Target.Ref.Name == w.Name {
@@ -88,40 +75,6 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 		// write sidecar deletion failure/success event
 		return true, c.handleSidecarDeletionSuccess(w)
 	}
-	return false, nil
-}
-
-func (c *StashController) applyResticLogic(w *wapi.Workload, caller string) (bool, error) {
-	// detect old Restic from annotations if it does exist
-	oldRestic, err := util.GetAppliedRestic(w.Annotations)
-	if err != nil {
-		return false, err
-	}
-
-	// find existing Restic for this workload
-	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
-	if err != nil {
-		return false, err
-	}
-
-	// if Restic currently exist for this workload but it is not same as old one,
-	// this means Restic has been newly created/updated.
-	// in this case, we have to add/update the sidecar container accordingly.
-	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-		err := c.ensureWorkloadSidecar(w, newRestic, caller)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	} else if oldRestic != nil && newRestic == nil {
-		// there was Restic before but currently does not exist.
-		// this means Restic has been removed.
-		// in this case, we have to delete the backup sidecar container
-		// and remove respective annotations from the workload.
-		c.ensureWorkloadSidecarDeleted(w, oldRestic)
-		return true, nil
-	}
-
 	return false, nil
 }
 

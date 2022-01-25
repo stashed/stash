@@ -277,8 +277,7 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
 						By("Verifying that the restored data is same as the sample data")
-						restoredData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
-						Expect(err).NotTo(HaveOccurred())
+						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
 						Expect(restoredData).Should(BeSameAs(sampleData))
 					})
 				})
@@ -348,7 +347,8 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
-						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
+						restoredData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
 						By("Verifying that no data has been restored")
 						Expect(restoredData).Should(BeSameAs(emptyData))
 					})

@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -45,6 +48,10 @@ func (r ResourceID) GroupVersion() schema.GroupVersion {
 	return schema.GroupVersion{Group: r.Group, Version: r.Version}
 }
 
+func (r ResourceID) GroupKind() schema.GroupKind {
+	return schema.GroupKind{Group: r.Group, Kind: r.Kind}
+}
+
 func (r ResourceID) GroupResource() schema.GroupResource {
 	return schema.GroupResource{Group: r.Group, Resource: r.Name}
 }
@@ -59,4 +66,117 @@ func (r ResourceID) GroupVersionResource() schema.GroupVersionResource {
 
 func (r ResourceID) GroupVersionKind() schema.GroupVersionKind {
 	return schema.GroupVersionKind{Group: r.Group, Version: r.Version, Kind: r.Kind}
+}
+
+func (r ResourceID) MetaGVR() metav1.GroupVersionResource {
+	return metav1.GroupVersionResource{Group: r.Group, Version: r.Version, Resource: r.Name}
+}
+
+func (r ResourceID) MetaGVK() metav1.GroupVersionKind {
+	return metav1.GroupVersionKind{Group: r.Group, Version: r.Version, Kind: r.Kind}
+}
+
+func NewResourceID(mapping *meta.RESTMapping) *ResourceID {
+	scope := ClusterScoped
+	if mapping.Scope == meta.RESTScopeNamespace {
+		scope = NamespaceScoped
+	}
+	return &ResourceID{
+		Group:   mapping.Resource.Group,
+		Version: mapping.Resource.Version,
+		Name:    mapping.Resource.Resource,
+		Kind:    mapping.GroupVersionKind.Kind,
+		Scope:   scope,
+	}
+}
+
+func FromMetaGVR(in metav1.GroupVersionResource) schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    in.Group,
+		Version:  in.Version,
+		Resource: in.Resource,
+	}
+}
+
+func ToMetaGVR(in schema.GroupVersionResource) metav1.GroupVersionResource {
+	return metav1.GroupVersionResource{
+		Group:    in.Group,
+		Version:  in.Version,
+		Resource: in.Resource,
+	}
+}
+
+func FromMetaGVK(in metav1.GroupVersionKind) schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   in.Group,
+		Version: in.Version,
+		Kind:    in.Kind,
+	}
+}
+
+func ToMetaGVK(in schema.GroupVersionKind) metav1.GroupVersionKind {
+	return metav1.GroupVersionKind{
+		Group:   in.Group,
+		Version: in.Version,
+		Kind:    in.Kind,
+	}
+}
+
+// FromAPIVersionAndKind returns a GVK representing the provided fields for types that
+// do not use TypeMeta. This method exists to support test types and legacy serializations
+// that have a distinct group and kind.
+func FromAPIVersionAndKind(apiVersion, kind string) metav1.GroupVersionKind {
+	if gv, err := schema.ParseGroupVersion(apiVersion); err == nil {
+		return metav1.GroupVersionKind{Group: gv.Group, Version: gv.Version, Kind: kind}
+	}
+	return metav1.GroupVersionKind{Kind: kind}
+}
+
+func EqualsGVK(a schema.GroupVersionKind, b metav1.GroupVersionKind) bool {
+	return a.Group == b.Group &&
+		a.Version == b.Version &&
+		a.Kind == b.Kind
+}
+
+func EqualsGVR(a schema.GroupVersionResource, b metav1.GroupVersionResource) bool {
+	return a.Group == b.Group &&
+		a.Version == b.Version &&
+		a.Resource == b.Resource
+}
+
+func ExtractResourceID(mapper meta.RESTMapper, in ResourceID) (*ResourceID, error) {
+	kindFound := in.Kind != ""
+	resFOund := in.Name != ""
+	if kindFound {
+		if resFOund {
+			return &in, nil
+		} else {
+			var versions []string
+			if in.Version != "" {
+				versions = append(versions, in.Version)
+			}
+			mapping, err := mapper.RESTMapping(schema.GroupKind{
+				Group: in.Group,
+				Kind:  in.Kind,
+			}, versions...)
+			if err != nil {
+				return nil, err
+			}
+			return NewResourceID(mapping), nil
+		}
+	} else {
+		if resFOund {
+			gvk, err := mapper.KindFor(in.GroupVersionResource())
+			if err != nil {
+				return nil, err
+			}
+			mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+			if err != nil {
+				return nil, err
+			}
+			return NewResourceID(mapping), nil
+		} else {
+			return nil, fmt.Errorf("missing both Kind and Resource name for %+v", in)
+		}
+	}
 }

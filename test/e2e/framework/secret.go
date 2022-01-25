@@ -20,7 +20,7 @@ import (
 	"context"
 	"os"
 
-	"stash.appscode.dev/stash/pkg/cli"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 
 	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
@@ -35,8 +35,8 @@ const (
 )
 
 func (fi *Invocation) SecretForS3Backend() core.Secret {
-	if os.Getenv(cli.AWS_ACCESS_KEY_ID) == "" ||
-		os.Getenv(cli.AWS_SECRET_ACCESS_KEY) == "" {
+	if os.Getenv(restic.AWS_ACCESS_KEY_ID) == "" ||
+		os.Getenv(restic.AWS_SECRET_ACCESS_KEY) == "" {
 		return core.Secret{}
 	}
 
@@ -46,9 +46,9 @@ func (fi *Invocation) SecretForS3Backend() core.Secret {
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
-			cli.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(cli.AWS_ACCESS_KEY_ID)),
-			cli.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(cli.AWS_SECRET_ACCESS_KEY)),
+			restic.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
+			restic.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(restic.AWS_ACCESS_KEY_ID)),
+			restic.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(restic.AWS_SECRET_ACCESS_KEY)),
 		},
 	}
 }
@@ -70,9 +70,9 @@ func (fi *Invocation) SecretForDOBackend() core.Secret {
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
-			cli.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(DO_ACCESS_KEY_ID)),
-			cli.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(DO_SECRET_ACCESS_KEY)),
+			restic.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
+			restic.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(DO_ACCESS_KEY_ID)),
+			restic.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(DO_SECRET_ACCESS_KEY)),
 		},
 	}
 }
@@ -90,16 +90,16 @@ func (fi *Invocation) SecretForGCSBackend() core.Secret {
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD:                 []byte(TEST_RESTIC_PASSWORD),
-			cli.GOOGLE_PROJECT_ID:               []byte(os.Getenv(cli.GOOGLE_PROJECT_ID)),
-			cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY: []byte(jsonKey),
+			restic.RESTIC_PASSWORD:                 []byte(TEST_RESTIC_PASSWORD),
+			restic.GOOGLE_PROJECT_ID:               []byte(os.Getenv(restic.GOOGLE_PROJECT_ID)),
+			restic.GOOGLE_SERVICE_ACCOUNT_JSON_KEY: []byte(jsonKey),
 		},
 	}
 }
 
 func (fi *Invocation) SecretForAzureBackend() core.Secret {
-	if os.Getenv(cli.AZURE_ACCOUNT_NAME) == "" ||
-		os.Getenv(cli.AZURE_ACCOUNT_KEY) == "" {
+	if os.Getenv(restic.AZURE_ACCOUNT_NAME) == "" ||
+		os.Getenv(restic.AZURE_ACCOUNT_KEY) == "" {
 		return core.Secret{}
 	}
 
@@ -109,18 +109,18 @@ func (fi *Invocation) SecretForAzureBackend() core.Secret {
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD:    []byte(TEST_RESTIC_PASSWORD),
-			cli.AZURE_ACCOUNT_NAME: []byte(os.Getenv(cli.AZURE_ACCOUNT_NAME)),
-			cli.AZURE_ACCOUNT_KEY:  []byte(os.Getenv(cli.AZURE_ACCOUNT_KEY)),
+			restic.RESTIC_PASSWORD:    []byte(TEST_RESTIC_PASSWORD),
+			restic.AZURE_ACCOUNT_NAME: []byte(os.Getenv(restic.AZURE_ACCOUNT_NAME)),
+			restic.AZURE_ACCOUNT_KEY:  []byte(os.Getenv(restic.AZURE_ACCOUNT_KEY)),
 		},
 	}
 }
 
 func (fi *Invocation) SecretForSwiftBackend() core.Secret {
-	if os.Getenv(cli.OS_AUTH_URL) == "" ||
-		(os.Getenv(cli.OS_TENANT_ID) == "" && os.Getenv(cli.OS_TENANT_NAME) == "") ||
-		os.Getenv(cli.OS_USERNAME) == "" ||
-		os.Getenv(cli.OS_PASSWORD) == "" {
+	if os.Getenv(restic.OS_AUTH_URL) == "" ||
+		(os.Getenv(restic.OS_TENANT_ID) == "" && os.Getenv(restic.OS_TENANT_NAME) == "") ||
+		os.Getenv(restic.OS_USERNAME) == "" ||
+		os.Getenv(restic.OS_PASSWORD) == "" {
 		return core.Secret{}
 	}
 
@@ -130,20 +130,20 @@ func (fi *Invocation) SecretForSwiftBackend() core.Secret {
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
-			cli.OS_AUTH_URL:     []byte(os.Getenv(cli.OS_AUTH_URL)),
-			cli.OS_TENANT_ID:    []byte(os.Getenv(cli.OS_TENANT_ID)),
-			cli.OS_TENANT_NAME:  []byte(os.Getenv(cli.OS_TENANT_NAME)),
-			cli.OS_USERNAME:     []byte(os.Getenv(cli.OS_USERNAME)),
-			cli.OS_PASSWORD:     []byte(os.Getenv(cli.OS_PASSWORD)),
-			cli.OS_REGION_NAME:  []byte(os.Getenv(cli.OS_REGION_NAME)),
+			restic.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
+			restic.OS_AUTH_URL:     []byte(os.Getenv(restic.OS_AUTH_URL)),
+			restic.OS_TENANT_ID:    []byte(os.Getenv(restic.OS_TENANT_ID)),
+			restic.OS_TENANT_NAME:  []byte(os.Getenv(restic.OS_TENANT_NAME)),
+			restic.OS_USERNAME:     []byte(os.Getenv(restic.OS_USERNAME)),
+			restic.OS_PASSWORD:     []byte(os.Getenv(restic.OS_PASSWORD)),
+			restic.OS_REGION_NAME:  []byte(os.Getenv(restic.OS_REGION_NAME)),
 		},
 	}
 }
 
 func (fi *Invocation) SecretForB2Backend() core.Secret {
-	if os.Getenv(cli.B2_ACCOUNT_ID) == "" ||
-		os.Getenv(cli.B2_ACCOUNT_KEY) == "" {
+	if os.Getenv(restic.B2_ACCOUNT_ID) == "" ||
+		os.Getenv(restic.B2_ACCOUNT_KEY) == "" {
 		return core.Secret{}
 	}
 
@@ -153,9 +153,9 @@ func (fi *Invocation) SecretForB2Backend() core.Secret {
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
-			cli.B2_ACCOUNT_ID:   []byte(os.Getenv(cli.B2_ACCOUNT_ID)),
-			cli.B2_ACCOUNT_KEY:  []byte(os.Getenv(cli.B2_ACCOUNT_KEY)),
+			restic.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
+			restic.B2_ACCOUNT_ID:   []byte(os.Getenv(restic.B2_ACCOUNT_ID)),
+			restic.B2_ACCOUNT_KEY:  []byte(os.Getenv(restic.B2_ACCOUNT_KEY)),
 		},
 	}
 }
@@ -167,13 +167,13 @@ func (fi *Invocation) SecretForMinioBackend(includeCacert bool) core.Secret {
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
-			cli.AWS_ACCESS_KEY_ID:     []byte(MINIO_ACCESS_KEY_ID),
-			cli.AWS_SECRET_ACCESS_KEY: []byte(MINIO_SECRET_ACCESS_KEY),
+			restic.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
+			restic.AWS_ACCESS_KEY_ID:     []byte(MINIO_ACCESS_KEY_ID),
+			restic.AWS_SECRET_ACCESS_KEY: []byte(MINIO_SECRET_ACCESS_KEY),
 		},
 	}
 	if includeCacert {
-		secret.Data[cli.CA_CERT_DATA] = fi.CertStore.CACertBytes()
+		secret.Data[restic.CA_CERT_DATA] = fi.CertStore.CACertBytes()
 	}
 	return secret
 }
@@ -185,13 +185,13 @@ func (fi *Invocation) SecretForRestBackend(includeCacert bool, username, passwor
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			cli.RESTIC_PASSWORD:      []byte(TEST_RESTIC_PASSWORD),
-			cli.REST_SERVER_USERNAME: []byte(username),
-			cli.REST_SERVER_PASSWORD: []byte(password),
+			restic.RESTIC_PASSWORD:      []byte(TEST_RESTIC_PASSWORD),
+			restic.REST_SERVER_USERNAME: []byte(username),
+			restic.REST_SERVER_PASSWORD: []byte(password),
 		},
 	}
 	if includeCacert {
-		secret.Data[cli.CA_CERT_DATA] = fi.CertStore.CACertBytes()
+		secret.Data[restic.CA_CERT_DATA] = fi.CertStore.CACertBytes()
 	}
 	return secret
 }

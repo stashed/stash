@@ -17,6 +17,7 @@ limitations under the License.
 package restic
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -77,7 +78,6 @@ const (
 	CA_CERT_DATA = "CA_CERT_DATA"
 
 	// ref: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#temporary-files
-	resticTempDir  = "restic-tmp"
 	resticCacheDir = "restic-cache"
 )
 
@@ -87,22 +87,27 @@ func (w *ResticWrapper) setupEnv() error {
 	// ref: https://restic.readthedocs.io/en/stable/manual_rest.html
 	w.sh.SetEnv(RESTIC_PROGRESS_FPS, "0.016666")
 
-	if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, RESTIC_PASSWORD)); err != nil {
+	if w.config.StorageSecret == nil {
+		return errors.New("missing storage Secret")
+	}
+
+	if err := w.exportSecretKey(RESTIC_PASSWORD, true); err != nil {
 		return err
-	} else {
-		w.sh.SetEnv(RESTIC_PASSWORD, string(v))
 	}
 
-	if _, err := os.Stat(filepath.Join(w.config.SecretDir, CA_CERT_DATA)); err == nil {
-		// ca-cert file exists
-		w.config.CacertFile = filepath.Join(w.config.SecretDir, CA_CERT_DATA)
-	}
-
-	tmpDir := filepath.Join(w.config.ScratchDir, resticTempDir)
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+	tmpDir, err := os.MkdirTemp(w.config.ScratchDir, "tmp-")
+	if err != nil {
 		return err
 	}
 	w.sh.SetEnv(TMPDIR, tmpDir)
+
+	if _, ok := w.config.StorageSecret.Data[CA_CERT_DATA]; ok {
+		filePath, err := w.writeSecretKeyToFile(CA_CERT_DATA, "ca.crt")
+		if err != nil {
+			return err
+		}
+		w.config.CacertFile = filePath
+	}
 
 	if w.config.EnableCache {
 		cacheDir := filepath.Join(w.config.ScratchDir, resticCacheDir)
@@ -126,11 +131,12 @@ func (w *ResticWrapper) setupEnv() error {
 		r := fmt.Sprintf("s3:%s/%s", w.config.Endpoint, filepath.Join(w.config.Bucket, w.config.Path))
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, AWS_ACCESS_KEY_ID)); err == nil {
-			w.sh.SetEnv(AWS_ACCESS_KEY_ID, string(v))
+		if err := w.exportSecretKey(AWS_ACCESS_KEY_ID, true); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, AWS_SECRET_ACCESS_KEY)); err == nil {
-			w.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(v))
+
+		if err := w.exportSecretKey(AWS_SECRET_ACCESS_KEY, true); err != nil {
+			return err
 		}
 
 		if w.config.Region != "" {
@@ -141,24 +147,26 @@ func (w *ResticWrapper) setupEnv() error {
 		r := fmt.Sprintf("gs:%s:/%s", w.config.Bucket, w.config.Path)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, GOOGLE_PROJECT_ID)); err == nil {
-			w.sh.SetEnv(GOOGLE_PROJECT_ID, string(v))
+		if err := w.exportSecretKey(GOOGLE_PROJECT_ID, true); err != nil {
+			return err
 		}
 
-		if _, err := os.Stat(filepath.Join(w.config.SecretDir, GOOGLE_SERVICE_ACCOUNT_JSON_KEY)); err == nil {
-			// json key file exists
-			w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, filepath.Join(w.config.SecretDir, GOOGLE_SERVICE_ACCOUNT_JSON_KEY))
+		filePath, err := w.writeSecretKeyToFile(GOOGLE_SERVICE_ACCOUNT_JSON_KEY, GOOGLE_SERVICE_ACCOUNT_JSON_KEY)
+		if err != nil {
+			return err
 		}
+		w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, filePath)
 
 	case storage.ProviderAzure:
 		r := fmt.Sprintf("azure:%s:/%s", w.config.Bucket, w.config.Path)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, AZURE_ACCOUNT_NAME)); err == nil {
-			w.sh.SetEnv(AZURE_ACCOUNT_NAME, string(v))
+		if err := w.exportSecretKey(AZURE_ACCOUNT_NAME, true); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, AZURE_ACCOUNT_KEY)); err == nil {
-			w.sh.SetEnv(AZURE_ACCOUNT_KEY, string(v))
+
+		if err := w.exportSecretKey(AZURE_ACCOUNT_KEY, true); err != nil {
+			return err
 		}
 
 	case storage.ProviderSwift:
@@ -170,14 +178,16 @@ func (w *ResticWrapper) setupEnv() error {
 		// ST_AUTH
 		// ST_USER
 		// ST_KEY
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, ST_AUTH)); err == nil {
-			w.sh.SetEnv(ST_AUTH, string(v))
+		if err := w.exportSecretKey(ST_AUTH, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, ST_USER)); err == nil {
-			w.sh.SetEnv(ST_USER, string(v))
+
+		if err := w.exportSecretKey(ST_USER, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, ST_KEY)); err == nil {
-			w.sh.SetEnv(ST_KEY, string(v))
+
+		if err := w.exportSecretKey(ST_KEY, false); err != nil {
+			return err
 		}
 
 		// For keystone v2 authentication (some variables are optional)
@@ -188,23 +198,28 @@ func (w *ResticWrapper) setupEnv() error {
 		// OS_PASSWORD
 		// OS_TENANT_ID
 		// OS_TENANT_NAME
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_AUTH_URL)); err == nil {
-			w.sh.SetEnv(OS_AUTH_URL, string(v))
+		if err := w.exportSecretKey(OS_AUTH_URL, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_REGION_NAME)); err == nil {
-			w.sh.SetEnv(OS_REGION_NAME, string(v))
+
+		if err := w.exportSecretKey(OS_REGION_NAME, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_USERNAME)); err == nil {
-			w.sh.SetEnv(OS_USERNAME, string(v))
+
+		if err := w.exportSecretKey(OS_USERNAME, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_PASSWORD)); err == nil {
-			w.sh.SetEnv(OS_PASSWORD, string(v))
+
+		if err := w.exportSecretKey(OS_PASSWORD, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_TENANT_ID)); err == nil {
-			w.sh.SetEnv(OS_TENANT_ID, string(v))
+
+		if err := w.exportSecretKey(OS_TENANT_ID, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_TENANT_NAME)); err == nil {
-			w.sh.SetEnv(OS_TENANT_NAME, string(v))
+
+		if err := w.exportSecretKey(OS_TENANT_NAME, false); err != nil {
+			return err
 		}
 
 		// For keystone v3 authentication (some variables are optional)
@@ -216,14 +231,16 @@ func (w *ResticWrapper) setupEnv() error {
 		// OS_USER_DOMAIN_NAME
 		// OS_PROJECT_NAME
 		// OS_PROJECT_DOMAIN_NAME
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_USER_DOMAIN_NAME)); err == nil {
-			w.sh.SetEnv(OS_USER_DOMAIN_NAME, string(v))
+		if err := w.exportSecretKey(OS_USER_DOMAIN_NAME, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_PROJECT_NAME)); err == nil {
-			w.sh.SetEnv(OS_PROJECT_NAME, string(v))
+
+		if err := w.exportSecretKey(OS_PROJECT_NAME, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_PROJECT_DOMAIN_NAME)); err == nil {
-			w.sh.SetEnv(OS_PROJECT_DOMAIN_NAME, string(v))
+
+		if err := w.exportSecretKey(OS_PROJECT_DOMAIN_NAME, false); err != nil {
+			return err
 		}
 
 		// For keystone v3 application credential authentication (application credential id)
@@ -231,11 +248,12 @@ func (w *ResticWrapper) setupEnv() error {
 		// OS_AUTH_URL (already set in v2 authentication section)
 		// OS_APPLICATION_CREDENTIAL_ID
 		// OS_APPLICATION_CREDENTIAL_SECRET
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_APPLICATION_CREDENTIAL_ID)); err == nil {
-			w.sh.SetEnv(OS_APPLICATION_CREDENTIAL_ID, string(v))
+		if err := w.exportSecretKey(OS_APPLICATION_CREDENTIAL_ID, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_APPLICATION_CREDENTIAL_SECRET)); err == nil {
-			w.sh.SetEnv(OS_APPLICATION_CREDENTIAL_SECRET, string(v))
+
+		if err := w.exportSecretKey(OS_APPLICATION_CREDENTIAL_SECRET, false); err != nil {
+			return err
 		}
 
 		// For keystone v3 application credential authentication (application credential name)
@@ -245,31 +263,32 @@ func (w *ResticWrapper) setupEnv() error {
 		// OS_USER_DOMAIN_NAME (already set in v3 authentication section)
 		// OS_APPLICATION_CREDENTIAL_NAME
 		// OS_APPLICATION_CREDENTIAL_SECRET (already set in v3 authentication with credential id section)
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_APPLICATION_CREDENTIAL_NAME)); err == nil {
-			w.sh.SetEnv(OS_APPLICATION_CREDENTIAL_NAME, string(v))
+		if err := w.exportSecretKey(OS_APPLICATION_CREDENTIAL_NAME, false); err != nil {
+			return err
 		}
 
 		// For authentication based on tokens
 		// Necessary Envs:
 		// OS_STORAGE_URL
 		// OS_AUTH_TOKEN
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_STORAGE_URL)); err == nil {
-			w.sh.SetEnv(OS_STORAGE_URL, string(v))
+		if err := w.exportSecretKey(OS_STORAGE_URL, false); err != nil {
+			return err
 		}
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_AUTH_TOKEN)); err == nil {
-			w.sh.SetEnv(OS_AUTH_TOKEN, string(v))
+
+		if err := w.exportSecretKey(OS_AUTH_TOKEN, false); err != nil {
+			return err
 		}
 
 	case storage.ProviderB2:
 		r := fmt.Sprintf("b2:%s:/%s", w.config.Bucket, w.config.Path)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, B2_ACCOUNT_ID)); err == nil {
-			w.sh.SetEnv(B2_ACCOUNT_ID, string(v))
+		if err := w.exportSecretKey(B2_ACCOUNT_ID, true); err != nil {
+			return err
 		}
 
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, B2_ACCOUNT_KEY)); err == nil {
-			w.sh.SetEnv(B2_ACCOUNT_KEY, string(v))
+		if err := w.exportSecretKey(B2_ACCOUNT_KEY, true); err != nil {
+			return err
 		}
 
 	case storage.ProviderRest:
@@ -277,8 +296,9 @@ func (w *ResticWrapper) setupEnv() error {
 		if err != nil {
 			return err
 		}
-		if username, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, REST_SERVER_USERNAME)); err == nil {
-			if password, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, REST_SERVER_PASSWORD)); err == nil {
+
+		if username, hasUserKey := w.config.StorageSecret.Data[REST_SERVER_USERNAME]; hasUserKey {
+			if password, hasPassKey := w.config.StorageSecret.Data[REST_SERVER_PASSWORD]; hasPassKey {
 				u.User = url.UserPassword(string(username), string(password))
 			} else {
 				u.User = url.User(string(username))
@@ -290,4 +310,30 @@ func (w *ResticWrapper) setupEnv() error {
 	}
 
 	return nil
+}
+
+func (w *ResticWrapper) exportSecretKey(key string, required bool) error {
+	if v, ok := w.config.StorageSecret.Data[key]; !ok {
+		if required {
+			return fmt.Errorf("storage Secret missing %s key", key)
+		}
+	} else {
+		w.sh.SetEnv(key, string(v))
+	}
+	return nil
+}
+
+func (w *ResticWrapper) writeSecretKeyToFile(key, name string) (string, error) {
+	v, ok := w.config.StorageSecret.Data[key]
+	if !ok {
+		return "", fmt.Errorf("storage Secret missing %s key", key)
+	}
+
+	tmpDir := w.GetEnv(TMPDIR)
+	filePath := filepath.Join(tmpDir, name)
+
+	if err := ioutil.WriteFile(filePath, v, 0755); err != nil {
+		return "", err
+	}
+	return filePath, nil
 }

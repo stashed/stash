@@ -82,9 +82,6 @@ github.com/aws/aws-sdk-go/service/sts/stsiface
 github.com/beorn7/perks/quantile
 # github.com/blang/semver v3.5.1+incompatible
 github.com/blang/semver
-# github.com/cenkalti/backoff v2.2.1+incompatible
-## explicit
-github.com/cenkalti/backoff
 # github.com/cespare/xxhash/v2 v2.1.1
 github.com/cespare/xxhash/v2
 # github.com/cloudevents/sdk-go/v2 v2.5.0
@@ -104,6 +101,9 @@ github.com/cloudevents/sdk-go/v2/protocol/http
 github.com/cloudevents/sdk-go/v2/types
 # github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0
 github.com/codegangsta/inject
+# github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
+## explicit
+github.com/codeskyblue/go-sh
 # github.com/coreos/go-semver v0.3.0
 github.com/coreos/go-semver/semver
 # github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e
@@ -145,8 +145,6 @@ github.com/go-openapi/jsonreference
 github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.19.5 => github.com/go-openapi/swag v0.19.5
 github.com/go-openapi/swag
-# github.com/gobuffalo/flect v0.2.3
-github.com/gobuffalo/flect
 # github.com/gogo/protobuf v1.3.2 => github.com/gogo/protobuf v1.3.2
 ## explicit
 github.com/gogo/protobuf/gogoproto
@@ -297,7 +295,6 @@ github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/prometheus/client_golang v1.11.0 => github.com/prometheus/client_golang v1.10.0
-## explicit
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promhttp
@@ -314,9 +311,6 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/robfig/cron/v3 v3.0.1
-## explicit
-github.com/robfig/cron/v3
 # github.com/russross/blackfriday/v2 v2.0.1
 github.com/russross/blackfriday/v2
 # github.com/satori/go.uuid v1.2.0 => github.com/gomodules/uuid v4.0.0+incompatible
@@ -341,7 +335,7 @@ github.com/yudai/gojsondiff
 github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 github.com/yudai/golcs
-# go.bytebuilders.dev/audit v0.0.14
+# go.bytebuilders.dev/audit v0.0.15
 ## explicit
 go.bytebuilders.dev/audit/api/v1
 go.bytebuilders.dev/audit/lib
@@ -446,7 +440,6 @@ golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
-golang.org/x/net/publicsuffix
 golang.org/x/net/trace
 golang.org/x/net/websocket
 # golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
@@ -465,7 +458,7 @@ golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
 golang.org/x/term
-# golang.org/x/text v0.3.6
+# golang.org/x/text v0.3.7
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -515,13 +508,9 @@ gomodules.xyz/envsubst/path
 ## explicit
 gomodules.xyz/flags
 # gomodules.xyz/go-sh v0.1.0
-## explicit
 gomodules.xyz/go-sh
 # gomodules.xyz/jsonpatch/v2 v2.2.0
 gomodules.xyz/jsonpatch/v2
-# gomodules.xyz/jsonpath v0.0.1
-gomodules.xyz/jsonpath
-gomodules.xyz/jsonpath/third_party/forked/golang/template
 # gomodules.xyz/logs v0.0.6
 ## explicit
 gomodules.xyz/logs
@@ -654,9 +643,6 @@ google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/inf.v0 v0.9.1
 gopkg.in/inf.v0
-# gopkg.in/ini.v1 v1.51.0
-## explicit
-gopkg.in/ini.v1
 # gopkg.in/natefinch/lumberjack.v2 v2.0.0
 gopkg.in/natefinch/lumberjack.v2
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
@@ -960,8 +946,6 @@ k8s.io/client-go/discovery/cached/disk
 k8s.io/client-go/discovery/cached/memory
 k8s.io/client-go/discovery/fake
 k8s.io/client-go/dynamic
-k8s.io/client-go/dynamic/dynamicinformer
-k8s.io/client-go/dynamic/dynamiclister
 k8s.io/client-go/informers
 k8s.io/client-go/informers/admissionregistration
 k8s.io/client-go/informers/admissionregistration/v1
@@ -1264,9 +1248,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/apiversion v0.2.0
-kmodules.xyz/apiversion
-# kmodules.xyz/client-go v0.0.0-20211122091731-6c471b24a4ea
+# kmodules.xyz/client-go v0.0.0-20220108081101-27afc2ac4ebe
 ## explicit
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -1274,18 +1256,14 @@ kmodules.xyz/client-go/admissionregistration/v1
 kmodules.xyz/client-go/api/v1
 kmodules.xyz/client-go/apiextensions
 kmodules.xyz/client-go/apiextensions/v1
-kmodules.xyz/client-go/apiextensions/v1beta1
 kmodules.xyz/client-go/apiregistration/v1
 kmodules.xyz/client-go/apps/v1
 kmodules.xyz/client-go/batch/v1
-kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/dynamic
-kmodules.xyz/client-go/dynamic/factory
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/rbac/v1
-kmodules.xyz/client-go/tools/clientcache
 kmodules.xyz/client-go/tools/clientcmd
 kmodules.xyz/client-go/tools/clusterid
 kmodules.xyz/client-go/tools/exec
@@ -1298,7 +1276,7 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/custom-resources v0.0.0-20211122142737-3bf3dbd8ac52
+# kmodules.xyz/custom-resources v0.0.0-20220104123914-3c036dd7c1cd
 ## explicit
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
@@ -1347,15 +1325,7 @@ kmodules.xyz/prober/probe
 kmodules.xyz/prober/probe/exec
 kmodules.xyz/prober/probe/http
 kmodules.xyz/prober/probe/tcp
-# kmodules.xyz/resource-metadata v0.6.7
-kmodules.xyz/resource-metadata/apis/meta
-kmodules.xyz/resource-metadata/apis/meta/v1alpha1
-kmodules.xyz/resource-metadata/crds
-kmodules.xyz/resource-metadata/hub
-kmodules.xyz/resource-metadata/hub/resourceclasses
-kmodules.xyz/resource-metadata/hub/resourcedescriptors
-kmodules.xyz/resource-metadata/pkg/graph
-# kmodules.xyz/resource-metrics v0.0.5
+# kmodules.xyz/resource-metrics v0.0.6
 kmodules.xyz/resource-metrics/api
 # kmodules.xyz/webhook-runtime v0.0.0-20211116181908-909a755cc9d1
 ## explicit
@@ -1475,7 +1445,7 @@ sigs.k8s.io/structured-merge-diff/v4/typed
 sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.17.0
+# stash.appscode.dev/apimachinery v0.17.1-0.20220121124417-69f0bb1ecd9f
 ## explicit
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
@@ -1484,6 +1454,8 @@ stash.appscode.dev/apimachinery/apis/repositories/v1alpha1
 stash.appscode.dev/apimachinery/apis/stash
 stash.appscode.dev/apimachinery/apis/stash/v1alpha1
 stash.appscode.dev/apimachinery/apis/stash/v1beta1
+stash.appscode.dev/apimachinery/apis/ui
+stash.appscode.dev/apimachinery/apis/ui/v1alpha1
 stash.appscode.dev/apimachinery/client/clientset/versioned
 stash.appscode.dev/apimachinery/client/clientset/versioned/fake
 stash.appscode.dev/apimachinery/client/clientset/versioned/scheme
@@ -1495,6 +1467,8 @@ stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/
 stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1
 stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/fake
 stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/ui/v1alpha1
+stash.appscode.dev/apimachinery/client/clientset/versioned/typed/ui/v1alpha1/fake
 stash.appscode.dev/apimachinery/client/informers/externalversions
 stash.appscode.dev/apimachinery/client/informers/externalversions/internalinterfaces
 stash.appscode.dev/apimachinery/client/informers/externalversions/stash

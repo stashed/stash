@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"path/filepath"
 
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gomodules.xyz/flags"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
@@ -53,7 +55,7 @@ func NewCmdRestorePVC() *cobra.Command {
 		Short:             "Takes a restore of Persistent Volume Claim",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.EnsureRequiredFlags(cmd, "restore-dirs", "provider", "secret-dir")
+			flags.EnsureRequiredFlags(cmd, "restore-dirs", "provider")
 
 			config, err := clientcmd.BuildConfigFromFlags(opt.masterURL, opt.kubeConfigPath)
 			if err != nil {
@@ -64,12 +66,12 @@ func NewCmdRestorePVC() *cobra.Command {
 			opt.k8sClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
 
-			inv, err := invoker.ExtractRestoreInvokerInfo(opt.k8sClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+			inv, err := invoker.NewRestoreInvoker(opt.k8sClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 			if err != nil {
 				return err
 			}
 
-			for _, targetInfo := range inv.TargetsInfo {
+			for _, targetInfo := range inv.GetTargetInfo() {
 				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
 
 					opt.restoreOpt.Host, err = util.GetHostName(targetInfo.Target)
@@ -113,7 +115,6 @@ func NewCmdRestorePVC() *cobra.Command {
 	cmd.Flags().StringVar(&opt.setupOpt.Endpoint, "endpoint", opt.setupOpt.Endpoint, "Endpoint for s3/s3 compatible backend or REST server URL")
 	cmd.Flags().StringVar(&opt.setupOpt.Region, "region", opt.setupOpt.Region, "Region for s3/s3 compatible backend")
 	cmd.Flags().StringVar(&opt.setupOpt.Path, "path", opt.setupOpt.Path, "Directory inside the bucket where backed up data will be stored")
-	cmd.Flags().StringVar(&opt.setupOpt.SecretDir, "secret-dir", opt.setupOpt.SecretDir, "Directory where storage secret has been mounted")
 	cmd.Flags().StringVar(&opt.setupOpt.ScratchDir, "scratch-dir", opt.setupOpt.ScratchDir, "Temporary directory")
 	cmd.Flags().BoolVar(&opt.setupOpt.EnableCache, "enable-cache", opt.setupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.setupOpt.MaxConnections, "max-connections", opt.setupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
@@ -128,6 +129,8 @@ func NewCmdRestorePVC() *cobra.Command {
 	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", opt.invokerName, "Name of the respective backup invoker")
 	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
 	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.StorageSecret.Name, "storage-secret-name", opt.StorageSecret.Name, "Name of the StorageSecret")
+	cmd.Flags().StringVar(&opt.StorageSecret.Namespace, "storage-secret-namespace", opt.StorageSecret.Namespace, "Namespace of the StorageSecret")
 	cmd.Flags().StringVar(&opt.outputDir, "output-dir", opt.outputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
 
 	return cmd
@@ -135,6 +138,11 @@ func NewCmdRestorePVC() *cobra.Command {
 
 func (opt *pvcOptions) restorePVC(targetRef api_v1beta1.TargetRef) (*restic.RestoreOutput, error) {
 	var err error
+	opt.setupOpt.StorageSecret, err = opt.k8sClient.CoreV1().Secrets(opt.StorageSecret.Namespace).Get(context.Background(), opt.StorageSecret.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
 	// apply nice, ionice settings from env
 	opt.setupOpt.Nice, err = v1.NiceSettingsFromEnv()
 	if err != nil {

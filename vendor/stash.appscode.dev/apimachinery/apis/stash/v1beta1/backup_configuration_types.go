@@ -88,7 +88,7 @@ type BackupConfigurationSpec struct {
 	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,3,opt,name=driver,casttype=Snapshotter"`
 	// Repository refer to the Repository crd that holds backend information
 	// +optional
-	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,4,opt,name=repository"`
+	Repository kmapi.ObjectReference `json:"repository,omitempty" protobuf:"bytes,4,opt,name=repository"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
 	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy" protobuf:"bytes,5,opt,name=retentionPolicy"`
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'

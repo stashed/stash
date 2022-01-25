@@ -19,7 +19,6 @@ package v1beta1
 import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -67,7 +66,7 @@ type BackupBatchSpec struct {
 	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,4,opt,name=driver,casttype=Snapshotter"`
 	// Repository refer to the Repository crd that holds backend information
 	// +optional
-	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,5,opt,name=repository"`
+	Repository kmapi.ObjectReference `json:"repository,omitempty" protobuf:"bytes,5,opt,name=repository"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
 	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy" protobuf:"bytes,6,opt,name=retentionPolicy"`
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'

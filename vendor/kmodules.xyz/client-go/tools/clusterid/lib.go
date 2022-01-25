@@ -19,8 +19,12 @@ package clusterid
 import (
 	"context"
 	"flag"
+	"fmt"
+
+	kmapi "kmodules.xyz/client-go/api/v1"
 
 	"github.com/spf13/pflag"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -45,4 +49,29 @@ func ClusterUID(client corev1.NamespaceInterface) (string, error) {
 		return "", err
 	}
 	return string(ns.UID), nil
+}
+
+func ClusterMetadataForNamespace(ns *core.Namespace) (*kmapi.ClusterMetadata, error) {
+	if ns.Name != metav1.NamespaceSystem {
+		return nil, fmt.Errorf("expected namespace %s, found namespace %s", metav1.NamespaceSystem, ns.Name)
+	}
+	name := ns.Annotations[kmapi.ClusterNameKey]
+	if name == "" {
+		name = ClusterName()
+	}
+	obj := &kmapi.ClusterMetadata{
+		UID:         string(ns.UID),
+		Name:        name,
+		DisplayName: ns.Annotations[kmapi.ClusterDisplayNameKey],
+		Provider:    kmapi.HostingProvider(ns.Annotations[kmapi.ClusterProviderNameKey]),
+	}
+	return obj, nil
+}
+
+func ClusterMetadata(client corev1.NamespaceInterface) (*kmapi.ClusterMetadata, error) {
+	ns, err := client.Get(context.TODO(), metav1.NamespaceSystem, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return ClusterMetadataForNamespace(ns)
 }

@@ -17,9 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,15 +34,13 @@ const (
 
 // +k8s:deepcopy-gen=false
 type Event struct {
-	LicenseID   string                                                          `json:"licenseID,omitempty"`
-	ResourceID  kmapi.ResourceID                                                `json:"resourceID,omitempty"`
-	Resource    client.Object                                                   `json:"resource,omitempty"`
-	Connections map[schema.GroupVersionResource][]*metav1.PartialObjectMetadata `json:"connections,omitempty"`
+	LicenseID  string           `json:"licenseID,omitempty"`
+	ResourceID kmapi.ResourceID `json:"resourceID,omitempty"`
+	Resource   client.Object    `json:"resource,omitempty"`
 }
 
 type UnstructuredEvent struct {
-	LicenseID   string                                                          `json:"licenseID,omitempty"`
-	ResourceID  kmapi.ResourceID                                                `json:"resourceID,omitempty"`
-	Resource    *unstructured.Unstructured                                      `json:"resource,omitempty"`
-	Connections map[schema.GroupVersionResource][]*metav1.PartialObjectMetadata `json:"connections,omitempty"`
+	LicenseID  string                     `json:"licenseID,omitempty"`
+	ResourceID kmapi.ResourceID           `json:"resourceID,omitempty"`
+	Resource   *unstructured.Unstructured `json:"resource,omitempty"`
 }

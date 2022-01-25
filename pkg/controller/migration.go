@@ -39,7 +39,6 @@ func (c *StashController) MigrateObservedGeneration() error {
 	var errs []error
 	for _, gvr := range []schema.GroupVersionResource{
 		v1alpha1.SchemeGroupVersion.WithResource(v1alpha1.ResourcePluralRepository),
-		v1alpha1.SchemeGroupVersion.WithResource(v1alpha1.ResourcePluralRecovery),
 	} {
 		client := dc.Resource(gvr)
 		objects, err := client.Namespace(core.NamespaceAll).List(context.TODO(), metav1.ListOptions{})

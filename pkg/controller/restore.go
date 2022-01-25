@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/util"
 
@@ -51,17 +50,8 @@ func (c *StashController) applyRestoreSessionLogic(w *wapi.Workload, caller stri
 	// this means RestoreSession has been newly created/updated.
 	// in this case, we have to add/update init-container container accordingly.
 	if newrs != nil && !util.RestoreSessionEqual(oldrs, newrs) {
-		inv, err := invoker.ExtractRestoreInvokerInfo(
-			c.kubeClient,
-			c.stashClient,
-			api_v1beta1.ResourceKindRestoreSession,
-			newrs.Name,
-			newrs.Namespace,
-		)
-		if err != nil {
-			return true, err
-		}
-		for _, targetInfo := range inv.TargetsInfo {
+		inv := invoker.NewRestoreSessionInvoker(c.kubeClient, c.stashClient, newrs)
+		for _, targetInfo := range inv.GetTargetInfo() {
 			if targetInfo.Target != nil &&
 				targetInfo.Target.Ref.Kind == w.Kind &&
 				targetInfo.Target.Ref.Name == w.Name {

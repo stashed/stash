@@ -126,6 +126,7 @@ func (f *Framework) BrowseMinioRepository(repo *v1alpha1.Repository) ([]stow.Ite
 	if err != nil {
 		return nil, err
 	}
+
 	tunnel := portforward.NewTunnel(portforward.TunnelOptions{
 		Client:    f.KubeClient.CoreV1().RESTClient(),
 		Config:    f.ClientConfig,

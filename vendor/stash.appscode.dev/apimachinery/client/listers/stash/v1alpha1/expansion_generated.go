@@ -18,14 +18,6 @@ limitations under the License.
 
 package v1alpha1
 
-// RecoveryListerExpansion allows custom methods to be added to
-// RecoveryLister.
-type RecoveryListerExpansion interface{}
-
-// RecoveryNamespaceListerExpansion allows custom methods to be added to
-// RecoveryNamespaceLister.
-type RecoveryNamespaceListerExpansion interface{}
-
 // RepositoryListerExpansion allows custom methods to be added to
 // RepositoryLister.
 type RepositoryListerExpansion interface{}
@@ -33,11 +25,3 @@ type RepositoryListerExpansion interface{}
 // RepositoryNamespaceListerExpansion allows custom methods to be added to
 // RepositoryNamespaceLister.
 type RepositoryNamespaceListerExpansion interface{}
-
-// ResticListerExpansion allows custom methods to be added to
-// ResticLister.
-type ResticListerExpansion interface{}
-
-// ResticNamespaceListerExpansion allows custom methods to be added to
-// ResticNamespaceLister.
-type ResticNamespaceListerExpansion interface{}

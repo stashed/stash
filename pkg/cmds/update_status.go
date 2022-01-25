@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -26,6 +27,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gomodules.xyz/flags"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -62,6 +64,16 @@ func NewCmdUpdateStatus() *cobra.Command {
 			opt.Config = config
 			opt.Metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(opt.InvokerKind), opt.Namespace, opt.InvokerName)
 
+			repo, err := opt.StashClient.StashV1alpha1().Repositories(opt.Repository.Namespace).Get(context.Background(), opt.Repository.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			opt.SetupOpt.StorageSecret, err = opt.KubeClient.CoreV1().Secrets(repo.Namespace).Get(context.Background(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
 			if opt.BackupSession != "" {
 				return opt.UpdateBackupStatusFromFile()
 			} else {
@@ -78,13 +90,12 @@ func NewCmdUpdateStatus() *cobra.Command {
 	cmd.Flags().StringVar(&opt.SetupOpt.Endpoint, "endpoint", opt.SetupOpt.Endpoint, "Endpoint for s3/s3 compatible backend or REST server URL")
 	cmd.Flags().StringVar(&opt.SetupOpt.Region, "region", opt.SetupOpt.Region, "Region for s3/s3 compatible backend")
 	cmd.Flags().StringVar(&opt.SetupOpt.Path, "path", opt.SetupOpt.Path, "Directory inside the bucket where backed up data will be stored")
-	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
 	cmd.Flags().StringVar(&opt.SetupOpt.ScratchDir, "scratch-dir", opt.SetupOpt.ScratchDir, "Temporary directory")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
-
 	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of Backup/Restore Session")
-	cmd.Flags().StringVar(&opt.Repository, "repository", opt.Repository, "Name of the Repository")
+	cmd.Flags().StringVar(&opt.Repository.Name, "repo-name", opt.Repository.Name, "Name of the Repository")
+	cmd.Flags().StringVar(&opt.Repository.Namespace, "repo-namespace", opt.Repository.Namespace, "Namespace of the Repository")
 	cmd.Flags().StringVar(&opt.InvokerKind, "invoker-kind", opt.InvokerKind, "Type of the respective backup/restore invoker")
 	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective backup/restore invoker")
 	cmd.Flags().StringVar(&opt.TargetRef.Kind, "target-kind", "", "Kind of the target")

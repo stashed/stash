@@ -32,6 +32,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:printcolumn:name="Repository",type="string",JSONPath=".status.repository"
 // +kubebuilder:printcolumn:name="Hostname",type="string",JSONPath=".status.hostname"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".uid"
 type Snapshot struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`

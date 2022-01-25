@@ -19,6 +19,10 @@ package v1alpha1
 import (
 	"stash.appscode.dev/apimachinery/crds"
 
+	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/apiextensions"
 )
 
@@ -41,4 +45,38 @@ func (r *Repository) LocalNetworkVolumePath() string {
 		}
 	}
 	return ""
+}
+
+func (r *Repository) UsageAllowed(srcNamespace *core.Namespace) bool {
+	if r.Spec.UsagePolicy == nil {
+		return r.Namespace == srcNamespace.Name
+	}
+	return r.isNamespaceAllowed(srcNamespace)
+}
+
+func (r *Repository) isNamespaceAllowed(srcNamespace *core.Namespace) bool {
+	allowedNamespaces := r.Spec.UsagePolicy.AllowedNamespaces
+
+	if allowedNamespaces.From == nil {
+		return false
+	}
+
+	if *allowedNamespaces.From == NamespacesFromAll {
+		return true
+	}
+
+	if *allowedNamespaces.From == NamespacesFromSame {
+		return r.Namespace == srcNamespace.Name
+	}
+
+	return selectorMatches(allowedNamespaces.Selector, srcNamespace.Labels)
+}
+
+func selectorMatches(ls *metav1.LabelSelector, srcLabels map[string]string) bool {
+	selector, err := metav1.LabelSelectorAsSelector(ls)
+	if err != nil {
+		klog.Infoln("invalid label selector: ", ls)
+		return false
+	}
+	return selector.Matches(labels.Set(srcLabels))
 }

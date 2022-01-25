@@ -36,7 +36,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -50,17 +50,16 @@ type UpdateStatusOptions struct {
 	StashClient cs.Interface
 
 	Namespace      string
-	Repository     string
 	BackupSession  string
 	OutputDir      string
 	OutputFileName string
-	Metrics        restic.MetricsOptions
-	TargetRef      v1beta1.TargetRef
+	InvokerKind    string
+	InvokerName    string
 
-	InvokerKind string
-	InvokerName string
-
-	SetupOpt restic.SetupOptions
+	Repository kmapi.ObjectReference
+	Metrics    restic.MetricsOptions
+	TargetRef  v1beta1.TargetRef
+	SetupOpt   restic.SetupOptions
 }
 
 func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
@@ -75,11 +74,11 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 		return err
 	}
 	// get backup Invoker
-	inv, err := invoker.ExtractBackupInvokerInfo(o.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
+	inv, err := invoker.NewBackupInvoker(o.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
 	if err != nil {
 		return err
 	}
-	for _, targetInfo := range inv.TargetsInfo {
+	for _, targetInfo := range inv.GetTargetInfo() {
 		if targetInfo.Target != nil &&
 			targetInfo.Target.Ref.Kind == o.TargetRef.Kind &&
 			targetInfo.Target.Ref.Name == o.TargetRef.Name {
@@ -97,11 +96,11 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 		return err
 	}
 
-	inv, err := invoker.ExtractRestoreInvokerInfo(o.KubeClient, o.StashClient, o.InvokerKind, o.InvokerName, o.Namespace)
+	inv, err := invoker.NewRestoreInvoker(o.KubeClient, o.StashClient, o.InvokerKind, o.InvokerName, o.Namespace)
 	if err != nil {
 		return err
 	}
-	for _, targetInfo := range inv.TargetsInfo {
+	for _, targetInfo := range inv.GetTargetInfo() {
 		if targetInfo.Target != nil &&
 			targetInfo.Target.Ref.Kind == o.TargetRef.Kind &&
 			targetInfo.Target.Ref.Name == o.TargetRef.Name {
@@ -112,6 +111,7 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 }
 
 func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput, inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) error {
+
 	klog.Infof("Updating post backup status.......")
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
@@ -144,7 +144,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			return backupSession.UID, in
 		}, metav1.UpdateOptions{})
 	if err != nil {
-		statusErr = utilerrors.NewAggregate([]error{statusErr, err})
+		statusErr = errors.NewAggregate([]error{statusErr, err})
 	}
 
 	// create status against the BackupSession for each hosts
@@ -169,9 +169,9 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		)
 		if err != nil {
 			klog.Errorf("failed to create event for %s %s/%s. Reason: %v",
-				inv.TypeMeta.Kind,
-				inv.ObjectMeta.Namespace,
-				inv.ObjectMeta.Name,
+				inv.GetTypeMeta().Kind,
+				inv.GetObjectMeta().Namespace,
+				inv.GetObjectMeta().Name,
 				err,
 			)
 		}
@@ -181,13 +181,14 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	if o.Metrics.Enabled && targetInfo.Target != nil {
 		err = o.Metrics.SendBackupHostMetrics(o.Config, inv, targetInfo.Target.Ref, backupOutput)
 		if err != nil {
-			statusErr = utilerrors.NewAggregate([]error{statusErr, err})
+			statusErr = errors.NewAggregate([]error{statusErr, err})
 		}
 	}
 	return statusErr
 }
 
 func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.RestoreOutput, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
+
 	if restoreOutput == nil {
 		return fmt.Errorf("invalid restore output. Restore output must not be nil")
 	}
@@ -195,10 +196,10 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	var err error
 	klog.Infof("Updating hosts status for restore target %s %s/%s.",
 		targetInfo.Target.Ref.Kind,
-		inv.ObjectMeta.Namespace,
+		inv.GetObjectMeta().Namespace,
 		targetInfo.Target.Ref.Name,
 	)
-	inv.Status, err = inv.UpdateRestoreInvokerStatus(invoker.RestoreInvokerStatus{
+	err = inv.UpdateStatus(invoker.RestoreInvokerStatus{
 		TargetStatus: []v1beta1.RestoreMemberStatus{
 			{
 				Ref:   targetInfo.Target.Ref,
@@ -224,9 +225,9 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 		err = inv.CreateEvent(eventType, eventer.EventSourceStatusUpdater, eventReason, eventMessage)
 		if err != nil {
 			klog.Errorf("failed to create event for %s %s/%s. Reason: %v",
-				inv.TypeMeta.Kind,
-				inv.ObjectMeta.Namespace,
-				inv.ObjectMeta.Name,
+				inv.GetTypeMeta().Kind,
+				inv.GetObjectMeta().Namespace,
+				inv.GetObjectMeta().Name,
 				err,
 			)
 		}
@@ -239,6 +240,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 }
 
 func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker, backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef, numCurHosts int) error {
+
 	var repoStats restic.RepositoryStats
 	for _, targetStatus := range backupSession.Status.Targets {
 		if invoker.TargetMatched(targetStatus.Ref, curTarget) {
@@ -266,13 +268,13 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 							w, err := restic.NewResticWrapper(o.SetupOpt)
 							if err != nil {
 								_, condErr := conditions.SetRetentionPolicyAppliedConditionToFalse(o.StashClient, backupSession, err)
-								return utilerrors.NewAggregate([]error{err, condErr})
+								return errors.NewAggregate([]error{err, condErr})
 							}
-							res, err := w.ApplyRetentionPolicies(inv.RetentionPolicy)
+							res, err := w.ApplyRetentionPolicies(inv.GetRetentionPolicy())
 							if err != nil {
 								klog.Warningf("Failed to apply retention policy. Reason: %s", err.Error())
 								_, condErr := conditions.SetRetentionPolicyAppliedConditionToFalse(o.StashClient, backupSession, err)
-								return utilerrors.NewAggregate([]error{err, condErr})
+								return errors.NewAggregate([]error{err, condErr})
 							}
 							if res != nil {
 								repoStats.SnapshotCount = res.SnapshotCount
@@ -289,13 +291,13 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 							w, err := restic.NewResticWrapper(o.SetupOpt)
 							if err != nil {
 								_, condErr := conditions.SetRepositoryIntegrityVerifiedConditionToFalse(o.StashClient, backupSession, err)
-								return utilerrors.NewAggregate([]error{err, condErr})
+								return errors.NewAggregate([]error{err, condErr})
 							}
 							res, err := w.VerifyRepositoryIntegrity()
 							if err != nil {
 								klog.Warningf("Failed to verify Repository integrity. Reason: %s", err.Error())
 								_, condErr := conditions.SetRepositoryIntegrityVerifiedConditionToFalse(o.StashClient, backupSession, err)
-								return utilerrors.NewAggregate([]error{err, condErr})
+								return errors.NewAggregate([]error{err, condErr})
 							}
 							if res != nil {
 								repoStats.Integrity = res.Integrity
@@ -314,7 +316,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 							if err != nil {
 								klog.Warningf("Failed to send Repository metrics. Reason: %s", err.Error())
 								_, condErr := conditions.SetRepositoryMetricsPushedConditionToFalse(o.StashClient, backupSession, err)
-								return utilerrors.NewAggregate([]error{err, condErr})
+								return errors.NewAggregate([]error{err, condErr})
 							}
 							_, err = conditions.SetRepositoryMetricsPushedConditionToTrue(o.StashClient, backupSession)
 							if err != nil {
@@ -328,7 +330,7 @@ func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker,
 				// now, update the repository status
 				if repoStats.Integrity != nil {
 					klog.Infoln("Updating repository status......")
-					repo, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(context.TODO(), inv.Repository, metav1.GetOptions{})
+					repo, err := inv.GetRepository()
 					if err != nil {
 						return err
 					}

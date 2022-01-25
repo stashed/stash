@@ -34,6 +34,7 @@ option go_package = "v1alpha1";
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:printcolumn:name="Repository",type="string",JSONPath=".status.repository"
 // +kubebuilder:printcolumn:name="Hostname",type="string",JSONPath=".status.hostname"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".uid"
 message Snapshot {
   optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
 

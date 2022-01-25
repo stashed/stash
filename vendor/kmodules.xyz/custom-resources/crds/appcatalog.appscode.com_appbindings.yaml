@@ -69,6 +69,9 @@ spec:
                       name:
                         description: '`name` is the name of the service. Required'
                         type: string
+                      namespace:
+                        description: '`namespace` is the namespace of the service.'
+                        type: string
                       path:
                         description: '`path` is an optional URL path which will be
                           sent in any request to this service.'
@@ -177,10 +180,8 @@ spec:
                             merged into the credentials Secret.
                           properties:
                             name:
-                              description: Name of the referent.
-                              type: string
-                            namespace:
-                              description: Namespace of the referent.
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
                       type: object

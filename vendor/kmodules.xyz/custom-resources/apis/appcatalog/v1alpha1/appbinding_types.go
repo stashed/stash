@@ -137,22 +137,26 @@ type ServiceReference struct {
 	// If not specified, then nothing will be prefixed
 	Scheme string `json:"scheme" protobuf:"bytes,1,opt,name=scheme"`
 
+	// `namespace` is the namespace of the service.
+	// +optional
+	Namespace string `json:"namespace,omitempty" protobuf:"bytes,2,opt,name=namespace"`
+
 	// `name` is the name of the service.
 	// Required
-	Name string `json:"name" protobuf:"bytes,2,opt,name=name"`
+	Name string `json:"name" protobuf:"bytes,3,opt,name=name"`
 
 	// The port that will be exposed by this app.
-	Port int32 `json:"port" protobuf:"varint,3,opt,name=port"`
+	Port int32 `json:"port" protobuf:"varint,4,opt,name=port"`
 
 	// `path` is an optional URL path which will be sent in any request to
 	// this service.
 	// +optional
-	Path string `json:"path,omitempty" protobuf:"bytes,4,opt,name=path"`
+	Path string `json:"path,omitempty" protobuf:"bytes,5,opt,name=path"`
 
 	// `query` is optional encoded query string, without '?' which will be
 	// sent in any request to this service.
 	// +optional
-	Query string `json:"query,omitempty" protobuf:"bytes,5,opt,name=query"`
+	Query string `json:"query,omitempty" protobuf:"bytes,6,opt,name=query"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -274,7 +278,7 @@ type AddKeyTransform struct {
 // the credentials Secret.
 type AddKeysFromTransform struct {
 	// The reference to the Secret that should be merged into the credentials Secret.
-	SecretRef *ObjectReference `json:"secretRef,omitempty" protobuf:"bytes,1,opt,name=secretRef"`
+	SecretRef *core.LocalObjectReference `json:"secretRef,omitempty" protobuf:"bytes,1,opt,name=secretRef"`
 }
 
 // RemoveKeyTransform specifies that one of the credentials keys returned

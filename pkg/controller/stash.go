@@ -335,44 +335,45 @@ func (c *StashController) ensureLatestSidecarConfiguration(inv invoker.BackupInv
 }
 
 func (c *StashController) getTargetWorkload(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) (runtime.Object, error) {
+	invMeta := inv.GetObjectMeta()
 	switch targetInfo.Target.Ref.Kind {
 	case apis.KindDeployment:
-		dp, err := c.dpLister.Deployments(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		dp, err := c.dpLister.Deployments(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		dp.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDeployment))
 		return dp, nil
 	case apis.KindDaemonSet:
-		ds, err := c.dsLister.DaemonSets(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		ds, err := c.dsLister.DaemonSets(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		ds.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDaemonSet))
 		return ds, nil
 	case apis.KindStatefulSet:
-		ss, err := c.ssLister.StatefulSets(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		ss, err := c.ssLister.StatefulSets(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		ss.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindStatefulSet))
 		return ss, nil
 	case apis.KindReplicaSet:
-		rs, err := c.rsLister.ReplicaSets(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		rs, err := c.rsLister.ReplicaSets(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		rs.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindReplicaSet))
 		return rs, nil
 	case apis.KindReplicationController:
-		rc, err := c.rcLister.ReplicationControllers(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		rc, err := c.rcLister.ReplicationControllers(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindReplicationController))
 		return rc, nil
 	case apis.KindDeploymentConfig:
-		dc, err := c.dcLister.DeploymentConfigs(inv.ObjectMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		dc, err := c.dcLister.DeploymentConfigs(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}

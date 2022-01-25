@@ -19,7 +19,6 @@ package util
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -34,9 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -69,15 +66,6 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func UpsertScratchVolume(volumes []core.Volume) []core.Volume {
-	return core_util.UpsertVolume(volumes, core.Volume{
-		Name: apis.ScratchDirVolumeName,
-		VolumeSource: core.VolumeSource{
-			EmptyDir: &core.EmptyDirVolumeSource{},
-		},
-	})
-}
-
 func UpsertTmpVolume(volumes []core.Volume, settings v1beta1_api.EmptyDirSettings) []core.Volume {
 	return core_util.UpsertVolume(volumes, core.Volume{
 		Name: apis.TmpDirVolumeName,
@@ -94,36 +82,6 @@ func UpsertTmpVolumeMount(volumeMounts []core.VolumeMount) []core.VolumeMount {
 	return core_util.UpsertVolumeMountByPath(volumeMounts, core.VolumeMount{
 		Name:      apis.TmpDirVolumeName,
 		MountPath: apis.TmpDirMountPath,
-	})
-}
-
-// https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
-func UpsertDownwardVolume(volumes []core.Volume) []core.Volume {
-	return core_util.UpsertVolume(volumes, core.Volume{
-		Name: apis.PodinfoVolumeName,
-		VolumeSource: core.VolumeSource{
-			DownwardAPI: &core.DownwardAPIVolumeSource{
-				Items: []core.DownwardAPIVolumeFile{
-					{
-						Path: "labels",
-						FieldRef: &core.ObjectFieldSelector{
-							FieldPath: "metadata.labels",
-						},
-					},
-				},
-			},
-		},
-	})
-}
-
-func UpsertSecretVolume(volumes []core.Volume, secretName string) []core.Volume {
-	return core_util.UpsertVolume(volumes, core.Volume{
-		Name: apis.StashSecretVolume,
-		VolumeSource: core.VolumeSource{
-			Secret: &core.SecretVolumeSource{
-				SecretName: secretName,
-			},
-		},
 	})
 }
 
@@ -247,43 +205,6 @@ func EnsureVolumeDeleted(volumes []core.Volume, name string) []core.Volume {
 	return volumes
 }
 
-func RecoveryEqual(old, new *api.Recovery) bool {
-	var oldSpec, newSpec *api.RecoverySpec
-	if old != nil {
-		oldSpec = &old.Spec
-	}
-	if new != nil {
-		newSpec = &new.Spec
-	}
-	return reflect.DeepEqual(oldSpec, newSpec)
-}
-
-func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
-	if err := workload.Canonicalize(); err != nil {
-		return err
-	}
-
-	switch workload.Kind {
-	case apis.KindDeployment:
-		_, err := k8sClient.AppsV1().Deployments(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
-		return err
-	case apis.KindReplicaSet:
-		_, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
-		return err
-	case apis.KindReplicationController:
-		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
-		return err
-	case apis.KindStatefulSet:
-		_, err := k8sClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
-		return err
-	case apis.KindDaemonSet:
-		_, err := k8sClient.AppsV1().DaemonSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
-		return err
-	default:
-		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
-	}
-}
-
 func GetConfigmapLockName(workload api.LocalTypedReference) string {
 	return strings.ToLower(fmt.Sprintf("lock-%s-%s", workload.Kind, workload.Name))
 }
@@ -325,69 +246,6 @@ func DeleteAllConfigMapLocks(k8sClient kubernetes.Interface, namespace, name, ki
 		return err
 	}
 	return nil
-}
-
-func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, workloadKind string, workloadName string) (int32, error) {
-	switch workloadKind {
-	case apis.KindDeployment:
-		obj, err := kubeClient.AppsV1().Deployments(namespace).Get(context.TODO(), workloadName, metav1.GetOptions{})
-		if err != nil {
-			return 0, err
-		} else {
-			return *obj.Spec.Replicas, nil
-		}
-	case apis.KindReplicationController:
-		obj, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), workloadName, metav1.GetOptions{})
-		if err != nil {
-			return 0, err
-		} else {
-			return *obj.Spec.Replicas, nil
-		}
-	case apis.KindReplicaSet:
-		obj, err := kubeClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), workloadName, metav1.GetOptions{})
-		if err != nil {
-			return 0, err
-		} else {
-			return *obj.Spec.Replicas, nil
-		}
-
-	default:
-		return 0, fmt.Errorf("unknown workload type")
-	}
-}
-
-func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, workload api.LocalTypedReference) bool {
-	var workloadAnnotation map[string]string
-
-	switch workload.Kind {
-	case apis.KindDeployment:
-		obj, err := k8sClient.AppsV1().Deployments(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
-		if err != nil {
-			klog.Fatalln(err)
-		}
-		workloadAnnotation = obj.Annotations
-	case apis.KindReplicationController:
-		obj, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
-		if err != nil {
-			klog.Fatalln(err)
-		}
-		workloadAnnotation = obj.Annotations
-	case apis.KindReplicaSet:
-		obj, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), workload.Name, metav1.GetOptions{})
-		if err != nil {
-			klog.Fatalln(err)
-		}
-		workloadAnnotation = obj.Annotations
-	case apis.KindStatefulSet:
-		// do nothing. we didn't scale down.
-	case apis.KindDaemonSet:
-		// do nothing.
-	default:
-		return false
-
-	}
-
-	return meta.HasKey(workloadAnnotation, apis.AnnotationOldReplica)
 }
 
 func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {

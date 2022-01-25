@@ -17,205 +17,36 @@ limitations under the License.
 package util
 
 import (
-	"context"
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
-	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
-	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/tools/pushgateway"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
 
-func NewCheckJob(restic *api_v1alpha1.Restic, hostName, smartPrefix string, image docker.Docker) *batch.Job {
-	job := &batch.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      apis.CheckJobPrefix + restic.Name,
-			Namespace: restic.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: api_v1alpha1.SchemeGroupVersion.String(),
-					Kind:       api_v1alpha1.ResourceKindRestic,
-					Name:       restic.Name,
-					UID:        restic.UID,
-				},
-			},
-			Labels: map[string]string{
-				"app":                    apis.AppLabelStash,
-				apis.AnnotationRestic:    restic.Name,
-				apis.AnnotationOperation: apis.OperationCheck,
-				// ensure that job gets deleted on completion
-				apis.KeyDeleteJobOnCompletion: apis.AllowDeletingJobOnCompletion,
-			},
-		},
-		Spec: batch.JobSpec{
-			Template: core.PodTemplateSpec{
-				Spec: core.PodSpec{
-					Containers: []core.Container{
-						{
-							Name:  apis.StashContainer,
-							Image: image.ToContainerImage(),
-							Args: append([]string{
-								"check",
-								"--restic-name=" + restic.Name,
-								"--host-name=" + hostName,
-								"--smart-prefix=" + smartPrefix,
-								fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-							}, flags.LoggerOptions.ToFlags()...),
-							VolumeMounts: []core.VolumeMount{
-								{
-									Name:      apis.ScratchDirVolumeName,
-									MountPath: "/tmp",
-								},
-							},
-						},
-					},
-					ImagePullSecrets: restic.Spec.ImagePullSecrets,
-					RestartPolicy:    core.RestartPolicyOnFailure,
-					Volumes: []core.Volume{
-						{
-							Name: apis.ScratchDirVolumeName,
-							VolumeSource: core.VolumeSource{
-								EmptyDir: &core.EmptyDirVolumeSource{},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	// local backend
-	// user don't need to specify "stash-local" volume, we collect it from restic-spec
-	if restic.Spec.Backend.Local != nil {
-		vol, mnt := restic.Spec.Backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
-		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
-			job.Spec.Template.Spec.Containers[0].VolumeMounts, mnt)
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, vol)
-	}
-
-	return job
-}
-
-func NewRecoveryJob(stashClient cs.Interface, recovery *api_v1alpha1.Recovery, image docker.Docker) (*batch.Job, error) {
-	repository, err := stashClient.StashV1alpha1().Repositories(recovery.Spec.Repository.Namespace).Get(context.TODO(), recovery.Spec.Repository.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	repoLabelData, err := ExtractDataFromRepositoryLabel(repository.Labels)
-	if err != nil {
-		return nil, err
-	}
-	volumes := make([]core.Volume, 0)
-	volumeMounts := make([]core.VolumeMount, 0)
-	for i, recVol := range recovery.Spec.RecoveredVolumes {
-		vol, mnt := recVol.ToVolumeAndMount(fmt.Sprintf("vol-%d", i))
-		volumes = append(volumes, vol)
-		volumeMounts = append(volumeMounts, mnt)
-	}
-
-	job := &batch.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      apis.RecoveryJobPrefix + recovery.Name,
-			Namespace: recovery.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: api_v1alpha1.SchemeGroupVersion.String(),
-					Kind:       api_v1alpha1.ResourceKindRecovery,
-					Name:       recovery.Name,
-					UID:        recovery.UID,
-				},
-			},
-			Labels: map[string]string{
-				"app":                    apis.AppLabelStash,
-				apis.AnnotationRecovery:  recovery.Name,
-				apis.AnnotationOperation: apis.OperationRecovery,
-				// ensure that the job gets deleted on completion
-				apis.KeyDeleteJobOnCompletion: apis.AllowDeletingJobOnCompletion,
-			},
-		},
-		Spec: batch.JobSpec{
-			Template: core.PodTemplateSpec{
-				Spec: core.PodSpec{
-					Containers: []core.Container{
-						{
-							Name:  apis.StashContainer,
-							Image: image.ToContainerImage(),
-							Args: append([]string{
-								"recover",
-								"--recovery-name=" + recovery.Name,
-								fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-							}, flags.LoggerOptions.ToFlags()...),
-							VolumeMounts: append(volumeMounts, core.VolumeMount{
-								Name:      apis.ScratchDirVolumeName,
-								MountPath: "/tmp",
-							}),
-						},
-					},
-					ImagePullSecrets: recovery.Spec.ImagePullSecrets,
-					RestartPolicy:    core.RestartPolicyOnFailure,
-					Volumes: append(volumes, core.Volume{
-						Name: apis.ScratchDirVolumeName,
-						VolumeSource: core.VolumeSource{
-							EmptyDir: &core.EmptyDirVolumeSource{},
-						},
-					}),
-				},
-			},
-		},
-	}
-
-	if repoLabelData.WorkloadKind == apis.KindDaemonSet {
-		job.Spec.Template.Spec.NodeName = repoLabelData.NodeName
-	} else {
-		job.Spec.Template.Spec.NodeSelector = recovery.Spec.NodeSelector
-	}
-
-	// local backend
-	if repository.Spec.Backend.Local != nil {
-		w := &api_v1alpha1.LocalTypedReference{
-			Kind: repoLabelData.WorkloadKind,
-			Name: repoLabelData.WorkloadName,
-		}
-		_, smartPrefix, err := w.HostnamePrefix(repoLabelData.PodName, repoLabelData.NodeName)
-		if err != nil {
-			return nil, err
-		}
-		backend := FixBackendPrefix(repository.Spec.Backend.DeepCopy(), smartPrefix)
-		vol, mnt := backend.Local.ToVolumeAndMount(apis.LocalVolumeName)
-		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
-			job.Spec.Template.Spec.Containers[0].VolumeMounts, mnt)
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, vol)
-	}
-
-	return job, nil
-}
-
 // NewPVCRestorerJob return a job definition to restore pvc.
 func NewPVCRestorerJob(inv invoker.RestoreInvoker, index int, repository *api_v1alpha1.Repository, image docker.Docker) (*core.PodTemplateSpec, error) {
-	targetInfo := inv.TargetsInfo[index]
+	targetInfo := inv.GetTargetInfo()[index]
 	container := core.Container{
 		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore",
-			"--invoker-kind=" + inv.TypeMeta.Kind,
-			"--invoker-name=" + inv.ObjectMeta.Name,
+			"--invoker-kind=" + inv.GetTypeMeta().Kind,
+			"--invoker-name=" + inv.GetObjectMeta().Name,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--restore-model=job",
-			"--secret-dir=" + apis.StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),
 			"--metrics-enabled=true",
@@ -238,12 +69,6 @@ func NewPVCRestorerJob(inv invoker.RestoreInvoker, index int, repository *api_v1
 						FieldPath: "metadata.name",
 					},
 				},
-			},
-		},
-		VolumeMounts: []core.VolumeMount{
-			{
-				Name:      apis.StashSecretVolume,
-				MountPath: apis.StashSecretMountDir,
 			},
 		},
 	}
@@ -293,8 +118,6 @@ func NewPVCRestorerJob(inv invoker.RestoreInvoker, index int, repository *api_v1
 
 	// add an emptyDir volume for holding temporary files
 	jobTemplate.Spec.Volumes = UpsertTmpVolume(jobTemplate.Spec.Volumes, targetInfo.TempDir)
-	// add storage secret as volume to the workload. this has been mounted on the container above.
-	jobTemplate.Spec.Volumes = UpsertSecretVolume(jobTemplate.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
 
 	return jobTemplate, nil
 }
@@ -344,15 +167,15 @@ func NewVolumeSnapshotterJob(bs *api_v1beta1.BackupSession, backupTarget *api_v1
 }
 
 func NewVolumeRestorerJob(inv invoker.RestoreInvoker, index int, image docker.Docker) (*core.PodTemplateSpec, error) {
-	targetInfo := inv.TargetsInfo[index]
+	targetInfo := inv.GetTargetInfo()[index]
 
 	container := core.Container{
 		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore-vs",
-			"--invoker-kind=" + inv.TypeMeta.Kind,
-			"--invoker-name=" + inv.ObjectMeta.Name,
+			"--invoker-kind=" + inv.GetTypeMeta().Kind,
+			"--invoker-name=" + inv.GetObjectMeta().Name,
 			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--metrics-enabled=true",

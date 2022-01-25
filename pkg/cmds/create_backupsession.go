@@ -92,7 +92,7 @@ func NewCmdCreateBackupSession() *cobra.Command {
 }
 
 func (opt *options) createBackupSession() error {
-	inv, err := invoker.ExtractBackupInvokerInfo(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+	inv, err := invoker.NewBackupInvoker(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 	if err != nil {
 		return err
 	}
@@ -111,14 +111,14 @@ func (opt *options) createBackupSession() error {
 		bsMeta,
 		func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
 			// Set BackupConfiguration  as BackupSession Owner
-			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.OwnerRef)
+			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
 			in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
 				APIGroup: api_v1beta1.SchemeGroupVersion.Group,
 				Kind:     opt.invokerKind,
 				Name:     opt.invokerName,
 			}
 
-			in.Labels = inv.Labels
+			in.Labels = inv.GetLabels()
 			// Add invoker name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
 			in.Labels[apis.LabelInvokerName] = opt.invokerName
 			in.Labels[apis.LabelInvokerType] = opt.invokerKind

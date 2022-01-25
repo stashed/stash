@@ -46,6 +46,7 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
@@ -77,6 +78,8 @@ type BackupSessionController struct {
 	Metrics  restic.MetricsOptions
 	Recorder record.EventRecorder
 }
+
+const BackupEventComponent = "stash-backup"
 
 func (c *BackupSessionController) RunBackup(targetInfo invoker.BackupTargetInfo, invokerRef *core.ObjectReference) error {
 	stopCh := make(chan struct{})
@@ -183,16 +186,16 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 		backupSession := obj.(*api_v1beta1.BackupSession)
 		klog.Infof("Sync/Add/Update for Backup Session %s", backupSession.GetName())
 
-		inv, err := invoker.ExtractBackupInvokerInfo(c.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, c.Namespace)
+		inv, err := invoker.NewBackupInvoker(c.StashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, c.Namespace)
 		if err != nil {
 			return err
 		}
 
-		for _, targetInfo := range inv.TargetsInfo {
+		for _, targetInfo := range inv.GetTargetInfo() {
 			if targetInfo.Target != nil && c.targetMatched(targetInfo.Target.Ref) {
 
 				// Ensure Execution Order
-				if inv.ExecutionOrder == api_v1beta1.Sequential &&
+				if inv.GetExecutionOrder() == api_v1beta1.Sequential &&
 					!inv.NextInOrder(targetInfo.Target.Ref, backupSession.Status.Targets) {
 					// backup order is sequential and the current target is not yet to be executed.
 					klog.Infof("Skipping backup. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.")
@@ -238,7 +241,7 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 }
 
 func (c *BackupSessionController) backup(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, backupSession *api_v1beta1.BackupSession) (*restic.BackupOutput, error) {
-	_, err := c.setSetupOptions(inv.Repository)
+	_, err := c.setSetupOptions(inv.GetRepoRef())
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +280,7 @@ func (c *BackupSessionController) backup(inv invoker.BackupInvoker, targetInfo i
 			return nil, err
 		}
 	}
-	extraOpt, err := c.setSetupOptions(inv.Repository)
+	extraOpt, err := c.setSetupOptions(inv.GetRepoRef())
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +292,7 @@ func (c *BackupSessionController) backup(inv invoker.BackupInvoker, targetInfo i
 	}
 
 	// BackupOptions backup target
-	backupOpt := util.BackupOptionsForBackupTarget(targetInfo.Target, inv.RetentionPolicy, *extraOpt)
+	backupOpt := util.BackupOptionsForBackupTarget(targetInfo.Target, inv.GetRetentionPolicy(), *extraOpt)
 	// Run Backup
 	// If there is an error during backup, don't return.
 	// We will execute postBackup hook even if the backup failed.
@@ -469,7 +472,7 @@ func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, 
 		KubeClient:    c.K8sClient,
 		StashClient:   c.StashClient,
 		Namespace:     c.Namespace,
-		Repository:    inv.Repository,
+		Repository:    inv.GetRepoRef(),
 		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
 		SetupOpt:      c.SetupOpt,
@@ -502,7 +505,7 @@ func (c *BackupSessionController) handleBackupFailure(backupSessionName string, 
 		KubeClient:    c.K8sClient,
 		StashClient:   c.StashClient,
 		Namespace:     c.Namespace,
-		Repository:    inv.Repository,
+		Repository:    inv.GetRepoRef(),
 		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
 		TargetRef:     targetInfo.Target.Ref,
@@ -543,19 +546,24 @@ func (c *BackupSessionController) targetMatched(ref api_v1beta1.TargetRef) bool 
 	return false
 }
 
-func (c *BackupSessionController) setSetupOptions(repoName string) (*util.ExtraOptions, error) {
+func (c *BackupSessionController) setSetupOptions(repo kmapi.ObjectReference) (*util.ExtraOptions, error) {
 	// get repository
-	repository, err := c.StashClient.StashV1alpha1().Repositories(c.Namespace).Get(context.TODO(), repoName, metav1.GetOptions{})
+	repository, err := c.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := c.K8sClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	// configure SourceHost, SecretDirectory, EnableCache and ScratchDirectory
 	extraOpt := &util.ExtraOptions{
-		Host:        c.Host,
-		SecretDir:   c.SetupOpt.SecretDir,
-		EnableCache: c.SetupOpt.EnableCache,
-		ScratchDir:  c.SetupOpt.ScratchDir,
+		Host:          c.Host,
+		StorageSecret: secret,
+		EnableCache:   c.SetupOpt.EnableCache,
+		ScratchDir:    c.SetupOpt.ScratchDir,
 	}
 
 	// configure setupOption

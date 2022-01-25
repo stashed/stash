@@ -24,6 +24,7 @@ import (
 	repositoriesv1alpha1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/repositories/v1alpha1"
 	stashv1alpha1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1"
 	stashv1beta1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1"
+	uiv1alpha1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/ui/v1alpha1"
 
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -35,6 +36,7 @@ type Interface interface {
 	RepositoriesV1alpha1() repositoriesv1alpha1.RepositoriesV1alpha1Interface
 	StashV1alpha1() stashv1alpha1.StashV1alpha1Interface
 	StashV1beta1() stashv1beta1.StashV1beta1Interface
+	UiV1alpha1() uiv1alpha1.UiV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -44,6 +46,7 @@ type Clientset struct {
 	repositoriesV1alpha1 *repositoriesv1alpha1.RepositoriesV1alpha1Client
 	stashV1alpha1        *stashv1alpha1.StashV1alpha1Client
 	stashV1beta1         *stashv1beta1.StashV1beta1Client
+	uiV1alpha1           *uiv1alpha1.UiV1alpha1Client
 }
 
 // RepositoriesV1alpha1 retrieves the RepositoriesV1alpha1Client
@@ -59,6 +62,11 @@ func (c *Clientset) StashV1alpha1() stashv1alpha1.StashV1alpha1Interface {
 // StashV1beta1 retrieves the StashV1beta1Client
 func (c *Clientset) StashV1beta1() stashv1beta1.StashV1beta1Interface {
 	return c.stashV1beta1
+}
+
+// UiV1alpha1 retrieves the UiV1alpha1Client
+func (c *Clientset) UiV1alpha1() uiv1alpha1.UiV1alpha1Interface {
+	return c.uiV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -94,6 +102,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cs.uiV1alpha1, err = uiv1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -109,6 +121,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 	cs.repositoriesV1alpha1 = repositoriesv1alpha1.NewForConfigOrDie(c)
 	cs.stashV1alpha1 = stashv1alpha1.NewForConfigOrDie(c)
 	cs.stashV1beta1 = stashv1beta1.NewForConfigOrDie(c)
+	cs.uiV1alpha1 = uiv1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -120,6 +133,7 @@ func New(c rest.Interface) *Clientset {
 	cs.repositoriesV1alpha1 = repositoriesv1alpha1.New(c)
 	cs.stashV1alpha1 = stashv1alpha1.New(c)
 	cs.stashV1beta1 = stashv1beta1.New(c)
+	cs.uiV1alpha1 = uiv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

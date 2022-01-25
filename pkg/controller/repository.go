@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash"
@@ -52,10 +53,10 @@ func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				return nil, obj.(*api.Repository).IsValid()
+				return nil, validateRepository(obj.(*api.Repository))
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				return nil, newObj.(*api.Repository).IsValid()
+				return nil, validateRepository(newObj.(*api.Repository))
 			},
 		},
 	)
@@ -163,5 +164,17 @@ func (c *StashController) deleteResticRepository(repository *api.Repository) err
 		}
 	}
 
+	return nil
+}
+
+func validateRepository(r *api.Repository) error {
+	err := r.IsValid()
+	if err != nil {
+		return err
+	}
+
+	if r.Spec.Backend.Local != nil {
+		return fmt.Errorf(`"local" backend is not supported in "Stash Community" edition. Please, install "Stash Enterprise" edition`)
+	}
 	return nil
 }

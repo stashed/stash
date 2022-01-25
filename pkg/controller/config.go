@@ -160,8 +160,6 @@ func (c *Config) New() (*StashController, error) {
 		return nil, err
 	}
 
-	ctrl.initNamespaceWatcher()
-
 	// init workload watchers
 	ctrl.initDeploymentWatcher()
 	ctrl.initDaemonSetWatcher()
@@ -173,8 +171,6 @@ func (c *Config) New() (*StashController, error) {
 	ctrl.initJobWatcher()
 
 	// init v1alpha1 resources watcher
-	ctrl.initResticWatcher()
-	ctrl.initRecoveryWatcher()
 	ctrl.initRepositoryWatcher()
 
 	// init v1beta1 resources watcher

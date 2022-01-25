@@ -73,16 +73,16 @@ var _ = Describe("Snapshot Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 			resources = append(resources, testResources{workloadMeta: deployment.ObjectMeta, workloadKind: apis.KindDeployment, workload: deployment})
 
-			// Deploy a StatefulSet
-			ss, err := f.DeployStatefulSet(framework.SourceStatefulSet, int32(3), framework.SourceVolume, func(ss *apps.StatefulSet) {
-				ss.Spec.Template.Spec.Containers[0].SecurityContext = securityContext
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			// Generate Sample Data
-			_, err = f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
-			Expect(err).NotTo(HaveOccurred())
-			resources = append(resources, testResources{workloadMeta: ss.ObjectMeta, workloadKind: apis.KindStatefulSet, workload: ss})
+			//// Deploy a StatefulSet
+			//ss, err := f.DeployStatefulSet(framework.SourceStatefulSet, int32(3), framework.SourceVolume, func(ss *apps.StatefulSet) {
+			//	ss.Spec.Template.Spec.Containers[0].SecurityContext = securityContext
+			//})
+			//Expect(err).NotTo(HaveOccurred())
+			//
+			//// Generate Sample Data
+			//_, err = f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
+			//Expect(err).NotTo(HaveOccurred())
+			//resources = append(resources, testResources{workloadMeta: ss.ObjectMeta, workloadKind: apis.KindStatefulSet, workload: ss})
 
 			// Deploy a DaemonSet
 			dmn, err := f.DeployDaemonSet(framework.SourceDaemonSet, framework.SourceVolume, func(dmn *apps.DaemonSet) {
@@ -125,6 +125,7 @@ var _ = Describe("Snapshot Tests", func() {
 			By("Listing all snapshots")
 			snapshots, err := f.ListSnapshots("")
 			Expect(err).NotTo(HaveOccurred())
+
 			Expect(len(snapshots.Items)).ShouldNot(BeZero())
 
 			By("Get a particular snapshot")
