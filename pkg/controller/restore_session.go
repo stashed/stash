@@ -31,7 +31,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
-	"stash.appscode.dev/apimachinery/pkg/restic"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
@@ -880,9 +880,9 @@ func (c *StashController) setRestorePhaseSucceeded(inv invoker.RestoreInvoker) e
 		)
 	}
 	// send restore metrics
-	metricsOpt := &restic.MetricsOptions{
+	metricsOpt := &metrics.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: apis.PushgatewayLocalURL,
+		PushgatewayURL: metrics.GetPushgatewayURL(),
 		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), invMeta.Namespace, invMeta.Name),
 	}
 	// send target specific metrics
@@ -929,9 +929,9 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 		)
 	}
 	// send restore metrics
-	metricsOpt := &restic.MetricsOptions{
+	metricsOpt := &metrics.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: apis.PushgatewayLocalURL,
+		PushgatewayURL: metrics.GetPushgatewayURL(),
 		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), invMeta.Namespace, invMeta.Name),
 	}
 	// send target specific metrics
@@ -979,9 +979,9 @@ func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, res
 		)
 	}
 	// send restore metrics
-	metricsOpt := &restic.MetricsOptions{
+	metricsOpt := &metrics.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: apis.PushgatewayLocalURL,
+		PushgatewayURL: metrics.GetPushgatewayURL(),
 		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), invMeta.Namespace, invMeta.Name),
 	}
 	// send target specific metrics

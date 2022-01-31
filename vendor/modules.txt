@@ -1268,7 +1268,6 @@ kmodules.xyz/client-go/tools/clientcmd
 kmodules.xyz/client-go/tools/clusterid
 kmodules.xyz/client-go/tools/exec
 kmodules.xyz/client-go/tools/portforward
-kmodules.xyz/client-go/tools/pushgateway
 kmodules.xyz/client-go/tools/queue
 # kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
 ## explicit
@@ -1445,7 +1444,7 @@ sigs.k8s.io/structured-merge-diff/v4/typed
 sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.17.1-0.20220121124417-69f0bb1ecd9f
+# stash.appscode.dev/apimachinery v0.17.1-0.20220131133517-3e17dd8d3a3d
 ## explicit
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
@@ -1480,6 +1479,7 @@ stash.appscode.dev/apimachinery/crds
 stash.appscode.dev/apimachinery/pkg/conditions
 stash.appscode.dev/apimachinery/pkg/docker
 stash.appscode.dev/apimachinery/pkg/invoker
+stash.appscode.dev/apimachinery/pkg/metrics
 stash.appscode.dev/apimachinery/pkg/restic
 stash.appscode.dev/apimachinery/pkg/util
 # bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

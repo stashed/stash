@@ -25,20 +25,14 @@ import (
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	util_v1beta1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/apimachinery/pkg/docker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"kmodules.xyz/client-go/tools/pushgateway"
 )
 
 // EnsureDefaultFunctions creates "update-status", "pvc-backup" and "pvc-restore" Functions if they are not already present
-func EnsureDefaultFunctions(stashClient cs.Interface, registry, stashImage, imageTag string) error {
-	image := docker.Docker{
-		Registry: registry,
-		Image:    stashImage,
-		Tag:      imageTag,
-	}
-
+func EnsureDefaultFunctions(stashClient cs.Interface, image docker.Docker) error {
 	defaultFunctions := []*api_v1beta1.Function{
 		updateStatusFunction(image),
 		pvcBackupFunction(image),
@@ -120,7 +114,7 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--target-name=${TARGET_NAME:=}",
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",
-				fmt.Sprintf("--metrics-pushgateway-url=%s", pushgateway.URL()),
+				fmt.Sprintf("--metrics-pushgateway-url=%s", metrics.GetPushgatewayURL()),
 			},
 		},
 	}

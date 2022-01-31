@@ -22,6 +22,7 @@ import (
 
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
+	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
@@ -134,7 +135,12 @@ func (c *Config) New() (*StashController, error) {
 	}
 
 	// ensure default functions
-	err = util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImage, ctrl.StashImageTag)
+	image := docker.Docker{
+		Registry: ctrl.DockerRegistry,
+		Image:    ctrl.StashImage,
+		Tag:      ctrl.StashImageTag,
+	}
+	err = util.EnsureDefaultFunctions(ctrl.stashClient, image)
 	if err != nil {
 		return nil, err
 	}
