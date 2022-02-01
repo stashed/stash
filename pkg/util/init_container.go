@@ -23,12 +23,12 @@ import (
 	v1alpha1_api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 
 	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/clientcmd"
-	"kmodules.xyz/client-go/tools/pushgateway"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
 
@@ -45,7 +45,7 @@ func NewRestoreInitContainer(inv invoker.RestoreInvoker, targetInfo invoker.Rest
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),
 			"--metrics-enabled=true",
-			"--pushgateway-url=" + pushgateway.URL(),
+			"--pushgateway-url=" + metrics.GetPushgatewayURL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{

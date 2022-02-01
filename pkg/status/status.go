@@ -30,6 +30,7 @@ import (
 	stash_util_v1beta1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/eventer"
 
@@ -57,7 +58,7 @@ type UpdateStatusOptions struct {
 	InvokerName    string
 
 	Repository kmapi.ObjectReference
-	Metrics    restic.MetricsOptions
+	Metrics    metrics.MetricsOptions
 	TargetRef  v1beta1.TargetRef
 	SetupOpt   restic.SetupOptions
 }

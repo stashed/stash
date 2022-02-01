@@ -24,12 +24,12 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 
 	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/clientcmd"
-	"kmodules.xyz/client-go/tools/pushgateway"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
@@ -50,7 +50,7 @@ func NewPVCRestorerJob(inv invoker.RestoreInvoker, index int, repository *api_v1
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),
 			"--metrics-enabled=true",
-			"--pushgateway-url=" + pushgateway.URL(),
+			"--pushgateway-url=" + metrics.GetPushgatewayURL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
@@ -132,7 +132,7 @@ func NewVolumeSnapshotterJob(bs *api_v1beta1.BackupSession, backupTarget *api_v1
 			"--target-name=" + backupTarget.Ref.Name,
 			"--target-kind=" + backupTarget.Ref.Kind,
 			"--metrics-enabled=true",
-			"--pushgateway-url=" + pushgateway.URL(),
+			"--pushgateway-url=" + metrics.GetPushgatewayURL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
@@ -179,7 +179,7 @@ func NewVolumeRestorerJob(inv invoker.RestoreInvoker, index int, image docker.Do
 			"--target-name=" + targetInfo.Target.Ref.Name,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			"--metrics-enabled=true",
-			"--pushgateway-url=" + pushgateway.URL(),
+			"--pushgateway-url=" + metrics.GetPushgatewayURL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{

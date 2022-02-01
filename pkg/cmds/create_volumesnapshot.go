@@ -27,6 +27,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
@@ -54,7 +55,7 @@ type VSoption struct {
 	kubeClient     kubernetes.Interface
 	stashClient    cs.Interface
 	snapshotClient vs_cs.Interface
-	metrics        restic.MetricsOptions
+	metrics        metrics.MetricsOptions
 
 	// Invoker
 	invokerKind string
@@ -71,7 +72,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 		kubeconfigPath string
 		opt            = VSoption{
 			namespace: meta.Namespace(),
-			metrics: restic.MetricsOptions{
+			metrics: metrics.MetricsOptions{
 				Enabled: true,
 			},
 		}

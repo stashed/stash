@@ -22,11 +22,11 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 
 	"gomodules.xyz/flags"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/clientcmd"
-	"kmodules.xyz/client-go/tools/pushgateway"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
@@ -44,7 +44,7 @@ func NewBackupSidecarContainer(inv invoker.BackupInvoker, targetInfo invoker.Bac
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", backend.MaxConnections()),
 			"--metrics-enabled=true",
-			"--pushgateway-url=" + pushgateway.URL(),
+			"--pushgateway-url=" + metrics.GetPushgatewayURL(),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 		}, flags.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{

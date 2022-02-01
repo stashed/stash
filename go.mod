@@ -41,7 +41,7 @@ require (
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
 	kmodules.xyz/webhook-runtime v0.0.0-20211116181908-909a755cc9d1
-	stash.appscode.dev/apimachinery v0.17.1-0.20220121124417-69f0bb1ecd9f
+	stash.appscode.dev/apimachinery v0.17.1-0.20220131133517-3e17dd8d3a3d
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

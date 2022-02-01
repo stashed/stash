@@ -27,7 +27,6 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-	"kmodules.xyz/client-go/tools/pushgateway"
 	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
 )
 
@@ -44,7 +43,6 @@ func NewRootCmd() *cobra.Command {
 			utilruntime.Must(ocscheme.AddToScheme(legacyscheme.Scheme))
 		},
 	}
-	rootCmd.PersistentFlags().StringVar(&pushgateway.ServiceName, "service-name", "stash-operator", "Stash service name.")
 
 	rootCmd.AddCommand(v.NewCmdVersion())
 	stopCh := genericapiserver.SetupSignalHandler()

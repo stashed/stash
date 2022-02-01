@@ -156,10 +156,9 @@ const (
 )
 
 const (
-	CallerWebhook       = "webhook"
-	CallerController    = "controller"
-	PushgatewayLocalURL = "http://localhost:56789"
-	DefaultHost         = "host-0"
+	CallerWebhook    = "webhook"
+	CallerController = "controller"
+	DefaultHost      = "host-0"
 )
 
 // ==================== Prometheus metrics related constants ============
