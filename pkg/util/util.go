@@ -26,6 +26,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
@@ -37,7 +38,6 @@ import (
 	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
-	"kmodules.xyz/client-go/tools/pushgateway"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
@@ -470,7 +470,7 @@ func HookExecutorContainer(name string, shiblings []core.Container, invokerKind,
 			"--hostname=${HOSTNAME:=}",
 			"--output-dir=${outputDir:=}",
 			"--metrics-enabled=true",
-			fmt.Sprintf("--metrics-pushgateway-url=%s", pushgateway.URL()),
+			fmt.Sprintf("--metrics-pushgateway-url=%s", metrics.GetPushgatewayURL()),
 		},
 		Env: []core.EnvVar{
 			{

@@ -27,6 +27,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
@@ -57,7 +58,7 @@ type hookOptions struct {
 	kubeClient        kubernetes.Interface
 	stashClient       cs.Interface
 	appClient         appcatalog_cs.Interface
-	metricOpts        restic.MetricsOptions
+	metricOpts        metrics.MetricsOptions
 	outputDir         string
 }
 

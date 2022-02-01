@@ -32,7 +32,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
-	"stash.appscode.dev/apimachinery/pkg/restic"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
@@ -636,7 +636,7 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 		backupSession,
 		core.EventTypeNormal,
 		eventer.EventReasonBackupSessionRunning,
-		"Backup job has been created succesfully/sidecar is watching the BackupSession.",
+		"Backup job has been created successfully/sidecar is watching the BackupSession.",
 	)
 	return err
 }
@@ -676,9 +676,9 @@ func (c *StashController) setBackupSessionSucceeded(inv invoker.BackupInvoker, b
 	}
 
 	// send backup metrics
-	metricsOpt := &restic.MetricsOptions{
+	metricsOpt := &metrics.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: apis.PushgatewayLocalURL,
+		PushgatewayURL: metrics.GetPushgatewayURL(),
 		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), inv.GetObjectMeta().Namespace, inv.GetObjectMeta().Name),
 	}
 
@@ -732,9 +732,9 @@ func (c *StashController) setBackupSessionFailed(inv invoker.BackupInvoker, back
 	)
 
 	// send metrics
-	metricsOpt := &restic.MetricsOptions{
+	metricsOpt := &metrics.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: apis.PushgatewayLocalURL,
+		PushgatewayURL: metrics.GetPushgatewayURL(),
 		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), inv.GetObjectMeta().Namespace, inv.GetObjectMeta().Name),
 	}
 

@@ -23,6 +23,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/docker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/stash/pkg/controller"
 
 	"github.com/spf13/pflag"
@@ -56,6 +57,7 @@ type ExtraOptions struct {
 	CronJobPSPNames         []string
 	BackupJobPSPNames       []string
 	RestoreJobPSPNames      []string
+	PushgatewayURL          string
 }
 
 func NewExtraOptions() *ExtraOptions {
@@ -91,6 +93,8 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringSliceVar(&s.CronJobPSPNames, "cron-job-psp", s.CronJobPSPNames, "Name of the PSPs for backup triggering CronJob. Use comma to separate multiple PSP names.")
 	fs.StringSliceVar(&s.BackupJobPSPNames, "backup-job-psp", s.BackupJobPSPNames, "Name of the PSPs for backup job. Use comma to separate multiple PSP names.")
 	fs.StringSliceVar(&s.RestoreJobPSPNames, "restore-job-psp", s.RestoreJobPSPNames, "Name of the PSPs for restore job. Use comma to separate multiple PSP names.")
+
+	fs.StringVar(&s.PushgatewayURL, "pushgateway-url", s.PushgatewayURL, "URL of the Prometheus pushgateway where backup metrics will be pushed.")
 }
 
 func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
@@ -145,6 +149,7 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 		}
 	}
 
+	metrics.SetPushgatewayURL(s.PushgatewayURL)
 	return nil
 }
 

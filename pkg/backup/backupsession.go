@@ -29,6 +29,7 @@ import (
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
 	"stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -75,7 +76,7 @@ type BackupSessionController struct {
 
 	SetupOpt restic.SetupOptions
 	Host     string
-	Metrics  restic.MetricsOptions
+	Metrics  metrics.MetricsOptions
 	Recorder record.EventRecorder
 }
 

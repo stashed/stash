@@ -26,6 +26,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/status"
@@ -60,7 +61,7 @@ type Options struct {
 	BackoffMaxWait time.Duration
 
 	SetupOpt restic.SetupOptions
-	Metrics  restic.MetricsOptions
+	Metrics  metrics.MetricsOptions
 	Host     string
 
 	KubeClient   kubernetes.Interface

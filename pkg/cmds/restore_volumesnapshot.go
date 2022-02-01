@@ -27,6 +27,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/status"
@@ -52,7 +53,7 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 		kubeconfigPath string
 		opt            = VSoption{
 			namespace: meta.Namespace(),
-			metrics: restic.MetricsOptions{
+			metrics: metrics.MetricsOptions{
 				Enabled: true,
 			},
 		}
