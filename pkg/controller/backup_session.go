@@ -897,10 +897,16 @@ func (c *StashController) cleanupBackupHistory(backupInvokerRef api_v1beta1.Back
 		return bsList[i].CreationTimestamp.After(bsList[j].CreationTimestamp.Time)
 	})
 
+	var lastCompletedSession string
+	for i := range bsList {
+		if bsList[i].Status.Phase == api_v1beta1.BackupSessionSucceeded || bsList[i].Status.Phase == api_v1beta1.BackupSessionFailed {
+			lastCompletedSession = bsList[i].Name
+			break
+		}
+	}
 	// delete the BackupSession that does not fit within the history limit
 	for i := int(historyLimit); i < len(bsList); i++ {
-		// delete only the BackupSessions that has completed its backup
-		if backupCompleted(bsList[i].Status.Phase) {
+		if backupCompleted(bsList[i].Status.Phase) && !(bsList[i].Name == lastCompletedSession && historyLimit > 0) {
 			err = c.stashClient.StashV1beta1().BackupSessions(namespace).Delete(context.TODO(), bsList[i].Name, meta.DeleteInBackground())
 			if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
 				return err
