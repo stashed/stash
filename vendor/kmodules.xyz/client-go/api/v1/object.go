@@ -26,6 +26,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// TypedObjectReference represents an typed namespaced object.
+type TypedObjectReference struct {
+	APIGroup string `json:"apiGroup,omitempty" protobuf:"bytes,1,opt,name=apiGroup"`
+	Kind     string `json:"kind,omitempty" protobuf:"bytes,2,opt,name=kind"`
+	// Namespace of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+	// +optional
+	Namespace string `json:"namespace,omitempty" protobuf:"bytes,3,opt,name=namespace"`
+	// Name of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	Name string `json:"name" protobuf:"bytes,4,opt,name=name"`
+}
+
 // ObjectReference contains enough information to let you inspect or modify the referred object.
 type ObjectReference struct {
 	// Namespace of the referent.

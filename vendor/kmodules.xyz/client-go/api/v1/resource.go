@@ -145,6 +145,10 @@ func EqualsGVR(a schema.GroupVersionResource, b metav1.GroupVersionResource) boo
 }
 
 func ExtractResourceID(mapper meta.RESTMapper, in ResourceID) (*ResourceID, error) {
+	if in.Group == "core" {
+		in.Group = ""
+	}
+
 	kindFound := in.Kind != ""
 	resFOund := in.Name != ""
 	if kindFound {

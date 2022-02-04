@@ -57,10 +57,11 @@ type UpdateStatusOptions struct {
 	InvokerKind    string
 	InvokerName    string
 
-	Repository kmapi.ObjectReference
-	Metrics    metrics.MetricsOptions
-	TargetRef  v1beta1.TargetRef
-	SetupOpt   restic.SetupOptions
+	StorageSecret kmapi.ObjectReference
+
+	Metrics   metrics.MetricsOptions
+	TargetRef v1beta1.TargetRef
+	SetupOpt  restic.SetupOptions
 }
 
 func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {

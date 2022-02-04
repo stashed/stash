@@ -143,6 +143,16 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 		return err
 	}
 
+	if inv.GetPhase() != api_v1beta1.BackupInvokerReady {
+		message := fmt.Sprintf("Skipped taking backup. Reason: %s %s/%s is not ready.",
+			inv.GetTypeMeta().Kind,
+			inv.GetObjectMeta().Namespace,
+			inv.GetObjectMeta().Name)
+
+		klog.Infof(message)
+		return c.setBackupSessionSkipped(inv, backupSession, message)
+	}
+
 	// ensure that target phases are up-to-date
 	backupSession, err = c.ensureTargetPhases(backupSession)
 	if err != nil {
@@ -161,11 +171,13 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 			return err
 		}
 		if runningBS != nil {
-			klog.Infof("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
+			message := fmt.Sprintf("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
 				runningBS.Name,
 				runningBS.Status.Phase,
 			)
-			return c.setBackupSessionSkipped(inv, backupSession, runningBS)
+
+			klog.Infof(message)
+			return c.setBackupSessionSkipped(inv, backupSession, message)
 		}
 	}
 
@@ -288,49 +300,26 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		Labels:    inv.GetLabels(),
 	}
 
-	var serviceAccountName string
-
-	// if RBAC is enabled then ensure respective RBAC stuffs
-	if targetInfo.RuntimeSettings.Pod != nil && targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
-		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
-	} else {
-		// ServiceAccount hasn't been specified. so create new one.
-		serviceAccountName = getBackupJobServiceAccountName(invMeta.Name, strconv.Itoa(index))
-		saMeta := metav1.ObjectMeta{
-			Name:      serviceAccountName,
-			Namespace: invMeta.Namespace,
-			Labels:    inv.GetLabels(),
-		}
-		_, _, err := core_util.CreateOrPatchServiceAccount(
-			context.TODO(),
-			c.kubeClient,
-			saMeta,
-			func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, ownerRef)
-				return in
-			},
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return err
-		}
-	}
-
 	psps, err := c.getBackupJobPSPNames(targetInfo.Task)
 	if err != nil {
 		return err
 	}
 
-	err = stash_rbac.EnsureBackupJobRBAC(c.kubeClient, ownerRef, invMeta.Namespace, serviceAccountName, psps, inv.GetLabels())
+	rbacOptions, err := c.getBackupRBACOptions(inv)
 	if err != nil {
 		return err
 	}
 
-	// Give the ServiceAccount permission to send request to the license handler
-	err = stash_rbac.EnsureLicenseReaderClusterRoleBinding(c.kubeClient, ownerRef, invMeta.Namespace, serviceAccountName, inv.GetLabels())
+	rbacOptions.PodSecurityPolicyNames = psps
+	if targetInfo.RuntimeSettings.Pod != nil && targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
+		rbacOptions.ServiceAccount.Name = targetInfo.RuntimeSettings.Pod.ServiceAccountName
+	}
+
+	err = rbacOptions.EnsureBackupJobRBAC()
 	if err != nil {
 		return err
 	}
+
 	// if the Stash is using a private registry, then ensure the image pull secrets
 	var imagePullSecrets []core.LocalObjectReference
 	if c.ImagePullSecrets != nil {
@@ -418,7 +407,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 
 			in.Spec.Template.Spec = podSpec
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
-			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 			in.Spec.BackoffLimit = pointer.Int32P(0)
 			return in
 		},
@@ -756,7 +745,7 @@ func (c *StashController) setBackupSessionFailed(inv invoker.BackupInvoker, back
 	return errors.NewAggregate([]error{backupErr, err})
 }
 
-func (c *StashController) setBackupSessionSkipped(inv invoker.BackupInvoker, currentBS, runningBS *api_v1beta1.BackupSession) error {
+func (c *StashController) setBackupSessionSkipped(inv invoker.BackupInvoker, currentBS *api_v1beta1.BackupSession, message string) error {
 
 	// total backup session duration is the difference between the time when BackupSession was created and current time
 	sessionDuration := time.Since(currentBS.CreationTimestamp.Time)
@@ -781,10 +770,8 @@ func (c *StashController) setBackupSessionSkipped(inv invoker.BackupInvoker, cur
 		currentBS,
 		core.EventTypeWarning,
 		eventer.EventReasonBackupSessionSkipped,
-		fmt.Sprintf("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
-			runningBS.Name,
-			runningBS.Status.Phase,
-		))
+		message,
+	)
 
 	// cleanup old BackupSessions
 	err := c.cleanupBackupHistory(currentBS.Spec.Invoker, currentBS.Namespace, inv.GetBackupHistoryLimit())
@@ -851,10 +838,6 @@ func getBackupJobName(backupSession *api_v1beta1.BackupSession, index string) st
 	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSession.Name, ".", "-"), index)
 }
 
-func getBackupJobServiceAccountName(invokerName, index string) string {
-	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(invokerName, ".", "-"), index)
-}
-
 func getVolumeSnapshotterJobName(targetRef api_v1beta1.TargetRef, name string) string {
 	parts := strings.Split(name, "-")
 	suffix := parts[len(parts)-1]
@@ -897,10 +880,16 @@ func (c *StashController) cleanupBackupHistory(backupInvokerRef api_v1beta1.Back
 		return bsList[i].CreationTimestamp.After(bsList[j].CreationTimestamp.Time)
 	})
 
+	var lastCompletedSession string
+	for i := range bsList {
+		if bsList[i].Status.Phase == api_v1beta1.BackupSessionSucceeded || bsList[i].Status.Phase == api_v1beta1.BackupSessionFailed {
+			lastCompletedSession = bsList[i].Name
+			break
+		}
+	}
 	// delete the BackupSession that does not fit within the history limit
 	for i := int(historyLimit); i < len(bsList); i++ {
-		// delete only the BackupSessions that has completed its backup
-		if backupCompleted(bsList[i].Status.Phase) {
+		if backupCompleted(bsList[i].Status.Phase) && !(bsList[i].Name == lastCompletedSession && historyLimit > 0) {
 			err = c.stashClient.StashV1beta1().BackupSessions(namespace).Delete(context.TODO(), bsList[i].Name, meta.DeleteInBackground())
 			if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
 				return err
@@ -1011,4 +1000,40 @@ func explicitInputs(params []appcat.Param) map[string]string {
 		inputs[param.Name] = param.Value
 	}
 	return inputs
+}
+
+func (c *StashController) getBackupRBACOptions(inv invoker.BackupInvoker) (stash_rbac.RBACOptions, error) {
+	invMeta := inv.GetObjectMeta()
+	repo := inv.GetRepoRef()
+
+	rbacOptions := stash_rbac.RBACOptions{
+		KubeClient: c.kubeClient,
+		Invoker: stash_rbac.InvokerOptions{
+			ObjectMeta: invMeta,
+			TypeMeta:   inv.GetTypeMeta(),
+		},
+		Owner:          inv.GetOwnerRef(),
+		OffshootLabels: inv.GetLabels(),
+		ServiceAccount: kmapi.ObjectReference{
+			Namespace: invMeta.Namespace,
+		},
+	}
+
+	if repo.Namespace != invMeta.Namespace {
+		repository, err := c.repoLister.Repositories(repo.Namespace).Get(repo.Name)
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				return rbacOptions, nil
+			}
+			return rbacOptions, err
+		}
+
+		rbacOptions.CrossNamespaceResources = &stash_rbac.CrossNamespaceResources{
+			Repository: repo.Name,
+			Namespace:  repo.Namespace,
+			Secret:     repository.Spec.Backend.StorageSecretName,
+		}
+	}
+
+	return rbacOptions, nil
 }

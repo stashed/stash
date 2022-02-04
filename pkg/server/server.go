@@ -128,13 +128,13 @@ func (c completedConfig) New() (*StashServer, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	license.NewLicenseEnforcer(c.ExtraConfig.ClientConfig, c.ExtraConfig.LicenseFile).Install(genericServer.Handler.NonGoRestfulMux)
-
 	ctrl, err := c.ExtraConfig.New()
 	if err != nil {
 		return nil, err
 	}
+
+	// Add license handler
+	license.NewLicenseEnforcer(c.ExtraConfig.ClientConfig, c.ExtraConfig.LicenseFile).Install(genericServer.Handler.NonGoRestfulMux)
 
 	var admissionHooks []hooks.AdmissionHook
 	if c.ExtraConfig.EnableValidatingWebhook {
@@ -142,6 +142,7 @@ func (c completedConfig) New() (*StashServer, error) {
 			ctrl.NewRepositoryWebhook(),
 			// ctrl.NewBackupSessionWebhook(),
 			ctrl.NewRestoreSessionWebhook(),
+			ctrl.NewBackupConfigurationWebhook(),
 		)
 	}
 	if c.ExtraConfig.EnableMutatingWebhook {

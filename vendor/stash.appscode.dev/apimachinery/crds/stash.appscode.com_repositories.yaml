@@ -1677,6 +1677,27 @@ spec:
                   which is updated on mutation by the API Server.
                 format: int64
                 type: integer
+              references:
+                description: References holds a list of resource references that using
+                  this Repository
+                items:
+                  description: TypedObjectReference represents an typed namespaced
+                    object.
+                  properties:
+                    apiGroup:
+                      type: string
+                    kind:
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                      type: string
+                    namespace:
+                      description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
               snapshotCount:
                 description: SnapshotCount shows number of snapshots stored in the
                   repository

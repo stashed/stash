@@ -168,16 +168,6 @@ func (fi *Invocation) EventuallyRunningBackupCompleted(invokerMeta metav1.Object
 	}, WaitTimeOut, PullInterval)
 }
 
-func (fi *Invocation) EventuallyBackupSessionCount(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
-	return Eventually(func() int {
-		bsList, err := fi.GetBackupSessionsForInvoker(invokerMeta, invokerKind)
-		if err != nil {
-			return 0
-		}
-		return len(bsList.Items)
-	}, WaitTimeOut, PullInterval)
-}
-
 func (fi *Invocation) GetBackupSessionsForInvoker(invokerMeta metav1.ObjectMeta, invokerKind string) (*v1beta1.BackupSessionList, error) {
 	return fi.StashClient.StashV1beta1().BackupSessions(fi.namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{

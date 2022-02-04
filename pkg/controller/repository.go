@@ -23,6 +23,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	stash_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"stash.appscode.dev/stash/pkg/util"
 
@@ -31,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
@@ -61,6 +63,7 @@ func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {
 		},
 	)
 }
+
 func (c *StashController) initRepositoryWatcher() {
 	c.repoInformer = c.stashInformerFactory.Stash().V1alpha1().Repositories().Informer()
 	c.repoQueue = queue.New(api.ResourceKindRepository, c.MaxNumRequeues, c.NumThreads, c.runRepositoryReconciler)
@@ -104,7 +107,9 @@ func (c *StashController) runRepositoryReconciler(key string) error {
 					},
 					metav1.PatchOptions{},
 				)
-				return err
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			_, _, err = stash_util.PatchRepository(
@@ -121,6 +126,21 @@ func (c *StashController) runRepositoryReconciler(key string) error {
 				return err
 			}
 		}
+		err = c.requeueRepositoryReferences(repo)
+		if err != nil {
+			return err
+		}
+		_, _, err = stash_util.PatchRepository(
+			context.TODO(),
+			c.stashClient.StashV1alpha1(),
+			repo,
+			func(in *api.Repository) *api.Repository {
+				in.Status.ObservedGeneration = in.ObjectMeta.Generation
+				return in
+			},
+			metav1.PatchOptions{},
+		)
+		return err
 	}
 	return nil
 }
@@ -176,5 +196,38 @@ func validateRepository(r *api.Repository) error {
 	if r.Spec.Backend.Local != nil {
 		return fmt.Errorf(`"local" backend is not supported in "Stash Community" edition. Please, install "Stash Enterprise" edition`)
 	}
+	return nil
+}
+
+func (c *StashController) requeueRepositoryReferences(repository *api.Repository) error {
+	for _, ref := range repository.Status.References {
+		switch ref.Kind {
+		case api_v1beta1.ResourceKindRestoreSession:
+			restoresession, err := c.restoreSessionLister.RestoreSessions(ref.Namespace).Get(ref.Name)
+			if err != nil {
+				return err
+			}
+			key, err := cache.MetaNamespaceKeyFunc(restoresession)
+			if err != nil {
+				return err
+			}
+			c.restoreSessionQueue.GetQueue().Add(key)
+
+		case api_v1beta1.ResourceKindBackupConfiguration:
+			backupconfiguration, err := c.bcLister.BackupConfigurations(ref.Namespace).Get(ref.Name)
+			if err != nil {
+				return err
+			}
+			key, err := cache.MetaNamespaceKeyFunc(backupconfiguration)
+			if err != nil {
+				return err
+			}
+			c.bcQueue.GetQueue().Add(key)
+
+		default:
+			return fmt.Errorf("Reference kind %q is unknown", ref.Kind)
+		}
+	}
+
 	return nil
 }

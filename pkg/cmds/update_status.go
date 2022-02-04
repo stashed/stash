@@ -64,12 +64,7 @@ func NewCmdUpdateStatus() *cobra.Command {
 			opt.Config = config
 			opt.Metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(opt.InvokerKind), opt.Namespace, opt.InvokerName)
 
-			repo, err := opt.StashClient.StashV1alpha1().Repositories(opt.Repository.Namespace).Get(context.Background(), opt.Repository.Name, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-
-			opt.SetupOpt.StorageSecret, err = opt.KubeClient.CoreV1().Secrets(repo.Namespace).Get(context.Background(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+			opt.SetupOpt.StorageSecret, err = opt.KubeClient.CoreV1().Secrets(opt.StorageSecret.Namespace).Get(context.Background(), opt.StorageSecret.Name, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -94,8 +89,8 @@ func NewCmdUpdateStatus() *cobra.Command {
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
 	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of Backup/Restore Session")
-	cmd.Flags().StringVar(&opt.Repository.Name, "repo-name", opt.Repository.Name, "Name of the Repository")
-	cmd.Flags().StringVar(&opt.Repository.Namespace, "repo-namespace", opt.Repository.Namespace, "Namespace of the Repository")
+	cmd.Flags().StringVar(&opt.StorageSecret.Name, "storage-secret-name", opt.StorageSecret.Name, "Name of the Repository")
+	cmd.Flags().StringVar(&opt.StorageSecret.Namespace, "storage-secret-namespace", opt.StorageSecret.Namespace, "Namespace of the Repository")
 	cmd.Flags().StringVar(&opt.InvokerKind, "invoker-kind", opt.InvokerKind, "Type of the respective backup/restore invoker")
 	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective backup/restore invoker")
 	cmd.Flags().StringVar(&opt.TargetRef.Kind, "target-kind", "", "Kind of the target")

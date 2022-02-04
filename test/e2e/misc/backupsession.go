@@ -17,7 +17,6 @@ limitations under the License.
 package misc
 
 import (
-	"fmt"
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -71,7 +70,7 @@ var _ = Describe("BackupSession", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			var lastXBS []string
+			var keepCandidates []string
 			totalBS := 5
 			By("Triggering multiple backups")
 			for i := 0; i < totalBS; i++ {
@@ -82,8 +81,8 @@ var _ = Describe("BackupSession", func() {
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(backupSession)
 				// store only last X BackupSession name
-				if i >= totalBS-int(historyLimit) {
-					lastXBS = append(lastXBS, backupSession.Name)
+				if i == 0 || i >= totalBS-int(historyLimit) {
+					keepCandidates = append(keepCandidates, backupSession.Name)
 				}
 				time.Sleep(1 * time.Second)
 			}
@@ -91,14 +90,11 @@ var _ = Describe("BackupSession", func() {
 			By("Waiting for all BackupSession to complete")
 			f.EventuallyRunningBackupCompleted(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeTrue())
 
-			By(fmt.Sprintf("Verifying that only %d BackupSession remaining", historyLimit))
-			f.EventuallyBackupSessionCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", 2))
-
-			By("Verifying that the remaining BackupSessions are the most recent BackupSessions")
+			By("Verifying that the remaining BackupSessions are the desired ones")
 			remainingBS, err := f.GetBackupSessionsForInvoker(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration)
 			Expect(err).NotTo(HaveOccurred())
 			for _, bs := range remainingBS.Items {
-				exist, _ := arrays.Contains(lastXBS, bs.Name)
+				exist, _ := arrays.Contains(keepCandidates, bs.Name)
 				Expect(exist).To(BeTrue())
 			}
 		})

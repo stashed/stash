@@ -36,28 +36,28 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) EnsureRestoreInitContainerRBAC() error {
 	// ensure ClusterRole for restore init container
-	err := ensureRestoreInitContainerClusterRole(kubeClient, labels)
+	err := opt.ensureRestoreInitContainerClusterRole()
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore init container
-	err = ensureRestoreInitContainerRoleBinding(kubeClient, owner, namespace, sa, labels)
+	err = opt.ensureRestoreInitContainerRoleBinding()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return opt.ensureCrossNamespaceRBAC()
 }
 
-func ensureRestoreInitContainerClusterRole(kc kubernetes.Interface, labels map[string]string) error {
+func (opt *RBACOptions) ensureRestoreInitContainerClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashRestoreInitContainerClusterRole,
-		Labels: labels,
+		Labels: opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -96,14 +96,14 @@ func ensureRestoreInitContainerClusterRole(kc kubernetes.Interface, labels map[s
 	return err
 }
 
-func ensureRestoreInitContainerRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) ensureRestoreInitContainerRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Namespace: namespace,
-		Name:      getRestoreInitContainerRoleBindingName(owner.Kind, owner.Name),
-		Labels:    labels,
+		Namespace: opt.Invoker.Namespace,
+		Name:      getRestoreInitContainerRoleBindingName(opt.Owner.Kind, opt.Owner.Name),
+		Labels:    opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
@@ -117,8 +117,8 @@ func ensureRestoreInitContainerRoleBinding(kc kubernetes.Interface, owner *metav
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      sa,
-				Namespace: namespace,
+				Name:      opt.ServiceAccount.Name,
+				Namespace: opt.ServiceAccount.Namespace,
 			},
 		}
 		return in

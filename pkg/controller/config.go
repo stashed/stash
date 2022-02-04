@@ -24,7 +24,6 @@ import (
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
-	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
 	auditlib "go.bytebuilders.dev/audit/lib"
@@ -155,10 +154,6 @@ func (c *Config) New() (*StashController, error) {
 		if err := reg_util.UpdateValidatingWebhookCABundle(c.ClientConfig, validatingWebhook); err != nil {
 			return nil, err
 		}
-	}
-
-	if err := stash_rbac.EnsureSidecarClusterRole(c.KubeClient); err != nil {
-		return nil, err
 	}
 
 	// init workload watchers

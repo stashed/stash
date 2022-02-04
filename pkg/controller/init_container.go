@@ -32,6 +32,7 @@ import (
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
@@ -41,13 +42,43 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 	// if RBAC is enabled then ensure ServiceAccount and respective ClusterRole and RoleBinding
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 
+	repository, err := inv.GetRepository()
+	if err != nil {
+		return err
+	}
+
 	// Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != apis.CallerWebhook {
 		owner, err := ownerWorkload(w)
 		if err != nil {
 			return err
 		}
-		err = stash_rbac.EnsureRestoreInitContainerRBAC(c.kubeClient, owner, invMeta.Namespace, sa, inv.GetLabels())
+
+		invMeta := inv.GetObjectMeta()
+
+		rbacOptions := stash_rbac.RBACOptions{
+			KubeClient: c.kubeClient,
+			Invoker: stash_rbac.InvokerOptions{
+				ObjectMeta: invMeta,
+				TypeMeta:   inv.GetTypeMeta(),
+			},
+			Owner:          owner,
+			OffshootLabels: inv.GetLabels(),
+			ServiceAccount: kmapi.ObjectReference{
+				Name:      sa,
+				Namespace: invMeta.Namespace,
+			},
+		}
+
+		if invMeta.Namespace != repository.Namespace {
+			rbacOptions.CrossNamespaceResources = &stash_rbac.CrossNamespaceResources{
+				Namespace:  repository.Namespace,
+				Repository: repository.Name,
+				Secret:     repository.Spec.Backend.StorageSecretName,
+			}
+		}
+
+		err = rbacOptions.EnsureRestoreInitContainerRBAC()
 		if err != nil {
 			return err
 		}
@@ -61,12 +92,6 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 			return err
 		}
 		w.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
-	}
-
-	repository, err := inv.GetRepository()
-	if err != nil {
-		klog.Errorf("unable to get Repository %s/%s: Reason: %v", inv.GetRepoRef().Namespace, inv.GetRepoRef().Name, err)
-		return err
 	}
 
 	if w.Spec.Template.Annotations == nil {

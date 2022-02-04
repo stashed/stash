@@ -33,6 +33,7 @@ import (
 
 // EnsureDefaultFunctions creates "update-status", "pvc-backup" and "pvc-restore" Functions if they are not already present
 func EnsureDefaultFunctions(stashClient cs.Interface, image docker.Docker) error {
+
 	defaultFunctions := []*api_v1beta1.Function{
 		updateStatusFunction(image),
 		pvcBackupFunction(image),
@@ -106,8 +107,8 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--namespace=${NAMESPACE:=default}",
 				"--backupsession=${BACKUP_SESSION:=}",
-				"--repo-name=${REPOSITORY_NAME:=}",
-				"--repo-namespace=${REPOSITORY_NAMESPACE:=}",
+				"--storage-secret-name=${REPOSITORY_SECRET_NAME}",
+				"--storage-secret-namespace=${REPOSITORY_SECRET_NAMESPACE}",
 				"--invoker-kind=${INVOKER_KIND:=}",
 				"--invoker-name=${INVOKER_NAME:=}",
 				"--target-kind=${TARGET_KIND:=}",

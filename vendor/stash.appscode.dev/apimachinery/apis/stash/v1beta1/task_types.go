@@ -37,29 +37,29 @@ const (
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Task struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Spec              TaskSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              TaskSpec `json:"spec,omitempty"`
 }
 
 type TaskSpec struct {
-	Steps []FunctionRef `json:"steps,omitempty" protobuf:"bytes,1,rep,name=steps"`
+	Steps []FunctionRef `json:"steps,omitempty"`
 	// List of volumes that can be mounted by containers belonging to the pod created for this task.
 	// +optional
-	Volumes []core.Volume `json:"volumes,omitempty" protobuf:"bytes,2,rep,name=volumes"`
+	Volumes []core.Volume `json:"volumes,omitempty"`
 }
 
 type FunctionRef struct {
 	// Name indicates the name of Function crd
-	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	Name string `json:"name,omitempty"`
 	// Inputs specifies the inputs of respective Function
 	// +optional
-	Params []Param `json:"params,omitempty" protobuf:"bytes,2,rep,name=params"`
+	Params []Param `json:"params,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type TaskList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Items           []Task `json:"items,omitempty" protobuf:"bytes,2,rep,name=items"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Task `json:"items,omitempty"`
 }
