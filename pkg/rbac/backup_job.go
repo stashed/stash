@@ -18,7 +18,6 @@ package rbac
 
 import (
 	"context"
-	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -28,34 +27,44 @@ import (
 	policy "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
-func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, psps []string, labels map[string]string) error {
+func (opt *RBACOptions) EnsureBackupJobRBAC() error {
+	if opt.ServiceAccount.Name == "" {
+		err := opt.ensureServiceAccount()
+		if err != nil {
+			return err
+		}
+	}
 	// ensure ClusterRole for restore job
-	err := ensureBackupJobClusterRole(kubeClient, psps, labels)
+	err := opt.ensureBackupJobClusterRole()
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore job
-	err = ensureBackupJobRoleBinding(kubeClient, owner, namespace, sa, labels)
+	err = opt.ensureBackupJobRoleBinding()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	err = opt.ensureCrossNamespaceRBAC()
+	if err != nil {
+		return err
+	}
+
+	return opt.ensureLicenseReaderClusterRoleBinding()
 }
 
-func ensureBackupJobClusterRole(kc kubernetes.Interface, psps []string, labels map[string]string) error {
+func (opt *RBACOptions) ensureBackupJobClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashBackupJobClusterRole,
-		Labels: labels,
+		Labels: opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -92,7 +101,7 @@ func ensureBackupJobClusterRole(kc kubernetes.Interface, psps []string, labels m
 				APIGroups:     []string{policy.GroupName},
 				Resources:     []string{"podsecuritypolicies"},
 				Verbs:         []string{"use"},
-				ResourceNames: psps,
+				ResourceNames: opt.PodSecurityPolicyNames,
 			},
 		}
 		return in
@@ -100,14 +109,14 @@ func ensureBackupJobClusterRole(kc kubernetes.Interface, psps []string, labels m
 	return err
 }
 
-func ensureBackupJobRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) ensureBackupJobRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Name:      getBackupJobRoleBindingName(sa),
-		Namespace: namespace,
-		Labels:    labels,
+		Name:      opt.getRoleBindingName(),
+		Namespace: opt.Invoker.Namespace,
+		Labels:    opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -117,17 +126,11 @@ func ensureBackupJobRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerRefe
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      sa,
-				Namespace: namespace,
+				Name:      opt.ServiceAccount.Name,
+				Namespace: opt.ServiceAccount.Namespace,
 			},
 		}
 		return in
 	}, metav1.PatchOptions{})
 	return err
-}
-
-func getBackupJobRoleBindingName(name string) string {
-	// Create RoleBinding with name same as the ServiceAccount name.
-	// The ServiceAccount already has Stash specific prefix in it's name.
-	return strings.ReplaceAll(name, ".", "-")
 }

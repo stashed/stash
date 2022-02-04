@@ -23,29 +23,38 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
 
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/apis/batch"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
-	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
 func getSidecarRoleBindingName(name string, kind string) string {
 	return meta_util.ValidNameWithPrefixNSuffix(apis.StashSidecarClusterRole, strings.ToLower(kind), name)
 }
 
-func EnsureSidecarClusterRole(kc kubernetes.Interface) error {
+func (opt *RBACOptions) EnsureSideCarRBAC() error {
+	err := opt.ensureSidecarClusterRole()
+	if err != nil {
+		return err
+	}
+
+	err = opt.ensureSidecarRoleBinding()
+	if err != nil {
+		return err
+	}
+
+	return opt.ensureCrossNamespaceRBAC()
+}
+
+func (opt *RBACOptions) ensureSidecarClusterRole() error {
 	meta := metav1.ObjectMeta{Name: apis.StashSidecarClusterRole}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -118,14 +127,14 @@ func EnsureSidecarClusterRole(kc kubernetes.Interface) error {
 	return err
 }
 
-func EnsureSidecarRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) ensureSidecarRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Namespace: namespace,
-		Name:      getSidecarRoleBindingName(owner.Name, owner.Kind),
-		Labels:    labels,
+		Namespace: opt.Invoker.Namespace,
+		Name:      getSidecarRoleBindingName(opt.Owner.Name, opt.Owner.Kind),
+		Labels:    opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
@@ -139,45 +148,11 @@ func EnsureSidecarRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerRefere
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      sa,
-				Namespace: namespace,
+				Name:      opt.ServiceAccount.Name,
+				Namespace: opt.ServiceAccount.Namespace,
 			},
 		}
 		return in
 	}, metav1.PatchOptions{})
 	return err
-}
-
-func ensureSidecarRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
-	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
-		context.TODO(),
-		getSidecarRoleBindingName(w.Name, w.Kind),
-		metav1.DeleteOptions{})
-	if err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	if err == nil {
-		klog.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getSidecarRoleBindingName(w.Name, w.Kind))
-	}
-	return nil
-}
-
-func EnsureUnnecessaryWorkloadRBACDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
-	// delete backup sidecar RoleBinding if workload does not have stash sidecar
-	if !util.HasStashSidecar(w.Spec.Template.Spec.Containers) {
-		err := ensureSidecarRoleBindingDeleted(kubeClient, w)
-		if err != nil && !kerr.IsNotFound(err) {
-			return err
-		}
-	}
-
-	// delete restore init-container RoleBinding if workload does not have sash init-container
-	if !util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers) {
-		err := ensureRestoreInitContainerRoleBindingDeleted(kubeClient, w)
-		if err != nil && !kerr.IsNotFound(err) {
-			return err
-		}
-	}
-
-	return nil
 }

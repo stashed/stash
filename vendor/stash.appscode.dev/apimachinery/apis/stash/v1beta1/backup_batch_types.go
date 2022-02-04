@@ -42,77 +42,80 @@ const (
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BackupBatch struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Spec              BackupBatchSpec   `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-	Status            BackupBatchStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              BackupBatchSpec   `json:"spec,omitempty"`
+	Status            BackupBatchStatus `json:"status,omitempty"`
 }
 
 type BackupBatchSpec struct {
 	// members is a list of backup configurations that are part of this batch
 	// +optional
-	Members []BackupConfigurationTemplateSpec `json:"members,omitempty" protobuf:"bytes,1,rep,name=members"`
+	Members []BackupConfigurationTemplateSpec `json:"members,omitempty"`
 	// Schedule specifies the schedule for invoking backup sessions
 	// +optional
-	Schedule string `json:"schedule,omitempty" protobuf:"bytes,2,opt,name=schedule"`
+	Schedule string `json:"schedule,omitempty"`
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc,
 	// and used to create service account for CronJob.
 	// +optional
-	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty" protobuf:"bytes,3,opt,name=runtimeSettings"`
+	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 	// Driver indicates the name of the agent to use to backup the target.
 	// Supported values are "Restic", "VolumeSnapshotter".
 	// Default value is "Restic".
 	// +optional
 	// +kubebuilder:default=Restic
-	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,4,opt,name=driver,casttype=Snapshotter"`
+	Driver Snapshotter `json:"driver,omitempty"`
 	// Repository refer to the Repository crd that holds backend information
 	// +optional
-	Repository kmapi.ObjectReference `json:"repository,omitempty" protobuf:"bytes,5,opt,name=repository"`
+	Repository kmapi.ObjectReference `json:"repository,omitempty"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
-	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy" protobuf:"bytes,6,opt,name=retentionPolicy"`
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy"`
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
 	// +optional
-	Paused bool `json:"paused,omitempty" protobuf:"varint,7,opt,name=paused"`
+	Paused bool `json:"paused,omitempty"`
 	// BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
 	// This is helpful for debugging purpose.
 	// Default: 1
 	// +optional
-	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty" protobuf:"varint,8,opt,name=backupHistoryLimit"`
+	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty"`
 	// Actions that Stash should take in response to backup sessions.
 	// Cannot be updated.
 	// +optional
-	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,9,opt,name=hooks"`
+	Hooks *BackupHooks `json:"hooks,omitempty"`
 	// ExecutionOrder indicate whether to backup the members in the sequential order as they appear in the members list.
 	// The default value is "Parallel" which means the members will be backed up in parallel.
 	// +kubebuilder:default=Parallel
 	// +optional
-	ExecutionOrder ExecutionOrder `json:"executionOrder,omitempty" protobuf:"bytes,10,opt,name=executionOrder"`
+	ExecutionOrder ExecutionOrder `json:"executionOrder,omitempty"`
 }
 
 type BackupBatchStatus struct {
 	// ObservedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the
 	// BackupBatch's generation, which is updated on mutation by the API Server.
 	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty" protobuf:"varint,1,opt,name=observedGeneration"`
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Conditions shows current backup setup condition of the BackupBatch.
 	// +optional
-	Conditions []kmapi.Condition `json:"conditions,omitempty" protobuf:"bytes,2,rep,name=conditions"`
+	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 	// MemberConditions shows current backup setup condition of the members of the BackupBatch.
 	// +optional
-	MemberConditions []MemberConditions `json:"memberConditions,omitempty" protobuf:"bytes,3,rep,name=memberConditions"`
+	MemberConditions []MemberConditions `json:"memberConditions,omitempty"`
+	// Phase indicates phase of this BackupBatch.
+	// +optional
+	Phase BackupInvokerPhase `json:"phase,omitempty"`
 }
 
 type MemberConditions struct {
 	// Target is the reference to the respective target whose condition is shown here.
-	Target TargetRef `json:"target" protobuf:"bytes,1,opt,name=target"`
+	Target TargetRef `json:"target"`
 	// Conditions shows current backup setup condition of this member.
 	// +optional
-	Conditions []kmapi.Condition `json:"conditions,omitempty" protobuf:"bytes,2,rep,name=conditions"`
+	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type BackupBatchList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Items           []BackupBatch `json:"items,omitempty" protobuf:"bytes,2,rep,name=items"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []BackupBatch `json:"items,omitempty"`
 }

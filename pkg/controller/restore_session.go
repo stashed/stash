@@ -79,7 +79,12 @@ func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				return nil, obj.(*api_v1beta1.RestoreSession).IsValid()
+				rs := obj.(*api_v1beta1.RestoreSession)
+				err := rs.IsValid()
+				if err != nil {
+					return nil, err
+				}
+				return nil, c.validateAgainstUsagePolicy(rs.Spec.Repository, rs.Namespace)
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				// TODO: should not allow spec update ???
@@ -164,6 +169,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 	if err != nil {
 		return err
 	}
+
 	if invMeta.DeletionTimestamp != nil {
 		// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
 		// remove respective init-container and finally remove finalizer
@@ -182,10 +188,21 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 					}
 				}
 			}
-			// Ensure that the ClusterRoleBindings for this restore invoker has been deleted
-			if err := stash_rbac.EnsureClusterRoleBindingDeleted(c.kubeClient, invMeta, inv.GetLabels()); err != nil {
+
+			rbacOptions, err := c.getRestoreRBACOptions(inv)
+			if err != nil {
 				return err
 			}
+
+			if err := rbacOptions.EnsureRBACResourcesDeleted(); err != nil {
+				return err
+			}
+
+			err = c.deleteRepositoryReferences(inv)
+			if err != nil {
+				return err
+			}
+
 			// remove finalizer
 			return inv.RemoveFinalizer()
 		}
@@ -196,58 +213,6 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 	err = inv.AddFinalizer()
 	if err != nil {
 		return err
-	}
-
-	// ======================== Set Global Conditions ============================
-	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
-		// Check whether Repository exist or not
-		repository, err := inv.GetRepository()
-		if err != nil {
-			if kerr.IsNotFound(err) {
-				klog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
-					inv.GetRepoRef().Namespace,
-					inv.GetRepoRef().Name,
-					inv.GetTypeMeta().Kind,
-					invMeta.Namespace,
-					invMeta.Name,
-				)
-				err2 := conditions.SetRepositoryFoundConditionToFalse(inv)
-				if err2 != nil {
-					return err2
-				}
-				return c.requeueRestoreInvoker(inv, key, 5*time.Second)
-			}
-			err2 := conditions.SetRepositoryFoundConditionToUnknown(inv, err)
-			return errors.NewAggregate([]error{err, err2})
-		}
-		err = conditions.SetRepositoryFoundConditionToTrue(inv)
-		if err != nil {
-			return err
-		}
-
-		// Check whether the backend Secret exist or not
-		secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-		if err != nil {
-			if kerr.IsNotFound(err) {
-				klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
-					secret.Namespace,
-					secret.Name,
-					repository.Namespace,
-					repository.Name,
-				)
-				err2 := conditions.SetBackendSecretFoundConditionToFalse(inv, secret.Name)
-				if err2 != nil {
-					return err2
-				}
-				return c.requeueRestoreInvoker(inv, key, 5*time.Second)
-			}
-			err2 := conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
-			return errors.NewAggregate([]error{err, err2})
-		}
-		err = conditions.SetBackendSecretFoundConditionToTrue(inv, secret.Name)
-		if err != nil {
-			return err
-		}
 	}
 
 	// ================= Don't Process Completed Invoker ===========================
@@ -269,7 +234,91 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 	if err != nil {
 		return err
 	}
-	// check whether restore process has completed or running and set it's phase accordingly
+
+	// ======================== Set Global Conditions ============================
+	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
+		// Check whether Repository exist or not
+		repository, err := inv.GetRepository()
+
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				klog.Infof("Repository %s/%s does not exist."+
+					"\nRequeueing after 5 seconds......",
+					inv.GetRepoRef().Namespace,
+					inv.GetRepoRef().Name)
+
+				err = conditions.SetRepositoryFoundConditionToFalse(inv)
+				if err != nil {
+					return err
+				}
+
+				return c.requeueRestoreInvoker(inv, key)
+			}
+			return conditions.SetRepositoryFoundConditionToUnknown(inv, err)
+		}
+
+		if repository.ObjectMeta.DeletionTimestamp != nil {
+			klog.Infof("Repository %s/%s has been deleted."+
+				"\nRequeueing after 5 seconds......",
+				inv.GetRepoRef().Namespace,
+				inv.GetRepoRef().Name)
+
+			err = conditions.SetRepositoryFoundConditionToFalse(inv)
+			if err != nil {
+				return err
+			}
+
+			return c.requeueRestoreInvoker(inv, key)
+		}
+
+		err = conditions.SetRepositoryFoundConditionToTrue(inv)
+		if err != nil {
+			return err
+		}
+
+		err = c.upsertRepositoryReferences(inv)
+		if err != nil {
+			return err
+		}
+
+		// Check whether the backend Secret exist or not
+		secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
+					secret.Namespace,
+					secret.Name,
+					repository.Namespace,
+					repository.Name,
+				)
+				err2 := conditions.SetBackendSecretFoundConditionToFalse(inv, secret.Name)
+				if err2 != nil {
+					return err2
+				}
+				return c.requeueRestoreInvoker(inv, key)
+			}
+			return conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
+		}
+		err = conditions.SetBackendSecretFoundConditionToTrue(inv, secret.Name)
+		if err != nil {
+			return err
+		}
+
+		err = c.validateAgainstUsagePolicy(inv.GetRepoRef(), inv.GetObjectMeta().Namespace)
+		if err != nil {
+			condErr := conditions.SetValidationPassedToFalse(inv, err)
+			if condErr != nil {
+				return condErr
+			}
+		} else {
+			condErr := conditions.SetValidationPassedToTrue(inv)
+			if condErr != nil {
+				return condErr
+			}
+		}
+	}
+
+	// check whether restore process has completed or running and set its phase accordingly
 	phase, err := c.getRestorePhase(inv.GetStatus())
 
 	// ==================== Execute Global PostRestore Hooks ===========================
@@ -288,7 +337,14 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 	}
 
 	// ==================== Set Restore Invoker Phase ======================================
-	if phase == api_v1beta1.RestoreFailed {
+	if phase == api_v1beta1.RestorePhaseInvalid {
+		klog.Infof("Skipping processing invalid Restoresession.")
+
+		if inv.GetStatus().Phase == api_v1beta1.RestorePhaseInvalid {
+			return nil
+		}
+		return c.setRestorePhaseInvalid(inv)
+	} else if phase == api_v1beta1.RestoreFailed {
 		// one or more target has failed to complete their restore process.
 		// mark entire restore process as failure.
 		// now, set restore phase "Failed", create an event. and send respective metrics.
@@ -457,54 +513,23 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 
 	targetInfo := inv.GetTargetInfo()[index]
 
-	// Ensure respective RBAC and PSP stuff.
-	var serviceAccountName string
-	if targetInfo.RuntimeSettings.Pod != nil &&
-		targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
-		// ServiceAccount has been specified, so use it.
-		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
-	} else {
-		// ServiceAccount hasn't been specified. so create new one with name generated from the invoker name.
-		serviceAccountName = getRestoreJobServiceAccountName(invMeta.Name, strconv.Itoa(index))
-		saMeta := metav1.ObjectMeta{
-			Name:      serviceAccountName,
-			Namespace: invMeta.Namespace,
-			Labels:    inv.GetLabels(),
-		}
-		_, _, err := core_util.CreateOrPatchServiceAccount(
-			context.TODO(),
-			c.kubeClient,
-			saMeta,
-			func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
-				in.Labels = inv.GetLabels()
-				return in
-			},
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return err
-		}
-	}
-
 	psps, err := c.getRestoreJobPSPNames(targetInfo.Task)
 	if err != nil {
 		return err
 	}
 
-	err = stash_rbac.EnsureRestoreJobRBAC(
-		c.kubeClient,
-		inv.GetOwnerRef(),
-		invMeta.Namespace,
-		serviceAccountName,
-		psps,
-		inv.GetLabels(),
-	)
+	rbacOptions, err := c.getRestoreRBACOptions(inv)
 	if err != nil {
 		return err
 	}
-	// Give the ServiceAccount permission to send request to the license handler
-	err = stash_rbac.EnsureLicenseReaderClusterRoleBinding(c.kubeClient, inv.GetOwnerRef(), invMeta.Namespace, serviceAccountName, inv.GetLabels())
+
+	rbacOptions.PodSecurityPolicyNames = psps
+
+	if targetInfo.RuntimeSettings.Pod != nil && targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
+		rbacOptions.ServiceAccount.Name = targetInfo.RuntimeSettings.Pod.ServiceAccountName
+	}
+
+	err = rbacOptions.EnsureRestoreJobRBAC()
 	if err != nil {
 		return err
 	}
@@ -565,7 +590,7 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		// pass offshoot labels to job's pod
 		jobTemplate.Labels = meta_util.OverwriteKeys(jobTemplate.Labels, inv.GetLabels())
 		jobTemplate.Spec.ImagePullSecrets = imagePullSecrets
-		jobTemplate.Spec.ServiceAccountName = serviceAccountName
+		jobTemplate.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 
 		return c.createRestoreJob(jobTemplate, jobMeta, inv.GetOwnerRef())
 	}
@@ -631,7 +656,7 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		}
 
 		restoreJobTemplate.Spec.ImagePullSecrets = imagePullSecrets
-		restoreJobTemplate.Spec.ServiceAccountName = serviceAccountName
+		restoreJobTemplate.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 
 		// create restore job
 		err = c.createRestoreJob(restoreJobTemplate, *restoreJobMeta, inv.GetOwnerRef())
@@ -946,6 +971,12 @@ func (c *StashController) setRestorePhaseFailed(inv invoker.RestoreInvoker, rest
 	return errors.NewAggregate([]error{restoreErr, err})
 }
 
+func (c *StashController) setRestorePhaseInvalid(inv invoker.RestoreInvoker) error {
+	return inv.UpdateStatus(invoker.RestoreInvokerStatus{
+		Phase: api_v1beta1.RestorePhaseInvalid,
+	})
+}
+
 func (c *StashController) setRestorePhaseUnknown(inv invoker.RestoreInvoker, restoreErr error) error {
 	var err error
 	invMeta := inv.GetObjectMeta()
@@ -1028,6 +1059,10 @@ func (c *StashController) setRestoreTargetPhaseRunning(inv invoker.RestoreInvoke
 }
 
 func (c *StashController) getRestorePhase(status invoker.RestoreInvokerStatus) (api_v1beta1.RestorePhase, error) {
+	if kmapi.IsConditionFalse(status.Conditions, apis.ValidationPassed) {
+		return api_v1beta1.RestorePhaseInvalid, nil
+	}
+
 	// If the Phase is empty or "Pending" then return it. controller will process accordingly
 	if status.Phase == "" || status.Phase == api_v1beta1.RestorePending {
 		return api_v1beta1.RestorePending, nil
@@ -1102,10 +1137,6 @@ func getRestoreJobName(invokerMeta metav1.ObjectMeta, suffix string) string {
 	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashRestore, strings.ReplaceAll(invokerMeta.Name, ".", "-"), suffix)
 }
 
-func getRestoreJobServiceAccountName(name, suffix string) string {
-	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashRestore, strings.ReplaceAll(name, ".", "-"), suffix)
-}
-
 func getVolumeRestorerJobName(invokerMeta metav1.ObjectMeta, index string) string {
 	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(invokerMeta.Name, ".", "-"), index)
 }
@@ -1130,11 +1161,11 @@ func restoreCompleted(phase api_v1beta1.RestorePhase) bool {
 		phase == api_v1beta1.RestorePhaseUnknown
 }
 
-func (c *StashController) requeueRestoreInvoker(inv invoker.RestoreInvoker, key string, delay time.Duration) error {
+func (c *StashController) requeueRestoreInvoker(inv invoker.RestoreInvoker, key string) error {
 	invTypeMeta := inv.GetTypeMeta()
 	switch invTypeMeta.Kind {
 	case api_v1beta1.ResourceKindRestoreSession:
-		c.rsQueue.GetQueue().AddAfter(key, delay)
+		c.rsQueue.GetQueue().AddAfter(key, requeueTimeInterval)
 	default:
 		return fmt.Errorf("unable to requeue. Reason: Restore invoker %s %s is not supported",
 			invTypeMeta.APIVersion,
@@ -1146,6 +1177,13 @@ func (c *StashController) requeueRestoreInvoker(inv invoker.RestoreInvoker, key 
 
 func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) error {
 	status := inv.GetStatus()
+	// Skipping phase calculation here if the restoresession is invalid
+	if kmapi.IsConditionTrue(status.Conditions, apis.RepositoryFound) &&
+		kmapi.IsConditionTrue(status.Conditions, apis.BackendSecretFound) &&
+		kmapi.IsConditionFalse(status.Conditions, apis.ValidationPassed) {
+		return nil
+	}
+
 	targetStats := status.TargetStatus
 	for i, target := range status.TargetStatus {
 		if target.TotalHosts == nil {
@@ -1193,7 +1231,6 @@ func (c *StashController) ensureRestoreTargetPhases(inv invoker.RestoreInvoker) 
 			targetStats[i].Phase = api_v1beta1.TargetRestoreSucceeded
 			continue
 		}
-		// all host completed their restore process and none of them failed. so, phase should be "Succeeded".
 		targetStats[i].Phase = api_v1beta1.TargetRestoreRunning
 	}
 	return inv.UpdateStatus(invoker.RestoreInvokerStatus{TargetStatus: targetStats})
@@ -1225,4 +1262,38 @@ func targetRestoreInitiated(inv invoker.RestoreInvoker, targetRef api_v1beta1.Ta
 		}
 	}
 	return false
+}
+func (c *StashController) getRestoreRBACOptions(inv invoker.RestoreInvoker) (stash_rbac.RBACOptions, error) {
+	invMeta := inv.GetObjectMeta()
+	repo := inv.GetRepoRef()
+
+	rbacOptions := stash_rbac.RBACOptions{
+		KubeClient: c.kubeClient,
+		Invoker: stash_rbac.InvokerOptions{
+			ObjectMeta: invMeta,
+			TypeMeta:   inv.GetTypeMeta(),
+		},
+		Owner:          inv.GetOwnerRef(),
+		OffshootLabels: inv.GetLabels(),
+		ServiceAccount: kmapi.ObjectReference{
+			Namespace: invMeta.Namespace,
+		},
+	}
+
+	if repo.Namespace != invMeta.Namespace {
+		repository, err := c.repoLister.Repositories(repo.Namespace).Get(repo.Name)
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				return rbacOptions, nil
+			}
+			return rbacOptions, err
+		}
+
+		rbacOptions.CrossNamespaceResources = &stash_rbac.CrossNamespaceResources{
+			Repository: repo.Name,
+			Namespace:  repo.Namespace,
+			Secret:     repository.Spec.Backend.StorageSecretName,
+		}
+	}
+	return rbacOptions, nil
 }

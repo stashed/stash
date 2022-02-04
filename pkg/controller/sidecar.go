@@ -27,7 +27,6 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/eventer"
-	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
 	stringz "gomodules.xyz/x/strings"
@@ -52,7 +51,14 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.Back
 
 	// Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != apis.CallerWebhook {
-		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, invMeta.Namespace, sa, inv.GetLabels())
+		rbacOptions, err := c.getBackupRBACOptions(inv)
+		if err != nil {
+			return err
+		}
+		rbacOptions.ServiceAccount.Name = sa
+		rbacOptions.Owner = owner
+
+		err = rbacOptions.EnsureSideCarRBAC()
 		if err != nil {
 			return err
 		}

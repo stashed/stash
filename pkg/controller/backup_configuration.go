@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
+	"stash.appscode.dev/apimachinery/apis/stash"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
@@ -37,6 +38,8 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
@@ -47,8 +50,44 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	ofst_util "kmodules.xyz/offshoot-api/util"
+	"kmodules.xyz/webhook-runtime/admission"
+	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
+	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
 	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
+
+const requeueTimeInterval = 5 * time.Second
+
+func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
+	return webhook.NewGenericWebhook(
+		schema.GroupVersionResource{
+			Group:    "admission.stash.appscode.com",
+			Version:  "v1beta1",
+			Resource: "backupconfigurationvalidators",
+		},
+		"backupconfigurationvalidator",
+		[]string{stash.GroupName},
+		api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				bc := obj.(*api_v1beta1.BackupConfiguration)
+
+				return nil, c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace)
+
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				bc := newObj.(*api_v1beta1.BackupConfiguration)
+
+				if bc.ObjectMeta.DeletionTimestamp != nil {
+					return nil, nil
+				}
+
+				return nil, c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace)
+			},
+		},
+	)
+}
 
 func (c *StashController) initBackupConfigurationWatcher() {
 	c.bcInformer = c.stashInformerFactory.Stash().V1beta1().BackupConfigurations().Informer()
@@ -120,8 +159,17 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 				return err
 			}
 
-			// Ensure that the ClusterRoleBindings for this backup invoker has been deleted
-			if err := stash_rbac.EnsureClusterRoleBindingDeleted(c.kubeClient, inv.GetObjectMeta(), inv.GetLabels()); err != nil {
+			rbacOptions, err := c.getBackupRBACOptions(inv)
+			if err != nil {
+				return err
+			}
+
+			if err := rbacOptions.EnsureRBACResourcesDeleted(); err != nil {
+				return err
+			}
+
+			err = c.deleteRepositoryReferences(inv)
+			if err != nil {
 				return err
 			}
 
@@ -138,25 +186,42 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
 		// Check whether Repository exist or not
 		repository, err := inv.GetRepository()
+
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				klog.Infof("Repository %s/%s for invoker: %s %s/%s does not exist.\nRequeueing after 5 seconds......",
+				klog.Infof("Repository %s/%s does not exist.\n"+
+					"Requeueing after 5 seconds......",
 					inv.GetRepoRef().Namespace,
-					inv.GetRepoRef().Name,
-					inv.GetTypeMeta().Kind,
-					invMeta.Namespace,
-					invMeta.Name,
-				)
-				err2 := conditions.SetRepositoryFoundConditionToFalse(inv)
-				if err2 != nil {
-					return err2
+					inv.GetRepoRef().Name)
+
+				err = conditions.SetRepositoryFoundConditionToFalse(inv)
+				if err != nil {
+					return err
 				}
-				return c.requeueInvoker(inv, key, 5*time.Second)
+				return c.requeueInvoker(inv, key)
 			}
-			err2 := conditions.SetRepositoryFoundConditionToUnknown(inv, err)
-			return errors.NewAggregate([]error{err, err2})
+			return conditions.SetRepositoryFoundConditionToUnknown(inv, err)
 		}
+
+		if repository.ObjectMeta.DeletionTimestamp != nil {
+			klog.Infof("Repository %s/%s has been deleted. \n"+
+				"Requeueing after 5 seconds......",
+				inv.GetRepoRef().Namespace,
+				inv.GetRepoRef().Name)
+
+			err = conditions.SetRepositoryFoundConditionToFalse(inv)
+			if err != nil {
+				return err
+			}
+			return c.requeueInvoker(inv, key)
+		}
+
 		err = conditions.SetRepositoryFoundConditionToTrue(inv)
+		if err != nil {
+			return err
+		}
+
+		err = c.upsertRepositoryReferences(inv)
 		if err != nil {
 			return err
 		}
@@ -175,12 +240,20 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 				if err2 != nil {
 					return err2
 				}
-				return c.requeueInvoker(inv, key, 5*time.Second)
+				return c.requeueInvoker(inv, key)
 			}
-			err2 := conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
-			return errors.NewAggregate([]error{err, err2})
+			return conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
 		}
 		err = conditions.SetBackendSecretFoundConditionToTrue(inv, secret.Name)
+		if err != nil {
+			return err
+		}
+
+		err = c.validateAgainstUsagePolicy(inv.GetRepoRef(), inv.GetObjectMeta().Namespace)
+		if err != nil {
+			return conditions.SetValidationPassedToFalse(inv, err)
+		}
+		err = conditions.SetValidationPassedToTrue(inv)
 		if err != nil {
 			return err
 		}
@@ -247,7 +320,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 			invMeta.Namespace,
 			invMeta.Name,
 		)
-		return c.requeueInvoker(inv, key, 5*time.Second)
+		return c.requeueInvoker(inv, key)
 	}
 	// create a CronJob that will create BackupSession on each schedule
 	err = c.EnsureBackupTriggeringCronJob(inv)
@@ -256,6 +329,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 		cerr := conditions.SetCronJobCreatedConditionToFalse(inv, err)
 		return c.handleCronJobCreationFailure(invokerRef, errors.NewAggregate([]error{err, cerr}))
 	}
+
 	// Successfully ensured the backup triggering CronJob. So, set "CronJobCreated" condition to "True"
 	return conditions.SetCronJobCreatedConditionToTrue(inv)
 }
@@ -527,10 +601,10 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.Objec
 	return errors.NewAggregate([]error{err, err2})
 }
 
-func (c *StashController) requeueInvoker(inv invoker.BackupInvoker, key string, delay time.Duration) error {
+func (c *StashController) requeueInvoker(inv invoker.BackupInvoker, key string) error {
 	switch inv.GetTypeMeta().Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:
-		c.bcQueue.GetQueue().AddAfter(key, delay)
+		c.bcQueue.GetQueue().AddAfter(key, requeueTimeInterval)
 	default:
 		return fmt.Errorf("unable to requeue. Reason: Backup invoker %s  %s is not supported",
 			inv.GetTypeMeta().APIVersion,

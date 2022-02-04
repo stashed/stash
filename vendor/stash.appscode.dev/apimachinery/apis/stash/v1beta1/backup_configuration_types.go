@@ -43,62 +43,63 @@ const (
 // +kubebuilder:printcolumn:name="Task",type="string",JSONPath=".spec.task.name"
 // +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
 // +kubebuilder:printcolumn:name="Paused",type="boolean",JSONPath=".spec.paused"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BackupConfiguration struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Spec              BackupConfigurationSpec   `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-	Status            BackupConfigurationStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              BackupConfigurationSpec   `json:"spec,omitempty"`
+	Status            BackupConfigurationStatus `json:"status,omitempty"`
 }
 
 type BackupConfigurationTemplateSpec struct {
 	// Task specify the Task crd that specifies the steps to take backup
 	// +optional
-	Task TaskRef `json:"task,omitempty" protobuf:"bytes,1,opt,name=task"`
+	Task TaskRef `json:"task,omitempty"`
 	// Target specify the backup target
 	// +optional
-	Target *BackupTarget `json:"target,omitempty" protobuf:"bytes,2,opt,name=target"`
+	Target *BackupTarget `json:"target,omitempty"`
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	// +optional
-	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty" protobuf:"bytes,3,opt,name=runtimeSettings"`
+	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 	// Temp directory configuration for functions/sidecar
 	// An `EmptyDir` will always be mounted at /tmp with this settings
 	// +optional
-	TempDir EmptyDirSettings `json:"tempDir,omitempty" protobuf:"bytes,4,opt,name=tempDir"`
+	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
 	// InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily
 	// before uploading to backend or inserting into target. It is only usable for job model.
 	// Don't specify it in sidecar model.
 	// +optional
-	InterimVolumeTemplate *ofst.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,5,opt,name=interimVolumeTemplate"`
+	InterimVolumeTemplate *ofst.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty"`
 	// Actions that Stash should take in response to backup sessions.
 	// +optional
-	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,6,opt,name=hooks"`
+	Hooks *BackupHooks `json:"hooks,omitempty"`
 }
 
 type BackupConfigurationSpec struct {
-	BackupConfigurationTemplateSpec `json:",inline,omitempty" protobuf:"bytes,1,opt,name=backupConfigurationTemplateSpec"`
+	BackupConfigurationTemplateSpec `json:",inline,omitempty"`
 	// Schedule specifies the schedule for invoking backup sessions
 	// +optional
-	Schedule string `json:"schedule,omitempty" protobuf:"bytes,2,opt,name=schedule"`
+	Schedule string `json:"schedule,omitempty"`
 	// Driver indicates the name of the agent to use to backup the target.
 	// Supported values are "Restic", "VolumeSnapshotter".
 	// Default value is "Restic".
 	// +optional
 	// +kubebuilder:default=Restic
-	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,3,opt,name=driver,casttype=Snapshotter"`
+	Driver Snapshotter `json:"driver,omitempty"`
 	// Repository refer to the Repository crd that holds backend information
 	// +optional
-	Repository kmapi.ObjectReference `json:"repository,omitempty" protobuf:"bytes,4,opt,name=repository"`
+	Repository kmapi.ObjectReference `json:"repository,omitempty"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
-	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy" protobuf:"bytes,5,opt,name=retentionPolicy"`
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy"`
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
 	// +optional
-	Paused bool `json:"paused,omitempty" protobuf:"varint,6,opt,name=paused"`
+	Paused bool `json:"paused,omitempty"`
 	// BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
 	// This is helpful for debugging purpose.
 	// Default: 1
 	// +optional
-	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty" protobuf:"varint,7,opt,name=backupHistoryLimit"`
+	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty"`
 }
 
 // Hooks describes actions that Stash should take in response to backup sessions. For the PostBackup
@@ -107,18 +108,18 @@ type BackupConfigurationSpec struct {
 type BackupHooks struct {
 	// PreBackup is called immediately before a backup session is initiated.
 	// +optional
-	PreBackup *prober.Handler `json:"preBackup,omitempty" protobuf:"bytes,1,opt,name=preBackup"`
+	PreBackup *prober.Handler `json:"preBackup,omitempty"`
 
 	// PostBackup is called immediately after a backup session is complete.
 	// +optional
-	PostBackup *prober.Handler `json:"postBackup,omitempty" protobuf:"bytes,2,opt,name=postBackup"`
+	PostBackup *prober.Handler `json:"postBackup,omitempty"`
 }
 
 type EmptyDirSettings struct {
-	Medium    core.StorageMedium `json:"medium,omitempty" protobuf:"bytes,1,opt,name=medium,casttype=k8s.io/api/core/v1.StorageMedium"`
-	SizeLimit *resource.Quantity `json:"sizeLimit,omitempty" protobuf:"bytes,2,opt,name=sizeLimit"`
+	Medium    core.StorageMedium `json:"medium,omitempty"`
+	SizeLimit *resource.Quantity `json:"sizeLimit,omitempty"`
 	// More info: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#caching
-	DisableCaching bool `json:"disableCaching,omitempty" protobuf:"varint,3,opt,name=disableCaching"`
+	DisableCaching bool `json:"disableCaching,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Restic;VolumeSnapshotter
@@ -133,16 +134,28 @@ type BackupConfigurationStatus struct {
 	// ObservedGeneration is the most recent generation observed for this BackupConfiguration. It corresponds to the
 	// BackupConfiguration's generation, which is updated on mutation by the API Server.
 	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty" protobuf:"varint,1,opt,name=observedGeneration"`
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Conditions shows current backup setup condition of the BackupConfiguration.
 	// +optional
-	Conditions []kmapi.Condition `json:"conditions,omitempty" protobuf:"bytes,2,rep,name=conditions"`
+	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// Phase indicates phase of this BackupConfiguration.
+	// +optional
+	Phase BackupInvokerPhase `json:"phase,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type BackupConfigurationList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Items           []BackupConfiguration `json:"items,omitempty" protobuf:"bytes,2,rep,name=items"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []BackupConfiguration `json:"items,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=Invalid;Ready;NotReady
+type BackupInvokerPhase string
+
+const (
+	BackupInvokerInvalid  BackupInvokerPhase = "Invalid"
+	BackupInvokerReady    BackupInvokerPhase = "Ready"
+	BackupInvokerNotReady BackupInvokerPhase = "NotReady"
+)

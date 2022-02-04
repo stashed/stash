@@ -47,9 +47,11 @@ func (c customTableConvertor) ConvertToTable(ctx context.Context, object runtime
 		if !ok {
 			return errNotAcceptable{resource: c.qualifiedResource}
 		}
+		snapshotID := []rune(snapshot.UID)
 		table.Rows = append(table.Rows, metav1.TableRow{
 			Cells: []interface{}{
 				snapshot.GetName(),
+				string(snapshotID[:8]),
 				snapshot.Status.Repository,
 				snapshot.Status.Hostname,
 				snapshot.GetCreationTimestamp().Time.UTC().Format(time.RFC3339),
@@ -82,6 +84,7 @@ func (c customTableConvertor) ConvertToTable(ctx context.Context, object runtime
 	if opt, ok := tableOptions.(*metav1.TableOptions); !ok || !opt.NoHeaders {
 		table.ColumnDefinitions = []metav1.TableColumnDefinition{
 			{Name: "Name", Type: "string", Format: "name", Description: "Name of the Snapshot"},
+			{Name: "ID", Type: "string", Format: "", Description: "Snapshot ID"},
 			{Name: "Repository", Type: "string", Format: "repository", Description: "Name of the repository where the Snapshot was backed up"},
 			{Name: "Hostname", Type: "string", Format: "hostname", Description: "Name of the host whose data was backed up"},
 			{Name: "Created At", Type: "date", Description: "Timestamp when the snapshot was created"},

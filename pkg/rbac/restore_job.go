@@ -29,35 +29,47 @@ import (
 	policy "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
-func EnsureRestoreJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, psps []string, labels map[string]string) error {
+func (opt *RBACOptions) EnsureRestoreJobRBAC() error {
+
+	if opt.ServiceAccount.Name == "" {
+		err := opt.ensureServiceAccount()
+		if err != nil {
+			return err
+		}
+	}
+
 	// ensure ClusterRole for restore job
-	err := ensureRestoreJobClusterRole(kubeClient, psps, labels)
+	err := opt.ensureRestoreJobClusterRole()
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore job
-	err = ensureRestoreJobRoleBinding(kubeClient, owner, namespace, sa, labels)
+	err = opt.ensureRestoreJobRoleBinding()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	err = opt.ensureCrossNamespaceRBAC()
+	if err != nil {
+		return err
+	}
+
+	return opt.ensureLicenseReaderClusterRoleBinding()
 }
 
-func ensureRestoreJobClusterRole(kc kubernetes.Interface, psps []string, labels map[string]string) error {
+func (opt *RBACOptions) ensureRestoreJobClusterRole() error {
 
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashRestoreJobClusterRole,
-		Labels: labels,
+		Labels: opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -109,7 +121,7 @@ func ensureRestoreJobClusterRole(kc kubernetes.Interface, psps []string, labels 
 				APIGroups:     []string{policy.GroupName},
 				Resources:     []string{"podsecuritypolicies"},
 				Verbs:         []string{"use"},
-				ResourceNames: psps,
+				ResourceNames: opt.PodSecurityPolicyNames,
 			},
 		}
 		return in
@@ -117,15 +129,15 @@ func ensureRestoreJobClusterRole(kc kubernetes.Interface, psps []string, labels 
 	return err
 }
 
-func ensureRestoreJobRoleBinding(kc kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) ensureRestoreJobRoleBinding() error {
 
 	meta := metav1.ObjectMeta{
-		Namespace: namespace,
-		Name:      getRestoreJobRoleBindingName(sa),
-		Labels:    labels,
+		Namespace: opt.Invoker.Namespace,
+		Name:      getRestoreJobRoleBindingName(opt.ServiceAccount.Name),
+		Labels:    opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -135,8 +147,8 @@ func ensureRestoreJobRoleBinding(kc kubernetes.Interface, resource *metav1.Owner
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      sa,
-				Namespace: namespace,
+				Name:      opt.ServiceAccount.Name,
+				Namespace: opt.ServiceAccount.Namespace,
 			},
 		}
 		return in

@@ -33,7 +33,7 @@ require (
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kubernetes v1.21.1
-	kmodules.xyz/client-go v0.0.0-20220108081101-27afc2ac4ebe
+	kmodules.xyz/client-go v0.0.0-20220131065336-bb3e98486e83
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
 	kmodules.xyz/custom-resources v0.0.0-20220104123914-3c036dd7c1cd
 	kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7
@@ -41,7 +41,7 @@ require (
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
 	kmodules.xyz/webhook-runtime v0.0.0-20211116181908-909a755cc9d1
-	stash.appscode.dev/apimachinery v0.17.1-0.20220131133517-3e17dd8d3a3d
+	stash.appscode.dev/apimachinery v0.17.1-0.20220203132324-9c5287433ad7
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

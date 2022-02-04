@@ -124,6 +124,7 @@ func (inv *BackupBatchInvoker) SetCondition(target *v1beta1.TargetRef, newCondit
 		} else {
 			in.Conditions = kmapi.SetCondition(in.Conditions, newCondition)
 		}
+		in.Phase = calculateBackupInvokerPhase(inv.GetDriver(), in.Conditions)
 		return inv.backupBatch.UID, in
 	}, metav1.UpdateOptions{})
 	if err != nil {
@@ -235,4 +236,8 @@ func (inv *BackupBatchInvoker) GetObjectJSON() (string, error) {
 
 func (inv *BackupBatchInvoker) GetRetentionPolicy() v1alpha1.RetentionPolicy {
 	return inv.backupBatch.Spec.RetentionPolicy
+}
+
+func (inv *BackupBatchInvoker) GetPhase() v1beta1.BackupInvokerPhase {
+	return inv.backupBatch.Status.Phase
 }

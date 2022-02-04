@@ -25,121 +25,121 @@ import (
 type BackupInvokerRef struct {
 	// APIGroup is the group for the resource being referenced
 	// +optional
-	APIGroup string `json:"apiGroup,omitempty" protobuf:"bytes,1,opt,name=apiGroup"`
+	APIGroup string `json:"apiGroup,omitempty"`
 	// Kind is the type of resource being referenced
-	Kind string `json:"kind" protobuf:"bytes,2,opt,name=kind"`
+	Kind string `json:"kind"`
 	// Name is the name of resource being referenced
-	Name string `json:"name" protobuf:"bytes,3,opt,name=name"`
+	Name string `json:"name"`
 }
 
 // Param declares a value to use for the Param called Name.
 type Param struct {
-	Name  string `json:"name" protobuf:"bytes,1,opt,name=name"`
-	Value string `json:"value" protobuf:"bytes,2,opt,name=value"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type TaskRef struct {
 	// Name specifies the name of the Task to use for backup/restore purpose. If your database has been deployed with KubeDB,
 	// then keep this field empty. Stash will read the Task info from the respective AppBinding.
 	// +optional
-	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	Name string `json:"name,omitempty"`
 	// Params specifies a list of parameter to pass to the Task. Stash will use this parameters to resolve the task.
 	// +optional
-	Params []Param `json:"params,omitempty" protobuf:"bytes,2,rep,name=params"`
+	Params []Param `json:"params,omitempty"`
 }
 
 type BackupTarget struct {
 	// Alias represents the identifier of the backed up data in the repository.
 	// This will be used as `hostname` or will be used to generate the `hostname` for the restic repository.
 	// +optional
-	Alias string `json:"alias,omitempty" protobuf:"bytes,1,opt,name=alias"`
+	Alias string `json:"alias,omitempty"`
 	// Ref refers to the backup target
-	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,2,opt,name=ref"`
+	Ref TargetRef `json:"ref,omitempty"`
 	// Paths specify the file paths to backup
 	// +optional
-	Paths []string `json:"paths,omitempty" protobuf:"bytes,3,rep,name=paths"`
+	Paths []string `json:"paths,omitempty"`
 	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
 	// Specify the volumes that contains the target directories
 	// +optional
-	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" protobuf:"bytes,4,rep,name=volumeMounts"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 	//replicas are the desired number of replicas whose data should be backed up.
 	// If unspecified, defaults to 1.
 	// +optional
-	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,5,opt,name=replicas"`
+	Replicas *int32 `json:"replicas,omitempty"`
 	// Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available.
 	// Use this field only if the "driver" field is set to "volumeSnapshotter".
 	// +optional
-	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty" protobuf:"bytes,6,opt,name=snapshotClassName"`
+	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty"`
 	// Exclude specifies a list of patterns for the files to ignore during backup.
 	// Stash will ignore those files that match the specified patterns.
 	// Supported only for "Restic" driver
 	// +optional
-	Exclude []string `json:"exclude,omitempty" protobuf:"bytes,7,rep,name=exclude"`
+	Exclude []string `json:"exclude,omitempty"`
 	// Args specifies a list of arguments to pass to the backup driver.
 	// +optional
-	Args []string `json:"args,omitempty" protobuf:"bytes,8,rep,name=args"`
+	Args []string `json:"args,omitempty"`
 }
 
 type RestoreTarget struct {
 	// Alias represents the identifier of the backed up data in the repository.
 	// This will be used as `sourceHost` and `targetHosts` or will be used to generate them.
 	// +optional
-	Alias string `json:"alias,omitempty" protobuf:"bytes,1,opt,name=alias"`
+	Alias string `json:"alias,omitempty"`
 	// Ref refers to the restore,target
-	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,2,opt,name=ref"`
+	Ref TargetRef `json:"ref,omitempty"`
 	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
 	// Specify the volumes that contains the target directories
 	// +optional
-	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" protobuf:"bytes,3,rep,name=volumeMounts"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 	// replicas is the desired number of replicas of the given Template.
 	// These are replicas in the sense that they are instantiations of the
 	// same Template, but individual replicas also have a consistent identity.
 	// If unspecified, defaults to 1.
 	// +optional
-	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,4,opt,name=replicas"`
+	Replicas *int32 `json:"replicas,omitempty"`
 	// volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot
 	// +optional
-	VolumeClaimTemplates []ofst.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty" protobuf:"bytes,5,rep,name=volumeClaimTemplates"`
+	VolumeClaimTemplates []ofst.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 	// Rules specifies different restore options for different hosts
 	// +optional
-	Rules []Rule `json:"rules,omitempty" protobuf:"bytes,6,rep,name=rules"`
+	Rules []Rule `json:"rules,omitempty"`
 	// Args specifies a list of arguments to pass to the restore driver.
 	// +optional
-	Args []string `json:"args,omitempty" protobuf:"bytes,7,rep,name=args"`
+	Args []string `json:"args,omitempty"`
 }
 
 type Rule struct {
 	// Subjects specifies the list of hosts that are subject to this rule
 	// +optional
-	TargetHosts []string `json:"targetHosts,omitempty" protobuf:"bytes,1,rep,name=targetHosts"`
+	TargetHosts []string `json:"targetHosts,omitempty"`
 	// SourceHost specifies the name of the host whose backed up state we are trying to restore
 	// By default, it will indicate the workload itself
 	// +optional
-	SourceHost string `json:"sourceHost,omitempty" protobuf:"bytes,2,opt,name=sourceHost"`
+	SourceHost string `json:"sourceHost,omitempty"`
 	// Snapshots specifies the list of snapshots that will be restored for the host under this rule.
 	// Don't specify if you have specified paths field.
 	// +optional
-	Snapshots []string `json:"snapshots,omitempty" protobuf:"bytes,3,rep,name=snapshots"`
+	Snapshots []string `json:"snapshots,omitempty"`
 	// Paths specifies the paths to be restored for the hosts under this rule.
 	// Don't specify if you have specified snapshots field.
 	// +optional
-	Paths []string `json:"paths,omitempty" protobuf:"bytes,4,rep,name=paths"`
+	Paths []string `json:"paths,omitempty"`
 	// Exclude specifies a list of patterns for the files to ignore during restore.
 	// Stash will only restore the files that does not match those patterns.
 	// Supported only for "Restic" driver
 	// +optional
-	Exclude []string `json:"exclude,omitempty" protobuf:"bytes,5,rep,name=exclude"`
+	Exclude []string `json:"exclude,omitempty"`
 	// Include specifies a list of patterns for the files to restore.
 	// Stash will only restore the files that match those patterns.
 	// Supported only for "Restic" driver
 	// +optional
-	Include []string `json:"include,omitempty" protobuf:"bytes,6,rep,name=include"`
+	Include []string `json:"include,omitempty"`
 }
 
 type TargetRef struct {
-	APIVersion string `json:"apiVersion,omitempty" protobuf:"bytes,1,opt,name=apiVersion"`
-	Kind       string `json:"kind,omitempty" protobuf:"bytes,2,opt,name=kind"`
-	Name       string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
+	APIVersion string `json:"apiVersion,omitempty"`
+	Kind       string `json:"kind,omitempty"`
+	Name       string `json:"name,omitempty"`
 }
 
 type ExecutionOrder string
