@@ -187,6 +187,32 @@ message TLSConfig {
   repeated CertificateSpec certificates = 2;
 }
 
+// TimeOfDay is a wrapper around time.Time which supports correct
+// marshaling to YAML and JSON.  Wrappers are provided for many
+// of the factory methods that the time package offers.
+//
+// +protobuf.options.marshal=false
+// +protobuf.as=Timestamp
+// +protobuf.options.(gogoproto.goproto_stringer)=false
+message TimeOfDay {
+}
+
+// TypedObjectReference represents an typed namespaced object.
+message TypedObjectReference {
+  optional string apiGroup = 1;
+
+  optional string kind = 2;
+
+  // Namespace of the referent.
+  // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+  // +optional
+  optional string namespace = 3;
+
+  // Name of the referent.
+  // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+  optional string name = 4;
+}
+
 // X509Subject Full X509 name specification
 message X509Subject {
   // Organizations to be used on the Certificate.

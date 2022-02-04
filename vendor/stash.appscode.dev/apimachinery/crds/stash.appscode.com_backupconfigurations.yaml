@@ -30,6 +30,9 @@ spec:
     - jsonPath: .spec.paused
       name: Paused
       type: boolean
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -2952,6 +2955,13 @@ spec:
                   generation, which is updated on mutation by the API Server.
                 format: int64
                 type: integer
+              phase:
+                description: Phase indicates phase of this BackupConfiguration.
+                enum:
+                - Invalid
+                - Ready
+                - NotReady
+                type: string
             type: object
         type: object
     served: true

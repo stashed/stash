@@ -22,21 +22,22 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 
+	"gomodules.xyz/pointer"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
-func EnsureLicenseReaderClusterRoleBinding(kc kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) ensureLicenseReaderClusterRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Name:   meta_util.NameWithSuffix(apis.LicenseReader, fmt.Sprintf("%s-%s", namespace, sa)),
-		Labels: labels,
+		Name:   meta_util.NameWithSuffix(apis.LicenseReader, fmt.Sprintf("%s-%s", opt.ServiceAccount.Namespace, opt.ServiceAccount.Name)),
+		Labels: opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), kc, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
+	owner := opt.Owner
+	owner.Controller = pointer.BoolP(false)
+	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.RoleRef = rbac.RoleRef{
@@ -47,29 +48,11 @@ func EnsureLicenseReaderClusterRoleBinding(kc kubernetes.Interface, owner *metav
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      sa,
-				Namespace: namespace,
+				Name:      opt.ServiceAccount.Name,
+				Namespace: opt.ServiceAccount.Namespace,
 			},
 		}
 		return in
 	}, metav1.PatchOptions{})
 	return err
-}
-
-func EnsureClusterRoleBindingDeleted(kubeClient kubernetes.Interface, owner metav1.ObjectMeta, selector map[string]string) error {
-	// List all the ClusterRoleBinding with the provided labels
-	resources, err := kubeClient.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(selector).String()})
-	if err != nil {
-		return err
-	}
-	// Delete the ClusterRoleBindings that are controlled by the provided owner
-	for i := range resources.Items {
-		if metav1.IsControlledBy(&resources.Items[i], &owner) {
-			err = kubeClient.RbacV1().ClusterRoleBindings().Delete(context.TODO(), resources.Items[i].Name, metav1.DeleteOptions{})
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }

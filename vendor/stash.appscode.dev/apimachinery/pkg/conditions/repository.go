@@ -153,6 +153,48 @@ func SetRepositoryFoundConditionToTrue(i interface{}) error {
 	}
 }
 
+func SetValidationPassedToTrue(i interface{}) error {
+	switch in := i.(type) {
+	case invoker.BackupInvoker:
+		return in.SetCondition(nil, kmapi.Condition{
+			Type:    apis.ValidationPassed,
+			Status:  core.ConditionTrue,
+			Reason:  apis.ResourceValidationPassed,
+			Message: "Successfully validated.",
+		})
+	case invoker.RestoreInvoker:
+		return in.SetCondition(nil, kmapi.Condition{
+			Type:    apis.ValidationPassed,
+			Status:  core.ConditionTrue,
+			Reason:  apis.ResourceValidationPassed,
+			Message: "Successfully validated.",
+		})
+	default:
+		return fmt.Errorf("unable to set %s condition. Reason: invoker type unknown", apis.ValidationPassed)
+	}
+}
+
+func SetValidationPassedToFalse(i interface{}, err error) error {
+	switch in := i.(type) {
+	case invoker.BackupInvoker:
+		return in.SetCondition(nil, kmapi.Condition{
+			Type:    apis.ValidationPassed,
+			Status:  core.ConditionFalse,
+			Reason:  apis.ResourceValidationFailed,
+			Message: err.Error(),
+		})
+	case invoker.RestoreInvoker:
+		return in.SetCondition(nil, kmapi.Condition{
+			Type:    apis.ValidationPassed,
+			Status:  core.ConditionFalse,
+			Reason:  apis.ResourceValidationFailed,
+			Message: err.Error(),
+		})
+	default:
+		return fmt.Errorf("unable to set %s condition. Reason: invoker type unknown", apis.ValidationPassed)
+	}
+}
+
 func SetBackendSecretFoundConditionToUnknown(i interface{}, secretName string, err error) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:

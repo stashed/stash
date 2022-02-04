@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
@@ -37,6 +38,7 @@ type BackupInvoker interface {
 	RepositoryGetter
 	DriverHandler
 	ObjectFormatter
+	BackupInvokerStatusHandler
 }
 
 type BackupExecutionOrderHandler interface {
@@ -52,6 +54,10 @@ type BackupTargetHandler interface {
 	IsPaused() bool
 	GetBackupHistoryLimit() *int32
 	GetGlobalHooks() *v1beta1.BackupHooks
+}
+
+type BackupInvokerStatusHandler interface {
+	GetPhase() v1beta1.BackupInvokerPhase
 }
 
 type BackupTargetInfo struct {
@@ -154,4 +160,38 @@ func TargetBackupCompleted(ref v1beta1.TargetRef, targetStatus []v1beta1.BackupT
 		}
 	}
 	return false
+}
+
+func isConditionSatisfied(conditions []kmapi.Condition, condType string) bool {
+	if kmapi.IsConditionFalse(conditions, condType) || kmapi.IsConditionUnknown(conditions, condType) {
+		return false
+	}
+
+	return true
+}
+
+func calculateBackupInvokerPhase(driver v1beta1.Snapshotter, conditions []kmapi.Condition) v1beta1.BackupInvokerPhase {
+	if !isConditionSatisfied(conditions, apis.RepositoryFound) ||
+		!isConditionSatisfied(conditions, apis.BackendSecretFound) {
+		return v1beta1.BackupInvokerNotReady
+	}
+
+	if kmapi.IsConditionFalse(conditions, apis.ValidationPassed) {
+		return v1beta1.BackupInvokerInvalid
+	}
+
+	if kmapi.IsConditionTrue(conditions, apis.ValidationPassed) &&
+		kmapi.IsConditionTrue(conditions, apis.CronJobCreated) &&
+		backendRequirementsSatisfied(driver, conditions) {
+		return v1beta1.BackupInvokerReady
+	}
+
+	return v1beta1.BackupInvokerNotReady
+}
+
+func backendRequirementsSatisfied(driver v1beta1.Snapshotter, conditions []kmapi.Condition) bool {
+	if driver == v1beta1.ResticSnapshotter {
+		return kmapi.IsConditionTrue(conditions, apis.RepositoryFound) && kmapi.IsConditionTrue(conditions, apis.BackendSecretFound)
+	}
+	return true
 }

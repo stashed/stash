@@ -240,8 +240,8 @@ func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput, inv 
 		KubeClient:  c.KubeClient,
 		StashClient: c.StashClient,
 		Namespace:   c.Namespace,
-		Repository:  inv.GetRepoRef(),
 		Metrics:     c.Metrics,
+		SetupOpt:    c.SetupOpt,
 	}
 	return statusOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
 }
@@ -273,8 +273,8 @@ func (c *Options) HandleRestoreFailure(inv invoker.RestoreInvoker, targetInfo in
 		KubeClient:  c.KubeClient,
 		StashClient: c.StashClient,
 		Namespace:   c.Namespace,
-		Repository:  inv.GetRepoRef(),
 		Metrics:     c.Metrics,
+		SetupOpt:    c.SetupOpt,
 	}
 	return statusOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
 }

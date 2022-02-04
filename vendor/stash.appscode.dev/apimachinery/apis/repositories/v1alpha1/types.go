@@ -35,25 +35,25 @@ const (
 // +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".uid"
 type Snapshot struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Status            SnapshotStatus `json:"status,omitempty" protobuf:"bytes,2,opt,name=status"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Status            SnapshotStatus `json:"status,omitempty"`
 }
 
 type SnapshotStatus struct {
-	Tree       string   `json:"tree" protobuf:"bytes,1,opt,name=tree"`
-	Paths      []string `json:"paths" protobuf:"bytes,2,rep,name=paths"`
-	Hostname   string   `json:"hostname" protobuf:"bytes,3,opt,name=hostname"`
-	Username   string   `json:"username" protobuf:"bytes,4,opt,name=username"`
-	UID        int32    `json:"uid" protobuf:"varint,5,opt,name=uid"`
-	Gid        int32    `json:"gid" protobuf:"varint,6,opt,name=gid"`
-	Tags       []string `json:"tags,omitempty" protobuf:"bytes,7,rep,name=tags"`
-	Repository string   `json:"repository" protobuf:"bytes,8,opt,name=repository"`
+	Tree       string   `json:"tree"`
+	Paths      []string `json:"paths"`
+	Hostname   string   `json:"hostname"`
+	Username   string   `json:"username"`
+	UID        int32    `json:"uid"`
+	Gid        int32    `json:"gid"`
+	Tags       []string `json:"tags,omitempty"`
+	Repository string   `json:"repository"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type SnapshotList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Items           []Snapshot `json:"items" protobuf:"bytes,2,rep,name=items"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Snapshot `json:"items"`
 }
