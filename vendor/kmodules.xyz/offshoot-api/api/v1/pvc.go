@@ -86,8 +86,6 @@ type PartialObjectMeta struct {
 	OwnerReferences []metav1.OwnerReference `json:"ownerReferences,omitempty" patchStrategy:"merge" patchMergeKey:"uid" protobuf:"bytes,6,rep,name=ownerReferences"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // PersistentVolumeClaim is a user's request for and claim to a persistent volume
 type PersistentVolumeClaim struct {
 	metav1.TypeMeta `json:",inline"`
