@@ -19,8 +19,6 @@ package controller
 import (
 	"fmt"
 
-	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
-	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
 	stash_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1"
@@ -39,10 +37,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1"
-	"kmodules.xyz/client-go/apiextensions"
 	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/tools/queue"
-	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
@@ -120,22 +116,6 @@ type StashController struct {
 	dcQueue    *queue.Worker
 	dcInformer cache.SharedIndexInformer
 	dcLister   oc_listers.DeploymentConfigLister
-}
-
-func (c *StashController) ensureCustomResourceDefinitions() error {
-	crds := []*apiextensions.CustomResourceDefinition{
-		api.Repository{}.CustomResourceDefinition(),
-		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
-		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
-		api_v1beta1.BackupBlueprint{}.CustomResourceDefinition(),
-		api_v1beta1.RestoreSession{}.CustomResourceDefinition(),
-		api_v1beta1.RestoreBatch{}.CustomResourceDefinition(),
-		api_v1beta1.Task{}.CustomResourceDefinition(),
-		api_v1beta1.Function{}.CustomResourceDefinition(),
-
-		appCatalog.AppBinding{}.CustomResourceDefinition(),
-	}
-	return apiextensions.RegisterCRDs(c.crdClient, crds)
 }
 
 func (c *StashController) Run(stopCh <-chan struct{}) {

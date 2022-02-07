@@ -128,11 +128,6 @@ func (c *Config) New() (*StashController, error) {
 		auditor:              auditor,
 	}
 
-	// register CRDs
-	if err := ctrl.ensureCustomResourceDefinitions(); err != nil {
-		return nil, err
-	}
-
 	// ensure default functions
 	image := docker.Docker{
 		Registry: ctrl.DockerRegistry,

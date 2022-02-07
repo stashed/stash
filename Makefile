@@ -24,7 +24,7 @@ BIN      := stash
 COMPRESS ?= no
 
 # Where to push the docker image.
-REGISTRY ?= appscode
+REGISTRY ?= stashed
 
 # This version-strategy uses git tags to set the version string
 git_branch       := $(shell git rev-parse --abbrev-ref HEAD)
@@ -364,6 +364,9 @@ else
 	IMAGE_PULL_SECRETS = --set imagePullSecrets[0].name=$(REGISTRY_SECRET)
 endif
 
+IMAGE_PULL_POLICY ?=IfNotPresent
+CRD_INSTALLER_TAG ?=latest
+
 .PHONY: install
 install:
 	@cd ../installer;						                \
@@ -374,7 +377,8 @@ install:
 		--set-file global.license=$(LICENSE_FILE)	        \
 		--set stash-community.operator.registry=$(REGISTRY)	\
 		--set stash-community.operator.tag=$(TAG)			\
-		--set stash-community.imagePullPolicy=IfNotPresent	\
+		--set stash-community.crdInstaller.tag=$(CRD_INSTALLER_TAG)\
+		--set stash-community.imagePullPolicy=$(IMAGE_PULL_POLICY)	\
 		$(IMAGE_PULL_SECRETS);				                \
 	kubectl wait --for=condition=Available apiservice -l 'app.kubernetes.io/name=stash-community,app.kubernetes.io/instance=stash' --timeout=5m
 
