@@ -452,8 +452,8 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/klauspost/cpuid v1.2.0/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
 github.com/kmodules/apimachinery v0.21.2-rc.0.0.20210617231004-332981b97d2d h1:6Yzcd8c16QYTv0rd0TSNWLNJ+WeJM5qp41eT9XIu78s=
 github.com/kmodules/apimachinery v0.21.2-rc.0.0.20210617231004-332981b97d2d/go.mod h1:jbreFvJo3ov9rj7eWT7+sYiRx+qZuCYXwWT1bcDswPY=
-github.com/kmodules/apiserver v0.21.2-0.20210716212718-83e5493ac170 h1:JnFBVfamGETJErVnJ4WoE3q+n1+4hrq61uY23HsV3c4=
-github.com/kmodules/apiserver v0.21.2-0.20210716212718-83e5493ac170/go.mod h1:nLLYZvMWn35glJ4/FZRhzLG/3MPxAaZTgV4FJZdr+tY=
+github.com/kmodules/apiserver v0.21.2-0.20220112070009-e3f6e88991d9 h1:ZHj6YH/If+3Gycc0Dm1NH1GexUkmxrRyFMb5SFpl8dU=
+github.com/kmodules/apiserver v0.21.2-0.20220112070009-e3f6e88991d9/go.mod h1:nLLYZvMWn35glJ4/FZRhzLG/3MPxAaZTgV4FJZdr+tY=
 github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20210617232219-a432af45d932 h1:J4rp2NvjFplpFgWe0DXz+PM1XotXTLmtTFhPSkRbRa8=
 github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20210617232219-a432af45d932/go.mod h1:mgkvSg6x5tL795vhwYyg0pKDYmCm/WYdy8LI54LvRJA=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -1249,10 +1249,12 @@ kmodules.xyz/crd-schema-fuzz v0.0.0-20210618002152-fae23aef5fb4/go.mod h1:IIkUct
 kmodules.xyz/custom-resources v0.0.0-20220104123914-3c036dd7c1cd/go.mod h1:/XjDeILFV2wBota5kHo21DMvOt08nSAk1vm6buCuwt4=
 kmodules.xyz/custom-resources v0.0.0-20220126201139-be014631db0c h1:SZzZ57uOh6nCIRMmGC1F0vyZr8fTmDm6gQAAh9GY1wY=
 kmodules.xyz/custom-resources v0.0.0-20220126201139-be014631db0c/go.mod h1:/XjDeILFV2wBota5kHo21DMvOt08nSAk1vm6buCuwt4=
-kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7 h1:JIAEFjN3GDhLEG1Fh1zYpy/QFyyN337mJTM+ODEGosg=
 kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7/go.mod h1:IICnDdPFOEeGXdaPVHOGYfdwD1cyh/p1I/TWMkyNTIE=
-kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61 h1:J56UGmRFddu6tERRd8BELmP5QbXxievzb+6vAjFptiM=
+kmodules.xyz/objectstore-api v0.0.0-20211207131029-3271069de43e h1:hbnb7Zy6pe0IwWWdIVbgfzBLM3kmppUMDpf7Sxy11d8=
+kmodules.xyz/objectstore-api v0.0.0-20211207131029-3271069de43e/go.mod h1:IICnDdPFOEeGXdaPVHOGYfdwD1cyh/p1I/TWMkyNTIE=
 kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61/go.mod h1:3LECbAL3FgbyK80NP3V3Pmiuo/a3hFWg/PR6SPFhTns=
+kmodules.xyz/offshoot-api v0.0.0-20211207130839-cc7187e020cf h1:cVaxFPsZyaymGsx4XoTii1MEvtwGxmLg75qwMxNHB4w=
+kmodules.xyz/offshoot-api v0.0.0-20211207130839-cc7187e020cf/go.mod h1:sJYyxf84ZvbVz4SivxMgSelGRYn19wOLUtObiEncCxk=
 kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f h1:V1lapZtGG7GntoUsOuEz2kWPXv6scMzJxS+3NaHIUzc=
 kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f/go.mod h1:8E5ckbd1KMNmR4hc7ScvmQnGfx1ULUUp+UTmoDdxRkc=
 kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027 h1:rtSPsruEkoBOLcbJkxMQjnPafpv8/vJnfWlTIj9yRBg=

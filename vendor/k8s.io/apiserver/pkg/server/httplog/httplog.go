@@ -80,7 +80,7 @@ func DefaultStacktracePred(status int) bool {
 func logLevel(rl *respLogger) klog.Level {
 	if (rl.status >= http.StatusOK && rl.status < http.StatusMultipleChoices) ||
 		rl.req.RequestURI == "/openapi/v2" ||
-		(rl.status == http.StatusForbidden &&
+		((rl.status == http.StatusForbidden || rl.status == http.StatusNotFound) &&
 			rl.req.Method == http.MethodGet &&
 			(strings.Contains(rl.req.RequestURI, "mutator") || strings.Contains(rl.req.RequestURI, "validator"))) {
 		return 8
