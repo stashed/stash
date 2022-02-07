@@ -14994,8 +14994,9 @@ func schema_resource_metadata_apis_core_v1alpha1_GenericResourceSpec(ref common.
 					},
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
 						},
 					},
 					"version": {
@@ -15094,7 +15095,7 @@ func schema_resource_metadata_apis_core_v1alpha1_GenericResourceSpec(ref common.
 						},
 					},
 				},
-				Required: []string{"apiType", "totalResource", "appResource", "status"},
+				Required: []string{"apiType", "name", "status"},
 			},
 		},
 		Dependencies: []string{

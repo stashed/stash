@@ -1257,8 +1257,9 @@ kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f h1:V1lapZtGG7GntoUsOuE
 kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f/go.mod h1:8E5ckbd1KMNmR4hc7ScvmQnGfx1ULUUp+UTmoDdxRkc=
 kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027 h1:rtSPsruEkoBOLcbJkxMQjnPafpv8/vJnfWlTIj9yRBg=
 kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027/go.mod h1:H4NcvS1RQxeXtQONALbU6r9OT3Xa7cMhfamX/k9t9wo=
-kmodules.xyz/resource-metadata v0.9.0 h1:kRY126ccnqHI3JTpZNocD2n+OY4zk1G8jczl7fp2BJk=
 kmodules.xyz/resource-metadata v0.9.0/go.mod h1:GsaythrHLBLKhEy8/l+ioJC0mFmJmZR0FRXpkyxztt8=
+kmodules.xyz/resource-metadata v0.9.1 h1:YQAeAnVKK7jULbV4HTcY2JJrtVsh9B64V6wn2FZEZm8=
+kmodules.xyz/resource-metadata v0.9.1/go.mod h1:GsaythrHLBLKhEy8/l+ioJC0mFmJmZR0FRXpkyxztt8=
 kmodules.xyz/resource-metrics v0.0.6/go.mod h1:M7rWuo2qh3BpHhogiEVPnvGY9Xx4Pfygqn1Rex8YbgM=
 kmodules.xyz/resource-metrics v0.0.8 h1:4WHV7vKGfoxpZquu/Jowq4pgoMEithyMjFfJIg68Nq8=
 kmodules.xyz/resource-metrics v0.0.8/go.mod h1:M7rWuo2qh3BpHhogiEVPnvGY9Xx4Pfygqn1Rex8YbgM=

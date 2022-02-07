@@ -45,13 +45,13 @@ type GenericResource struct {
 type GenericResourceSpec struct {
 	Cluster              kmapi.ClusterMetadata             `json:"cluster,omitempty"`
 	APIType              kmapi.ResourceID                  `json:"apiType"`
-	Name                 string                            `json:"name,omitempty"`
+	Name                 string                            `json:"name"`
 	Version              string                            `json:"version,omitempty"`
 	Replicas             int64                             `json:"replicas,omitempty"`
 	RoleReplicas         api.ReplicaList                   `json:"roleReplicas,omitempty"`
 	Mode                 string                            `json:"mode,omitempty"`
-	TotalResource        core.ResourceRequirements         `json:"totalResource"`
-	AppResource          core.ResourceRequirements         `json:"appResource"`
+	TotalResource        core.ResourceRequirements         `json:"totalResource,omitempty"`
+	AppResource          core.ResourceRequirements         `json:"appResource,omitempty"`
 	RoleResourceLimits   map[api.PodRole]core.ResourceList `json:"roleResourceLimits,omitempty"`
 	RoleResourceRequests map[api.PodRole]core.ResourceList `json:"roleResourceRequests,omitempty"`
 	Status               GenericResourceStatus             `json:"status"`
