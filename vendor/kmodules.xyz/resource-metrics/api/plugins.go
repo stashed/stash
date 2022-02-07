@@ -58,6 +58,13 @@ func RegisteredTypes() []schema.GroupVersionKind {
 	return result
 }
 
+func IsRegistered(gvk schema.GroupVersionKind) bool {
+	lock.RLock()
+	_, ok := plugins[gvk]
+	lock.RUnlock()
+	return ok
+}
+
 type NotRegistered struct {
 	gvk schema.GroupVersionKind
 }
