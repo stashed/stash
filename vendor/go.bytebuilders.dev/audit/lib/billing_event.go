@@ -19,12 +19,15 @@ package lib
 import (
 	api "go.bytebuilders.dev/audit/api/v1"
 
+	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/discovery"
+	corev1alpha1 "kmodules.xyz/resource-metadata/apis/core/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type BillingEventCreator struct {
-	Mapper discovery.ResourceMapper
+	Mapper          discovery.ResourceMapper
+	ClusterMetadata *kmapi.ClusterMetadata
 }
 
 func (p *BillingEventCreator) CreateEvent(obj client.Object) (*api.Event, error) {
@@ -33,8 +36,13 @@ func (p *BillingEventCreator) CreateEvent(obj client.Object) (*api.Event, error)
 		return nil, err
 	}
 
+	res, err := corev1alpha1.ToGenericResource(obj, rid, p.ClusterMetadata)
+	if err != nil {
+		return nil, err
+	}
+
 	return &api.Event{
-		Resource:   obj,
+		Resource:   res,
 		ResourceID: *rid,
 	}, nil
 }

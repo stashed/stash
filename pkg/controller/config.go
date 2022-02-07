@@ -96,15 +96,16 @@ func (c *Config) New() (*StashController, error) {
 	// WARNING: https://stackoverflow.com/a/46275411/244009
 	var auditor *auditlib.EventPublisher
 	if c.LicenseFile != "" && !c.License.DisableAnalytics() {
-		fn := auditlib.BillingEventCreator{
-			Mapper: mapper,
-		}
-		cid, err := clusterid.ClusterUID(c.KubeClient.CoreV1().Namespaces())
+		cmeta, err := clusterid.ClusterMetadata(c.KubeClient.CoreV1().Namespaces())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to extract cluster metadata, reason: %v", err)
+		}
+		fn := auditlib.BillingEventCreator{
+			Mapper:          mapper,
+			ClusterMetadata: cmeta,
 		}
 		auditor = auditlib.NewResilientEventPublisher(func() (*auditlib.NatsConfig, error) {
-			return auditlib.NewNatsConfig(cid, c.LicenseFile)
+			return auditlib.NewNatsConfig(cmeta.UID, c.LicenseFile)
 		}, mapper, fn.CreateEvent)
 		err = auditor.SetupSiteInfoPublisher(c.ClientConfig, c.KubeClient, informerFactory)
 		if err != nil {

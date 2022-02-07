@@ -25,6 +25,7 @@ type ResourceCalculator interface {
 	RoleReplicas(obj map[string]interface{}) (ReplicaList, error)
 
 	Mode(obj map[string]interface{}) (string, error)
+	UsesTLS(obj map[string]interface{}) (bool, error)
 
 	TotalResourceLimits(obj map[string]interface{}) (core.ResourceList, error)
 	TotalResourceRequests(obj map[string]interface{}) (core.ResourceList, error)
@@ -46,6 +47,7 @@ type ResourceCalculatorFuncs struct {
 
 	RoleReplicasFn         func(obj map[string]interface{}) (ReplicaList, error)
 	ModeFn                 func(obj map[string]interface{}) (string, error)
+	UsesTLSFn              func(obj map[string]interface{}) (bool, error)
 	RoleResourceLimitsFn   func(obj map[string]interface{}) (map[PodRole]core.ResourceList, error)
 	RoleResourceRequestsFn func(obj map[string]interface{}) (map[PodRole]core.ResourceList, error)
 }
@@ -73,6 +75,13 @@ func (c ResourceCalculatorFuncs) Mode(obj map[string]interface{}) (string, error
 		return c.ModeFn(obj)
 	}
 	return "", nil
+}
+
+func (c ResourceCalculatorFuncs) UsesTLS(obj map[string]interface{}) (bool, error) {
+	if c.UsesTLSFn != nil {
+		return c.UsesTLSFn(obj)
+	}
+	return false, nil
 }
 
 func (c ResourceCalculatorFuncs) TotalResourceLimits(obj map[string]interface{}) (core.ResourceList, error) {

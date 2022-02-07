@@ -42,6 +42,7 @@ import (
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/discovery"
+	"kmodules.xyz/client-go/tools/clusterid"
 	auditorapi "kmodules.xyz/custom-resources/apis/auditor/v1alpha1"
 	"kmodules.xyz/custom-resources/util/siteinfo"
 	cachex "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -231,11 +232,17 @@ func (p *EventPublisher) setupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.
 	nodeInformer.AddEventHandler(&ResourceEventPublisher{
 		p: p,
 		createEvent: func(_ client.Object) (*api.Event, error) {
+			cmeta, err := clusterid.ClusterMetadata(kc.CoreV1().Namespaces())
+			if err != nil {
+				return nil, err
+			}
 			nodes, err := listNodes()
 			if err != nil {
 				return nil, err
 			}
+
 			p.siMutex.Lock()
+			p.si.Kubernetes.Cluster = *cmeta
 			siteinfo.RefreshNodeStats(p.si, nodes)
 			p.siMutex.Unlock()
 
