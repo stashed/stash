@@ -14999,6 +14999,12 @@ func schema_resource_metadata_apis_core_v1alpha1_GenericResourceSpec(ref common.
 							Format:  "",
 						},
 					},
+					"uid": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 					"version": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},

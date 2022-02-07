@@ -100,6 +100,7 @@ func ToGenericResource(item client.Object, apiType *kmapi.ResourceID, cmeta *kma
 			Cluster:              *cmeta,
 			APIType:              *apiType,
 			Name:                 item.GetName(),
+			UID:                  item.GetUID(),
 			Replicas:             0,
 			RoleReplicas:         nil,
 			Mode:                 "",

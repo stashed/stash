@@ -23,6 +23,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -43,16 +44,27 @@ type GenericResource struct {
 }
 
 type GenericResourceSpec struct {
-	Cluster              kmapi.ClusterMetadata             `json:"cluster,omitempty"`
-	APIType              kmapi.ResourceID                  `json:"apiType"`
-	Name                 string                            `json:"name"`
-	Version              string                            `json:"version,omitempty"`
-	Replicas             int64                             `json:"replicas,omitempty"`
-	RoleReplicas         api.ReplicaList                   `json:"roleReplicas,omitempty"`
-	Mode                 string                            `json:"mode,omitempty"`
-	TotalResource        core.ResourceRequirements         `json:"totalResource,omitempty"`
-	AppResource          core.ResourceRequirements         `json:"appResource,omitempty"`
-	RoleResourceLimits   map[api.PodRole]core.ResourceList `json:"roleResourceLimits,omitempty"`
+	// +optional
+	Cluster kmapi.ClusterMetadata `json:"cluster,omitempty"`
+	APIType kmapi.ResourceID      `json:"apiType"`
+	Name    string                `json:"name"`
+	// +optional
+	UID types.UID `json:"uid,omitempty"`
+	// +optional
+	Version string `json:"version,omitempty"`
+	// +optional
+	Replicas int64 `json:"replicas,omitempty"`
+	// +optional
+	RoleReplicas api.ReplicaList `json:"roleReplicas,omitempty"`
+	// +optional
+	Mode string `json:"mode,omitempty"`
+	// +optional
+	TotalResource core.ResourceRequirements `json:"totalResource,omitempty"`
+	// +optional
+	AppResource core.ResourceRequirements `json:"appResource,omitempty"`
+	// +optional
+	RoleResourceLimits map[api.PodRole]core.ResourceList `json:"roleResourceLimits,omitempty"`
+	// +optional
 	RoleResourceRequests map[api.PodRole]core.ResourceList `json:"roleResourceRequests,omitempty"`
 	Status               GenericResourceStatus             `json:"status"`
 }
