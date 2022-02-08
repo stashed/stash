@@ -60,6 +60,12 @@ spec:
                 required:
                 - uid
                 type: object
+              clusterName:
+                description: Deprecated
+                type: string
+              clusterUID:
+                description: Deprecated
+                type: string
               controlPlane:
                 description: https://github.com/kmodules/client-go/blob/kubernetes-1.16.3/tools/analytics/analytics.go#L66
                 properties:

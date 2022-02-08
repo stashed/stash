@@ -68,7 +68,7 @@ func GetSiteInfo(cfg *rest.Config, kc kubernetes.Interface, nodes []*core.Node, 
 	if err != nil {
 		return nil, err
 	}
-	si.Kubernetes.Cluster = *cmeta
+	si.Kubernetes.Cluster = cmeta
 	si.Kubernetes.Version, err = kc.Discovery().ServerVersion()
 	if err != nil {
 		return nil, err

@@ -242,7 +242,7 @@ func (p *EventPublisher) setupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.
 			}
 
 			p.siMutex.Lock()
-			p.si.Kubernetes.Cluster = *cmeta
+			p.si.Kubernetes.Cluster = cmeta
 			siteinfo.RefreshNodeStats(p.si, nodes)
 			p.siMutex.Unlock()
 
