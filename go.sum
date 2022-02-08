@@ -776,8 +776,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yvasiyarov/go-metrics v0.0.0-20140926110328-57bccd1ccd43/go.mod h1:aX5oPXxHm3bOH+xeAttToC8pqch2ScQN/JoXYupl6xs=
 github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50/go.mod h1:NUSPSUX/bi6SeDMUh6brw0nXpxHnc96TguQh0+r/ssA=
 github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f/go.mod h1:GlGEuHIJweS1mbCqG+7vt2nvWLzLLnRHbXz5JKd/Qbg=
-go.bytebuilders.dev/audit v0.0.18 h1:0na/Llo1zeoTwUnl9gnqOS8dQciR+Dg4yBfMhEyBJec=
-go.bytebuilders.dev/audit v0.0.18/go.mod h1:FFaFOAVL3Y/7kaNlILc/qQXCv3zi3ZAOhap820T12m0=
+go.bytebuilders.dev/audit v0.0.19 h1:pNlIMbIpqPkeJGrXr/62N1AisNQqsv4cQeW/u/AMSVQ=
+go.bytebuilders.dev/audit v0.0.19/go.mod h1:hjCnaInn/0JQwL1S2zzZn0ldUuKO5Ydb2bGE02EnABg=
 go.bytebuilders.dev/license-verifier v0.9.3/go.mod h1:GpIW0o8O0wpiBVt7IIz4z7bcPuG8nza8/bCDkaupDn8=
 go.bytebuilders.dev/license-verifier v0.9.7 h1:m7Z3cuVJYUUctCfTK6qT0IKtPVZurxq1b1bKzWjqwsE=
 go.bytebuilders.dev/license-verifier v0.9.7/go.mod h1:GpIW0o8O0wpiBVt7IIz4z7bcPuG8nza8/bCDkaupDn8=
@@ -1247,8 +1247,8 @@ kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278 h1:sFmqh4EaiZ4K2FkkGvr
 kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20210618002152-fae23aef5fb4/go.mod h1:IIkUctlfoptoci0BOrsUf8ya+MOG5uaeh1PE4uzaIbA=
 kmodules.xyz/custom-resources v0.0.0-20220104123914-3c036dd7c1cd/go.mod h1:/XjDeILFV2wBota5kHo21DMvOt08nSAk1vm6buCuwt4=
-kmodules.xyz/custom-resources v0.0.0-20220126201139-be014631db0c h1:SZzZ57uOh6nCIRMmGC1F0vyZr8fTmDm6gQAAh9GY1wY=
-kmodules.xyz/custom-resources v0.0.0-20220126201139-be014631db0c/go.mod h1:/XjDeILFV2wBota5kHo21DMvOt08nSAk1vm6buCuwt4=
+kmodules.xyz/custom-resources v0.0.0-20220208103158-61b298634e43 h1:mwW2DgP7sAMambZe7Met/e9nrBYnzYgM/lupbm7jgGM=
+kmodules.xyz/custom-resources v0.0.0-20220208103158-61b298634e43/go.mod h1:/XjDeILFV2wBota5kHo21DMvOt08nSAk1vm6buCuwt4=
 kmodules.xyz/objectstore-api v0.0.0-20211116180107-8720be0c9bf7/go.mod h1:IICnDdPFOEeGXdaPVHOGYfdwD1cyh/p1I/TWMkyNTIE=
 kmodules.xyz/objectstore-api v0.0.0-20211207131029-3271069de43e h1:hbnb7Zy6pe0IwWWdIVbgfzBLM3kmppUMDpf7Sxy11d8=
 kmodules.xyz/objectstore-api v0.0.0-20211207131029-3271069de43e/go.mod h1:IICnDdPFOEeGXdaPVHOGYfdwD1cyh/p1I/TWMkyNTIE=
@@ -1259,8 +1259,8 @@ kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f h1:V1lapZtGG7GntoUsOuE
 kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f/go.mod h1:8E5ckbd1KMNmR4hc7ScvmQnGfx1ULUUp+UTmoDdxRkc=
 kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027 h1:rtSPsruEkoBOLcbJkxMQjnPafpv8/vJnfWlTIj9yRBg=
 kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027/go.mod h1:H4NcvS1RQxeXtQONALbU6r9OT3Xa7cMhfamX/k9t9wo=
-kmodules.xyz/resource-metadata v0.9.3 h1:uvlDK+btXkHjcMVnuwd9rZrZtyA/lc8pIvzcFVQ83Q4=
-kmodules.xyz/resource-metadata v0.9.3/go.mod h1:aqGkyKpDVvbRArR6ueVL0CdJzPxToKj8BF7Q3eOMctc=
+kmodules.xyz/resource-metadata v0.9.4 h1:aVVh3j8Z/Z98NRHI5kYXTEchm1oYCaH7q/e2U/XYEyE=
+kmodules.xyz/resource-metadata v0.9.4/go.mod h1:GsaythrHLBLKhEy8/l+ioJC0mFmJmZR0FRXpkyxztt8=
 kmodules.xyz/resource-metrics v0.0.6/go.mod h1:M7rWuo2qh3BpHhogiEVPnvGY9Xx4Pfygqn1Rex8YbgM=
 kmodules.xyz/resource-metrics v0.0.8 h1:4WHV7vKGfoxpZquu/Jowq4pgoMEithyMjFfJIg68Nq8=
 kmodules.xyz/resource-metrics v0.0.8/go.mod h1:M7rWuo2qh3BpHhogiEVPnvGY9Xx4Pfygqn1Rex8YbgM=

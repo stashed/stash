@@ -11,7 +11,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.18
+	go.bytebuilders.dev/audit v0.0.19
 	go.bytebuilders.dev/license-verifier v0.9.7
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.7
 	gomodules.xyz/blobfs v0.1.7
@@ -34,7 +34,7 @@ require (
 	k8s.io/kubernetes v1.21.1
 	kmodules.xyz/client-go v0.0.0-20220203031013-1de48437aaf3
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
-	kmodules.xyz/custom-resources v0.0.0-20220126201139-be014631db0c
+	kmodules.xyz/custom-resources v0.0.0-20220208103158-61b298634e43
 	kmodules.xyz/objectstore-api v0.0.0-20211207131029-3271069de43e
 	kmodules.xyz/offshoot-api v0.0.0-20211207130839-cc7187e020cf
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
@@ -165,7 +165,7 @@ require (
 	k8s.io/component-base v0.21.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20210421082810-95288971da7e // indirect
 	k8s.io/utils v0.0.0-20210802155522-efc7438f0176 // indirect
-	kmodules.xyz/resource-metadata v0.9.3 // indirect
+	kmodules.xyz/resource-metadata v0.9.4 // indirect
 	kmodules.xyz/resource-metrics v0.0.8 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.15 // indirect
 	sigs.k8s.io/cli-utils v0.26.1 // indirect

@@ -416,7 +416,7 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
-# go.bytebuilders.dev/audit v0.0.18
+# go.bytebuilders.dev/audit v0.0.19
 ## explicit; go 1.16
 go.bytebuilders.dev/audit/api/v1
 go.bytebuilders.dev/audit/lib
@@ -1394,7 +1394,7 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/custom-resources v0.0.0-20220126201139-be014631db0c
+# kmodules.xyz/custom-resources v0.0.0-20220208103158-61b298634e43
 ## explicit; go 1.16
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
@@ -1443,7 +1443,7 @@ kmodules.xyz/prober/probe
 kmodules.xyz/prober/probe/exec
 kmodules.xyz/prober/probe/http
 kmodules.xyz/prober/probe/tcp
-# kmodules.xyz/resource-metadata v0.9.3
+# kmodules.xyz/resource-metadata v0.9.4
 ## explicit; go 1.17
 kmodules.xyz/resource-metadata/apis/core/v1alpha1
 # kmodules.xyz/resource-metrics v0.0.8

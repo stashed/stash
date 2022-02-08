@@ -15975,10 +15975,23 @@ func schema_custom_resources_apis_auditor_v1alpha1_KubernetesInfo(ref common.Ref
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
+					"clusterName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"clusterUID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"cluster": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("kmodules.xyz/client-go/api/v1.ClusterMetadata"),
+							Ref: ref("kmodules.xyz/client-go/api/v1.ClusterMetadata"),
 						},
 					},
 					"version": {
