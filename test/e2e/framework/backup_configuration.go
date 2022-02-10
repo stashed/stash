@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/x/crypto/rand"
@@ -148,4 +149,26 @@ func getBackupCronJobName(objMeta metav1.ObjectMeta) string {
 
 func getBackupJobName(backupSessionName string, index string) string {
 	return meta_util.ValidNameWithPrefixNSuffix(apis.PrefixStashBackup, strings.ReplaceAll(backupSessionName, ".", "-"), index)
+}
+
+func (f *Framework) EventuallyBackupInvokerPhase(invoker invoker.BackupInvoker) GomegaAsyncAssertion {
+	return Eventually(
+		func() v1beta1.BackupInvokerPhase {
+			switch invoker.GetTypeMeta().Kind {
+			case v1beta1.ResourceKindBackupConfiguration:
+				bc, err := f.StashClient.StashV1beta1().BackupConfigurations(invoker.GetObjectMeta().Namespace).Get(context.TODO(), invoker.GetObjectMeta().Name, metav1.GetOptions{})
+				if err != nil {
+					return ""
+				}
+				return bc.Status.Phase
+			case v1beta1.ResourceKindBackupBatch:
+				bb, err := f.StashClient.StashV1beta1().BackupBatches(invoker.GetObjectMeta().Namespace).Get(context.TODO(), invoker.GetObjectMeta().Name, metav1.GetOptions{})
+				if err != nil {
+					return ""
+				}
+				return bb.Status.Phase
+			default:
+				return ""
+			}
+		}, WaitTimeOut, PullInterval)
 }

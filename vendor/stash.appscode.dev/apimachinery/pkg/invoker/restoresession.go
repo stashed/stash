@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
@@ -119,15 +120,10 @@ func (inv *RestoreSessionInvoker) GetCondition(target *v1beta1.TargetRef, condit
 }
 
 func (inv *RestoreSessionInvoker) SetCondition(target *v1beta1.TargetRef, newCondition kmapi.Condition) error {
-	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(context.TODO(), inv.stashClient.StashV1beta1(), inv.restoreSession.ObjectMeta, func(in *v1beta1.RestoreSessionStatus) (types.UID, *v1beta1.RestoreSessionStatus) {
-		in.Conditions = kmapi.SetCondition(in.Conditions, newCondition)
-		return inv.restoreSession.UID, in
-	}, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
-	inv.restoreSession = updatedRestoreSession
-	return nil
+	status := inv.GetStatus()
+	status.Conditions = kmapi.SetCondition(status.Conditions, newCondition)
+	status.TargetStatus[0].Conditions = status.Conditions
+	return inv.UpdateStatus(status)
 }
 
 func (inv *RestoreSessionInvoker) IsConditionTrue(target *v1beta1.TargetRef, conditionType string) (bool, error) {
@@ -209,47 +205,6 @@ func (inv *RestoreSessionInvoker) GetObjectJSON() (string, error) {
 	return string(jsonObj), nil
 }
 
-func (inv *RestoreSessionInvoker) UpdateStatus(status RestoreInvokerStatus) error {
-	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(
-		context.TODO(),
-		inv.stashClient.StashV1beta1(),
-		inv.restoreSession.ObjectMeta,
-		func(in *v1beta1.RestoreSessionStatus) (types.UID, *v1beta1.RestoreSessionStatus) {
-			if status.Phase != "" {
-				in.Phase = status.Phase
-			}
-			if status.SessionDuration != "" {
-				in.SessionDuration = status.SessionDuration
-			}
-			if len(status.Conditions) > 0 {
-				in.Conditions = upsertConditions(in.Conditions, status.Conditions)
-			}
-			if len(status.TargetStatus) > 0 {
-				targetStatus := status.TargetStatus[0]
-				if targetStatus.TotalHosts != nil {
-					in.TotalHosts = targetStatus.TotalHosts
-				}
-				if targetStatus.Conditions != nil {
-					in.Conditions = upsertConditions(in.Conditions, targetStatus.Conditions)
-				}
-				if targetStatus.Stats != nil {
-					in.Stats = upsertRestoreHostStatus(in.Stats, targetStatus.Stats)
-				}
-				if targetStatus.Phase != "" {
-					in.Phase = v1beta1.RestorePhase(targetStatus.Phase)
-				}
-			}
-			return inv.restoreSession.ObjectMeta.UID, in
-		},
-		metav1.UpdateOptions{},
-	)
-	if err != nil {
-		return err
-	}
-	inv.restoreSession = updatedRestoreSession
-	return nil
-}
-
 func (inv *RestoreSessionInvoker) CreateEvent(eventType, source, reason, message string) error {
 	objRef, err := inv.GetObjectRef()
 	if err != nil {
@@ -316,4 +271,69 @@ func (inv *RestoreSessionInvoker) EnsureKubeDBIntegration(appClient appcatalog_c
 
 func (inv *RestoreSessionInvoker) GetStatus() RestoreInvokerStatus {
 	return getInvokerStatusFromRestoreSession(inv.restoreSession)
+}
+
+func (inv *RestoreSessionInvoker) UpdateStatus(status RestoreInvokerStatus) error {
+	startTime := inv.GetObjectMeta().CreationTimestamp
+	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(
+		context.TODO(),
+		inv.stashClient.StashV1beta1(),
+		inv.restoreSession.ObjectMeta,
+		func(in *v1beta1.RestoreSessionStatus) (types.UID, *v1beta1.RestoreSessionStatus) {
+			curStatus := v1beta1.RestoreMemberStatus{
+				Conditions: in.Conditions,
+				TotalHosts: in.TotalHosts,
+				Stats:      in.Stats,
+			}
+			newStatus := v1beta1.RestoreMemberStatus{
+				Conditions: status.TargetStatus[0].Conditions,
+				TotalHosts: status.TargetStatus[0].TotalHosts,
+				Stats:      status.TargetStatus[0].Stats,
+			}
+			updatedStatus := upsertRestoreTargetStatus(curStatus, newStatus)
+
+			in.Conditions = updatedStatus.Conditions
+			in.Stats = updatedStatus.Stats
+			in.TotalHosts = updatedStatus.TotalHosts
+			in.Phase = calculateRestoreSessionPhase(updatedStatus)
+
+			if IsRestoreCompleted(in.Phase) && in.SessionDuration == "" {
+				duration := time.Since(startTime.Time)
+				in.SessionDuration = duration.Round(time.Second).String()
+			}
+			return inv.restoreSession.ObjectMeta.UID, in
+		},
+		metav1.UpdateOptions{},
+	)
+	if err != nil {
+		return err
+	}
+	inv.restoreSession = updatedRestoreSession
+	return nil
+}
+
+func calculateRestoreSessionPhase(status v1beta1.RestoreMemberStatus) v1beta1.RestorePhase {
+	if len(status.Conditions) == 0 ||
+		kmapi.IsConditionFalse(status.Conditions, apis.RepositoryFound) ||
+		kmapi.IsConditionFalse(status.Conditions, apis.BackendSecretFound) ||
+		kmapi.IsConditionFalse(status.Conditions, apis.RestoreTargetFound) {
+		return v1beta1.RestorePending
+	}
+
+	if kmapi.IsConditionFalse(status.Conditions, apis.ValidationPassed) {
+		return v1beta1.RestorePhaseInvalid
+	}
+
+	switch status.Phase {
+	case v1beta1.TargetRestorePending:
+		return v1beta1.RestorePending
+	case v1beta1.TargetRestoreSucceeded:
+		return v1beta1.RestoreSucceeded
+	case v1beta1.TargetRestoreFailed:
+		return v1beta1.RestoreFailed
+	case v1beta1.TargetRestorePhaseUnknown:
+		return v1beta1.RestorePhaseUnknown
+	default:
+		return v1beta1.RestoreRunning
+	}
 }

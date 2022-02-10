@@ -27,6 +27,7 @@ import (
 	"gomodules.xyz/pointer"
 	"gomodules.xyz/x/crypto/rand"
 	apps "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -113,27 +114,22 @@ func (fi *Invocation) DeployDeployment(name string, replica int32, volName strin
 	// append test case specific suffix so that name does not conflict during parallel test
 	pvcName := fmt.Sprintf("%s-%s", volName, fi.app)
 
-	// If the PVC does not exist, create PVC for Deployment
-	pvc, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(fi.namespace).Get(context.TODO(), pvcName, metav1.GetOptions{})
-	if err != nil {
-		if kerr.IsNotFound(err) {
-			pvc, err = fi.CreateNewPVC(pvcName)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	}
-
 	// Generate Deployment definition
-	deployment := fi.Deployment(name, pvc.Name, volName)
+	deployment := fi.Deployment(name, pvcName, volName)
 	deployment.Spec.Replicas = &replica
 
 	// transformFuncs provides a array of functions that made test specific change on the Deployment
 	// apply these test specific changes
 	for _, fn := range transformFuncs {
 		fn(&deployment)
+	}
+
+	// If the PVC does not exist, create PVC for Deployment
+	_, err := fi.CreateNewPVC(pvcName, func(p *core.PersistentVolumeClaim) {
+		p.Namespace = deployment.Namespace
+	})
+	if err != nil && !kerr.IsAlreadyExists(err) {
+		return nil, err
 	}
 
 	By("Deploying Deployment: " + deployment.Name)

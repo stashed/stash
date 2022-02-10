@@ -157,7 +157,7 @@ func (c *StashController) handleInitContainerInjectionFailure(w *wapi.Workload, 
 	klog.Warningf("Failed to inject stash init-container into %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Name, err)
 
 	// Set "StashInitContainerInjected" condition to "False"
-	cerr := conditions.SetInitContainerInjectedConditionToFalse(inv, ref, err)
+	cerr := conditions.SetInitContainerInjectedConditionToFalse(inv, &ref, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
@@ -175,7 +175,7 @@ func (c *StashController) handleInitContainerInjectionSuccess(w *wapi.Workload, 
 	klog.Infof("Successfully injected stash init-container into %s %s/%s.", w.Kind, w.Namespace, w.Name)
 
 	// Set "StashInitContainerInjected" condition to "True"
-	cerr := conditions.SetInitContainerInjectedConditionToTrue(inv, ref)
+	cerr := conditions.SetInitContainerInjectedConditionToTrue(inv, &ref)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(

@@ -21,9 +21,11 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -61,7 +63,7 @@ type RestoreTargetHandler interface {
 
 type RestoreStatusHandler interface {
 	GetStatus() RestoreInvokerStatus
-	UpdateStatus(status RestoreInvokerStatus) error
+	UpdateStatus(newStatus RestoreInvokerStatus) error
 }
 
 type RestoreInvokerStatus struct {
@@ -148,30 +150,6 @@ func isRestoreMemberConditionTrue(status []v1beta1.RestoreMemberStatus, target v
 	return false
 }
 
-func upsertRestoreMemberStatus(cur []v1beta1.RestoreMemberStatus, new v1beta1.RestoreMemberStatus) []v1beta1.RestoreMemberStatus {
-	// if the member status already exist, then update it
-	for i := range cur {
-		if TargetMatched(cur[i].Ref, new.Ref) {
-			if new.Phase != "" {
-				cur[i].Phase = new.Phase
-			}
-			if len(new.Conditions) > 0 {
-				cur[i].Conditions = upsertConditions(cur[i].Conditions, new.Conditions)
-			}
-			if new.TotalHosts != nil {
-				cur[i].TotalHosts = new.TotalHosts
-			}
-			if len(new.Stats) > 0 {
-				cur[i].Stats = upsertRestoreHostStatus(cur[i].Stats, new.Stats)
-			}
-			return cur
-		}
-	}
-	// the member status does not exist. so, add new entry.
-	cur = append(cur, new)
-	return cur
-}
-
 func upsertConditions(cur []kmapi.Condition, new []kmapi.Condition) []kmapi.Condition {
 	for i := range new {
 		cur = kmapi.SetCondition(cur, new[i])
@@ -256,4 +234,72 @@ func TargetOfGroupKind(targetRef v1beta1.TargetRef, group, kind string) bool {
 		return true
 	}
 	return false
+}
+
+func upsertRestoreTargetStatus(cur, new v1beta1.RestoreMemberStatus) v1beta1.RestoreMemberStatus {
+	if len(new.Conditions) > 0 {
+		cur.Conditions = upsertConditions(cur.Conditions, new.Conditions)
+	}
+
+	if new.TotalHosts != nil {
+		cur.TotalHosts = new.TotalHosts
+	}
+
+	if len(new.Stats) > 0 {
+		cur.Stats = upsertRestoreHostStatus(cur.Stats, new.Stats)
+	}
+
+	cur.Phase = calculateRestoreTargetPhase(cur)
+	return cur
+}
+
+func calculateRestoreTargetPhase(status v1beta1.RestoreMemberStatus) v1beta1.RestoreTargetPhase {
+	if kmapi.IsConditionFalse(status.Conditions, apis.RestorerEnsured) ||
+		kmapi.IsConditionFalse(status.Conditions, apis.MetricsPushed) {
+		return v1beta1.TargetRestoreFailed
+	}
+
+	allConditionTrue := true
+	for _, c := range status.Conditions {
+		if c.Status != core.ConditionTrue {
+			allConditionTrue = false
+		}
+	}
+	if !allConditionTrue || status.TotalHosts == nil {
+		return v1beta1.TargetRestorePending
+	}
+
+	failedHostCount := int32(0)
+	unknownHostCount := int32(0)
+	successfulHostCount := int32(0)
+	for _, hostStats := range status.Stats {
+		switch hostStats.Phase {
+		case v1beta1.HostRestoreFailed:
+			failedHostCount++
+		case v1beta1.HostRestoreUnknown:
+			unknownHostCount++
+		case v1beta1.HostRestoreSucceeded:
+			successfulHostCount++
+		}
+	}
+
+	completedHosts := successfulHostCount + failedHostCount + unknownHostCount
+	if completedHosts < *status.TotalHosts {
+		return v1beta1.TargetRestoreRunning
+	}
+
+	if failedHostCount > 0 {
+		return v1beta1.TargetRestoreFailed
+	}
+	if unknownHostCount > 0 {
+		return v1beta1.TargetRestorePhaseUnknown
+	}
+
+	return v1beta1.TargetRestoreSucceeded
+}
+
+func IsRestoreCompleted(phase v1beta1.RestorePhase) bool {
+	return phase == v1beta1.RestoreSucceeded ||
+		phase == v1beta1.RestoreFailed ||
+		phase == v1beta1.RestorePhaseUnknown
 }

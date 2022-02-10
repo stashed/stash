@@ -55,7 +55,7 @@ func (c *StashController) validateAgainstUsagePolicy(repo kmapi.ObjectReference,
 	}
 
 	if !repository.UsageAllowed(namespace) {
-		return fmt.Errorf("Namespace %q is not allowed to refer Repository %q of %q namespace. Please, check the `usagePolicy` of the Repository.", curNamespace, repo.Name, repo.Namespace)
+		return fmt.Errorf("namespace %q is not allowed to refer Repository %q of %q namespace. Please, check the `usagePolicy` of the Repository", curNamespace, repo.Name, repo.Namespace)
 	}
 
 	return nil

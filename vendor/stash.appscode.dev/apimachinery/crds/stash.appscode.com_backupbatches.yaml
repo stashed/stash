@@ -25,6 +25,9 @@ spec:
     - jsonPath: .spec.paused
       name: Paused
       type: boolean
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date

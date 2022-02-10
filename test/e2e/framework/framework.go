@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
+	"kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 )
 
@@ -81,11 +82,14 @@ func NewInvocation() *Invocation {
 }
 
 func (f *Framework) Invoke() *Invocation {
-	return &Invocation{
+	inv := &Invocation{
 		Framework:     f,
 		app:           rand.WithUniqSuffix("stash-e2e"),
 		testResources: make([]interface{}, 0),
 	}
+	inv.backupNamespace = meta.NameWithSuffix(inv.app, "backup")
+	inv.restoreNamespace = meta.NameWithSuffix(inv.app, "restore")
+	return inv
 }
 
 func (fi *Invocation) AppLabel() string {
@@ -96,8 +100,18 @@ func (fi *Invocation) App() string {
 	return fi.app
 }
 
+func (fi *Invocation) BackupNamespace() string {
+	return fi.backupNamespace
+}
+
+func (fi *Invocation) RestoreNamespace() string {
+	return fi.restoreNamespace
+}
+
 type Invocation struct {
 	*Framework
-	app           string
-	testResources []interface{}
+	app              string
+	backupNamespace  string
+	restoreNamespace string
+	testResources    []interface{}
 }

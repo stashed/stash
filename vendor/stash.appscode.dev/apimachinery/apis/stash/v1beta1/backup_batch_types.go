@@ -39,6 +39,7 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
 // +kubebuilder:printcolumn:name="Paused",type="boolean",JSONPath=".spec.paused"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BackupBatch struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`

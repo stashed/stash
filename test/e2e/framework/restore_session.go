@@ -23,6 +23,7 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/x/arrays"
@@ -72,14 +73,23 @@ func (fi Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
 func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
-			if err != nil {
-				return false
+			var restorePhase v1beta1.RestorePhase
+			if invokerKind == v1beta1.ResourceKindRestoreSession {
+				rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
+				if err != nil {
+					return false
+				}
+				restorePhase = rs.Status.Phase
+			} else {
+				rb, err := f.StashClient.StashV1beta1().RestoreBatches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
+				if err != nil {
+					return false
+				}
+				restorePhase = rb.Status.Phase
 			}
-
-			if rs.Status.Phase == v1beta1.RestoreSucceeded ||
-				rs.Status.Phase == v1beta1.RestoreFailed ||
-				rs.Status.Phase == v1beta1.RestorePhaseUnknown {
+			if restorePhase == v1beta1.RestoreSucceeded ||
+				restorePhase == v1beta1.RestoreFailed ||
+				restorePhase == v1beta1.RestorePhaseUnknown {
 				return true
 			}
 			return false
@@ -141,4 +151,26 @@ func ruleExist(rule v1beta1.Rule, rules []v1beta1.Rule) bool {
 		}
 	}
 	return false
+}
+
+func (f *Framework) EventuallyRestoreInvokerPhase(invoker invoker.RestoreInvoker) GomegaAsyncAssertion {
+	return Eventually(
+		func() v1beta1.RestorePhase {
+			switch invoker.GetTypeMeta().Kind {
+			case v1beta1.ResourceKindRestoreSession:
+				rs, err := f.StashClient.StashV1beta1().RestoreSessions(invoker.GetObjectMeta().Namespace).Get(context.TODO(), invoker.GetObjectMeta().Name, metav1.GetOptions{})
+				if err != nil {
+					return ""
+				}
+				return rs.Status.Phase
+			case v1beta1.ResourceKindRestoreBatch:
+				rb, err := f.StashClient.StashV1beta1().RestoreBatches(invoker.GetObjectMeta().Namespace).Get(context.TODO(), invoker.GetObjectMeta().Name, metav1.GetOptions{})
+				if err != nil {
+					return ""
+				}
+				return rb.Status.Phase
+			default:
+				return ""
+			}
+		}, WaitTimeOut, PullInterval)
 }

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
@@ -126,19 +127,14 @@ func (inv *RestoreBatchInvoker) GetCondition(target *v1beta1.TargetRef, conditio
 }
 
 func (inv *RestoreBatchInvoker) SetCondition(target *v1beta1.TargetRef, newCondition kmapi.Condition) error {
-	updatedRestoreBatch, err := v1beta1_util.UpdateRestoreBatchStatus(context.TODO(), inv.stashClient.StashV1beta1(), inv.restoreBatch.ObjectMeta, func(in *v1beta1.RestoreBatchStatus) (types.UID, *v1beta1.RestoreBatchStatus) {
-		if target != nil {
-			in.Members = setRestoreMemberCondition(in.Members, *target, newCondition)
-		} else {
-			in.Conditions = kmapi.SetCondition(in.Conditions, newCondition)
-		}
-		return inv.restoreBatch.UID, in
-	}, metav1.UpdateOptions{})
-	if err != nil {
-		return err
+	status := inv.GetStatus()
+
+	if target != nil {
+		status.TargetStatus = setRestoreMemberCondition(status.TargetStatus, *target, newCondition)
+	} else {
+		status.Conditions = kmapi.SetCondition(status.Conditions, newCondition)
 	}
-	inv.restoreBatch = updatedRestoreBatch
-	return nil
+	return inv.UpdateStatus(status)
 }
 
 func (inv *RestoreBatchInvoker) IsConditionTrue(target *v1beta1.TargetRef, conditionType string) (bool, error) {
@@ -225,37 +221,6 @@ func (inv *RestoreBatchInvoker) GetObjectJSON() (string, error) {
 	return string(jsonObj), nil
 }
 
-func (inv *RestoreBatchInvoker) UpdateStatus(status RestoreInvokerStatus) error {
-	updatedRestoreBatch, err := v1beta1_util.UpdateRestoreBatchStatus(
-		context.TODO(),
-		inv.stashClient.StashV1beta1(),
-		inv.restoreBatch.ObjectMeta,
-		func(in *v1beta1.RestoreBatchStatus) (types.UID, *v1beta1.RestoreBatchStatus) {
-			if status.Phase != "" {
-				in.Phase = status.Phase
-			}
-			if status.SessionDuration != "" {
-				in.SessionDuration = status.SessionDuration
-			}
-			if len(status.Conditions) > 0 {
-				in.Conditions = upsertConditions(in.Conditions, status.Conditions)
-			}
-			if len(status.TargetStatus) > 0 {
-				for i := range status.TargetStatus {
-					in.Members = upsertRestoreMemberStatus(in.Members, status.TargetStatus[i])
-				}
-			}
-			return inv.restoreBatch.ObjectMeta.UID, in
-		},
-		metav1.UpdateOptions{},
-	)
-	if err != nil {
-		return err
-	}
-	inv.restoreBatch = updatedRestoreBatch
-	return nil
-}
-
 func (inv *RestoreBatchInvoker) CreateEvent(eventType, source, reason, message string) error {
 	objRef, err := inv.GetObjectRef()
 	if err != nil {
@@ -325,4 +290,89 @@ func (inv *RestoreBatchInvoker) EnsureKubeDBIntegration(appClient appcatalog_cs.
 
 func (inv *RestoreBatchInvoker) GetStatus() RestoreInvokerStatus {
 	return getInvokerStatusFromRestoreBatch(inv.restoreBatch)
+}
+
+func (inv *RestoreBatchInvoker) UpdateStatus(status RestoreInvokerStatus) error {
+	startTime := inv.GetObjectMeta().CreationTimestamp
+	totalTargets := len(inv.GetTargetInfo())
+	updatedRestoreBatch, err := v1beta1_util.UpdateRestoreBatchStatus(
+		context.TODO(),
+		inv.stashClient.StashV1beta1(),
+		inv.restoreBatch.ObjectMeta,
+		func(in *v1beta1.RestoreBatchStatus) (types.UID, *v1beta1.RestoreBatchStatus) {
+			if len(status.Conditions) > 0 {
+				in.Conditions = upsertConditions(in.Conditions, status.Conditions)
+			}
+			if len(status.TargetStatus) > 0 {
+				for i := range status.TargetStatus {
+					in.Members = upsertRestoreMemberStatus(in.Members, status.TargetStatus[i])
+				}
+			}
+
+			in.Phase = calculateRestoreBatchPhase(in, totalTargets)
+			if IsRestoreCompleted(in.Phase) && in.SessionDuration == "" {
+				duration := time.Since(startTime.Time)
+				in.SessionDuration = duration.Round(time.Second).String()
+			}
+			return inv.restoreBatch.ObjectMeta.UID, in
+		},
+		metav1.UpdateOptions{},
+	)
+	if err != nil {
+		return err
+	}
+	inv.restoreBatch = updatedRestoreBatch
+	return nil
+}
+
+func upsertRestoreMemberStatus(cur []v1beta1.RestoreMemberStatus, new v1beta1.RestoreMemberStatus) []v1beta1.RestoreMemberStatus {
+	// if the member status already exist, then update it
+	for i := range cur {
+		if TargetMatched(cur[i].Ref, new.Ref) {
+			cur[i] = upsertRestoreTargetStatus(cur[i], new)
+			return cur
+		}
+	}
+	// the member status does not exist. so, add new entry.
+	cur = append(cur, new)
+	return cur
+}
+
+func calculateRestoreBatchPhase(status *v1beta1.RestoreBatchStatus, totalTargets int) v1beta1.RestorePhase {
+	if len(status.Conditions) == 0 || len(status.Members) == 0 ||
+		kmapi.IsConditionFalse(status.Conditions, apis.RepositoryFound) ||
+		kmapi.IsConditionFalse(status.Conditions, apis.BackendSecretFound) {
+		return v1beta1.RestorePending
+	}
+
+	if kmapi.IsConditionFalse(status.Conditions, apis.ValidationPassed) {
+		return v1beta1.RestorePhaseInvalid
+	}
+
+	failedTargetCount := 0
+	unknownTargetCount := 0
+	successfulTargetCount := 0
+
+	for _, m := range status.Members {
+		switch m.Phase {
+		case v1beta1.TargetRestoreFailed:
+			failedTargetCount++
+		case v1beta1.TargetRestorePhaseUnknown:
+			unknownTargetCount++
+		case v1beta1.TargetRestoreSucceeded:
+			successfulTargetCount++
+		}
+	}
+	completedTargets := successfulTargetCount + failedTargetCount + unknownTargetCount
+	if completedTargets < len(status.Members) || completedTargets < totalTargets {
+		return v1beta1.RestoreRunning
+	}
+	if failedTargetCount > 0 {
+		return v1beta1.RestoreFailed
+	}
+	if unknownTargetCount > 0 {
+		return v1beta1.RestorePhaseUnknown
+	}
+
+	return v1beta1.RestoreSucceeded
 }
