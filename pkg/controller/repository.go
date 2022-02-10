@@ -225,7 +225,7 @@ func (c *StashController) requeueRepositoryReferences(repository *api.Repository
 			c.bcQueue.GetQueue().Add(key)
 
 		default:
-			return fmt.Errorf("Reference kind %q is unknown", ref.Kind)
+			return fmt.Errorf("reference kind %q is unknown", ref.Kind)
 		}
 	}
 

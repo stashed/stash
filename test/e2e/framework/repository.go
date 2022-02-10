@@ -23,12 +23,14 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	v1alpha1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"stash.appscode.dev/stash/pkg/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/stow"
 	"gomodules.xyz/x/crypto/rand"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/tools/portforward"
@@ -345,17 +347,19 @@ func (fi *Invocation) SetupMinioRepository(transformFuncs ...func(repo *v1alpha1
 	for _, fn := range transformFuncs {
 		fn(repo)
 	}
-	// Create Repository
+	return fi.CreateRepository(repo, &cred)
+}
+
+func (fi *Invocation) CreateRepository(repo *v1alpha1.Repository, cred *core.Secret) (*v1alpha1.Repository, error) {
 	By("Creating Repository")
-	repo, err = fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
+	repo, err := fi.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(context.TODO(), repo, metav1.CreateOptions{})
 	if err != nil {
 		return repo, err
 	}
 
 	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
 	// Hence we need to delete the Repository object first.
-	fi.AppendToCleanupList(repo, &cred)
-
+	fi.AppendToCleanupList(repo, cred)
 	return repo, nil
 }
 
@@ -543,4 +547,16 @@ func (fi *Invocation) SetupB2Repository(maxConnection int64, transformFuncs ...f
 	fi.AppendToCleanupList(&cred)
 
 	return repo, nil
+}
+
+func (fi *Invocation) AllowNamespace(repo *v1alpha1.Repository, allowedNamespace v1alpha1.FromNamespaces) (*v1alpha1.Repository, error) {
+	repo, _, err := v1alpha1_util.PatchRepository(context.TODO(), fi.StashClient.StashV1alpha1(), repo, func(repository *v1alpha1.Repository) *v1alpha1.Repository {
+		repository.Spec.UsagePolicy = &v1alpha1.UsagePolicy{
+			AllowedNamespaces: v1alpha1.AllowedNamespaces{
+				From: &allowedNamespace,
+			},
+		}
+		return repository
+	}, metav1.PatchOptions{})
+	return repo, err
 }

@@ -24,6 +24,7 @@ import (
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	invoker2 "stash.appscode.dev/apimachinery/pkg/invoker"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
 	. "github.com/onsi/ginkgo"
@@ -73,8 +74,9 @@ func (fi *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v
 	backupConfig, err := fi.CreateBackupConfigForWorkload(objMeta, repo, kind, transformFuncs...)
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Verifying that backup triggering CronJob has been created")
-	fi.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
+	By("Verifying that backup invoker is ready")
+	inv := invoker2.NewBackupConfigurationInvoker(fi.StashClient, backupConfig)
+	fi.EventuallyBackupInvokerPhase(inv).Should(BeEquivalentTo(v1beta1.BackupInvokerReady))
 
 	By("Verifying that sidecar has been injected")
 	switch kind {
@@ -247,7 +249,9 @@ func (fi *Invocation) CreateRestoreSessionForWorkload(objMeta metav1.ObjectMeta,
 
 	By("Creating RestoreSession")
 	err := fi.CreateRestoreSession(restoreSession)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return nil, err
+	}
 	fi.AppendToCleanupList(restoreSession)
 
 	return restoreSession, nil

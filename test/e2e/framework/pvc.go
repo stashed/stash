@@ -58,9 +58,13 @@ func (f *Framework) CreatePersistentVolumeClaim(pvc *core.PersistentVolumeClaim)
 	return f.KubeClient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Create(context.TODO(), pvc, metav1.CreateOptions{})
 }
 
-func (fi *Invocation) CreateNewPVC(name string) (*core.PersistentVolumeClaim, error) {
+func (fi *Invocation) CreateNewPVC(name string, transformFuncs ...func(p *core.PersistentVolumeClaim)) (*core.PersistentVolumeClaim, error) {
 	// Generate PVC definition
 	pvc := fi.PersistentVolumeClaim(name)
+
+	for _, fn := range transformFuncs {
+		fn(pvc)
+	}
 
 	By(fmt.Sprintf("Creating PVC: %s/%s", pvc.Namespace, pvc.Name))
 	createdPVC, err := fi.CreatePersistentVolumeClaim(pvc)
