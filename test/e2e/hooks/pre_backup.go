@@ -33,7 +33,6 @@ import (
 )
 
 var _ = Describe("PreBackup Hook", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

@@ -86,6 +86,7 @@ func (f *Framework) DeleteRepository(repository *v1alpha1.Repository) error {
 	}
 	return nil
 }
+
 func (f *Framework) BrowseBackendRepository(repository *v1alpha1.Repository) ([]stow.Item, error) {
 	cfg, err := osm.NewOSMContext(f.KubeClient, repository.Spec.Backend, repository.Namespace)
 	if err != nil {

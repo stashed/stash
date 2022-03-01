@@ -44,9 +44,7 @@ import (
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 )
 
-var (
-	sampleFiles = []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
-)
+var sampleFiles = []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
 
 const (
 	PullInterval             = time.Second * 2
@@ -145,7 +143,6 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 }
 
 func WaitUntilRepositoryDeleted(sc cs.Interface, repository *api.Repository) error {
-
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
 		if _, err := sc.StashV1alpha1().Repositories(repository.Namespace).Get(context.TODO(), repository.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
@@ -202,6 +199,7 @@ func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resou
 	}
 	return nil
 }
+
 func (fi *Invocation) CreateSampleFiles(objMeta metav1.ObjectMeta, sampleFiles []string) error {
 	pod, err := fi.GetPod(objMeta)
 	if err != nil {
@@ -219,7 +217,6 @@ func (fi *Invocation) CreateSampleFiles(objMeta metav1.ObjectMeta, sampleFiles [
 }
 
 func (fi *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resourceKind string) error {
-
 	switch resourceKind {
 	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPod:
 		pod, err := fi.GetPod(meta)

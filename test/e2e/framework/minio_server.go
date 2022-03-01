@@ -64,21 +64,21 @@ var (
 )
 
 func (f *Framework) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
-	//creating secret for minio server
+	// creating secret for minio server
 	mcred = f.SecretForMinioServer(ips)
 	_, err := f.CreateSecret(mcred)
 	if err != nil {
 		return "", err
 	}
 
-	//creating pvc for minio server
+	// creating pvc for minio server
 	mpvc = f.PVCForMinioServer()
 	err = f.CreatePersistentVolumeClaimForMinioServer(mpvc)
 	if err != nil {
 		return "", nil
 	}
 
-	//creating deployment for minio server
+	// creating deployment for minio server
 	mdeploy = f.DeploymentForMinioServer(mpvc, mcred)
 	if !tls { // if tls not enabled then don't mount secret for cacerts
 		mdeploy.Spec.Template.Spec.Containers = f.RemoveSecretVolumeMount(mdeploy.Spec.Template.Spec.Containers, mcred)
@@ -89,7 +89,7 @@ func (f *Framework) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
 		return "", err
 	}
 
-	//creating service for minio server
+	// creating service for minio server
 	msrvc = f.ServiceForMinioServer()
 	_, err = f.CreateServiceForMinioServer(msrvc)
 	if err != nil {
@@ -308,6 +308,7 @@ func (f *Framework) DeleteMinioServer() error {
 	}
 	return nil
 }
+
 func (f *Framework) DeleteSecretForMinioServer(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(context.TODO(), meta.Name, *deleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {

@@ -36,18 +36,16 @@ type E2EOptions struct {
 	StorageClass string
 }
 
-var (
-	options = &E2EOptions{
-		ExtraOptions: server.NewExtraOptions(),
-		KubeConfig: func() string {
-			kubecfg := os.Getenv("KUBECONFIG")
-			if kubecfg != "" {
-				return kubecfg
-			}
-			return filepath.Join(homedir.HomeDir(), ".kube", "config")
-		}(),
-	}
-)
+var options = &E2EOptions{
+	ExtraOptions: server.NewExtraOptions(),
+	KubeConfig: func() string {
+		kubecfg := os.Getenv("KUBECONFIG")
+		if kubecfg != "" {
+			return kubecfg
+		}
+		return filepath.Join(homedir.HomeDir(), ".kube", "config")
+	}(),
+}
 
 // xref: https://github.com/onsi/ginkgo/issues/602#issuecomment-559421839
 func TestMain(m *testing.M) {

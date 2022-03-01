@@ -631,7 +631,6 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 }
 
 func (c *StashController) setBackupSessionSucceeded(inv invoker.BackupInvoker, backupSession *api_v1beta1.BackupSession) error {
-
 	// total backup session duration is the difference between the time when BackupSession was created and current time
 	sessionDuration := time.Since(backupSession.CreationTimestamp.Time)
 
@@ -690,7 +689,6 @@ func (c *StashController) setBackupSessionSucceeded(inv invoker.BackupInvoker, b
 }
 
 func (c *StashController) setBackupSessionFailed(inv invoker.BackupInvoker, backupSession *api_v1beta1.BackupSession, backupErr error) error {
-
 	// total backup session duration is the difference between the time when BackupSession was created and current time
 	sessionDuration := time.Since(backupSession.CreationTimestamp.Time)
 
@@ -746,7 +744,6 @@ func (c *StashController) setBackupSessionFailed(inv invoker.BackupInvoker, back
 }
 
 func (c *StashController) setBackupSessionSkipped(inv invoker.BackupInvoker, currentBS *api_v1beta1.BackupSession, message string) error {
-
 	// total backup session duration is the difference between the time when BackupSession was created and current time
 	sessionDuration := time.Since(currentBS.CreationTimestamp.Time)
 

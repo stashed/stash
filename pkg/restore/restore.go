@@ -70,7 +70,6 @@ type Options struct {
 }
 
 func (opt *Options) Restore(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
-
 	if targetInfo.Target == nil {
 		return nil, fmt.Errorf("no restore target has specified")
 	}
@@ -116,7 +115,6 @@ func (opt *Options) Restore(inv invoker.RestoreInvoker, targetInfo invoker.Resto
 }
 
 func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
-
 	klog.Infoln("Attempting to elect restore leader")
 
 	rlc := resourcelock.ResourceLockConfig{
@@ -181,7 +179,6 @@ func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo in
 }
 
 func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
-
 	// if already restored for this host then don't process further
 	if opt.isRestoredForThisHost(inv, targetInfo, opt.Host) {
 		klog.Infof("Skipping restore for %s %s/%s. Reason: restore already completed for host %q.",
@@ -280,7 +277,6 @@ func (c *Options) HandleRestoreFailure(inv invoker.RestoreInvoker, targetInfo in
 }
 
 func (opt *Options) isRestoredForThisHost(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, host string) bool {
-
 	// if overall invoker Phase is "Succeeded" then restore has been complete for this host
 	if inv.GetStatus().Phase == api_v1beta1.RestoreSucceeded {
 		return true

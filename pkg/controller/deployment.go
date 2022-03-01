@@ -56,7 +56,6 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 				// apply stash backup/restore logic on this workload
 				_, err := c.applyStashLogic(w, apis.CallerWebhook)
 				return w, err
-
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
@@ -127,7 +126,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 				return err
 			}
 
-			//TODO: Should we force restart all pods while restore?
+			// TODO: Should we force restart all pods while restore?
 			// otherwise one pod will restore while others are writing/reading?
 
 			// wait until newly patched deployment pods are ready

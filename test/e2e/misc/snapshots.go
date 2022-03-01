@@ -174,7 +174,6 @@ var _ = Describe("Snapshot Tests", func() {
 	)
 
 	Context("Backend", func() {
-
 		Context("Minio", func() {
 			It("should successfully perform Snapshot operations", func() {
 				// Deploy the workloads
@@ -515,5 +514,4 @@ var _ = Describe("Snapshot Tests", func() {
 			})
 		})
 	})
-
 })

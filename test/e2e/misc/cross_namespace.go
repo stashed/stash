@@ -38,7 +38,6 @@ var (
 )
 
 var _ = Describe("Cross Namespace", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {
@@ -51,7 +50,6 @@ var _ = Describe("Cross Namespace", func() {
 		By("Create restore namespace: " + f.RestoreNamespace())
 		err = f.CreateNamespace(f.NewNamespace(f.RestoreNamespace()))
 		Expect(err).NotTo(HaveOccurred())
-
 	})
 
 	JustAfterEach(func() {

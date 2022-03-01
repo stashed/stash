@@ -51,12 +51,14 @@ type REST struct {
 	convertor   rest.TableConvertor
 }
 
-var _ rest.Scoper = &REST{}
-var _ rest.Getter = &REST{}
-var _ rest.Lister = &REST{}
-var _ rest.GracefulDeleter = &REST{}
-var _ rest.GroupVersionKindProvider = &REST{}
-var _ rest.CategoriesProvider = &REST{}
+var (
+	_ rest.Scoper                   = &REST{}
+	_ rest.Getter                   = &REST{}
+	_ rest.Lister                   = &REST{}
+	_ rest.GracefulDeleter          = &REST{}
+	_ rest.GroupVersionKindProvider = &REST{}
+	_ rest.CategoriesProvider       = &REST{}
+)
 
 func NewREST(config *restconfig.Config) *REST {
 	return &REST{

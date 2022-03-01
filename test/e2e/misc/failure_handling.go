@@ -28,7 +28,6 @@ import (
 )
 
 var _ = Describe("Failure Handling", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

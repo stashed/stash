@@ -65,7 +65,6 @@ func (opt *RBACOptions) ensureBackupJobClusterRole() error {
 		Labels: opt.OffshootLabels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},

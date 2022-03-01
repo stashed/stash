@@ -55,7 +55,6 @@ func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook 
 				// apply stash backup/restore logic on this workload
 				_, err := c.applyStashLogic(w, apis.CallerWebhook)
 				return w, err
-
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
@@ -138,7 +137,6 @@ func (c *StashController) runRCInjector(key string) error {
 			err = util.WaitUntilRCReady(c.kubeClient, rc.ObjectMeta)
 			if err != nil {
 				return err
-
 			}
 		}
 

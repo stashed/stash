@@ -35,7 +35,6 @@ import (
 )
 
 var _ = Describe("PreRestore Hook", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

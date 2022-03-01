@@ -50,7 +50,6 @@ type testInfo struct {
 const testNamespace = "vs-retention-policy-test"
 
 func TestCleanupSnapshots(t *testing.T) {
-
 	snapMeta := []snapInfo{
 		{name: "snap-1", creationTime: "2019-12-10T05:36:07Z", pvcName: "pvc-1"},
 		{name: "snap-2", creationTime: "2019-11-10T05:36:07Z", pvcName: "pvc-1"},
@@ -163,7 +162,6 @@ func TestCleanupSnapshots(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func getVolumeSnapshots(snapMetas []snapInfo) ([]runtime.Object, error) {

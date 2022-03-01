@@ -173,7 +173,6 @@ func NewCmdBackupPVC() *cobra.Command {
 }
 
 func (opt *pvcOptions) backupPVC(targetRef api_v1beta1.TargetRef) (*restic.BackupOutput, error) {
-
 	var err error
 	opt.setupOpt.StorageSecret, err = opt.k8sClient.CoreV1().Secrets(opt.StorageSecret.Namespace).Get(context.Background(), opt.StorageSecret.Name, metav1.GetOptions{})
 	if err != nil {

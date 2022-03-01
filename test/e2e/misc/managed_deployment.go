@@ -34,7 +34,6 @@ import (
 )
 
 var _ = Describe("Managed Deployment", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

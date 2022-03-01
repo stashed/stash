@@ -65,7 +65,6 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 					}
 				}
 				return w, err
-
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)

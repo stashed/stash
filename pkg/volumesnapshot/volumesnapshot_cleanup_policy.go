@@ -87,9 +87,11 @@ type VolumeSnapshots []VolumeSnapshot
 func (vs VolumeSnapshots) Len() int {
 	return len(vs)
 }
+
 func (vs VolumeSnapshots) Less(i, j int) bool {
 	return vs[i].VolumeSnap.CreationTimestamp.Time.After(vs[j].VolumeSnap.CreationTimestamp.Time)
 }
+
 func (vs VolumeSnapshots) Swap(i, j int) {
 	vs[i], vs[j] = vs[j], vs[i]
 }
@@ -99,7 +101,6 @@ func (vs VolumeSnapshots) Swap(i, j int) {
 // 2. then list that are to be kept and removed according to the policy.
 // 3. remove VolumeSnapshot that are not necessary according to RetentionPolicy
 func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots VolumeSnapshots, namespace string, vsClient vs_cs.Interface) error {
-
 	// sorts the VolumeSnapshots according to CreationTimeStamp
 	sort.Sort(VolumeSnapshots(volumeSnapshots))
 
@@ -107,7 +108,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 		return nil
 	}
 
-	var buckets = [6]struct {
+	buckets := [6]struct {
 		Count     int64
 		LastAdded func(d time.Time, nr int) int
 		Last      int

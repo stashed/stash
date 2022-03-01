@@ -113,7 +113,6 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 }
 
 func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput, inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) error {
-
 	klog.Infof("Updating post backup status.......")
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
@@ -190,7 +189,6 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 }
 
 func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.RestoreOutput, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
-
 	if restoreOutput == nil {
 		return fmt.Errorf("invalid restore output. Restore output must not be nil")
 	}
@@ -242,7 +240,6 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 }
 
 func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker, backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef, numCurHosts int) error {
-
 	var repoStats restic.RepositoryStats
 	for _, targetStatus := range backupSession.Status.Targets {
 		if invoker.TargetMatched(targetStatus.Ref, curTarget) {

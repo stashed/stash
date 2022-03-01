@@ -32,7 +32,6 @@ import (
 )
 
 var _ = Describe("Pause Backup", func() {
-
 	var f *framework.Invocation
 	const AtEveryMinutes = "* * * * *"
 

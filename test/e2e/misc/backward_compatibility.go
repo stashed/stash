@@ -31,7 +31,6 @@ import (
 )
 
 var _ = Describe("Backward Compatibility Test", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {
@@ -365,7 +364,6 @@ var _ = Describe("Backward Compatibility Test", func() {
 			// Verify that restored data is same as the original data
 			By("Verifying restored data is same as the original data")
 			Expect(restoredData).Should(BeSameAs(sampleData))
-
 		})
 	})
 })
