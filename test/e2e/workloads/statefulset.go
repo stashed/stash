@@ -31,7 +31,6 @@ import (
 )
 
 var _ = Describe("Workload Test", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {
@@ -51,7 +50,6 @@ var _ = Describe("Workload Test", func() {
 	})
 
 	Context("StatefulSet", func() {
-
 		Context("Restore in same StatefulSet", func() {
 			It("should Backup & Restore in the source StatefulSet", func() {
 				// Deploy a StatefulSet

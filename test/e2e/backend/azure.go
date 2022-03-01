@@ -30,7 +30,6 @@ import (
 )
 
 var _ = Describe("Azure Backend", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

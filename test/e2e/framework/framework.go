@@ -77,6 +77,7 @@ func New(clientConfig *rest.Config, storageClass, registry string) *Framework {
 		DockerRegistry: registry,
 	}
 }
+
 func NewInvocation() *Invocation {
 	return RootFramework.Invoke()
 }

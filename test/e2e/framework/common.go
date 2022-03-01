@@ -70,7 +70,6 @@ func (fi *Invocation) GenerateBigSampleFile(meta metav1.ObjectMeta, kind string)
 }
 
 func (fi *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
-
 	backupConfig, err := fi.CreateBackupConfigForWorkload(objMeta, repo, kind, transformFuncs...)
 	Expect(err).NotTo(HaveOccurred())
 

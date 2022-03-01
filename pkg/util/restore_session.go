@@ -102,7 +102,6 @@ func FindRestoreSession(lister v1beta1_listers.RestoreSessionLister, w *wapi.Wor
 
 // RestoreSessionEqual check whether two RestoreSessions has same specification.
 func RestoreSessionEqual(old, new *v1beta1_api.RestoreSession) bool {
-
 	var oldSpec, newSpec *v1beta1_api.RestoreSessionSpec
 	var oldName, newName string
 

@@ -30,7 +30,6 @@ import (
 )
 
 var _ = Describe("GCS Backend", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

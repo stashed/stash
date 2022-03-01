@@ -35,7 +35,6 @@ import (
 )
 
 var _ = Describe("Clone", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {
@@ -197,7 +196,7 @@ var _ = Describe("Clone", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
-				//Deploy restored StatefulSet
+				// Deploy restored StatefulSet
 				restoredSS, err := f.DeployStatefulSet(framework.RestoredStatefulSet, int32(3), framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 

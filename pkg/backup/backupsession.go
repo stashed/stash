@@ -63,13 +63,13 @@ type BackupSessionController struct {
 	MaxNumRequeues       int
 	NumThreads           int
 	ResyncPeriod         time.Duration
-	//backupConfiguration/BackupBatch
+	// backupConfiguration/BackupBatch
 	InvokerKind      string
 	InvokerName      string
 	Namespace        string
 	BackupTargetName string
 	BackupTargetKind string
-	//Backup Session
+	// Backup Session
 	bsQueue    *queue.Worker
 	bsInformer cache.SharedIndexInformer
 	bsLister   v1beta1.BackupSessionLister
@@ -182,7 +182,6 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 	}
 	if !exists {
 		klog.Warningf("Backup Session %s does not exist anymore\n", key)
-
 	} else {
 		backupSession := obj.(*api_v1beta1.BackupSession)
 		klog.Infof("Sync/Add/Update for Backup Session %s", backupSession.GetName())
@@ -515,7 +514,6 @@ func (c *BackupSessionController) handleBackupFailure(backupSessionName string, 
 }
 
 func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1beta1.BackupSession, backupTarget *api_v1beta1.BackupTarget) bool {
-
 	// if overall backupSession phase is "Succeeded" or "Failed" or "Skipped" then it has been processed already
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed {

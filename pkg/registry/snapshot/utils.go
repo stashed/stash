@@ -51,6 +51,7 @@ func (r *REST) GetSnapshotsFromBackned(repository *stash.Repository, snapshotIDs
 	}
 	return r.getSnapshotsFromBackend(repository, snapshotIDs)
 }
+
 func (r *REST) getSnapshotsFromBackend(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
 	tempDir, err := ioutil.TempDir("", "stash")
 	if err != nil {
@@ -130,6 +131,7 @@ func (r *REST) getSnapshotsFromBackend(repository *stash.Repository, snapshotIDs
 	}
 	return snapshots, nil
 }
+
 func (r *REST) getSnapshotsFromLocalBackend(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
 	response, err := r.execOnBackendMountingPod(repository, "snapshots", snapshotIDs)
 	if err != nil {
@@ -151,10 +153,12 @@ func (r *REST) ForgetSnapshotsFromBackend(repository *stash.Repository, snapshot
 	}
 	return r.forgetSnapshotsFromBackend(repository, snapshotIDs)
 }
+
 func (r *REST) forgetSnapshotsFromLocalBackend(repository *stash.Repository, snapshotIDs []string) error {
 	_, err := r.execOnBackendMountingPod(repository, "forget", snapshotIDs)
 	return err
 }
+
 func (r *REST) forgetSnapshotsFromBackend(repository *stash.Repository, snapshotIDs []string) error {
 	tempDir, err := ioutil.TempDir("", "stash")
 	if err != nil {

@@ -35,7 +35,6 @@ import (
 )
 
 var _ = Describe("Runtime Settings", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

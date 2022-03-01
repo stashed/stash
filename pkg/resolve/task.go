@@ -79,7 +79,7 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 		// merge/replace backup config inputs
 		inputs = meta_util.OverwriteKeys(inputs, o.Inputs)
 
-		//Add addon image as input
+		// Add addon image as input
 		inputs = meta_util.OverwriteKeys(inputs, map[string]string{
 			apis.AddonImage: function.Spec.Image,
 		})

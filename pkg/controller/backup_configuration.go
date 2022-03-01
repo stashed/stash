@@ -74,7 +74,6 @@ func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
 				bc := obj.(*api_v1beta1.BackupConfiguration)
 
 				return nil, c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace)
-
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				bc := newObj.(*api_v1beta1.BackupConfiguration)
@@ -186,7 +185,6 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
 		// Check whether Repository exist or not
 		repository, err := inv.GetRepository()
-
 		if err != nil {
 			if kerr.IsNotFound(err) {
 				klog.Infof("Repository %s/%s does not exist.\n"+
@@ -311,7 +309,6 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 				}
 			}
 		}
-
 	}
 	// If some backup targets are missing, then retry after some time.
 	if someTargetMissing {
@@ -473,7 +470,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 		c.kubeClient,
 		meta,
 		func(in *batchv1.CronJob) *batchv1.CronJob {
-			//set backup invoker object as cron-job owner
+			// set backup invoker object as cron-job owner
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerRef)
 
 			in.Spec.Schedule = inv.GetSchedule()

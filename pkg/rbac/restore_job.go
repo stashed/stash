@@ -35,7 +35,6 @@ import (
 )
 
 func (opt *RBACOptions) EnsureRestoreJobRBAC() error {
-
 	if opt.ServiceAccount.Name == "" {
 		err := opt.ensureServiceAccount()
 		if err != nil {
@@ -64,13 +63,11 @@ func (opt *RBACOptions) EnsureRestoreJobRBAC() error {
 }
 
 func (opt *RBACOptions) ensureRestoreJobClusterRole() error {
-
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashRestoreJobClusterRole,
 		Labels: opt.OffshootLabels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
@@ -130,7 +127,6 @@ func (opt *RBACOptions) ensureRestoreJobClusterRole() error {
 }
 
 func (opt *RBACOptions) ensureRestoreJobRoleBinding() error {
-
 	meta := metav1.ObjectMeta{
 		Namespace: opt.Invoker.Namespace,
 		Name:      getRestoreJobRoleBindingName(opt.ServiceAccount.Name),

@@ -30,7 +30,6 @@ import (
 )
 
 var _ = Describe("Workload Test", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {
@@ -47,7 +46,6 @@ var _ = Describe("Workload Test", func() {
 	})
 
 	Context("ReplicaSet", func() {
-
 		Context("Restore in same ReplicaSet", func() {
 			It("should Backup & Restore in the source ReplicaSet", func() {
 				// Deploy a ReplicaSet

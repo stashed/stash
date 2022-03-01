@@ -227,7 +227,6 @@ func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncA
 
 		_, err = f.ExecOnPod(pod, "ls", "-R")
 		return err == nil
-
 	}, WaitTimeOut, PullInterval)
 }
 

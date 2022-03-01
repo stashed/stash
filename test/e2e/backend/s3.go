@@ -30,7 +30,6 @@ import (
 )
 
 var _ = Describe("S3 Backend", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {
@@ -142,7 +141,6 @@ var _ = Describe("S3 Backend", func() {
 			items, err := f.BrowseBackendRepository(repo)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(items).Should(BeEmpty())
-
 		})
 	})
 
@@ -199,5 +197,4 @@ var _ = Describe("S3 Backend", func() {
 			Expect(restoredData).Should(BeSameAs(sampleData))
 		})
 	})
-
 })

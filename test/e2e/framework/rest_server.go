@@ -45,7 +45,7 @@ const (
 )
 
 func (fi *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
-	//creating secret for Rest server
+	// creating secret for Rest server
 	cred := fi.SecretForRestServer(ips)
 	rcred, err := fi.CreateSecret(cred)
 	if err != nil {
@@ -53,7 +53,7 @@ func (fi *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
 	}
 	fi.AppendToCleanupList(rcred)
 
-	//creating deployment for Rest server
+	// creating deployment for Rest server
 	deploy := fi.DeploymentForRestServer()
 
 	// if tls not enabled then don't mount secret for cacerts and don't pass tls related environment variables
@@ -70,7 +70,7 @@ func (fi *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
 	}
 	fi.AppendToCleanupList(rdeploy)
 
-	//creating pvc for Rest server
+	// creating pvc for Rest server
 	pvc := fi.PVCForRestServer()
 	rpvc, err := fi.CreatePersistentVolumeClaimForRestServer(pvc)
 	if err != nil {
@@ -78,7 +78,7 @@ func (fi *Invocation) CreateRestServer(tls bool, ips []net.IP) (string, error) {
 	}
 	fi.AppendToCleanupList(rpvc)
 
-	//creating service for Rest server
+	// creating service for Rest server
 	svc := fi.ServiceForRestServer()
 	rsvc, err := fi.CreateServiceForRestServer(svc)
 	if err != nil {
@@ -270,7 +270,6 @@ func (fi *Invocation) RestServerSANs(ips []net.IP) cert.AltNames {
 
 func (fi *Invocation) RestServiceAddres() string {
 	return fmt.Sprintf("%s-%s.%s.svc", RestService, fi.App(), fi.namespace)
-
 }
 
 func (fi *Invocation) CreateRestUser(username string) error {

@@ -147,7 +147,6 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 }
 
 func (c *StashController) getTotalHosts(target interface{}, namespace string, driver api_v1beta1.Snapshotter) (*int32, error) {
-
 	// for cluster backup/restore, target is nil. in this case, there is only one host
 	var targetRef api_v1beta1.TargetRef
 	var rep *int32

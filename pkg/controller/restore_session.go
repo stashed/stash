@@ -233,7 +233,6 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
 		// Check whether Repository exist or not
 		repository, err := inv.GetRepository()
-
 		if err != nil {
 			if kerr.IsNotFound(err) {
 				klog.Infof("Repository %s/%s does not exist."+
@@ -450,6 +449,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 	}
 	return nil
 }
+
 func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int) error {
 	invMeta := inv.GetObjectMeta()
 	image := docker.Docker{

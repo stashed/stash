@@ -50,7 +50,6 @@ func (opt *RBACOptions) ensureCrossNamespaceRole() error {
 		Labels:    opt.OffshootLabels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.Role) *rbac.Role {
-
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups:     []string{api_v1alpha1.SchemeGroupVersion.Group},
@@ -78,7 +77,6 @@ func (opt *RBACOptions) ensureCrossNamespaceRoleBinding() error {
 	}
 
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     apis.KindRole,
@@ -99,6 +97,7 @@ func (opt *RBACOptions) ensureCrossNamespaceRoleBinding() error {
 func (opt *RBACOptions) getRoleBindingName() string {
 	return strings.ReplaceAll(opt.ServiceAccount.Name, ".", "-")
 }
+
 func (opt *RBACOptions) getCrossNamespaceRoleName() string {
 	return meta_util.NameWithPrefix(
 		opt.Invoker.Namespace,

@@ -30,7 +30,6 @@ import (
 )
 
 var _ = Describe("B2 Backend", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

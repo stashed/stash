@@ -31,7 +31,6 @@ import (
 )
 
 var _ = Describe("Rest Backend", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

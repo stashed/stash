@@ -89,7 +89,6 @@ func ensureCronJobClusterRole(kc kubernetes.Interface, psps []string, labels map
 			},
 		}
 		return in
-
 	}, metav1.PatchOptions{})
 	return err
 }

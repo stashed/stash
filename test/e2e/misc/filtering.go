@@ -30,7 +30,6 @@ import (
 )
 
 var _ = Describe("Filtering Files", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

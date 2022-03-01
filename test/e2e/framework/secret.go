@@ -213,7 +213,6 @@ func (fi *Invocation) SecretForRegistry(dockerCfgJson []byte) core.Secret {
 
 func (f *Framework) CreateSecret(obj core.Secret) (*core.Secret, error) {
 	return f.KubeClient.CoreV1().Secrets(obj.Namespace).Create(context.TODO(), &obj, metav1.CreateOptions{})
-
 }
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {

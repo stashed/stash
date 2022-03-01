@@ -35,7 +35,6 @@ import (
 )
 
 var _ = Describe("PostRestore Hook", func() {
-
 	var f *framework.Invocation
 
 	BeforeEach(func() {

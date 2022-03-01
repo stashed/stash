@@ -61,7 +61,7 @@ type VSoption struct {
 	invokerKind string
 	invokerName string
 
-	//Target
+	// Target
 	targetName string
 	targetKind string
 }
@@ -314,5 +314,4 @@ func getPVCsForStatefulset(volList []corev1.PersistentVolumeClaim, ss *appsv1.St
 		}
 	}
 	return pvcList
-
 }
