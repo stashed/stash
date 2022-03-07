@@ -76,11 +76,6 @@ func (opt *RBACOptions) ensureRestoreInitContainerClusterRole() error {
 			},
 			{
 				APIGroups: []string{core.GroupName},
-				Resources: []string{"pods"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
 				Resources: []string{"pods/exec"},
 				Verbs:     []string{"get", "create"},
 			},
@@ -88,6 +83,11 @@ func (opt *RBACOptions) ensureRestoreInitContainerClusterRole() error {
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"events"},
 				Verbs:     []string{"create"},
+			},
+			{
+				APIGroups: []string{core.SchemeGroupVersion.Group},
+				Resources: []string{"secrets", "endpoints", "pods"},
+				Verbs:     []string{"get"},
 			},
 		}
 		return in
