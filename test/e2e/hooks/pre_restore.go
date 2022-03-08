@@ -23,6 +23,7 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -188,6 +189,10 @@ var _ = Describe("PreRestore Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
 
+					By("Verifying that target restore were not executed")
+					inv := invoker.NewRestoreSessionInvoker(f.KubeClient, f.StashClient, completedRS)
+					Expect(f.TargetRestoreExecuted(inv)).Should(BeFalse())
+
 					// Delete RestoreSession so that the StatefulSet can start normally
 					By("Deleting RestoreSession")
 					err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -345,6 +350,10 @@ var _ = Describe("PreRestore Hook", func() {
 						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreFailed))
+
+						By("Verifying that target restore were not executed")
+						inv := invoker.NewRestoreSessionInvoker(f.KubeClient, f.StashClient, completedRS)
+						Expect(f.TargetRestoreExecuted(inv)).Should(BeFalse())
 
 						restoredData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
 						Expect(err).NotTo(HaveOccurred())

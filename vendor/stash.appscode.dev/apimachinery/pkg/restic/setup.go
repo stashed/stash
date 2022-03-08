@@ -111,18 +111,18 @@ func (w *ResticWrapper) setupEnv() error {
 
 	if w.config.EnableCache {
 		cacheDir := filepath.Join(w.config.ScratchDir, resticCacheDir)
-		if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 			return err
 		}
 	}
 
-	//path = strings.TrimPrefix(path, "/")
+	// path = strings.TrimPrefix(path, "/")
 
 	switch w.config.Provider {
 
 	case storage.ProviderLocal:
 		r := w.config.Bucket
-		if err := os.MkdirAll(r, 0755); err != nil {
+		if err := os.MkdirAll(r, 0o755); err != nil {
 			return err
 		}
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
@@ -332,7 +332,7 @@ func (w *ResticWrapper) writeSecretKeyToFile(key, name string) (string, error) {
 	tmpDir := w.GetEnv(TMPDIR)
 	filePath := filepath.Join(tmpDir, name)
 
-	if err := ioutil.WriteFile(filePath, v, 0755); err != nil {
+	if err := ioutil.WriteFile(filePath, v, 0o755); err != nil {
 		return "", err
 	}
 	return filePath, nil

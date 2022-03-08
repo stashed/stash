@@ -19,12 +19,11 @@ package misc
 import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/test/e2e/framework"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/kubernetes/pkg/apis/core"
 )
 
 var _ = Describe("Failure Handling", func() {
@@ -44,7 +43,7 @@ var _ = Describe("Failure Handling", func() {
 	})
 
 	Context("CronJob Creation Failure", func() {
-		It("should write CronJob creation failure event to the BackupConfiguration", func() {
+		It("should set CronJobCreated condition to true", func() {
 			// Deploy a Deployment
 			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
@@ -64,13 +63,8 @@ var _ = Describe("Failure Handling", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Verifying that CronJob creation failure event has been written")
-			f.EventuallyEventWritten(
-				backupConfig.ObjectMeta,
-				v1beta1.ResourceKindBackupConfiguration,
-				v1.EventTypeWarning,
-				eventer.EventReasonCronJobCreationFailed,
-			).Should(BeTrue())
+			By("Verifying that CronJobCreated condition has been set")
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, v1beta1.CronJobCreated).Should(BeEquivalentTo(core.ConditionFalse))
 		})
 	})
 })

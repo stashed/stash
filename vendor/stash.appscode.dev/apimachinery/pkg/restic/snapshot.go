@@ -39,5 +39,4 @@ func (w *ResticWrapper) GetSnapshotSize(snapshotID string) (uint64, error) {
 		return 0, err
 	}
 	return stat.TotalSize, nil
-
 }

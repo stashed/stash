@@ -22,7 +22,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash"
@@ -30,6 +29,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
+	stashHooks "stash.appscode.dev/apimachinery/pkg/hooks"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 	api_util "stash.appscode.dev/apimachinery/pkg/util"
@@ -169,34 +169,8 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 	}
 
 	if invMeta.DeletionTimestamp != nil {
-		// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
-		// remove respective init-container and finally remove finalizer
 		if core_util.HasFinalizer(invMeta, api_v1beta1.StashKey) {
-			for _, targetInfo := range inv.GetTargetInfo() {
-				target := targetInfo.Target
-				if target != nil && util.RestoreModel(target.Ref.Kind) == apis.ModelSidecar {
-					// send event to workload controller. workload controller will take care of removing restore init-container
-					err := c.sendEventToWorkloadQueue(
-						target.Ref.Kind,
-						invMeta.Namespace,
-						target.Ref.Name,
-					)
-					if err != nil {
-						return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
-					}
-				}
-			}
-
-			rbacOptions, err := c.getRestoreRBACOptions(inv)
-			if err != nil {
-				return err
-			}
-
-			if err := rbacOptions.EnsureRBACResourcesDeleted(); err != nil {
-				return err
-			}
-
-			err = c.deleteRepositoryReferences(inv)
+			err := c.cleanupRestoreInvokerOffshoots(inv, invokerRef)
 			if err != nil {
 				return err
 			}
@@ -207,134 +181,56 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 		return nil
 	}
 
-	// add finalizer
 	err = inv.AddFinalizer()
 	if err != nil {
 		return err
 	}
 
-	// ================= Don't Process Completed Invoker ===========================
 	status := inv.GetStatus()
-	if invoker.IsRestoreCompleted(status.Phase) {
+	if invoker.RestoreCompletedForAllTargets(status.TargetStatus) {
+		if !restoreMetricsPushed(status.Conditions) {
+			err = c.sendRestoreMetrics(inv)
+			if err != nil {
+				condErr := conditions.SetRestoreMetricsPushedConditionToFalse(inv, err)
+				if condErr != nil {
+					return condErr
+				}
+			}
+		}
+
+		if !globalPostRestoreHookExecuted(inv) {
+			err = c.executeGlobalPostRestoreHook(inv)
+			if err != nil {
+				condErr := conditions.SetGlobalPostRestoreHookSucceededConditionToFalse(inv, err)
+				if condErr != nil {
+					return condErr
+				}
+			}
+		}
+
 		klog.Infof("Skipping processing %s %s/%s. Reason: phase is %q.",
 			inv.GetTypeMeta().Kind,
 			invMeta.Namespace,
 			invMeta.Name,
 			status.Phase,
 		)
-		err = c.ensureMetricsPushed(inv)
-		if err != nil {
-			return conditions.SetMetricsPushedConditionToFalse(inv, nil, err)
-		}
 		return nil
 	}
 
-	// ======================== Set Global Conditions ============================
 	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
-		// Check whether Repository exist or not
-		repository, err := inv.GetRepository()
+		shouldRequeue, err := c.checkForResticSnapshotterRequirements(inv, inv)
 		if err != nil {
-			if kerr.IsNotFound(err) {
-				klog.Infof("Repository %s/%s does not exist."+
-					"\nRequeueing after 5 seconds......",
-					inv.GetRepoRef().Namespace,
-					inv.GetRepoRef().Name)
-
-				err = conditions.SetRepositoryFoundConditionToFalse(inv)
-				if err != nil {
-					return err
-				}
-
-				return c.requeueRestoreInvoker(inv, key)
-			}
-			return conditions.SetRepositoryFoundConditionToUnknown(inv, err)
+			return err
 		}
-
-		if repository.ObjectMeta.DeletionTimestamp != nil {
-			klog.Infof("Repository %s/%s has been deleted."+
-				"\nRequeueing after 5 seconds......",
-				inv.GetRepoRef().Namespace,
-				inv.GetRepoRef().Name)
-
-			err = conditions.SetRepositoryFoundConditionToFalse(inv)
-			if err != nil {
-				return err
-			}
-
+		if shouldRequeue {
 			return c.requeueRestoreInvoker(inv, key)
 		}
-
-		err = conditions.SetRepositoryFoundConditionToTrue(inv)
-		if err != nil {
-			return err
-		}
-
-		err = c.upsertRepositoryReferences(inv)
-		if err != nil {
-			return err
-		}
-
-		// Check whether the backend Secret exist or not
-		secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-		if err != nil {
-			if kerr.IsNotFound(err) {
-				klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
-					secret.Namespace,
-					secret.Name,
-					repository.Namespace,
-					repository.Name,
-				)
-				err2 := conditions.SetBackendSecretFoundConditionToFalse(inv, secret.Name)
-				if err2 != nil {
-					return err2
-				}
-				return c.requeueRestoreInvoker(inv, key)
-			}
-			return conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
-		}
-		err = conditions.SetBackendSecretFoundConditionToTrue(inv, secret.Name)
-		if err != nil {
-			return err
-		}
-
-		err = c.validateAgainstUsagePolicy(inv.GetRepoRef(), inv.GetObjectMeta().Namespace)
-		if err != nil {
-			condErr := conditions.SetValidationPassedToFalse(inv, err)
-			if condErr != nil {
-				return condErr
-			}
-		} else {
-			condErr := conditions.SetValidationPassedToTrue(inv)
-			if condErr != nil {
-				return condErr
-			}
-		}
-	}
-	phase := inv.GetStatus().Phase
-
-	// ==================== Execute Global PostRestore Hooks ===========================
-	// if the restore process has completed(Failed or Succeeded or Unknown), then execute global postRestore hook if not yet executed
-	if invoker.IsRestoreCompleted(phase) && !globalPostRestoreHookExecuted(inv) {
-		err = util.ExecuteHook(c.clientConfig, inv.GetGlobalHooks(), apis.PostRestoreHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
-		if err != nil {
-			return conditions.SetGlobalPostRestoreHookSucceededConditionToFalse(inv, err)
-		}
-		err = conditions.SetGlobalPostRestoreHookSucceededConditionToTrue(inv)
-		if err != nil {
-			return err
-		}
 	}
 
-	// ==================== Execute Global PreRestore Hook =====================
-	// if global preRestore hook exist and not executed yet, then execute the preRestoreHook
 	if !globalPreRestoreHookExecuted(inv) {
-		err = util.ExecuteHook(c.clientConfig, inv.GetGlobalHooks(), apis.PreBackupHook, os.Getenv("MY_POD_NAME"), os.Getenv("MY_POD_NAMESPACE"))
+		err := c.executeGlobalPreRestoreHook(inv)
 		if err != nil {
 			return conditions.SetGlobalPreRestoreHookSucceededConditionToFalse(inv, err)
-		}
-		err = conditions.SetGlobalPreRestoreHookSucceededConditionToTrue(inv)
-		if err != nil {
-			return err
 		}
 	}
 
@@ -343,106 +239,50 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 		if targetInfo.Target != nil {
 			// Skip processing if the restore process has been already initiated before for this target
 			if targetRestoreInitiated(inv, targetInfo.Target.Ref) {
-				continue
-			}
-			// ----------------- Ensure Execution Order -------------------
-			if inv.GetExecutionOrder() == api_v1beta1.Sequential &&
-				!inv.NextInOrder(targetInfo.Target.Ref, inv.GetStatus().TargetStatus) {
+				klog.Infof("Skipping initiating restore for %s %s/%s. Reason: Restore has been already initiated for this target.", targetInfo.Target.Ref.Kind, inv.GetObjectMeta().Namespace, targetInfo.Target.Ref.Name)
 				continue
 			}
 
-			// ------------- Set Target Specific Conditions --------------
-			tref := targetInfo.Target.Ref
-			if tref.Name != "" {
-				wc := util.WorkloadClients{
-					KubeClient:       c.kubeClient,
-					OcClient:         c.ocClient,
-					StashClient:      c.stashClient,
-					CRDClient:        c.crdClient,
-					AppCatalogClient: c.appCatalogClient,
-				}
-				targetExist, err := wc.IsTargetExist(tref, invMeta.Namespace)
-				if err != nil {
-					klog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
-						tref.APIVersion,
-						tref.Kind,
-						invMeta.Namespace,
-						tref.Name,
-						err.Error(),
-					)
-					return conditions.SetRestoreTargetFoundConditionToUnknown(inv, i, err)
-				}
-
-				if !targetExist {
-					// Target does not exist. Log the information.
-					klog.Infof("Restore target %s %s %s/%s does not exist.",
-						tref.APIVersion,
-						tref.Kind,
-						invMeta.Namespace,
-						tref.Name)
-					// Set the "RestoreTargetFound" condition to "False"
-					err = conditions.SetRestoreTargetFoundConditionToFalse(inv, i)
-					if err != nil {
-						return err
-					}
-					// Now retry after 5 seconds
-					klog.Infof("Requeueing Restore Invoker %s %s/%s after 5 seconds....",
-						inv.GetTypeMeta().Kind,
-						invMeta.Namespace,
-						invMeta.Name,
-					)
-					c.restoreSessionQueue.GetQueue().AddAfter(key, 5*time.Second)
-					return nil
-				}
-
-				// Restore target exist. So, set "RestoreTargetFound" condition to "True"
-				err = conditions.SetRestoreTargetFoundConditionToTrue(inv, i)
+			// Skip processing if the target is not in next in order
+			if !nextInOrder(inv, targetInfo) {
+				klog.Infof("Skipping restoring for target %s %s/%s. Reason: Previous targets hasn't been executed.",
+					targetInfo.Target.Ref.Kind,
+					inv.GetObjectMeta().Namespace,
+					targetInfo.Target.Ref.Name,
+				)
+				err = c.setTargetRestorePending(inv, targetInfo.Target.Ref)
 				if err != nil {
 					return err
 				}
+				continue
 			}
 
-			// -------------- Ensure Restore Process for the Target ------------------
-			// Take appropriate step to restore based on restore model
-			switch c.restorerEntity(tref, inv.GetDriver()) {
-			case RestorerInitContainer:
-				// The target is kubernetes workload i.e. Deployment, StatefulSet etc.
-				// Send event to the respective workload controller. The workload controller will take care of injecting restore init-container.
-				err := c.sendEventToWorkloadQueue(
+			tref := targetInfo.Target.Ref
+			shouldRequeue, err := c.checkForTargetExistence(inv, tref, i)
+			if err != nil {
+				klog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
+					tref.APIVersion,
 					tref.Kind,
 					invMeta.Namespace,
 					tref.Name,
+					err.Error(),
 				)
-				if err != nil {
-					msg := fmt.Sprintf("failed to trigger workload controller for %s %s/%s. Reason: %v", tref.Kind, invMeta.Namespace, tref.Name, err)
-					klog.Warning(msg)
-					return conditions.SetRestorerEnsuredToFalse(inv, &tref, msg)
-				}
-			case RestorerCSIDriver:
-				// VolumeSnapshotter driver has been used. So, ensure VolumeRestorer job
-				err := c.ensureVolumeRestorerJob(inv, i)
-				if err != nil {
-					msg := fmt.Sprintf("failed to ensure volume snapshotter job for %s %s/%s. Reason: %v", tref.Kind, invMeta.Namespace, tref.Name, err)
-					klog.Warning(msg)
-					return conditions.SetRestorerEnsuredToFalse(inv, &tref, msg)
-				}
-			case RestorerJob:
-				// Restic driver has been used. Ensure restore job.
-				err = c.ensureRestoreJob(inv, i)
-				if err != nil {
-					msg := fmt.Sprintf("failed to ensure restore job for %s %s/%s. Reason: %v", tref.Kind, invMeta.Namespace, tref.Name, err)
-					klog.Warning(msg)
-					return conditions.SetRestorerEnsuredToFalse(inv, &tref, msg)
-				}
-			default:
-				msg := fmt.Sprintf("unable to identify restorer entity for target %s %s/%s", tref.Kind, invMeta.Namespace, tref.Name)
-				klog.Warning(msg)
-				return conditions.SetRestorerEnsuredToFalse(inv, &tref, msg)
+				return conditions.SetRestoreTargetFoundConditionToUnknown(inv, i, err)
 			}
-			msg := fmt.Sprintf("Restorer job/init-container has been ensured successfully for %s %s/%s.", tref.Kind, invMeta.Namespace, tref.Name)
-			err = conditions.SetRestorerEnsuredToTrue(inv, &tref, msg)
+			if shouldRequeue {
+				klog.Infof("Requeueing invoker %s %s/%s after 5 seconds....",
+					inv.GetTypeMeta().Kind,
+					inv.GetObjectMeta().Namespace,
+					inv.GetObjectMeta().Name,
+				)
+				return c.requeueRestoreInvoker(inv, key)
+			}
+
+			err = c.ensureRestoreExecutor(inv, tref, i)
 			if err != nil {
-				return err
+				msg := fmt.Sprintf("failed to ensure restore executor. Reason: %v", err)
+				klog.Warning(msg)
+				return conditions.SetRestoreExecutorEnsuredToFalse(inv, &tref, msg)
 			}
 			return c.initiateTargetRestore(inv, i)
 		}
@@ -843,16 +683,54 @@ func globalPostRestoreHookExecuted(inv invoker.RestoreInvoker) bool {
 	if inv.GetGlobalHooks() == nil || inv.GetGlobalHooks().PostRestore == nil {
 		return true
 	}
-	return kmapi.HasCondition(inv.GetStatus().Conditions, apis.GlobalPostRestoreHookSucceeded) &&
-		kmapi.IsConditionTrue(inv.GetStatus().Conditions, apis.GlobalPostRestoreHookSucceeded)
+	return kmapi.HasCondition(inv.GetStatus().Conditions, api_v1beta1.GlobalPostRestoreHookSucceeded) &&
+		kmapi.IsConditionTrue(inv.GetStatus().Conditions, api_v1beta1.GlobalPostRestoreHookSucceeded)
+}
+
+func (c *StashController) executeGlobalPostRestoreHook(inv invoker.RestoreInvoker) error {
+	hookExecutor := stashHooks.HookExecutor{
+		Config: c.clientConfig,
+		Hook:   inv.GetGlobalHooks().PostRestore,
+		ExecutorPod: kmapi.ObjectReference{
+			Namespace: os.Getenv("MY_POD_NAMESPACE"),
+			Name:      os.Getenv("MY_POD_NAME"),
+		},
+		Summary: inv.GetSummary(api_v1beta1.TargetRef{}, kmapi.ObjectReference{
+			Namespace: inv.GetObjectMeta().Namespace,
+			Name:      inv.GetObjectMeta().Name,
+		}),
+	}
+	if err := hookExecutor.Execute(); err != nil {
+		return err
+	}
+	return conditions.SetGlobalPostRestoreHookSucceededConditionToTrue(inv)
 }
 
 func globalPreRestoreHookExecuted(inv invoker.RestoreInvoker) bool {
 	if inv.GetGlobalHooks() == nil || inv.GetGlobalHooks().PreRestore == nil {
 		return true
 	}
-	return kmapi.HasCondition(inv.GetStatus().Conditions, apis.GlobalPreRestoreHookSucceeded) &&
-		kmapi.IsConditionTrue(inv.GetStatus().Conditions, apis.GlobalPreRestoreHookSucceeded)
+	return kmapi.HasCondition(inv.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded) &&
+		kmapi.IsConditionTrue(inv.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded)
+}
+
+func (c *StashController) executeGlobalPreRestoreHook(inv invoker.RestoreInvoker) error {
+	hookExecutor := stashHooks.HookExecutor{
+		Config: c.clientConfig,
+		Hook:   inv.GetGlobalHooks().PreRestore,
+		ExecutorPod: kmapi.ObjectReference{
+			Namespace: os.Getenv("MY_POD_NAMESPACE"),
+			Name:      os.Getenv("MY_POD_NAME"),
+		},
+		Summary: inv.GetSummary(api_v1beta1.TargetRef{}, kmapi.ObjectReference{
+			Namespace: inv.GetObjectMeta().Namespace,
+			Name:      inv.GetObjectMeta().Name,
+		}),
+	}
+	if err := hookExecutor.Execute(); err != nil {
+		return err
+	}
+	return conditions.SetGlobalPreRestoreHookSucceededConditionToTrue(inv)
 }
 
 func targetRestoreInitiated(inv invoker.RestoreInvoker, targetRef api_v1beta1.TargetRef) bool {
@@ -919,15 +797,21 @@ func (c *StashController) initiateTargetRestore(inv invoker.RestoreInvoker, inde
 	})
 }
 
-func (c *StashController) ensureMetricsPushed(inv invoker.RestoreInvoker) error {
-	metricsPushed, err := inv.IsConditionTrue(nil, apis.MetricsPushed)
-	if err != nil {
-		return err
-	}
-	if metricsPushed {
-		return nil
-	}
+func (c *StashController) setTargetRestorePending(inv invoker.RestoreInvoker, targetRef api_v1beta1.TargetRef) error {
+	return inv.UpdateStatus(invoker.RestoreInvokerStatus{
+		TargetStatus: []api_v1beta1.RestoreMemberStatus{
+			{
+				Ref: targetRef,
+			},
+		},
+	})
+}
 
+func restoreMetricsPushed(conditions []kmapi.Condition) bool {
+	return kmapi.HasCondition(conditions, api_v1beta1.MetricsPushed)
+}
+
+func (c *StashController) sendRestoreMetrics(inv invoker.RestoreInvoker) error {
 	// send restore metrics
 	metricsOpt := &metrics.MetricsOptions{
 		Enabled:        true,
@@ -936,15 +820,116 @@ func (c *StashController) ensureMetricsPushed(inv invoker.RestoreInvoker) error 
 	}
 	// send target specific metrics
 	for _, target := range inv.GetStatus().TargetStatus {
-		err = metricsOpt.SendRestoreTargetMetrics(c.clientConfig, inv, target.Ref)
+		err := metricsOpt.SendRestoreTargetMetrics(c.clientConfig, inv, target.Ref)
 		if err != nil {
 			return err
 		}
 	}
 	// send restore session metrics
-	err = metricsOpt.SendRestoreSessionMetrics(inv)
+	err := metricsOpt.SendRestoreSessionMetrics(inv)
 	if err != nil {
 		return err
 	}
-	return conditions.SetMetricsPushedConditionToTrue(inv, nil)
+	return conditions.SetRestoreMetricsPushedConditionToTrue(inv)
+}
+
+func (c *StashController) checkForTargetExistence(inv invoker.RestoreInvoker, tref api_v1beta1.TargetRef, idx int) (bool, error) {
+	// if target hasn't been specified, we don't need to check for its existence
+	if tref.Name == "" {
+		return false, nil
+	}
+
+	wc := util.WorkloadClients{
+		KubeClient:       c.kubeClient,
+		OcClient:         c.ocClient,
+		StashClient:      c.stashClient,
+		CRDClient:        c.crdClient,
+		AppCatalogClient: c.appCatalogClient,
+	}
+
+	targetExist, err := wc.IsTargetExist(tref, inv.GetObjectMeta().Namespace)
+	if err != nil {
+		return false, err
+	}
+
+	if !targetExist {
+		// Target does not exist. Log the information.
+		klog.Infof("Restore target %s %s %s/%s does not exist.",
+			tref.APIVersion,
+			tref.Kind,
+			inv.GetObjectMeta().Namespace,
+			tref.Name,
+		)
+		return true, conditions.SetRestoreTargetFoundConditionToFalse(inv, idx)
+	}
+
+	return false, conditions.SetRestoreTargetFoundConditionToTrue(inv, idx)
+}
+
+func nextInOrder(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) bool {
+	if inv.GetExecutionOrder() == api_v1beta1.Sequential &&
+		!inv.NextInOrder(targetInfo.Target.Ref, inv.GetStatus().TargetStatus) {
+		return false
+	}
+	return true
+}
+
+func (c *StashController) ensureRestoreExecutor(inv invoker.RestoreInvoker, tref api_v1beta1.TargetRef, idx int) error {
+	switch c.restorerEntity(tref, inv.GetDriver()) {
+	case RestorerInitContainer:
+		// The target is kubernetes workload i.e. Deployment, StatefulSet etc.
+		// Send event to the respective workload controller. The workload controller will take care of injecting restore init-container.
+		err := c.sendEventToWorkloadQueue(
+			tref.Kind,
+			inv.GetObjectMeta().Namespace,
+			tref.Name,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to trigger workload controller for %s %s/%s. Error: %v", tref.Kind, inv.GetObjectMeta().Namespace, tref.Name, err)
+		}
+	case RestorerCSIDriver:
+		// VolumeSnapshotter driver has been used. So, ensure VolumeRestorer job
+		err := c.ensureVolumeRestorerJob(inv, idx)
+		if err != nil {
+			return fmt.Errorf("failed to ensure volume snapshotter job for %s %s/%s. Error: %v", tref.Kind, inv.GetObjectMeta().Namespace, tref.Name, err)
+		}
+	case RestorerJob:
+		// Restic driver has been used. Ensure restore job.
+		err := c.ensureRestoreJob(inv, idx)
+		if err != nil {
+			return fmt.Errorf("failed to ensure restore job for %s %s/%s. Error: %v", tref.Kind, inv.GetObjectMeta().Namespace, tref.Name, err)
+		}
+	default:
+		return fmt.Errorf("unable to identify restorer entity for target %s %s/%s", tref.Kind, inv.GetObjectMeta().Namespace, tref.Name)
+	}
+	msg := fmt.Sprintf("Restorer job/init-container has been ensured successfully for %s %s/%s.", tref.Kind, inv.GetObjectMeta().Namespace, tref.Name)
+	return conditions.SetRestoreExecutorEnsuredToTrue(inv, &tref, msg)
+}
+
+func (c *StashController) cleanupRestoreInvokerOffshoots(inv invoker.RestoreInvoker, invokerRef *core.ObjectReference) error {
+	for _, targetInfo := range inv.GetTargetInfo() {
+		target := targetInfo.Target
+		if target != nil && util.RestoreModel(target.Ref.Kind) == apis.ModelSidecar {
+			// send event to workload controller. workload controller will take care of removing restore init-container
+			err := c.sendEventToWorkloadQueue(
+				target.Ref.Kind,
+				inv.GetObjectMeta().Namespace,
+				target.Ref.Name,
+			)
+			if err != nil {
+				return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
+			}
+		}
+	}
+
+	rbacOptions, err := c.getRestoreRBACOptions(inv)
+	if err != nil {
+		return err
+	}
+
+	if err := rbacOptions.EnsureRBACResourcesDeleted(); err != nil {
+		return err
+	}
+
+	return c.deleteRepositoryReferences(inv)
 }

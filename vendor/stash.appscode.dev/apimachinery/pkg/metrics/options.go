@@ -59,9 +59,7 @@ type MetricsOptions struct {
 	JobName        string
 }
 
-var (
-	pushgatewayURL string
-)
+var pushgatewayURL string
 
 const (
 	PushgatewayLocalURL = "http://localhost:56789"
@@ -113,7 +111,6 @@ func upsertLabel(original, new map[string]string) map[string]string {
 
 // targetLabels returns backup/restore target specific labels
 func targetLabels(config *rest.Config, target api_v1beta1.TargetRef, namespace string) (map[string]string, error) {
-
 	labels := make(map[string]string)
 	switch target.Kind {
 	case apis.KindAppBinding:

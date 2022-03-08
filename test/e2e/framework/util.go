@@ -465,47 +465,6 @@ func isDebugTarget(containers []core.Container) (bool, []string) {
 	return false, nil
 }
 
-func (fi *Invocation) HookFailed(involvedObjectKind string, involvedObjectMeta metav1.ObjectMeta, probeType string) (bool, error) {
-	fieldSelector := fields.SelectorFromSet(fields.Set{
-		"involvedObject.kind":      involvedObjectKind,
-		"involvedObject.name":      involvedObjectMeta.Name,
-		"involvedObject.namespace": involvedObjectMeta.Namespace,
-		"type":                     core.EventTypeWarning,
-	})
-	events, err := fi.KubeClient.CoreV1().Events(fi.namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
-	Expect(err).NotTo(HaveOccurred())
-
-	hasHookFailureEvent := false
-	for _, e := range events.Items {
-		if strings.Contains(e.Message, fmt.Sprintf("failed to execute %q probe.", probeType)) {
-			hasHookFailureEvent = true
-			break
-		}
-	}
-	return hasHookFailureEvent, nil
-}
-
-func (f *Framework) EventuallyEventWritten(involvedObjectMeta metav1.ObjectMeta, involvedObjectKind, eventType, eventReason string) GomegaAsyncAssertion {
-	return Eventually(func() bool {
-		fieldSelector := fields.SelectorFromSet(fields.Set{
-			"involvedObject.kind":      involvedObjectKind,
-			"involvedObject.name":      involvedObjectMeta.Name,
-			"involvedObject.namespace": involvedObjectMeta.Namespace,
-			"type":                     eventType,
-		})
-		events, err := f.KubeClient.CoreV1().Events(involvedObjectMeta.Namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fieldSelector.String()})
-		if err != nil {
-			return false
-		}
-		for _, event := range events.Items {
-			if event.Reason == eventReason {
-				return true
-			}
-		}
-		return false
-	}, WaitTimeOut, PullInterval)
-}
-
 func HasFSGroup(sc *core.PodSecurityContext) bool {
 	return sc != nil && sc.FSGroup != nil && *sc.FSGroup == TestFSGroup
 }

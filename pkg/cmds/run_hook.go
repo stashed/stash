@@ -20,25 +20,22 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	stashHooks "stash.appscode.dev/apimachinery/pkg/hooks"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
-	"stash.appscode.dev/apimachinery/pkg/restic"
-	"stash.appscode.dev/stash/pkg/status"
-	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 )
@@ -89,16 +86,13 @@ func NewCmdRunHook() *cobra.Command {
 
 			err = opt.executeHook()
 			if err != nil {
-				// For preBackup or preRestore hook failure, we will fail the container so that the task does to proceed to next step.
-				// We will also update the BackupSession/RestoreSession status as the update-status Function will not execute.
-				if opt.hookType == apis.PreBackupHook || opt.hookType == apis.PreRestoreHook {
-					return opt.handlePreTaskHookFailure(err)
+				klog.Infof("Failed to execute %s hook. Reason: %v", opt.hookType, err)
+				if opt.shouldFailContainer() {
+					return err
 				}
-				// For other postBackup or postRestore hook failure, we will simply write the failure output into the output directory.
-				// The update-status Function will update the status of the BackupSession/RestoreSession
-				return opt.handlePostTaskHookFailure(err)
+				return nil
 			}
-
+			klog.Infof("Successfully executed %q hook.", opt.hookType)
 			return nil
 		},
 	}
@@ -119,46 +113,113 @@ func NewCmdRunHook() *cobra.Command {
 }
 
 func (opt *hookOptions) executeHook() error {
-	var hook interface{}
-	var executorPodName string
-
 	if opt.backupSessionName != "" {
-		// For backup hooks, BackupSession name will be provided. We will read the hooks from the underlying backup inv.
-		inv, err := invoker.NewBackupInvoker(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
-		if err != nil {
-			return err
-		}
-		// We need to extract the hook only for the current target
-		for _, targetInfo := range inv.GetTargetInfo() {
-			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-				hook = targetInfo.Hooks
-				executorPodName, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
-				if err != nil {
-					return err
-				}
-				break
-			}
-		}
-	} else {
-		// backupSessionName flag name was not provided, it means it is restore hook.
-		inv, err := invoker.NewRestoreInvoker(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
-		if err != nil {
-			return err
-		}
-		for _, targetInfo := range inv.GetTargetInfo() {
-			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-				hook = targetInfo.Hooks
-				executorPodName, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
-				if err != nil {
-					return err
-				}
-				break
-			}
-		}
+		return opt.executeBackupHook()
+	}
+	return opt.executeRestoreHook()
+}
+
+func (opt *hookOptions) executeBackupHook() error {
+	inv, err := invoker.NewBackupInvoker(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+	if err != nil {
+		return err
 	}
 
-	// Execute the hooks
-	return util.ExecuteHook(opt.config, hook, opt.hookType, executorPodName, opt.namespace)
+	targetInfo := opt.getBackupTargetInfo(inv)
+	if targetInfo == nil {
+		return fmt.Errorf("backup target %s/%s did not matched with any target of the %s %s/%s",
+			opt.targetKind,
+			opt.targetName,
+			opt.invokerKind,
+			opt.namespace,
+			opt.invokerName,
+		)
+	}
+
+	hookExecutor := stashHooks.BackupHookExecutor{
+		Config:      opt.config,
+		StashClient: opt.stashClient,
+		Invoker:     inv,
+		Target:      targetInfo.Target.Ref,
+		ExecutorPod: kmapi.ObjectReference{
+			Namespace: opt.namespace,
+		},
+	}
+	if opt.hookType == apis.PreBackupHook {
+		hookExecutor.Hook = targetInfo.Hooks.PreBackup
+		hookExecutor.HookType = apis.PreBackupHook
+	} else {
+		hookExecutor.Hook = targetInfo.Hooks.PostBackup
+		hookExecutor.HookType = apis.PostBackupHook
+	}
+	hookExecutor.ExecutorPod.Name, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
+	if err != nil {
+		return err
+	}
+
+	hookExecutor.BackupSession, err = opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(context.TODO(), opt.backupSessionName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	return hookExecutor.Execute()
+}
+
+func (opt *hookOptions) getBackupTargetInfo(inv invoker.BackupInvoker) *invoker.BackupTargetInfo {
+	for _, targetInfo := range inv.GetTargetInfo() {
+		if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+			return &targetInfo
+		}
+	}
+	return nil
+}
+
+func (opt *hookOptions) executeRestoreHook() error {
+	inv, err := invoker.NewRestoreInvoker(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
+	if err != nil {
+		return err
+	}
+
+	targetInfo := opt.getRestoreTargetInfo(inv)
+	if targetInfo == nil {
+		return fmt.Errorf("restore target %s/%s did not matched with any target of the %s %s/%s",
+			opt.targetKind,
+			opt.targetName,
+			opt.invokerKind,
+			opt.namespace,
+			opt.invokerName,
+		)
+	}
+
+	hookExecutor := stashHooks.RestoreHookExecutor{
+		Config:  opt.config,
+		Invoker: inv,
+		Target:  targetInfo.Target.Ref,
+		ExecutorPod: kmapi.ObjectReference{
+			Namespace: opt.namespace,
+		},
+	}
+
+	if opt.hookType == apis.PreRestoreHook {
+		hookExecutor.Hook = targetInfo.Hooks.PreRestore
+		hookExecutor.HookType = apis.PreRestoreHook
+	} else {
+		hookExecutor.Hook = targetInfo.Hooks.PostRestore
+		hookExecutor.HookType = apis.PostRestoreHook
+	}
+	hookExecutor.ExecutorPod.Name, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
+	if err != nil {
+		return err
+	}
+	return hookExecutor.Execute()
+}
+
+func (opt *hookOptions) getRestoreTargetInfo(inv invoker.RestoreInvoker) *invoker.RestoreTargetInfo {
+	for _, targetInfo := range inv.GetTargetInfo() {
+		if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+			return &targetInfo
+		}
+	}
+	return nil
 }
 
 func (opt *hookOptions) getHookExecutorPodName(targetRef v1beta1.TargetRef) (string, error) {
@@ -173,7 +234,6 @@ func (opt *hookOptions) getHookExecutorPodName(targetRef v1beta1.TargetRef) (str
 }
 
 func (opt *hookOptions) getAppPodName(appbindingName string) (string, error) {
-	// get the AppBinding
 	appbinding, err := opt.appClient.AppcatalogV1alpha1().AppBindings(opt.namespace).Get(context.TODO(), appbindingName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -205,123 +265,6 @@ func (opt *hookOptions) getAppPodName(appbindingName string) (string, error) {
 	return "", fmt.Errorf("no pod found for AppBinding %s/%s", opt.namespace, appbindingName)
 }
 
-func (opt *hookOptions) handlePreTaskHookFailure(hookErr error) error {
-	statusOpt := status.UpdateStatusOptions{
-		Config:      opt.config,
-		KubeClient:  opt.kubeClient,
-		StashClient: opt.stashClient,
-		Namespace:   opt.namespace,
-		Metrics:     opt.metricOpts,
-		TargetRef: v1beta1.TargetRef{
-			Kind: opt.targetKind,
-			Name: opt.targetName,
-		},
-	}
-	if opt.hookType == apis.PreBackupHook {
-		backupOutput := &restic.BackupOutput{
-			BackupTargetStatus: v1beta1.BackupTargetStatus{
-				Ref: statusOpt.TargetRef,
-				Stats: []v1beta1.HostBackupStats{
-					{
-						Hostname: opt.hostname,
-						Phase:    v1beta1.HostBackupFailed,
-						Error:    hookErr.Error(),
-					},
-				},
-			},
-		}
-		statusOpt.BackupSession = opt.backupSessionName
-		// Extract invoker information
-		inv, err := invoker.NewBackupInvoker(opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
-		if err != nil {
-			return err
-		}
-		for _, targetInfo := range inv.GetTargetInfo() {
-			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-				err := statusOpt.UpdatePostBackupStatus(backupOutput, inv, targetInfo)
-				if err != nil {
-					hookErr = errors.NewAggregate([]error{hookErr, err})
-				}
-			}
-		}
-	} else {
-		// otherwise it is postRestore hook
-		restoreOutput := &restic.RestoreOutput{
-			RestoreTargetStatus: v1beta1.RestoreMemberStatus{
-				Ref: statusOpt.TargetRef,
-				Stats: []v1beta1.HostRestoreStats{
-					{
-						Hostname: opt.hostname,
-						Phase:    v1beta1.HostRestoreFailed,
-						Error:    hookErr.Error(),
-					},
-				},
-			},
-		}
-		inv, err := invoker.NewRestoreInvoker(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
-		if err != nil {
-			return err
-		}
-
-		for _, targetInfo := range inv.GetTargetInfo() {
-			if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
-				err = statusOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
-				if err != nil {
-					hookErr = errors.NewAggregate([]error{hookErr, err})
-				}
-			}
-		}
-	}
-	// return error so that the container fail
-	return hookErr
-}
-
-func (opt *hookOptions) handlePostTaskHookFailure(hookErr error) error {
-	if opt.hookType == apis.PostBackupHook {
-		backupOutput := &restic.BackupOutput{
-			BackupTargetStatus: v1beta1.BackupTargetStatus{
-				Ref: v1beta1.TargetRef{
-					Kind: opt.targetKind,
-					Name: opt.targetName,
-				},
-				Stats: []v1beta1.HostBackupStats{
-					{
-						Hostname: opt.hostname,
-						Phase:    v1beta1.HostBackupFailed,
-						Error:    hookErr.Error(),
-					},
-				},
-			},
-		}
-
-		err := backupOutput.WriteOutput(filepath.Join(opt.outputDir, restic.DefaultOutputFileName))
-		if err != nil {
-			// failed to write output file. we should fail the container. hence, we are returning the error
-			return errors.NewAggregate([]error{hookErr, err})
-		}
-	} else { // otherwise it is postRestore hook
-		restoreOutput := &restic.RestoreOutput{
-			RestoreTargetStatus: v1beta1.RestoreMemberStatus{
-				Ref: v1beta1.TargetRef{
-					Kind: opt.targetKind,
-					Name: opt.targetName,
-				},
-				Stats: []v1beta1.HostRestoreStats{
-					{
-						Hostname: opt.hostname,
-						Phase:    v1beta1.HostRestoreFailed,
-						Error:    hookErr.Error(),
-					},
-				},
-			},
-		}
-		err := restoreOutput.WriteOutput(filepath.Join(opt.outputDir, restic.DefaultOutputFileName))
-		if err != nil {
-			// failed to write output file. we should fail the container. hence, are returning the error
-			return errors.NewAggregate([]error{hookErr, err})
-		}
-	}
-	// don't return error. we don't want to fail this container. update-status Function will execute after it.
-	// update-status Function will take care of updating BackupSession/RestoreSession status
-	return nil
+func (opt *hookOptions) shouldFailContainer() bool {
+	return opt.hookType == apis.PreBackupHook || opt.hookType == apis.PreRestoreHook
 }

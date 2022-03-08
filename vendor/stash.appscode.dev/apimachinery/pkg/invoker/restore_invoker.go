@@ -20,12 +20,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
-	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -49,6 +48,7 @@ type RestoreInvoker interface {
 	KubeDBIntegrator
 	ObjectFormatter
 	RestoreStatusHandler
+	Summarizer
 }
 
 type RestoreExecutionOrderHandler interface {
@@ -189,19 +189,23 @@ func getInvokerStatusFromRestoreBatch(restoreBatch *v1beta1.RestoreBatch) Restor
 
 func getInvokerStatusFromRestoreSession(restoreSession *v1beta1.RestoreSession) RestoreInvokerStatus {
 	invokerStatus := RestoreInvokerStatus{
-		Phase:           restoreSession.Status.Phase,
-		SessionDuration: restoreSession.Status.SessionDuration,
+		SessionDuration: time.Since(restoreSession.CreationTimestamp.Time).Round(time.Second).String(),
 		Conditions:      restoreSession.Status.Conditions,
 	}
+	var targetStatus v1beta1.RestoreMemberStatus
 	if restoreSession.Spec.Target != nil {
-		invokerStatus.TargetStatus = append(invokerStatus.TargetStatus, v1beta1.RestoreMemberStatus{
+		targetStatus = v1beta1.RestoreMemberStatus{
 			Ref:        restoreSession.Spec.Target.Ref,
 			Conditions: restoreSession.Status.Conditions,
 			TotalHosts: restoreSession.Status.TotalHosts,
-			Phase:      v1beta1.RestoreTargetPhase(restoreSession.Status.Phase),
 			Stats:      restoreSession.Status.Stats,
-		})
+		}
+		targetStatus.Phase = calculateRestoreTargetPhase(targetStatus)
 	}
+
+	invokerStatus.TargetStatus = append(invokerStatus.TargetStatus, targetStatus)
+	invokerStatus.Phase = calculateRestoreSessionPhase(targetStatus)
+
 	return invokerStatus
 }
 
@@ -254,18 +258,15 @@ func upsertRestoreTargetStatus(cur, new v1beta1.RestoreMemberStatus) v1beta1.Res
 }
 
 func calculateRestoreTargetPhase(status v1beta1.RestoreMemberStatus) v1beta1.RestoreTargetPhase {
-	if kmapi.IsConditionFalse(status.Conditions, apis.RestorerEnsured) ||
-		kmapi.IsConditionFalse(status.Conditions, apis.MetricsPushed) {
+	if kmapi.IsConditionFalse(status.Conditions, v1beta1.RestoreExecutorEnsured) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.PreRestoreHookExecutionSucceeded) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.PostRestoreHookExecutionSucceeded) {
 		return v1beta1.TargetRestoreFailed
 	}
 
-	allConditionTrue := true
-	for _, c := range status.Conditions {
-		if c.Status != core.ConditionTrue {
-			allConditionTrue = false
-		}
-	}
-	if !allConditionTrue || status.TotalHosts == nil {
+	if status.TotalHosts == nil ||
+		len(status.Conditions) == 0 ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.RestoreTargetFound) {
 		return v1beta1.TargetRestorePending
 	}
 
@@ -282,20 +283,19 @@ func calculateRestoreTargetPhase(status v1beta1.RestoreMemberStatus) v1beta1.Res
 			successfulHostCount++
 		}
 	}
-
 	completedHosts := successfulHostCount + failedHostCount + unknownHostCount
-	if completedHosts < *status.TotalHosts {
-		return v1beta1.TargetRestoreRunning
-	}
 
-	if failedHostCount > 0 {
-		return v1beta1.TargetRestoreFailed
-	}
-	if unknownHostCount > 0 {
-		return v1beta1.TargetRestorePhaseUnknown
-	}
+	if completedHosts == *status.TotalHosts {
+		if unknownHostCount > 0 {
+			return v1beta1.TargetRestorePhaseUnknown
+		}
 
-	return v1beta1.TargetRestoreSucceeded
+		if failedHostCount > 0 {
+			return v1beta1.TargetRestoreFailed
+		}
+		return v1beta1.TargetRestoreSucceeded
+	}
+	return v1beta1.TargetRestoreRunning
 }
 
 func IsRestoreCompleted(phase v1beta1.RestorePhase) bool {

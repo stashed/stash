@@ -31,9 +31,10 @@ import (
 
 type E2EOptions struct {
 	*server.ExtraOptions
-	KubeContext  string
-	KubeConfig   string
-	StorageClass string
+	KubeContext     string
+	KubeConfig      string
+	StorageClass    string
+	SlackWebhookURL string
 }
 
 var options = &E2EOptions{
@@ -54,6 +55,8 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&options.KubeConfig, "kubeconfig", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	flag.StringVar(&options.KubeContext, "kube-context", "", "Name of kube context")
 	flag.StringVar(&options.StorageClass, "storageclass", "standard", "Storageclass for PVC")
+	flag.StringVar(&options.SlackWebhookURL, "slack-webhook", "", "URL of the Slack webhook")
+
 	enableLogging()
 	flag.Parse()
 	os.Exit(m.Run())

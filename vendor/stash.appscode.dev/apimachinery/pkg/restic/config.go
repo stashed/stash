@@ -145,8 +145,9 @@ func (w *ResticWrapper) GetEnv(key string) string {
 func (w *ResticWrapper) GetCaPath() string {
 	return w.config.CacertFile
 }
+
 func (w *ResticWrapper) DumpEnv(path string, dumpedFile string) error {
-	if err := os.MkdirAll(path, 0755); err != nil {
+	if err := os.MkdirAll(path, 0o755); err != nil {
 		return err
 	}
 
@@ -156,13 +157,13 @@ func (w *ResticWrapper) DumpEnv(path string, dumpedFile string) error {
 		for k := range w.sh.Env {
 			sortedKeys = append(sortedKeys, k)
 		}
-		sort.Strings(sortedKeys) //sort by key
+		sort.Strings(sortedKeys) // sort by key
 		for _, v := range sortedKeys {
 			envs = envs + fmt.Sprintln(v+"="+w.sh.Env[v])
 		}
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(path, dumpedFile), []byte(envs), 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(path, dumpedFile), []byte(envs), 0o600); err != nil {
 		return err
 	}
 	return nil
@@ -196,9 +197,9 @@ func (w *ResticWrapper) Copy() *ResticWrapper {
 			out.sh.Env[k] = v
 		}
 		// don't use same stdin, stdout, stderr for each instant to avoid data race.
-		//out.sh.Stdin = in.sh.Stdin
-		//out.sh.Stdout = in.sh.Stdout
-		//out.sh.Stderr = in.sh.Stderr
+		// out.sh.Stdin = in.sh.Stdin
+		// out.sh.Stdout = in.sh.Stdout
+		// out.sh.Stderr = in.sh.Stderr
 		out.sh.ShowCMD = w.sh.ShowCMD
 		out.sh.PipeFail = w.sh.PipeFail
 		out.sh.PipeStdErrors = w.sh.PipeStdErrors

@@ -135,10 +135,14 @@ var _ = Describe("BackupSession", func() {
 			f.EventuallyRunningBackupCompleted(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeTrue())
 
 			By("Verifying that the only one BackupSession has succeeded")
-			f.EventuallySuccessfulBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", 1))
+			successfulSessionCount, err := f.GetSuccessfulBackupSessionCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(successfulSessionCount).Should(BeNumerically("==", 1))
 
 			By("Verifying that others BackupSession has been skipped")
-			f.EventuallySkippedBackupCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration).Should(BeNumerically("==", totalBS-1))
+			skippedSessionCount, err := f.GetSkippedBackupSessionCount(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skippedSessionCount).Should(BeNumerically("==", totalBS-1))
 		})
 	})
 })

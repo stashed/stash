@@ -19,8 +19,8 @@ package invoker
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
@@ -39,6 +39,7 @@ type BackupInvoker interface {
 	DriverHandler
 	ObjectFormatter
 	BackupInvokerStatusHandler
+	Summarizer
 }
 
 type BackupExecutionOrderHandler interface {
@@ -171,17 +172,17 @@ func isConditionSatisfied(conditions []kmapi.Condition, condType string) bool {
 }
 
 func calculateBackupInvokerPhase(driver v1beta1.Snapshotter, conditions []kmapi.Condition) v1beta1.BackupInvokerPhase {
-	if !isConditionSatisfied(conditions, apis.RepositoryFound) ||
-		!isConditionSatisfied(conditions, apis.BackendSecretFound) {
+	if !isConditionSatisfied(conditions, v1beta1.RepositoryFound) ||
+		!isConditionSatisfied(conditions, v1beta1.BackendSecretFound) {
 		return v1beta1.BackupInvokerNotReady
 	}
 
-	if kmapi.IsConditionFalse(conditions, apis.ValidationPassed) {
+	if kmapi.IsConditionFalse(conditions, v1beta1.ValidationPassed) {
 		return v1beta1.BackupInvokerInvalid
 	}
 
-	if kmapi.IsConditionTrue(conditions, apis.ValidationPassed) &&
-		kmapi.IsConditionTrue(conditions, apis.CronJobCreated) &&
+	if kmapi.IsConditionTrue(conditions, v1beta1.ValidationPassed) &&
+		kmapi.IsConditionTrue(conditions, v1beta1.CronJobCreated) &&
 		backendRequirementsSatisfied(driver, conditions) {
 		return v1beta1.BackupInvokerReady
 	}
@@ -191,7 +192,77 @@ func calculateBackupInvokerPhase(driver v1beta1.Snapshotter, conditions []kmapi.
 
 func backendRequirementsSatisfied(driver v1beta1.Snapshotter, conditions []kmapi.Condition) bool {
 	if driver == v1beta1.ResticSnapshotter {
-		return kmapi.IsConditionTrue(conditions, apis.RepositoryFound) && kmapi.IsConditionTrue(conditions, apis.BackendSecretFound)
+		return kmapi.IsConditionTrue(conditions, v1beta1.RepositoryFound) && kmapi.IsConditionTrue(conditions, v1beta1.BackendSecretFound)
 	}
 	return true
+}
+
+func getTargetBackupSummary(stashClient cs.Interface, target v1beta1.TargetRef, session kmapi.ObjectReference) *v1beta1.Summary {
+	summary := &v1beta1.Summary{
+		Name:      session.Name,
+		Namespace: session.Namespace,
+		Target:    target,
+	}
+
+	backupSession, err := stashClient.StashV1beta1().BackupSessions(session.Namespace).Get(context.TODO(), session.Name, metav1.GetOptions{})
+	if err != nil {
+		summary.Status.Phase = string(v1beta1.BackupSessionUnknown)
+		summary.Status.Error = fmt.Sprintf("Unable to summarize target backup state. Reason: %s", err.Error())
+		return summary
+	}
+	summary.Status.Duration = time.Since(backupSession.CreationTimestamp.Time).Round(time.Second).String()
+
+	if target.Name != "" {
+		for _, t := range backupSession.Status.Targets {
+			if TargetMatched(target, t.Ref) {
+				failureFound, reason := checkBackupFailureInTargetStatus(t)
+				if failureFound {
+					summary.Status.Phase = string(v1beta1.BackupSessionFailed)
+					summary.Status.Error = reason
+					return summary
+				}
+			}
+		}
+	} else {
+		for _, t := range backupSession.Status.Targets {
+			failureFound, reason := checkBackupFailureInTargetStatus(t)
+			if failureFound {
+				summary.Status.Phase = string(v1beta1.BackupSessionFailed)
+				summary.Status.Error = reason
+				return summary
+			}
+		}
+	}
+
+	failureFound, reason := checkFailureInConditions(backupSession.Status.Conditions)
+	if failureFound {
+		summary.Status.Phase = string(v1beta1.BackupSessionFailed)
+		summary.Status.Error = reason
+		return summary
+	}
+
+	summary.Status.Phase = string(v1beta1.RestoreSucceeded)
+	return summary
+}
+
+func checkBackupFailureInTargetStatus(status v1beta1.BackupTargetStatus) (bool, string) {
+	failureFound, reason := checkBackupFailureInHostStatus(status.Stats)
+	if failureFound {
+		return true, reason
+	}
+
+	failureFound, reason = checkFailureInConditions(status.Conditions)
+	if failureFound {
+		return true, reason
+	}
+	return false, ""
+}
+
+func checkBackupFailureInHostStatus(status []v1beta1.HostBackupStats) (bool, string) {
+	for _, host := range status {
+		if hostBackupCompleted(host.Phase) && host.Phase != v1beta1.HostBackupSucceeded {
+			return true, host.Error
+		}
+	}
+	return false, ""
 }

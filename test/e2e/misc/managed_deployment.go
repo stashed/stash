@@ -65,7 +65,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that BackupTargetFound condition is 'False'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, v1beta1.BackupTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
 
 			By("Creating Deployment")
 			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume, func(dp *apps.Deployment) {
@@ -78,13 +78,13 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that BackupTargetFound condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, v1beta1.BackupTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
 
 			By("Checking that StashSidecarInjected condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.StashSidecarInjected).Should(BeEquivalentTo(core.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, v1beta1.StashSidecarInjected).Should(BeEquivalentTo(core.ConditionTrue))
 
 			By("Checking that CronJobCreated condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.CronJobCreated).Should(BeEquivalentTo(core.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, v1beta1.CronJobCreated).Should(BeEquivalentTo(core.ConditionTrue))
 
 			// Take an Instant Backup of the Sample Data
 			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
@@ -108,7 +108,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that RestoreTargetFound condition is 'False'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, v1beta1.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
 
 			// Deploy restored Deployment
 			restoredDeployment, err := f.DeployDeployment(framework.RestoredDeployment, int32(1), framework.RestoredVolume, func(dp *apps.Deployment) {
@@ -117,10 +117,10 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that RestoreTargetFound condition is 'True'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, v1beta1.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
 
 			By("Checking that StashInitContainerInjected condition is 'True'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.StashInitContainerInjected).Should(BeEquivalentTo(core.ConditionTrue))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, v1beta1.StashInitContainerInjected).Should(BeEquivalentTo(core.ConditionTrue))
 
 			By("Verifying that RestoreSession succeeded")
 			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
@@ -159,7 +159,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that BackupTargetFound condition is 'False'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, v1beta1.BackupTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
 
 			// Create PVC
 			pvc, err := f.CreateNewPVC(pvcMeta.Name)
@@ -174,10 +174,10 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that BackupTargetFound condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.BackupTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, v1beta1.BackupTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
 
 			By("Checking that CronJobCreated condition is 'True'")
-			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, apis.CronJobCreated).Should(BeEquivalentTo(core.ConditionTrue))
+			f.EventuallyCondition(backupConfig.ObjectMeta, v1beta1.ResourceKindBackupConfiguration, v1beta1.CronJobCreated).Should(BeEquivalentTo(core.ConditionTrue))
 
 			// Take an Instant Backup of the Sample Data
 			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
@@ -214,7 +214,7 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that RestoreTargetFound condition is 'False'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, v1beta1.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionFalse))
 
 			// Create restored PVC
 			restoredPVC, err := f.CreateNewPVC(rpvcMeta.Name)
@@ -225,10 +225,10 @@ var _ = Describe("Managed Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking that RestoreTargetFound condition is 'True'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, v1beta1.RestoreTargetFound).Should(BeEquivalentTo(core.ConditionTrue))
 
-			By("Checking that RestoreJobCreated condition is 'True'")
-			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, apis.RestoreJobCreated).Should(BeEquivalentTo(core.ConditionTrue))
+			By("Checking that RestoreExecutorEnsured condition is 'True'")
+			f.EventuallyCondition(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession, v1beta1.RestoreExecutorEnsured).Should(BeEquivalentTo(core.ConditionTrue))
 
 			By("Waiting for restore process to complete")
 			f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta, v1beta1.ResourceKindRestoreSession).Should(BeTrue())

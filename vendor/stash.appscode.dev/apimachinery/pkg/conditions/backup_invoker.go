@@ -20,96 +20,103 @@ import (
 	"fmt"
 	"strings"
 
-	"stash.appscode.dev/apimachinery/apis"
-	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
-func SetBackupTargetFoundConditionToUnknown(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef, err error) error {
+func SetBackupTargetFoundConditionToUnknown(invoker invoker.BackupInvoker, tref v1beta1.TargetRef, err error) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
-		Type:   apis.BackupTargetFound,
+		Type:   v1beta1.BackupTargetFound,
 		Status: core.ConditionUnknown,
-		Reason: apis.UnableToCheckTargetAvailability,
+		Reason: v1beta1.UnableToCheckTargetAvailability,
 		Message: fmt.Sprintf("Failed to check whether backup target %s %s/%s exist or not. Reason: %v",
 			tref.APIVersion,
 			strings.ToLower(tref.Kind),
 			tref.Name,
 			err.Error(),
 		),
+		LastTransitionTime: metav1.Now(),
 	})
 }
 
-func SetBackupTargetFoundConditionToFalse(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef) error {
+func SetBackupTargetFoundConditionToFalse(invoker invoker.BackupInvoker, tref v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
 		// Set the "BackupTargetFound" condition to "False"
-		Type:   apis.BackupTargetFound,
+		Type:   v1beta1.BackupTargetFound,
 		Status: core.ConditionFalse,
-		Reason: apis.TargetNotAvailable,
+		Reason: v1beta1.TargetNotAvailable,
 		Message: fmt.Sprintf("Backup target %s %s/%s does not exist.",
 			tref.APIVersion,
 			strings.ToLower(tref.Kind),
 			tref.Name,
 		),
+		LastTransitionTime: metav1.Now(),
 	})
 }
 
-func SetBackupTargetFoundConditionToTrue(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef) error {
+func SetBackupTargetFoundConditionToTrue(invoker invoker.BackupInvoker, tref v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
-		Type:   apis.BackupTargetFound,
+		Type:   v1beta1.BackupTargetFound,
 		Status: core.ConditionTrue,
-		Reason: apis.TargetAvailable,
+		Reason: v1beta1.TargetAvailable,
 		Message: fmt.Sprintf("Backup target %s %s/%s found.",
 			tref.APIVersion,
 			strings.ToLower(tref.Kind),
 			tref.Name,
 		),
+		LastTransitionTime: metav1.Now(),
 	})
 }
 
 func SetCronJobCreatedConditionToFalse(invoker invoker.BackupInvoker, err error) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
-		Type:    apis.CronJobCreated,
-		Status:  core.ConditionFalse,
-		Reason:  apis.CronJobCreationFailed,
-		Message: fmt.Sprintf("Failed to create backup triggering CronJob. Reason: %v", err.Error()),
+		Type:               v1beta1.CronJobCreated,
+		Status:             core.ConditionFalse,
+		Reason:             v1beta1.CronJobCreationFailed,
+		Message:            fmt.Sprintf("Failed to create backup triggering CronJob. Reason: %v", err.Error()),
+		LastTransitionTime: metav1.Now(),
 	})
 }
 
 func SetCronJobCreatedConditionToTrue(invoker invoker.BackupInvoker) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
-		Type:    apis.CronJobCreated,
-		Status:  core.ConditionTrue,
-		Reason:  apis.CronJobCreationSucceeded,
-		Message: "Successfully created backup triggering CronJob.",
+		Type:               v1beta1.CronJobCreated,
+		Status:             core.ConditionTrue,
+		Reason:             v1beta1.CronJobCreationSucceeded,
+		Message:            "Successfully created backup triggering CronJob.",
+		LastTransitionTime: metav1.Now(),
 	})
 }
 
-func SetSidecarInjectedConditionToTrue(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef) error {
+func SetSidecarInjectedConditionToTrue(invoker invoker.BackupInvoker, tref v1beta1.TargetRef) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
-		Type:   apis.StashSidecarInjected,
+		Type:   v1beta1.StashSidecarInjected,
 		Status: core.ConditionTrue,
-		Reason: apis.SidecarInjectionSucceeded,
+		Reason: v1beta1.SidecarInjectionSucceeded,
 		Message: fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s",
 			tref.APIVersion,
 			strings.ToLower(tref.Kind),
 			tref.Name,
 		),
+		LastTransitionTime: metav1.Now(),
 	})
 }
 
-func SetSidecarInjectedConditionToFalse(invoker invoker.BackupInvoker, tref api_v1beta1.TargetRef, err error) error {
+func SetSidecarInjectedConditionToFalse(invoker invoker.BackupInvoker, tref v1beta1.TargetRef, err error) error {
 	return invoker.SetCondition(&tref, kmapi.Condition{
-		Type:   apis.StashSidecarInjected,
+		Type:   v1beta1.StashSidecarInjected,
 		Status: core.ConditionFalse,
-		Reason: apis.SidecarInjectionFailed,
+		Reason: v1beta1.SidecarInjectionFailed,
 		Message: fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v",
 			tref.APIVersion,
 			strings.ToLower(tref.Kind),
 			tref.Name,
 			err.Error(),
 		),
+		LastTransitionTime: metav1.Now(),
 	})
 }

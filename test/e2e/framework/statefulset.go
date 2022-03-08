@@ -196,8 +196,9 @@ func (fi *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.State
 				Spec: core.PodSpec{
 					Containers: []core.Container{
 						{
-							Name:  ProberDemoPodPrefix,
-							Image: "appscodeci/prober-demo",
+							Name:            ProberDemoPodPrefix,
+							ImagePullPolicy: core.PullIfNotPresent,
+							Image:           "appscodeci/prober-demo",
 							Args: []string{
 								"run-client",
 							},

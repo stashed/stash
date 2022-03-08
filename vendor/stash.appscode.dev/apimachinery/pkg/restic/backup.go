@@ -82,7 +82,6 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, targetR
 		wg.Add(1)
 
 		go func(opt BackupOptions, startTime time.Time) {
-
 			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
 			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
 			defer func() {
@@ -126,7 +125,7 @@ func (w *ResticWrapper) runBackup(backupOption BackupOptions) (api_v1beta1.HostB
 		Hostname: backupOption.Host,
 	}
 
-	//fmt.Println("shell: ",w)
+	// fmt.Println("shell: ",w)
 	// Backup from stdin
 	if len(backupOption.StdinPipeCommands) != 0 {
 		out, err := w.backupFromStdin(backupOption)
@@ -179,7 +178,6 @@ func upsertSnapshotStats(hostStats api_v1beta1.HostBackupStats, snapStats api_v1
 }
 
 func (backupOutput *BackupOutput) upsertHostBackupStats(hostStats api_v1beta1.HostBackupStats) {
-
 	// check if a entry already exist for this host in backupOutput. If exist then update it.
 	for i, v := range backupOutput.BackupTargetStatus.Stats {
 		if v.Hostname == hostStats.Hostname {

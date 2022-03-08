@@ -174,3 +174,12 @@ func (f *Framework) EventuallyRestoreInvokerPhase(invoker invoker.RestoreInvoker
 			}
 		}, WaitTimeOut, PullInterval)
 }
+
+func (fi *Invocation) TargetRestoreExecuted(inv invoker.RestoreInvoker) bool {
+	for _, t := range inv.GetStatus().TargetStatus {
+		if len(t.Stats) > 0 {
+			return true
+		}
+	}
+	return false
+}
