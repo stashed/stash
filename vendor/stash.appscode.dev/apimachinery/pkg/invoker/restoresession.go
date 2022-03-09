@@ -21,16 +21,17 @@ import (
 	"fmt"
 	"time"
 
-	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	stash_scheme "stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
+	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/reference"
@@ -205,6 +206,10 @@ func (inv *RestoreSessionInvoker) GetObjectJSON() (string, error) {
 	return string(jsonObj), nil
 }
 
+func (inv *RestoreSessionInvoker) GetRuntimeObject() runtime.Object {
+	return inv.restoreSession
+}
+
 func (inv *RestoreSessionInvoker) CreateEvent(eventType, source, reason, message string) error {
 	objRef, err := inv.GetObjectRef()
 	if err != nil {
@@ -274,7 +279,7 @@ func (inv *RestoreSessionInvoker) GetStatus() RestoreInvokerStatus {
 }
 
 func (inv *RestoreSessionInvoker) UpdateStatus(status RestoreInvokerStatus) error {
-	startTime := inv.GetObjectMeta().CreationTimestamp
+	startTime := inv.GetObjectMeta().CreationTimestamp.Time
 	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(
 		context.TODO(),
 		inv.stashClient.StashV1beta1(),
@@ -298,8 +303,7 @@ func (inv *RestoreSessionInvoker) UpdateStatus(status RestoreInvokerStatus) erro
 			in.Phase = calculateRestoreSessionPhase(updatedStatus)
 
 			if IsRestoreCompleted(in.Phase) && in.SessionDuration == "" {
-				duration := time.Since(startTime.Time)
-				in.SessionDuration = duration.Round(time.Second).String()
+				in.SessionDuration = time.Since(startTime).Round(time.Second).String()
 			}
 			return inv.restoreSession.ObjectMeta.UID, in
 		},
@@ -312,28 +316,131 @@ func (inv *RestoreSessionInvoker) UpdateStatus(status RestoreInvokerStatus) erro
 	return nil
 }
 
+func (inv *RestoreSessionInvoker) GetSummary(target v1beta1.TargetRef, session kmapi.ObjectReference) *v1beta1.Summary {
+	summary := &v1beta1.Summary{
+		Name:      session.Name,
+		Namespace: session.Namespace,
+		Target:    target,
+		Invoker: core.TypedLocalObjectReference{
+			APIGroup: pointer.StringP(v1beta1.SchemeGroupVersion.Group),
+			Kind:     v1beta1.ResourceKindRestoreSession,
+			Name:     inv.restoreSession.Name,
+		},
+	}
+	restoreSession, err := inv.stashClient.StashV1beta1().RestoreSessions(session.Namespace).Get(context.TODO(), session.Name, metav1.GetOptions{})
+	if err != nil {
+		summary.Status.Phase = string(v1beta1.RestorePhaseUnknown)
+		summary.Status.Error = fmt.Sprintf("Unable to summarize target restore state. Reason: %s", err.Error())
+		return summary
+	}
+	summary.Status.Duration = time.Since(restoreSession.CreationTimestamp.Time).Round(time.Second).String()
+
+	failureFound, reason := checkRestoreFailureInHostStatus(restoreSession.Status.Stats)
+	if failureFound {
+		summary.Status.Phase = string(v1beta1.RestoreFailed)
+		summary.Status.Error = reason
+		return summary
+	}
+
+	failureFound, reason = checkFailureInConditions(restoreSession.Status.Conditions)
+	if failureFound {
+		summary.Status.Phase = string(v1beta1.RestoreFailed)
+		summary.Status.Error = reason
+		return summary
+	}
+
+	summary.Status.Phase = string(v1beta1.RestoreSucceeded)
+
+	return summary
+}
+
+func checkRestoreFailureInHostStatus(status []v1beta1.HostRestoreStats) (bool, string) {
+	for _, host := range status {
+		if hostRestoreCompleted(host.Phase) && host.Phase != v1beta1.HostRestoreSucceeded {
+			return true, host.Error
+		}
+	}
+	return false, ""
+}
+
+func checkFailureInConditions(conditions []kmapi.Condition) (bool, string) {
+	for _, c := range conditions {
+		if c.Status == core.ConditionFalse {
+			return true, c.Message
+		}
+	}
+	return false, ""
+}
+
 func calculateRestoreSessionPhase(status v1beta1.RestoreMemberStatus) v1beta1.RestorePhase {
-	if len(status.Conditions) == 0 ||
-		kmapi.IsConditionFalse(status.Conditions, apis.RepositoryFound) ||
-		kmapi.IsConditionFalse(status.Conditions, apis.BackendSecretFound) ||
-		kmapi.IsConditionFalse(status.Conditions, apis.RestoreTargetFound) {
+	if kmapi.IsConditionFalse(status.Conditions, v1beta1.RestoreExecutorEnsured) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.PreRestoreHookExecutionSucceeded) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.PostRestoreHookExecutionSucceeded) {
+		return v1beta1.RestoreFailed
+	}
+
+	if len(status.Conditions) == 0 || isAllTargetRestorePending([]v1beta1.RestoreMemberStatus{status}) {
 		return v1beta1.RestorePending
 	}
 
-	if kmapi.IsConditionFalse(status.Conditions, apis.ValidationPassed) {
+	if RestoreCompletedForAllTargets([]v1beta1.RestoreMemberStatus{status}) {
+		if status.Phase == v1beta1.TargetRestorePhaseUnknown {
+			return v1beta1.RestorePhaseUnknown
+		}
+
+		if status.Phase == v1beta1.TargetRestoreFailed ||
+			kmapi.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) {
+			return v1beta1.RestoreFailed
+		}
+
+		if kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) {
+			return v1beta1.RestoreSucceeded
+		}
+	}
+
+	if status.Phase == v1beta1.TargetRestorePending ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryFound) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.BackendSecretFound) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.RestoreTargetFound) {
+		return v1beta1.RestorePending
+	}
+
+	if kmapi.IsConditionFalse(status.Conditions, v1beta1.ValidationPassed) {
 		return v1beta1.RestorePhaseInvalid
 	}
 
-	switch status.Phase {
-	case v1beta1.TargetRestorePending:
-		return v1beta1.RestorePending
-	case v1beta1.TargetRestoreSucceeded:
-		return v1beta1.RestoreSucceeded
-	case v1beta1.TargetRestoreFailed:
-		return v1beta1.RestoreFailed
-	case v1beta1.TargetRestorePhaseUnknown:
-		return v1beta1.RestorePhaseUnknown
-	default:
-		return v1beta1.RestoreRunning
+	return v1beta1.RestoreRunning
+}
+
+func RestoreCompletedForAllTargets(status []v1beta1.RestoreMemberStatus) bool {
+	for _, t := range status {
+		if t.TotalHosts == nil || !restoreCompletedForAllHosts(t.Stats, *t.TotalHosts) {
+			return false
+		}
 	}
+	return len(status) > 0
+}
+
+func restoreCompletedForAllHosts(status []v1beta1.HostRestoreStats, totalHosts int32) bool {
+	for _, h := range status {
+		if !hostRestoreCompleted(h.Phase) {
+			return false
+		}
+	}
+	return len(status) == int(totalHosts)
+}
+
+func hostRestoreCompleted(phase v1beta1.HostRestorePhase) bool {
+	return phase == v1beta1.HostRestoreSucceeded ||
+		phase == v1beta1.HostRestoreFailed ||
+		phase == v1beta1.HostRestoreUnknown
+}
+
+func isAllTargetRestorePending(status []v1beta1.RestoreMemberStatus) bool {
+	for _, m := range status {
+		if m.Phase != v1beta1.TargetRestorePending {
+			return false
+		}
+	}
+	return true
 }

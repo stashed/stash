@@ -21,16 +21,17 @@ import (
 	"fmt"
 	"time"
 
-	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	stash_scheme "stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
+	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/reference"
@@ -221,6 +222,10 @@ func (inv *RestoreBatchInvoker) GetObjectJSON() (string, error) {
 	return string(jsonObj), nil
 }
 
+func (inv *RestoreBatchInvoker) GetRuntimeObject() runtime.Object {
+	return inv.restoreBatch
+}
+
 func (inv *RestoreBatchInvoker) CreateEvent(eventType, source, reason, message string) error {
 	objRef, err := inv.GetObjectRef()
 	if err != nil {
@@ -334,19 +339,20 @@ func upsertRestoreMemberStatus(cur []v1beta1.RestoreMemberStatus, new v1beta1.Re
 		}
 	}
 	// the member status does not exist. so, add new entry.
+	new.Phase = calculateRestoreTargetPhase(new)
 	cur = append(cur, new)
 	return cur
 }
 
 func calculateRestoreBatchPhase(status *v1beta1.RestoreBatchStatus, totalTargets int) v1beta1.RestorePhase {
-	if len(status.Conditions) == 0 || len(status.Members) == 0 ||
-		kmapi.IsConditionFalse(status.Conditions, apis.RepositoryFound) ||
-		kmapi.IsConditionFalse(status.Conditions, apis.BackendSecretFound) {
-		return v1beta1.RestorePending
+	if kmapi.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPreRestoreHookSucceeded) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPostRestoreHookSucceeded) {
+		return v1beta1.RestoreFailed
 	}
 
-	if kmapi.IsConditionFalse(status.Conditions, apis.ValidationPassed) {
-		return v1beta1.RestorePhaseInvalid
+	if len(status.Conditions) == 0 || len(status.Members) == 0 || isAllTargetRestorePending(status.Members) {
+		return v1beta1.RestorePending
 	}
 
 	failedTargetCount := 0
@@ -364,15 +370,95 @@ func calculateRestoreBatchPhase(status *v1beta1.RestoreBatchStatus, totalTargets
 		}
 	}
 	completedTargets := successfulTargetCount + failedTargetCount + unknownTargetCount
-	if completedTargets < len(status.Members) || completedTargets < totalTargets {
-		return v1beta1.RestoreRunning
-	}
-	if failedTargetCount > 0 {
-		return v1beta1.RestoreFailed
-	}
-	if unknownTargetCount > 0 {
-		return v1beta1.RestorePhaseUnknown
+
+	if completedTargets == totalTargets {
+		if unknownTargetCount > 0 {
+			return v1beta1.RestorePhaseUnknown
+		}
+
+		if failedTargetCount > 0 {
+			return v1beta1.RestoreFailed
+		}
+
+		if kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) {
+			return v1beta1.RestoreSucceeded
+		}
 	}
 
-	return v1beta1.RestoreSucceeded
+	if kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryFound) ||
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.BackendSecretFound) {
+		return v1beta1.RestorePending
+	}
+
+	if kmapi.IsConditionFalse(status.Conditions, v1beta1.ValidationPassed) {
+		return v1beta1.RestorePhaseInvalid
+	}
+
+	return v1beta1.RestoreRunning
+}
+
+func (inv *RestoreBatchInvoker) GetSummary(target v1beta1.TargetRef, session kmapi.ObjectReference) *v1beta1.Summary {
+	summary := &v1beta1.Summary{
+		Name:      session.Name,
+		Namespace: session.Namespace,
+		Target:    target,
+		Invoker: core.TypedLocalObjectReference{
+			APIGroup: pointer.StringP(v1beta1.SchemeGroupVersion.Group),
+			Kind:     v1beta1.ResourceKindRestoreBatch,
+			Name:     inv.restoreBatch.Name,
+		},
+	}
+
+	rb, err := inv.stashClient.StashV1beta1().RestoreBatches(session.Namespace).Get(context.TODO(), session.Name, metav1.GetOptions{})
+	if err != nil {
+		summary.Status.Phase = string(v1beta1.RestorePhaseUnknown)
+		summary.Status.Error = fmt.Sprintf("Unable to summarize target restore state. Reason: %s", err.Error())
+		return summary
+	}
+	summary.Status.Duration = time.Since(rb.CreationTimestamp.Time).Round(time.Second).String()
+
+	if target.Name != "" {
+		for _, m := range rb.Status.Members {
+			if TargetMatched(target, m.Ref) {
+				failureFound, reason := checkRestoreFailureInMemberStatus(m)
+				if failureFound {
+					summary.Status.Phase = string(v1beta1.RestoreFailed)
+					summary.Status.Error = reason
+					return summary
+				}
+			}
+		}
+	} else {
+		for _, m := range rb.Status.Members {
+			failureFound, reason := checkRestoreFailureInMemberStatus(m)
+			if failureFound {
+				summary.Status.Phase = string(v1beta1.RestoreFailed)
+				summary.Status.Error = reason
+				return summary
+			}
+		}
+	}
+
+	failureFound, reason := checkFailureInConditions(rb.Status.Conditions)
+	if failureFound {
+		summary.Status.Phase = string(v1beta1.RestoreFailed)
+		summary.Status.Error = reason
+		return summary
+	}
+
+	summary.Status.Phase = string(v1beta1.RestoreSucceeded)
+	return summary
+}
+
+func checkRestoreFailureInMemberStatus(status v1beta1.RestoreMemberStatus) (bool, string) {
+	failureFound, reason := checkRestoreFailureInHostStatus(status.Stats)
+	if failureFound {
+		return true, reason
+	}
+
+	failureFound, reason = checkFailureInConditions(status.Conditions)
+	if failureFound {
+		return true, reason
+	}
+	return false, ""
 }

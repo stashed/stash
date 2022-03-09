@@ -117,6 +117,9 @@ type BackupTargetStatus struct {
 	// PostBackupActions specifies a list of actions that the backup process should execute after taking backup
 	// +optional
 	PostBackupActions []string `json:"postBackupActions,omitempty"`
+	// Conditions shows condition of different operations/steps of the backup process for this target
+	// +optional
+	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
 
 type HostBackupStats struct {
@@ -170,3 +173,83 @@ type BackupSessionList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BackupSession `json:"items,omitempty"`
 }
+
+// =============================== Pre-backup Actions ============================
+const (
+	InitializeBackendRepository = "InitializeBackendRepository"
+)
+
+// ============================== Post-backup Actions ==========================
+const (
+	ApplyRetentionPolicy      = "ApplyRetentionPolicy"
+	VerifyRepositoryIntegrity = "VerifyRepositoryIntegrity"
+	SendRepositoryMetrics     = "SendRepositoryMetrics"
+)
+
+// ============================ Condition Types ========================
+const (
+	// RetentionPolicyApplied indicates that whether the retention policies were applied or not
+	RetentionPolicyApplied = "RetentionPolicyApplied"
+
+	// BackendRepositoryInitialized indicates that whether backend repository was initialized or not
+	BackendRepositoryInitialized = "BackendRepositoryInitialized"
+
+	// RepositoryIntegrityVerified indicates whether the repository integrity check succeeded or not
+	RepositoryIntegrityVerified = "RepositoryIntegrityVerified"
+
+	// RepositoryMetricsPushed indicates whether the Repository metrics for this backup session were pushed or not
+	RepositoryMetricsPushed = "RepositoryMetricsPushed"
+
+	// BackupSkipped indicates that the current session was skipped
+	BackupSkipped = "BackupSkipped"
+
+	// BackupHistoryCleaned indicates whether the backup history was cleaned or not according to backupHistoryLimit
+	BackupHistoryCleaned = "BackupHistoryCleaned"
+
+	// BackupExecutorEnsured indicates whether the backup executor entity was created or not
+	BackupExecutorEnsured = "BackupExecutorEnsured"
+
+	// PreBackupHookExecutionSucceeded indicates whether the preBackup hook was executed successfully or not
+	PreBackupHookExecutionSucceeded = "PreBackupHookExecutionSucceeded"
+
+	// PostBackupHookExecutionSucceeded indicates whether the postBackup hook was executed successfully or not
+	PostBackupHookExecutionSucceeded = "PostBackupHookExecutionSucceeded"
+)
+
+// =========================== Condition Reasons =======================
+const (
+	// SuccessfullyAppliedRetentionPolicy indicates that the condition transitioned to this state because the retention policies was applied successfully
+	SuccessfullyAppliedRetentionPolicy = "SuccessfullyAppliedRetentionPolicy"
+	// FailedToApplyRetentionPolicy indicates that the condition transitioned to this state because the Stash was unable to apply the retention policies
+	FailedToApplyRetentionPolicy = "FailedToApplyRetentionPolicy"
+
+	// BackendRepositoryFound indicates that the condition transitioned to this state because the restic repository was found in the backend
+	BackendRepositoryFound = "BackendRepositoryFound"
+	// FailedToInitializeBackendRepository indicates that the condition transitioned to this state because the Stash was unable to initialize a repository in the backend
+	FailedToInitializeBackendRepository = "FailedToInitializeBackendRepository"
+
+	// SuccessfullyVerifiedRepositoryIntegrity indicates that the condition transitioned to this state because the repository has passed the integrity check
+	SuccessfullyVerifiedRepositoryIntegrity = "SuccessfullyVerifiedRepositoryIntegrity"
+	// FailedToVerifyRepositoryIntegrity indicates that the condition transitioned to this state because the repository has failed the integrity check
+	FailedToVerifyRepositoryIntegrity = "FailedToVerifyRepositoryIntegrity"
+
+	// SuccessfullyPushedRepositoryMetrics indicates that the condition transitioned to this state because the repository metrics was successfully pushed to the pushgateway
+	SuccessfullyPushedRepositoryMetrics = "SuccessfullyPushedRepositoryMetrics"
+	// FailedToPushRepositoryMetrics indicates that the condition transitioned to this state because the Stash was unable to push the repository metrics to the pushgateway
+	FailedToPushRepositoryMetrics = "FailedToPushRepositoryMetrics"
+
+	// SkippedTakingNewBackup indicates that the backup was skipped because another backup was running or backup invoker is not ready state.
+	SkippedTakingNewBackup = "SkippedTakingNewBackup"
+
+	SuccessfullyCleanedBackupHistory = "SuccessfullyCleanedBackupHistory"
+	FailedToCleanBackupHistory       = "FailedToCleanBackupHistory"
+
+	SuccessfullyEnsuredBackupExecutor = "SuccessfullyEnsuredBackupExecutor"
+	FailedToEnsureBackupExecutor      = "FailedToEnsureBackupExecutor"
+
+	SuccessfullyExecutedPreBackupHook = "SuccessfullyExecutedPreBackupHook"
+	FailedToExecutePreBackupHook      = "FailedToExecutePreBackupHook"
+
+	SuccessfullyExecutedPostBackupHook = "SuccessfullyExecutedPostBackupHook"
+	FailedToExecutePostBackupHook      = "FailedToExecutePostBackupHook"
+)

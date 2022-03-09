@@ -207,8 +207,9 @@ func (f *Framework) DeploymentForMinioServer(pvc core.PersistentVolumeClaim, sec
 					// run this containers in minio server pod
 					Containers: []core.Container{
 						{
-							Name:  "minio-server",
-							Image: "minio/minio",
+							Name:            "minio-server",
+							Image:           "minio/minio",
+							ImagePullPolicy: core.PullIfNotPresent,
 							Args: []string{
 								"server",
 								"--address",

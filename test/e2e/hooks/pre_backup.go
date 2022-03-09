@@ -679,14 +679,8 @@ var _ = Describe("PreBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
-					By("Verifying that Repository has zero SnapshotCount")
-					repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(context.TODO(), repo.Name, metav1.GetOptions{})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(repo2.Status.SnapshotCount).Should(BeZero())
-
-					By("Verifying that no backup has been taken in the backend")
-					_, err = f.BrowseBackendRepository(repo)
-					Expect(err).To(HaveOccurred())
+					By("Verifying that target backup were not executed")
+					Expect(f.TargetBackupExecuted(completedBS.Status.Targets)).Should(BeFalse())
 				})
 			})
 		})

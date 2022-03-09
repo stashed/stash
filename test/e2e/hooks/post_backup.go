@@ -918,5 +918,219 @@ var _ = Describe("PostBackup Hook", func() {
 				})
 			})
 		})
+
+		Context("Template", func() {
+			Context("Templated data in the request Body", func() {
+				It("should resolve the template successfully", func() {
+					// Deploy a StatefulSet.
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Generate Sample Data
+					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Setup a Minio Repository
+					repo, err := f.SetupMinioRepository()
+					Expect(err).NotTo(HaveOccurred())
+					f.AppendToCleanupList(repo)
+
+					// Setup Backup
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+						bc.Spec.Hooks = &v1beta1.BackupHooks{
+							PostBackup: &probev1.Handler{
+								HTTPPost: &probev1.HTTPPostAction{
+									Scheme: "HTTP",
+									Path:   "/post-demo",
+									Port:   intstr.FromString(framework.HttpPortName),
+									Body:   `{{ .Status.Phase }}`,
+								},
+								ContainerName: framework.ProberDemoPodPrefix,
+							},
+						}
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					// Take an Instant Backup of the Sample Data
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+						Name: backupConfig.Name,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying that BackupSession has succeeded")
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+				})
+			})
+
+			Context("Failure Test", func() {
+				It("should take a backup even when the postBackup hook failed", func() {
+					// Deploy a StatefulSet.
+					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Generate Sample Data
+					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Setup a Minio Repository
+					repo, err := f.SetupMinioRepository()
+					Expect(err).NotTo(HaveOccurred())
+					f.AppendToCleanupList(repo)
+
+					// Setup Backup
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+						bc.Spec.Hooks = &v1beta1.BackupHooks{
+							PostBackup: &probev1.Handler{
+								HTTPPost: &probev1.HTTPPostAction{
+									Scheme: "HTTP",
+									Path:   "/post-demo",
+									Port:   intstr.FromString(framework.HttpPortName),
+									Form: []probev1.FormEntry{
+										{
+											Key:    "expectedResponse",
+											Values: []string{"fail"},
+										},
+										{
+											Key:    "expectedCode",
+											Values: []string{"403"},
+										},
+									},
+								},
+								ContainerName: framework.ProberDemoPodPrefix,
+							},
+						}
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					// Take an Instant Backup of the Sample Data
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+						Name: backupConfig.Name,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying that BackupSession has failed")
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+
+					By("Verifying that a backup has been taken")
+					items, err := f.BrowseMinioRepository(repo)
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(items).ShouldNot(BeEmpty())
+				})
+			})
+		})
+	})
+
+	Context("Send notification to Slack webhook", func() {
+		BeforeEach(func() {
+			if f.SlackWebhookURL == "" {
+				Skip("Slack Webhook URL is missing")
+			}
+		})
+
+		It("should send backup success notification", func() {
+			// Deploy a StatefulSet.
+			statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Generate Sample Data
+			_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Setup a Minio Repository
+			repo, err := f.SetupMinioRepository()
+			Expect(err).NotTo(HaveOccurred())
+			f.AppendToCleanupList(repo)
+
+			// Setup Backup
+			backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+				bc.Spec.Hooks = &v1beta1.BackupHooks{
+					PostBackup: &probev1.Handler{
+						HTTPPost: &probev1.HTTPPostAction{
+							Host:   "hooks.slack.com",
+							Path:   f.SlackWebhookURL,
+							Port:   intstr.FromInt(443),
+							Scheme: "HTTPS",
+							HTTPHeaders: []core.HTTPHeader{
+								{
+									Name:  "Content-Type",
+									Value: "application/json",
+								},
+							},
+							Body: "{\"blocks\": [{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"{{if eq .Status.Phase `Succeeded`}}:white_check_mark: Backup succeeded for {{ .Namespace }}/{{.Target.Name}}{{else}}:x: Backup failed for {{ .Namespace }}/{{.Target.Name}} Reason: {{.Status.Error}}.{{end}}\"}}]}",
+						},
+						ContainerName: framework.ProberDemoPodPrefix,
+					},
+				}
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Take an Instant Backup of the Sample Data
+			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+				Name: backupConfig.Name,
+				Kind: v1beta1.ResourceKindBackupConfiguration,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Verifying that BackupSession has succeeded")
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+		})
+		It("should send backup failure notification", func() {
+			// Deploy a StatefulSet.
+			statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Generate Sample Data
+			_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Setup a Minio Repository
+			repo, err := f.SetupMinioRepository()
+			Expect(err).NotTo(HaveOccurred())
+			f.AppendToCleanupList(repo)
+
+			// Setup Backup
+			backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+				bc.Spec.Hooks = &v1beta1.BackupHooks{
+					PostBackup: &probev1.Handler{
+						HTTPPost: &probev1.HTTPPostAction{
+							Host:   "hooks.slack.com",
+							Path:   f.SlackWebhookURL,
+							Port:   intstr.FromInt(443),
+							Scheme: "HTTPS",
+							HTTPHeaders: []core.HTTPHeader{
+								{
+									Name:  "Content-Type",
+									Value: "application/json",
+								},
+							},
+							Body: "{\"blocks\": [{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"{{if eq .Status.Phase `Succeeded`}}:white_check_mark: Backup succeeded for {{ .Namespace }}/{{.Target.Name}}{{else}}:x: Backup failed for {{ .Namespace }}/{{.Target.Name}} Reason: {{.Status.Error}}.{{end}}\"}}]}",
+						},
+						ContainerName: framework.ProberDemoPodPrefix,
+					},
+				}
+				bc.Spec.Target.Paths = []string{"/some/non-existing/path"}
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Take an Instant Backup of the Sample Data
+			backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+				Name: backupConfig.Name,
+				Kind: v1beta1.ResourceKindBackupConfiguration,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Verifying that BackupSession has failed")
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+		})
 	})
 })

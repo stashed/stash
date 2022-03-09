@@ -25,6 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
+	stashHooks "stash.appscode.dev/apimachinery/pkg/hooks"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
@@ -39,6 +40,7 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -69,48 +71,13 @@ type Options struct {
 	RestoreModel string
 }
 
-func (opt *Options) Restore(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
-	if targetInfo.Target == nil {
-		return nil, fmt.Errorf("no restore target has specified")
-	}
-
-	repository, err := inv.GetRepository()
-	if err != nil {
-		return nil, err
-	}
-
-	secret, err := opt.KubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	extraOptions := &util.ExtraOptions{
-		Host:          opt.Host,
-		StorageSecret: secret,
-		EnableCache:   opt.SetupOpt.EnableCache,
-		ScratchDir:    opt.SetupOpt.ScratchDir,
-	}
-	setupOptions, err := util.SetupOptionsForRepository(*repository, *extraOptions)
-	if err != nil {
-		return nil, err
-	}
-	// apply nice, ionice settings from env
-	setupOptions.Nice, err = v1.NiceSettingsFromEnv()
-	if err != nil {
-		return nil, err
-	}
-	setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
-	if err != nil {
-		return nil, err
-	}
-	opt.SetupOpt = setupOptions
-
+func (opt *Options) Restore(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
 	// if we are restoring using job then there no need to lock the repository
 	if opt.RestoreModel == RestoreModelJob {
-		return opt.runRestore(inv, targetInfo)
+		return opt.restoreHost(inv, targetInfo)
 	} else {
 		// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock
-		return nil, opt.electRestoreLeader(inv, targetInfo)
+		return opt.electRestoreLeader(inv, targetInfo)
 	}
 }
 
@@ -149,23 +116,12 @@ func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo in
 			OnStartedLeading: func(ctx context.Context) {
 				klog.Infoln("Got leadership, preparing for restore")
 				// run restore process
-				restoreOutput, restoreErr := opt.runRestore(inv, targetInfo)
-				if restoreErr != nil {
-					e2 := opt.HandleRestoreFailure(inv, targetInfo, restoreErr)
-					if e2 != nil {
-						restoreErr = errors.NewAggregate([]error{restoreErr, e2})
-					}
+				err := opt.restoreHost(inv, targetInfo)
+				if err != nil {
 					// step down from leadership so that other replicas try to restore
 					cancel()
 					// fail the container so that it restart and re-try to restore
-					klog.Fatalf("failed to complete restore. Reason: %v", restoreErr)
-				}
-				if restoreOutput != nil {
-					err = opt.HandleRestoreSuccess(restoreOutput, inv, targetInfo)
-					if err != nil {
-						cancel()
-						klog.Fatalf("failed to complete restore. Reason: %v", err)
-					}
+					klog.Fatalf("failed to complete restore. Reason: %v", err)
 				}
 				// restore process is complete. now, step down from leadership so that other replicas can start
 				cancel()
@@ -178,7 +134,83 @@ func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo in
 	return nil
 }
 
+func (opt *Options) restoreHost(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
+	// execute at the end of restore. no matter if the restore succeed or fail.
+	defer func() {
+		if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {
+			err := opt.executePostRestoreHook(inv, targetInfo)
+			if err != nil {
+				klog.Infoln("failed to execute postRestore hook. Reason: ", err)
+			}
+		}
+	}()
+
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PreRestore != nil {
+		err := opt.executePreRestoreHook(inv, targetInfo)
+		if err != nil {
+			return err
+		}
+	}
+
+	restoreOutput, restoreErr := opt.runRestore(inv, targetInfo)
+	if restoreErr != nil {
+		restoreOutput = &restic.RestoreOutput{
+			RestoreTargetStatus: api_v1beta1.RestoreMemberStatus{
+				Ref: targetInfo.Target.Ref,
+				Stats: []api_v1beta1.HostRestoreStats{
+					{
+						Hostname: opt.Host,
+						Phase:    api_v1beta1.HostRestoreFailed,
+						Error:    fmt.Sprintf("failed to complete restore process for host %s. Reason: %v", opt.Host, restoreErr),
+					},
+				},
+			},
+		}
+	}
+	statusErr := opt.updateHostRestoreStatus(restoreOutput, inv, targetInfo)
+	if statusErr != nil {
+		restoreErr = errors.NewAggregate([]error{restoreErr, statusErr})
+	}
+
+	return restoreErr
+}
+
 func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
+	if targetInfo.Target == nil {
+		return nil, fmt.Errorf("no restore target has specified")
+	}
+
+	repository, err := inv.GetRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := opt.KubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	extraOptions := &util.ExtraOptions{
+		Host:          opt.Host,
+		StorageSecret: secret,
+		EnableCache:   opt.SetupOpt.EnableCache,
+		ScratchDir:    opt.SetupOpt.ScratchDir,
+	}
+	setupOptions, err := util.SetupOptionsForRepository(*repository, *extraOptions)
+	if err != nil {
+		return nil, err
+	}
+	// apply nice, ionice settings from env
+	setupOptions.Nice, err = v1.NiceSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	setupOptions.IONice, err = v1.IONiceSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	opt.SetupOpt = setupOptions
+
 	// if already restored for this host then don't process further
 	if opt.isRestoredForThisHost(inv, targetInfo, opt.Host) {
 		klog.Infof("Skipping restore for %s %s/%s. Reason: restore already completed for host %q.",
@@ -190,88 +222,24 @@ func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.Re
 		return nil, nil
 	}
 
-	// If preRestore hook is specified, then execute those hooks first
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PreRestore != nil {
-		err := util.ExecuteHook(opt.Config, targetInfo.Hooks, apis.PreRestoreHook, os.Getenv(apis.KeyPodName), opt.Namespace)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// setup restic wrapper
 	w, err := restic.NewResticWrapper(opt.SetupOpt)
 	if err != nil {
 		return nil, err
 	}
-
-	// Run restore process
-	// If there is an error during restore, don't return.
-	// We will execute postRestore hook even if the restore failed.
-	// Reason: https://github.com/stashed/stash/issues/986
-	var restoreErr, hookErr error
 	restoreOptions := util.RestoreOptionsForHost(opt.Host, targetInfo.Target.Rules)
 	restoreOptions.Args = targetInfo.Target.Args
-	output, restoreErr := w.RunRestore(restoreOptions, targetInfo.Target.Ref)
-
-	// If postRestore hook is specified, then execute those hooks
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {
-		hookErr = util.ExecuteHook(opt.Config, targetInfo.Hooks, apis.PostRestoreHook, os.Getenv(apis.KeyPodName), opt.Namespace)
-	}
-
-	if restoreErr != nil || hookErr != nil {
-		return nil, errors.NewAggregate([]error{restoreErr, hookErr})
-	}
-	return output, nil
+	return w.RunRestore(restoreOptions, targetInfo.Target.Ref)
 }
 
-func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
-	// write log
-	klog.Infof("Restore completed successfully for %s %s/%s",
-		inv.GetTypeMeta().Kind,
-		inv.GetObjectMeta().Namespace,
-		inv.GetObjectMeta().Name,
-	)
-
+func (opt *Options) updateHostRestoreStatus(restoreOutput *restic.RestoreOutput, inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
 	statusOpt := status.UpdateStatusOptions{
-		Config:      c.Config,
-		KubeClient:  c.KubeClient,
-		StashClient: c.StashClient,
-		Namespace:   c.Namespace,
-		Metrics:     c.Metrics,
-		SetupOpt:    c.SetupOpt,
-	}
-	return statusOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
-}
-
-func (c *Options) HandleRestoreFailure(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, restoreErr error) error {
-	// write log
-	klog.Errorf("Failed to complete restore process for %s %s/%s. Reason: %v",
-		inv.GetTypeMeta().Kind,
-		inv.GetObjectMeta().Namespace,
-		inv.GetObjectMeta().Name,
-		restoreErr,
-	)
-
-	restoreOutput := &restic.RestoreOutput{
-		RestoreTargetStatus: api_v1beta1.RestoreMemberStatus{
-			Ref: targetInfo.Target.Ref,
-			Stats: []api_v1beta1.HostRestoreStats{
-				{
-					Hostname: c.Host,
-					Phase:    api_v1beta1.HostRestoreFailed,
-					Error:    fmt.Sprintf("failed to complete restore process for host %s. Reason: %v", c.Host, restoreErr),
-				},
-			},
-		},
-	}
-
-	statusOpt := status.UpdateStatusOptions{
-		Config:      c.Config,
-		KubeClient:  c.KubeClient,
-		StashClient: c.StashClient,
-		Namespace:   c.Namespace,
-		Metrics:     c.Metrics,
-		SetupOpt:    c.SetupOpt,
+		Config:      opt.Config,
+		KubeClient:  opt.KubeClient,
+		StashClient: opt.StashClient,
+		Namespace:   opt.Namespace,
+		Metrics:     opt.Metrics,
+		SetupOpt:    opt.SetupOpt,
 	}
 	return statusOpt.UpdatePostRestoreStatus(restoreOutput, inv, targetInfo)
 }
@@ -292,4 +260,34 @@ func (opt *Options) isRestoredForThisHost(inv invoker.RestoreInvoker, targetInfo
 		}
 	}
 	return false
+}
+
+func (opt *Options) executePreRestoreHook(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
+	hookExecutor := stashHooks.RestoreHookExecutor{
+		Config:  opt.Config,
+		Invoker: inv,
+		Target:  targetInfo.Target.Ref,
+		ExecutorPod: kmapi.ObjectReference{
+			Namespace: opt.Namespace,
+			Name:      os.Getenv(apis.KeyPodName),
+		},
+		Hook:     targetInfo.Hooks.PreRestore,
+		HookType: apis.PreRestoreHook,
+	}
+	return hookExecutor.Execute()
+}
+
+func (opt *Options) executePostRestoreHook(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
+	hookExecutor := stashHooks.RestoreHookExecutor{
+		Config:  opt.Config,
+		Invoker: inv,
+		Target:  targetInfo.Target.Ref,
+		ExecutorPod: kmapi.ObjectReference{
+			Namespace: opt.Namespace,
+			Name:      os.Getenv(apis.KeyPodName),
+		},
+		Hook:     targetInfo.Hooks.PostRestore,
+		HookType: apis.PostRestoreHook,
+	}
+	return hookExecutor.Execute()
 }

@@ -23,6 +23,7 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/x/crypto/rand"
@@ -47,9 +48,7 @@ func (f *Framework) EventuallyBackupProcessCompleted(meta metav1.ObjectMeta) Gom
 				Expect(err).NotTo(HaveOccurred())
 				return false
 			}
-			if bs.Status.Phase == v1beta1.BackupSessionSucceeded ||
-				bs.Status.Phase == v1beta1.BackupSessionFailed ||
-				bs.Status.Phase == v1beta1.BackupSessionUnknown {
+			if invoker.IsBackupCompleted(bs.Status.Phase) {
 				return true
 			}
 			return false
@@ -113,16 +112,6 @@ func (fi *Invocation) EventuallySuccessfulBackupCount(invokerMeta metav1.ObjectM
 	}, WaitTimeOut, PullInterval)
 }
 
-func (fi *Invocation) EventuallySkippedBackupCount(invokerMeta metav1.ObjectMeta, invokerKind string) GomegaAsyncAssertion {
-	return Eventually(func() int64 {
-		count, err := fi.GetSkippedBackupSessionCount(invokerMeta, invokerKind)
-		if err != nil {
-			return 0
-		}
-		return count
-	}, WaitTimeOut, PullInterval)
-}
-
 func (fi *Invocation) GetSuccessfulBackupSessionCount(invokerMeta metav1.ObjectMeta, invokerKind string) (int64, error) {
 	backupSessions, err := fi.GetBackupSessionsForInvoker(invokerMeta, invokerKind)
 	if err != nil {
@@ -175,4 +164,13 @@ func (fi *Invocation) GetBackupSessionsForInvoker(invokerMeta metav1.ObjectMeta,
 			apis.LabelInvokerType: invokerKind,
 		}).String(),
 	})
+}
+
+func (fi *Invocation) TargetBackupExecuted(status []v1beta1.BackupTargetStatus) bool {
+	for _, t := range status {
+		if len(t.Stats) > 0 {
+			return true
+		}
+	}
+	return false
 }

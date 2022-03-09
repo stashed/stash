@@ -122,13 +122,13 @@ func NewPVCRestorerJob(inv invoker.RestoreInvoker, index int, repository *api_v1
 	return jobTemplate, nil
 }
 
-func NewVolumeSnapshotterJob(bs *api_v1beta1.BackupSession, backupTarget *api_v1beta1.BackupTarget, runtimeSettings v1.RuntimeSettings, image docker.Docker) (*core.PodTemplateSpec, error) {
+func NewVolumeSnapshotterJob(session *invoker.BackupSessionHandler, backupTarget *api_v1beta1.BackupTarget, runtimeSettings v1.RuntimeSettings, image docker.Docker) (*core.PodTemplateSpec, error) {
 	container := core.Container{
 		Name:  apis.StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"create-vs",
-			fmt.Sprintf("--backupsession=%s", bs.Name),
+			fmt.Sprintf("--backupsession=%s", session.GetObjectMeta().Name),
 			"--target-name=" + backupTarget.Ref.Name,
 			"--target-kind=" + backupTarget.Ref.Kind,
 			"--metrics-enabled=true",

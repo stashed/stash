@@ -30,7 +30,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 )
 
-const FileModeRWXAll = 0777
+const FileModeRWXAll = 0o777
 
 type BackupOutput struct {
 	// BackupTargetStatus shows the status of a backup target
@@ -53,7 +53,7 @@ type RestoreOutput struct {
 	RestoreTargetStatus api_v1beta1.RestoreMemberStatus `json:"targetStatus,omitempty"`
 }
 
-// WriteOutput write output of backup process into output.json file in the directory
+// WriteOutput write output of backup process into output.go file in the directory
 // specified by outputDir parameter
 func (out *BackupOutput) WriteOutput(fileName string) error {
 	jsonOutput, err := json.MarshalIndent(out, "", "  ")

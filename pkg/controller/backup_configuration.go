@@ -24,6 +24,7 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash"
+	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
@@ -145,29 +146,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 	}
 	if invMeta.DeletionTimestamp != nil {
 		if core_util.HasFinalizer(invMeta, api_v1beta1.StashKey) {
-			for _, targetInfo := range inv.GetTargetInfo() {
-				if targetInfo.Target != nil {
-					err := c.EnsureV1beta1SidecarDeleted(targetInfo.Target.Ref, invMeta.Namespace)
-					if err != nil {
-						return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
-					}
-				}
-			}
-
-			if err := c.EnsureBackupTriggeringCronJobDeleted(inv); err != nil {
-				return err
-			}
-
-			rbacOptions, err := c.getBackupRBACOptions(inv)
-			if err != nil {
-				return err
-			}
-
-			if err := rbacOptions.EnsureRBACResourcesDeleted(); err != nil {
-				return err
-			}
-
-			err = c.deleteRepositoryReferences(inv)
+			err := c.cleanupBackupInvokerOffshoots(inv, invokerRef)
 			if err != nil {
 				return err
 			}
@@ -177,83 +156,19 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 		}
 		return nil
 	}
+
 	err = inv.AddFinalizer()
 	if err != nil {
 		return err
 	}
 
 	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
-		// Check whether Repository exist or not
-		repository, err := inv.GetRepository()
-		if err != nil {
-			if kerr.IsNotFound(err) {
-				klog.Infof("Repository %s/%s does not exist.\n"+
-					"Requeueing after 5 seconds......",
-					inv.GetRepoRef().Namespace,
-					inv.GetRepoRef().Name)
-
-				err = conditions.SetRepositoryFoundConditionToFalse(inv)
-				if err != nil {
-					return err
-				}
-				return c.requeueInvoker(inv, key)
-			}
-			return conditions.SetRepositoryFoundConditionToUnknown(inv, err)
-		}
-
-		if repository.ObjectMeta.DeletionTimestamp != nil {
-			klog.Infof("Repository %s/%s has been deleted. \n"+
-				"Requeueing after 5 seconds......",
-				inv.GetRepoRef().Namespace,
-				inv.GetRepoRef().Name)
-
-			err = conditions.SetRepositoryFoundConditionToFalse(inv)
-			if err != nil {
-				return err
-			}
-			return c.requeueInvoker(inv, key)
-		}
-
-		err = conditions.SetRepositoryFoundConditionToTrue(inv)
+		shouldRequeue, err := c.checkForResticSnapshotterRequirements(inv, inv)
 		if err != nil {
 			return err
 		}
-
-		err = c.upsertRepositoryReferences(inv)
-		if err != nil {
-			return err
-		}
-
-		// Check whether the backend Secret exist or not
-		secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-		if err != nil {
-			if kerr.IsNotFound(err) {
-				klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
-					secret.Namespace,
-					secret.Name,
-					repository.Namespace,
-					repository.Name,
-				)
-				err2 := conditions.SetBackendSecretFoundConditionToFalse(inv, secret.Name)
-				if err2 != nil {
-					return err2
-				}
-				return c.requeueInvoker(inv, key)
-			}
-			return conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
-		}
-		err = conditions.SetBackendSecretFoundConditionToTrue(inv, secret.Name)
-		if err != nil {
-			return err
-		}
-
-		err = c.validateAgainstUsagePolicy(inv.GetRepoRef(), inv.GetObjectMeta().Namespace)
-		if err != nil {
-			return conditions.SetValidationPassedToFalse(inv, err)
-		}
-		err = conditions.SetValidationPassedToTrue(inv)
-		if err != nil {
-			return err
+		if shouldRequeue {
+			return c.requeueBackupInvoker(inv, key)
 		}
 	}
 
@@ -317,7 +232,7 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 			invMeta.Namespace,
 			invMeta.Name,
 		)
-		return c.requeueInvoker(inv, key)
+		return c.requeueBackupInvoker(inv, key)
 	}
 	// create a CronJob that will create BackupSession on each schedule
 	err = c.EnsureBackupTriggeringCronJob(inv)
@@ -598,7 +513,7 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.Objec
 	return errors.NewAggregate([]error{err, err2})
 }
 
-func (c *StashController) requeueInvoker(inv invoker.BackupInvoker, key string) error {
+func (c *StashController) requeueBackupInvoker(inv invoker.BackupInvoker, key string) error {
 	switch inv.GetTypeMeta().Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:
 		c.bcQueue.GetQueue().AddAfter(key, requeueTimeInterval)
@@ -609,4 +524,96 @@ func (c *StashController) requeueInvoker(inv invoker.BackupInvoker, key string) 
 		)
 	}
 	return nil
+}
+
+func (c *StashController) cleanupBackupInvokerOffshoots(inv invoker.BackupInvoker, invokerRef *core.ObjectReference) error {
+	for _, targetInfo := range inv.GetTargetInfo() {
+		if targetInfo.Target != nil {
+			err := c.EnsureV1beta1SidecarDeleted(targetInfo.Target.Ref, inv.GetObjectMeta().Namespace)
+			if err != nil {
+				return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
+			}
+		}
+	}
+
+	if err := c.EnsureBackupTriggeringCronJobDeleted(inv); err != nil {
+		return err
+	}
+
+	rbacOptions, err := c.getBackupRBACOptions(inv)
+	if err != nil {
+		return err
+	}
+
+	if err := rbacOptions.EnsureRBACResourcesDeleted(); err != nil {
+		return err
+	}
+
+	return c.deleteRepositoryReferences(inv)
+}
+
+func (c *StashController) checkForResticSnapshotterRequirements(inv interface{}, r repoReferenceHandler) (bool, error) {
+	repository, err := c.checkForRepositoryExistence(inv, r)
+	if err != nil {
+		return false, err
+	}
+
+	if repository == nil {
+		klog.Infof("Repository %s/%s does not exist.\nRequeueing after 5 seconds......",
+			r.GetRepoRef().Namespace,
+			r.GetRepoRef().Name)
+		return true, nil
+	}
+
+	secret, err := c.checkForBackendSecretExistence(inv, repository)
+	if err != nil {
+		return false, err
+	}
+	if secret == nil {
+		klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
+			repository.Namespace,
+			repository.Spec.Backend.StorageSecretName,
+			repository.Namespace,
+			repository.Name,
+		)
+		return true, nil
+	}
+
+	err = c.validateAgainstUsagePolicy(r.GetRepoRef(), r.GetObjectMeta().Namespace)
+	if err != nil {
+		return false, conditions.SetValidationPassedToFalse(inv, err)
+	}
+	return false, conditions.SetValidationPassedToTrue(inv)
+}
+
+func (c *StashController) checkForRepositoryExistence(inv interface{}, r repoReferenceHandler) (*api_v1alpha1.Repository, error) {
+	repository, err := r.GetRepository()
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil, conditions.SetRepositoryFoundConditionToFalse(inv)
+		}
+		return nil, conditions.SetRepositoryFoundConditionToUnknown(inv, err)
+	}
+
+	if repository.ObjectMeta.DeletionTimestamp != nil {
+		return nil, conditions.SetRepositoryFoundConditionToFalse(inv)
+	}
+
+	err = conditions.SetRepositoryFoundConditionToTrue(inv)
+	if err != nil {
+		return repository, err
+	}
+
+	return repository, c.upsertRepositoryReferences(r)
+}
+
+func (c *StashController) checkForBackendSecretExistence(inv interface{}, repository *api_v1alpha1.Repository) (*core.Secret, error) {
+	secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil, conditions.SetBackendSecretFoundConditionToFalse(inv, secret.Name)
+		}
+		return nil, conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
+	}
+	return secret, conditions.SetBackendSecretFoundConditionToTrue(inv, secret.Name)
 }

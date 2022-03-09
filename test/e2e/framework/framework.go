@@ -34,16 +34,17 @@ import (
 )
 
 type Framework struct {
-	KubeClient     kubernetes.Interface
-	StashClient    cs.Interface
-	KAClient       ka.Interface
-	catalogClient  appcatalog_cs.Interface
-	dmClient       dynamic.Interface
-	namespace      string
-	CertStore      *certstore.CertStore
-	ClientConfig   *rest.Config
-	StorageClass   string
-	DockerRegistry string
+	KubeClient      kubernetes.Interface
+	StashClient     cs.Interface
+	KAClient        ka.Interface
+	catalogClient   appcatalog_cs.Interface
+	dmClient        dynamic.Interface
+	namespace       string
+	CertStore       *certstore.CertStore
+	ClientConfig    *rest.Config
+	StorageClass    string
+	DockerRegistry  string
+	SlackWebhookURL string
 }
 
 // RootFramework will be used to invoke new Invocation before each test from the individual test packages
@@ -51,7 +52,7 @@ var RootFramework *Framework
 
 var TestFailed = false
 
-func New(clientConfig *rest.Config, storageClass, registry string) *Framework {
+func New(clientConfig *rest.Config, storageClass, registry, slackWebhook string) *Framework {
 	store, err := certstore.New(blobfs.NewInMemoryFS(), filepath.Join("", "pki"))
 	Expect(err).NotTo(HaveOccurred())
 
@@ -65,16 +66,17 @@ func New(clientConfig *rest.Config, storageClass, registry string) *Framework {
 	catalogClient := appcatalog_cs.NewForConfigOrDie(clientConfig)
 
 	return &Framework{
-		KubeClient:     kubeClient,
-		StashClient:    stashClient,
-		KAClient:       kaClient,
-		dmClient:       dmClient,
-		catalogClient:  catalogClient,
-		namespace:      rand.WithUniqSuffix("test-stash"),
-		CertStore:      store,
-		ClientConfig:   clientConfig,
-		StorageClass:   storageClass,
-		DockerRegistry: registry,
+		KubeClient:      kubeClient,
+		StashClient:     stashClient,
+		KAClient:        kaClient,
+		dmClient:        dmClient,
+		catalogClient:   catalogClient,
+		namespace:       rand.WithUniqSuffix("test-stash"),
+		CertStore:       store,
+		ClientConfig:    clientConfig,
+		StorageClass:    storageClass,
+		DockerRegistry:  registry,
+		SlackWebhookURL: slackWebhook,
 	}
 }
 

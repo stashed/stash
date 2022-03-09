@@ -64,3 +64,7 @@ type ObjectFormatter interface {
 	GetHash() string
 	GetObjectJSON() (string, error)
 }
+
+type Summarizer interface {
+	GetSummary(target v1beta1.TargetRef, session kmapi.ObjectReference) *v1beta1.Summary
+}

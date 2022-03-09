@@ -70,7 +70,7 @@ var _ = BeforeSuite(func() {
 	err = options.ApplyTo(ctrlConfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	root = framework.New(clientConfig, options.StorageClass, options.DockerRegistry)
+	root = framework.New(clientConfig, options.StorageClass, options.DockerRegistry, options.SlackWebhookURL)
 	framework.RootFramework = root
 	By("Using test namespace " + root.Namespace())
 	err = root.CreateTestNamespace()

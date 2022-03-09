@@ -56,7 +56,6 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions, targetRef api_
 // RunParallelRestore run restore process for multiple hosts in parallel using go routine.
 // You can control maximum number of parallel restore using maxConcurrency parameter.
 func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, targetRef api_v1beta1.TargetRef, maxConcurrency int) (*RestoreOutput, error) {
-
 	// WaitGroup to wait until all go routine finish
 	wg := sync.WaitGroup{}
 	// concurrencyLimiter channel is used to limit maximum number simultaneous go routine
@@ -154,7 +153,6 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions, targetRef api_v1beta1.Targ
 // ParallelDump run dump for multiple hosts concurrently using go routine.
 // You can control maximum number of parallel restore process using maxConcurrency parameter.
 func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, targetRef api_v1beta1.TargetRef, maxConcurrency int) (*RestoreOutput, error) {
-
 	// WaitGroup to wait until all go routine finish
 	wg := sync.WaitGroup{}
 	// concurrencyLimiter channel is used to limit maximum number simultaneous go routine
@@ -258,7 +256,6 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 }
 
 func (restoreOutput *RestoreOutput) upsertHostRestoreStats(hostStats api_v1beta1.HostRestoreStats) {
-
 	// check if a entry already exist for this host in restoreOutput. If exist then update it.
 	for i, v := range restoreOutput.RestoreTargetStatus.Stats {
 		if v.Hostname == hostStats.Hostname {

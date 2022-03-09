@@ -29,7 +29,6 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -86,16 +85,22 @@ func NewCmdRestore() *cobra.Command {
 						return err
 					}
 
-					// run restore
-					restoreOutput, restoreErr := opt.Restore(inv, targetInfo)
-					if restoreErr != nil {
-						err = opt.HandleRestoreFailure(inv, targetInfo, restoreErr)
-						return errors.NewAggregate([]error{restoreErr, err})
-
+					err := opt.Restore(inv, targetInfo)
+					if err != nil {
+						klog.Errorf("Failed to complete restore process for %s %s/%s. Reason: %v",
+							inv.GetTypeMeta().Kind,
+							inv.GetObjectMeta().Namespace,
+							inv.GetObjectMeta().Name,
+							err,
+						)
+						return err
 					}
-					if restoreOutput != nil {
-						return opt.HandleRestoreSuccess(restoreOutput, inv, targetInfo)
-					}
+					klog.Infof("Restore completed successfully for %s %s/%s",
+						inv.GetTypeMeta().Kind,
+						inv.GetObjectMeta().Namespace,
+						inv.GetObjectMeta().Name,
+					)
+					return nil
 				}
 			}
 

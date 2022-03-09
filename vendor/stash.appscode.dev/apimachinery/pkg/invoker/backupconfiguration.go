@@ -25,6 +25,7 @@ import (
 	stash_scheme "stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 
+	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,6 +70,7 @@ func (inv *BackupConfigurationInvoker) GetOwnerRef() *metav1.OwnerReference {
 func (inv *BackupConfigurationInvoker) GetLabels() map[string]string {
 	return inv.backupConfig.OffshootLabels()
 }
+
 func (inv *BackupConfigurationInvoker) AddFinalizer() error {
 	updatedBackupConfig, _, err := v1beta1_util.PatchBackupConfiguration(context.TODO(), inv.stashClient.StashV1beta1(), inv.backupConfig, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
 		in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, v1beta1.StashKey)
@@ -224,4 +226,14 @@ func (inv *BackupConfigurationInvoker) GetRetentionPolicy() v1alpha1.RetentionPo
 
 func (inv *BackupConfigurationInvoker) GetPhase() v1beta1.BackupInvokerPhase {
 	return inv.backupConfig.Status.Phase
+}
+
+func (inv *BackupConfigurationInvoker) GetSummary(target v1beta1.TargetRef, session kmapi.ObjectReference) *v1beta1.Summary {
+	summary := getTargetBackupSummary(inv.stashClient, target, session)
+	summary.Invoker = core.TypedLocalObjectReference{
+		APIGroup: pointer.StringP(v1beta1.SchemeGroupVersion.Group),
+		Kind:     v1beta1.ResourceKindBackupConfiguration,
+		Name:     inv.backupConfig.Name,
+	}
+	return summary
 }

@@ -34,14 +34,11 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
-	prober "kmodules.xyz/prober/probe"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
@@ -416,43 +413,6 @@ func ResourceKindShortForm(kind string) string {
 	default:
 		return strings.ToLower(kind)
 	}
-}
-
-func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, namespace string) error {
-	var hookErr error
-	klog.Infof("Executing %s hooks.........\n", hookType)
-
-	switch h := hook.(type) {
-	case *api_v1beta1.BackupHooks:
-		if hookType == apis.PreBackupHook {
-			hookErr = prober.RunProbe(config, h.PreBackup, podName, namespace)
-		} else {
-			err := prober.RunProbe(config, h.PostBackup, podName, namespace)
-			if err != nil {
-				hookErr = fmt.Errorf(err.Error() + ". Warning: The actual backup process may be succeeded." +
-					" Hence, backup data might be present in the backend even if the overall BackupSession phase is 'Failed'")
-			}
-		}
-	case *api_v1beta1.RestoreHooks:
-		if hookType == apis.PreRestoreHook {
-			hookErr = prober.RunProbe(config, h.PreRestore, podName, namespace)
-		} else {
-			err := prober.RunProbe(config, h.PostRestore, podName, namespace)
-			if err != nil {
-				hookErr = fmt.Errorf(err.Error() + ". Warning: The actual restore process may be succeeded." +
-					" Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")
-			}
-		}
-	default:
-		return fmt.Errorf("unknown hook type")
-	}
-
-	if hookErr != nil {
-		return hookErr
-	}
-
-	klog.Infof("Successfully executed %s hook.\n", hookType)
-	return nil
 }
 
 func HookExecutorContainer(name string, shiblings []core.Container, invokerKind, invokerName, targetKind, targetName string) core.Container {

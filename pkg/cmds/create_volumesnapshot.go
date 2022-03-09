@@ -124,7 +124,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 					statOpt.TargetRef.Name = opt.targetName
 					statOpt.TargetRef.Kind = opt.targetKind
 
-					return statOpt.UpdatePostBackupStatus(backupOutput, inv, targetInfo)
+					return statOpt.UpdatePostBackupStatus(backupOutput)
 
 				}
 			}

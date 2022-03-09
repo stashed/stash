@@ -435,7 +435,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreTargetSpec":               schema_apimachinery_apis_stash_v1beta1_RestoreTargetSpec(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.Rule":                            schema_apimachinery_apis_stash_v1beta1_Rule(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.SnapshotStats":                   schema_apimachinery_apis_stash_v1beta1_SnapshotStats(ref),
+		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.Summary":                         schema_apimachinery_apis_stash_v1beta1_Summary(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetRef":                       schema_apimachinery_apis_stash_v1beta1_TargetRef(ref),
+		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetStatus":                    schema_apimachinery_apis_stash_v1beta1_TargetStatus(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.Task":                            schema_apimachinery_apis_stash_v1beta1_Task(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskList":                        schema_apimachinery_apis_stash_v1beta1_TaskList(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef":                         schema_apimachinery_apis_stash_v1beta1_TaskRef(ref),
@@ -20345,11 +20347,25 @@ func schema_apimachinery_apis_stash_v1beta1_BackupTargetStatus(ref common.Refere
 							},
 						},
 					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions shows condition of different operations/steps of the backup process for this target",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kmodules.xyz/client-go/api/v1.Condition"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"stash.appscode.dev/apimachinery/apis/stash/v1beta1.HostBackupStats", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetRef"},
+			"kmodules.xyz/client-go/api/v1.Condition", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.HostBackupStats", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetRef"},
 	}
 }
 
@@ -21665,6 +21681,56 @@ func schema_apimachinery_apis_stash_v1beta1_SnapshotStats(ref common.ReferenceCa
 	}
 }
 
+func schema_apimachinery_apis_stash_v1beta1_Summary(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Summary summarizes backup/restore session information for a target",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the respective BackupSession/RestoreSession/RestoreBatch",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespace of the respective invoker",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"invoker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Invoker specifies the information about the invoker which resulted this session",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.TypedLocalObjectReference"),
+						},
+					},
+					"target": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Target specifies the target information that has been backed up /restored in this session",
+							Default:     map[string]interface{}{},
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetRef"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status specifies the backup/restore status for the respective target",
+							Default:     map[string]interface{}{},
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.TypedLocalObjectReference", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetRef", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetStatus"},
+	}
+}
+
 func schema_apimachinery_apis_stash_v1beta1_TargetRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -21687,6 +21753,39 @@ func schema_apimachinery_apis_stash_v1beta1_TargetRef(ref common.ReferenceCallba
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_apimachinery_apis_stash_v1beta1_TargetStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Phase represent the backup/restore phase of the target",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"duration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Duration represent the amount of time it took to complete the backup for this target.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"error": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Error specifies the respective error message in case of backup/restore failure",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
