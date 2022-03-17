@@ -28,6 +28,8 @@ import (
 	"stash.appscode.dev/stash/pkg/cmds"
 
 	"github.com/spf13/cobra/doc"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gomodules.xyz/runtime"
 	"k8s.io/klog/v2"
 )
@@ -91,7 +93,7 @@ func main() {
 	filePrepender := func(filename string) string {
 		filename = filepath.Base(filename)
 		base := strings.TrimSuffix(filename, path.Ext(filename))
-		name := strings.Title(strings.Replace(base, "_", " ", -1))
+		name := cases.Title(language.English).String(strings.Replace(base, "_", " ", -1))
 		parts := strings.Split(name, " ")
 		if len(parts) > 1 {
 			name = strings.Join(parts[1:], " ")
