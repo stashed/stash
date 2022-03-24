@@ -1378,6 +1378,7 @@ kmodules.xyz/client-go/apiextensions/v1
 kmodules.xyz/client-go/apiregistration/v1
 kmodules.xyz/client-go/apps/v1
 kmodules.xyz/client-go/batch/v1
+kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/dynamic
