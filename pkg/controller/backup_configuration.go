@@ -35,7 +35,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/pointer"
-	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +45,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
-	batch_util "kmodules.xyz/client-go/batch/v1"
+	batch_v1beta1_util "kmodules.xyz/client-go/batch/v1beta1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta2 "kmodules.xyz/client-go/meta"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -380,11 +380,11 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 			return err
 		}
 	}
-	_, _, err = batch_util.CreateOrPatchCronJob(
+	_, _, err = batch_v1beta1_util.CreateOrPatchCronJob(
 		context.TODO(),
 		c.kubeClient,
 		meta,
-		func(in *batchv1.CronJob) *batchv1.CronJob {
+		func(in *batchv1beta1.CronJob) *batchv1beta1.CronJob {
 			// set backup invoker object as cron-job owner
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerRef)
 
@@ -437,18 +437,18 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 // Kuebernetes garbage collector will take care of removing the CronJob
 func (c *StashController) EnsureBackupTriggeringCronJobDeleted(inv invoker.BackupInvoker) error {
 	invMeta := inv.GetObjectMeta()
-	cur, err := c.kubeClient.BatchV1().CronJobs(invMeta.Namespace).Get(context.TODO(), getBackupCronJobName(invMeta.Name), metav1.GetOptions{})
+	cur, err := c.kubeClient.BatchV1beta1().CronJobs(invMeta.Namespace).Get(context.TODO(), getBackupCronJobName(invMeta.Name), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	_, _, err = batch_util.PatchCronJob(
+	_, _, err = batch_v1beta1_util.PatchCronJob(
 		context.TODO(),
 		c.kubeClient,
 		cur,
-		func(in *batchv1.CronJob) *batchv1.CronJob {
+		func(in *batchv1beta1.CronJob) *batchv1beta1.CronJob {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
 			return in
 		},

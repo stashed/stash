@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/x/crypto/rand"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -93,8 +94,8 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 	)
 }
 
-func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batchv1.CronJob, error) {
-	return f.KubeClient.BatchV1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
+func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batchv1beta1.CronJob, error) {
+	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 }
 
 func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsyncAssertion {
