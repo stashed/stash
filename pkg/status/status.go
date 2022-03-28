@@ -234,113 +234,140 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 }
 
 func (o UpdateStatusOptions) executePostBackupActions(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler, curTarget v1beta1.TargetRef, numCurHosts int) error {
-	var repoStats restic.RepositoryStats
 	for _, targetStatus := range session.GetTargetStatus() {
-		if invoker.TargetMatched(targetStatus.Ref, curTarget) {
-			// check if it has any post-backup action assigned to it
-			if len(targetStatus.PostBackupActions) > 0 {
-				// For StatefulSet and DaemonSet, only the last host will run these PostBackupActions
-				if curTarget.Kind == apis.KindStatefulSet || curTarget.Kind == apis.KindDaemonSet {
-					if len(targetStatus.Stats) != (int(*targetStatus.TotalHosts) - numCurHosts) {
-						klog.Infof("Skipping running PostBackupActions. Reason: Only the last host will execute the post backup actions for %s", curTarget.Kind)
-						return nil
-					}
-				}
-				// wait until all other targets/hosts has completed their backup.
-				err := o.waitUntilOtherHostsCompleted(session.GetBackupSession(), curTarget, numCurHosts)
-				if err != nil {
-					return fmt.Errorf("failed to execute PostBackupActions. Reason: %v ", err.Error())
-				}
-
-				// execute the post-backup actions
-				for _, action := range targetStatus.PostBackupActions {
-					switch action {
-					case v1beta1.ApplyRetentionPolicy:
-						if !kmapi.HasCondition(session.GetConditions(), v1beta1.RetentionPolicyApplied) {
-							klog.Infoln("Applying retention policy.....")
-							w, err := restic.NewResticWrapper(o.SetupOpt)
-							if err != nil {
-								condErr := conditions.SetRetentionPolicyAppliedConditionToFalse(session, err)
-								return errors.NewAggregate([]error{err, condErr})
-							}
-							res, err := w.ApplyRetentionPolicies(inv.GetRetentionPolicy())
-							if err != nil {
-								klog.Warningf("Failed to apply retention policy. Reason: %s", err.Error())
-								condErr := conditions.SetRetentionPolicyAppliedConditionToFalse(session, err)
-								return errors.NewAggregate([]error{err, condErr})
-							}
-							if res != nil {
-								repoStats.SnapshotCount = res.SnapshotCount
-								repoStats.SnapshotsRemovedOnLastCleanup = res.SnapshotsRemovedOnLastCleanup
-							}
-							err = conditions.SetRetentionPolicyAppliedConditionToTrue(session)
-							if err != nil {
-								return err
-							}
-						}
-					case v1beta1.VerifyRepositoryIntegrity:
-						if !kmapi.HasCondition(session.GetConditions(), v1beta1.RepositoryIntegrityVerified) {
-							klog.Infoln("Verifying repository integrity...........")
-							w, err := restic.NewResticWrapper(o.SetupOpt)
-							if err != nil {
-								condErr := conditions.SetRepositoryIntegrityVerifiedConditionToFalse(session, err)
-								return errors.NewAggregate([]error{err, condErr})
-							}
-							res, err := w.VerifyRepositoryIntegrity()
-							if err != nil {
-								klog.Warningf("Failed to verify Repository integrity. Reason: %s", err.Error())
-								condErr := conditions.SetRepositoryIntegrityVerifiedConditionToFalse(session, err)
-								return errors.NewAggregate([]error{err, condErr})
-							}
-							if res != nil {
-								repoStats.Integrity = res.Integrity
-								repoStats.Size = res.Size
-							}
-							err = conditions.SetRepositoryIntegrityVerifiedConditionToTrue(session)
-							if err != nil {
-								return err
-							}
-						}
-					case v1beta1.SendRepositoryMetrics:
-						// if metrics enabled then send metrics to the Prometheus pushgateway
-						if o.Metrics.Enabled && !kmapi.HasCondition(session.GetConditions(), v1beta1.RepositoryMetricsPushed) {
-							klog.Infoln("Pushing repository metrics...........")
-							err := o.Metrics.SendRepositoryMetrics(o.Config, inv, repoStats)
-							if err != nil {
-								klog.Warningf("Failed to send Repository metrics. Reason: %s", err.Error())
-								condErr := conditions.SetRepositoryMetricsPushedConditionToFalse(session, err)
-								return errors.NewAggregate([]error{err, condErr})
-							}
-							return conditions.SetRepositoryMetricsPushedConditionToTrue(session)
-						}
-					default:
-						return fmt.Errorf("unknown PostBackupAction: %s", action)
-					}
-				}
-				// now, update the repository status
-				if repoStats.Integrity != nil {
-					klog.Infoln("Updating repository status......")
-					repo, err := inv.GetRepository()
-					if err != nil {
-						return err
-					}
-					startTime := session.GetObjectMeta().CreationTimestamp
-					_, err = stash_util.UpdateRepositoryStatus(
-						context.TODO(),
-						o.StashClient.StashV1alpha1(),
-						repo.ObjectMeta,
-						func(in *v1alpha1.RepositoryStatus) (types.UID, *v1alpha1.RepositoryStatus) {
-							in.Integrity = repoStats.Integrity
-							in.SnapshotCount = repoStats.SnapshotCount
-							in.SnapshotsRemovedOnLastCleanup = repoStats.SnapshotsRemovedOnLastCleanup
-							in.TotalSize = repoStats.Size
-							in.LastBackupTime = &startTime
-							return repo.UID, in
-						}, metav1.UpdateOptions{})
-					return err
+		if invoker.TargetMatched(targetStatus.Ref, curTarget) && len(targetStatus.PostBackupActions) > 0 {
+			// For StatefulSet and DaemonSet, only the last host will run these PostBackupActions
+			if curTarget.Kind == apis.KindStatefulSet || curTarget.Kind == apis.KindDaemonSet {
+				if len(targetStatus.Stats) != (int(*targetStatus.TotalHosts) - numCurHosts) {
+					klog.Infof("Skipping running PostBackupActions. Reason: Only the last host will execute the post backup actions for %s", curTarget.Kind)
+					return nil
 				}
 			}
+			err := o.waitUntilOtherHostsCompleted(session.GetBackupSession(), curTarget, numCurHosts)
+			if err != nil {
+				return fmt.Errorf("failed to execute PostBackupActions. Reason: %v ", err.Error())
+			}
+			return o.executePostBackupActionsForTarget(inv, session, targetStatus)
 		}
+	}
+	return nil
+}
+
+func (o *UpdateStatusOptions) executePostBackupActionsForTarget(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler, targetStatus v1beta1.BackupTargetStatus) error {
+	var repoStats restic.RepositoryStats
+	for _, action := range targetStatus.PostBackupActions {
+		switch action {
+		case v1beta1.ApplyRetentionPolicy:
+			res, err := o.applyRetentionPolicy(inv, session)
+			if err != nil {
+				klog.Warningf("Failed to apply retention policy. Reason: %s", err.Error())
+				return conditions.SetRetentionPolicyAppliedConditionToFalse(session, err)
+			}
+			if res != nil {
+				repoStats.SnapshotCount = res.SnapshotCount
+				repoStats.SnapshotsRemovedOnLastCleanup = res.SnapshotsRemovedOnLastCleanup
+			}
+		case v1beta1.VerifyRepositoryIntegrity:
+			res, err := o.verifyRepositoryIntegrity(session)
+			if err != nil {
+				klog.Warningf("Failed to verify Repository integrity. Reason: %s", err.Error())
+				return conditions.SetRepositoryIntegrityVerifiedConditionToFalse(session, err)
+			}
+			if res != nil {
+				repoStats.Integrity = res.Integrity
+				repoStats.Size = res.Size
+			}
+		case v1beta1.SendRepositoryMetrics:
+			err := o.sendRepositoryMetrics(inv, session, repoStats)
+			if err != nil {
+				klog.Warningf("Failed to push Repository metrics. Reason: %s", err.Error())
+				return conditions.SetRepositoryMetricsPushedConditionToFalse(session, err)
+			}
+
+		default:
+			return fmt.Errorf("unknown PostBackupAction: %s", action)
+		}
+	}
+	return o.updateRepositoryStatus(inv, session, repoStats)
+}
+
+func (o UpdateStatusOptions) applyRetentionPolicy(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler) (*restic.RepositoryStats, error) {
+	if !isRetentionPolicyApplied(session) {
+		klog.Infoln("Applying retention policy.....")
+		w, err := restic.NewResticWrapper(o.SetupOpt)
+		if err != nil {
+			return nil, err
+		}
+		res, err := w.ApplyRetentionPolicies(inv.GetRetentionPolicy())
+		if err != nil {
+			return nil, err
+		}
+		return res, conditions.SetRetentionPolicyAppliedConditionToTrue(session)
+	}
+	return nil, nil
+}
+
+func isRetentionPolicyApplied(session *invoker.BackupSessionHandler) bool {
+	return kmapi.HasCondition(session.GetConditions(), v1beta1.RetentionPolicyApplied)
+}
+
+func (o UpdateStatusOptions) verifyRepositoryIntegrity(session *invoker.BackupSessionHandler) (*restic.RepositoryStats, error) {
+	if !isRepoIntegrityVerified(session) {
+		klog.Infoln("Verifying repository integrity...........")
+		w, err := restic.NewResticWrapper(o.SetupOpt)
+		if err != nil {
+			return nil, err
+		}
+		res, err := w.VerifyRepositoryIntegrity()
+		if err != nil {
+			return nil, err
+		}
+		return res, conditions.SetRepositoryIntegrityVerifiedConditionToTrue(session)
+	}
+	return nil, nil
+}
+
+func isRepoIntegrityVerified(session *invoker.BackupSessionHandler) bool {
+	return kmapi.HasCondition(session.GetConditions(), v1beta1.RepositoryIntegrityVerified)
+}
+
+func (o *UpdateStatusOptions) sendRepositoryMetrics(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler, repoStats restic.RepositoryStats) error {
+	if o.Metrics.Enabled && !isRepositoryMetricSent(session) {
+		klog.Infoln("Pushing repository metrics...........")
+		err := o.Metrics.SendRepositoryMetrics(o.Config, inv, repoStats)
+		if err != nil {
+			return err
+		}
+		return conditions.SetRepositoryMetricsPushedConditionToTrue(session)
+	}
+	return nil
+}
+
+func isRepositoryMetricSent(session *invoker.BackupSessionHandler) bool {
+	return kmapi.HasCondition(session.GetConditions(), v1beta1.RepositoryMetricsPushed)
+}
+
+func (o *UpdateStatusOptions) updateRepositoryStatus(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler, repoStats restic.RepositoryStats) error {
+	if repoStats.Integrity != nil {
+		klog.Infoln("Updating repository status......")
+		repo, err := inv.GetRepository()
+		if err != nil {
+			return err
+		}
+		startTime := session.GetObjectMeta().CreationTimestamp
+		_, err = stash_util.UpdateRepositoryStatus(
+			context.TODO(),
+			o.StashClient.StashV1alpha1(),
+			repo.ObjectMeta,
+			func(in *v1alpha1.RepositoryStatus) (types.UID, *v1alpha1.RepositoryStatus) {
+				in.Integrity = repoStats.Integrity
+				in.SnapshotCount = repoStats.SnapshotCount
+				in.SnapshotsRemovedOnLastCleanup = repoStats.SnapshotsRemovedOnLastCleanup
+				in.TotalSize = repoStats.Size
+				in.LastBackupTime = &startTime
+				return repo.UID, in
+			}, metav1.UpdateOptions{})
+		return err
 	}
 	return nil
 }
