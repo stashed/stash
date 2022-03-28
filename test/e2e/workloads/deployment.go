@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
 var _ = Describe("Workload Test", func() {
@@ -91,6 +92,10 @@ var _ = Describe("Workload Test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
 
+				By("Waiting for Deployment to be ready after restore")
+				err = apps_util.WaitUntilDeploymentReady(context.TODO(), f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
 				// Get restored data
 				restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
 
@@ -144,6 +149,10 @@ var _ = Describe("Workload Test", func() {
 				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
+
+				By("Waiting for Deployment to be ready after restore")
+				err = apps_util.WaitUntilDeploymentReady(context.TODO(), f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Get restored data
 				restoredData := f.RestoredData(restoredDeployment.ObjectMeta, apis.KindDeployment)
@@ -204,6 +213,10 @@ var _ = Describe("Workload Test", func() {
 
 				// Get restored data
 				restoredData := f.RestoredData(deployment.ObjectMeta, apis.KindDeployment)
+
+				By("Waiting for Deployment to be ready after restore")
+				err = apps_util.WaitUntilDeploymentReady(context.TODO(), f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")
