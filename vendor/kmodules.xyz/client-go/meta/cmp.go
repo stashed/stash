@@ -25,22 +25,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	cmpOptions = []cmp.Option{
-		cmp.Comparer(func(x, y resource.Quantity) bool {
-			return x.Cmp(y) == 0
-		}),
-		cmp.Comparer(func(x, y *metav1.Time) bool {
-			if x == nil && y == nil {
-				return true
-			}
-			if x != nil && y != nil {
-				return x.Time.Equal(y.Time)
-			}
-			return false
-		}),
-	}
-)
+var cmpOptions = []cmp.Option{
+	cmp.Comparer(func(x, y resource.Quantity) bool {
+		return x.Cmp(y) == 0
+	}),
+	cmp.Comparer(func(x, y *metav1.Time) bool {
+		if x == nil && y == nil {
+			return true
+		}
+		if x != nil && y != nil {
+			return x.Time.Equal(y.Time)
+		}
+		return false
+	}),
+}
 
 func Diff(x, y interface{}) string {
 	return cmp.Diff(x, y, cmpOptions...)
@@ -78,7 +76,7 @@ func EqualAnnotation(x, y map[string]string) bool {
 }
 
 func JsonDiff(old, new interface{}) (string, error) {
-	var json = jsoniter.ConfigFastest
+	json := jsoniter.ConfigFastest
 	oldBytes, err := json.Marshal(old)
 	if err != nil {
 		return "", err

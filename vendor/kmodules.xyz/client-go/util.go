@@ -55,8 +55,10 @@ func IsRequestRetryable(err error) bool {
 		kerr.IsTooManyRequests(err)
 }
 
-var reMutator = regexp.MustCompile(`^Internal error occurred: admission webhook "[^"]+" denied the request.*$`)
-var reValidator = regexp.MustCompile(`^admission webhook "[^"]+" denied the request.*$`)
+var (
+	reMutator   = regexp.MustCompile(`^Internal error occurred: admission webhook "[^"]+" denied the request.*$`)
+	reValidator = regexp.MustCompile(`^admission webhook "[^"]+" denied the request.*$`)
+)
 
 func AdmissionWebhookDeniedRequest(err error) bool {
 	return (kerr.IsInternalError(err) && reMutator.MatchString(err.Error())) ||

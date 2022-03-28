@@ -203,6 +203,10 @@ message PersistentVolumeClaim {
 }
 
 message PodRuntimeSettings {
+  // PodAnnotations are the annotations that will be attached with the respective Pod
+  // +optional
+  map<string, string> podAnnotations = 15;
+
   // NodeSelector is a selector which must be true for the pod to fit on a node.
   // Selector which must match a node's labels for the pod to be scheduled on that node.
   // More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
@@ -213,6 +217,10 @@ message PodRuntimeSettings {
   // More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
   // +optional
   optional string serviceAccountName = 2;
+
+  // ServiceAccountAnnotations are the annotations that will be attached with the respective ServiceAccount
+  // +optional
+  map<string, string> serviceAccountAnnotations = 16;
 
   // AutomountServiceAccountToken indicates whether a service account token should be automatically mounted.
   // +optional

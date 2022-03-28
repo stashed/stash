@@ -44,13 +44,11 @@ const (
 	NamespaceDemo string = "demo"
 )
 
-var (
-	appsCodeAPIGroups = sets.NewString(
-		"appscode.com",
-		"kubedb.com",
-		"kubevault.com",
-		"kubeform.com",
-	)
+var appsCodeAPIGroups = sets.NewString(
+	"appscode.com",
+	"kubedb.com",
+	"kubevault.com",
+	"kubeform.com",
 )
 
 func logLevel(apiGroup string) klog.Level {

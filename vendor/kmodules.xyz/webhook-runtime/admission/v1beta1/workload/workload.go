@@ -65,7 +65,8 @@ func NewWorkloadWebhook(
 	singular string,
 	kind string,
 	factory api.GetterFactory,
-	handler admission.ResourceHandler) *WorkloadWebhook {
+	handler admission.ResourceHandler,
+) *WorkloadWebhook {
 	return &WorkloadWebhook{
 		plural:    plural,
 		singular:  singular,

@@ -77,8 +77,8 @@ func untilHasKey(
 	namespace, name string,
 	fn func(metav1.Object) map[string]string,
 	key string, value *string,
-	timeout time.Duration) (out string, err error) {
-
+	timeout time.Duration,
+) (out string, err error) {
 	ctx := context.Background()
 	if timeout > 0 {
 		var cancel context.CancelFunc
