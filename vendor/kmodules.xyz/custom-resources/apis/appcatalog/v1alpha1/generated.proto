@@ -117,6 +117,10 @@ message AppBindingSpec {
   // +kubebuilder:validation:EmbeddedResource
   // +kubebuilder:pruning:PreserveUnknownFields
   optional k8s.io.apimachinery.pkg.runtime.RawExtension parameters = 6;
+
+  // TLSSecret is the name of the secret that will hold
+  // the client certificate and private key associated with the AppBinding.
+  optional k8s.io.api.core.v1.LocalObjectReference tlsSecret = 7;
 }
 
 message AppReference {
@@ -179,6 +183,12 @@ message ClientConfig {
   // CABundle is a PEM encoded CA bundle which will be used to validate the serving certificate of this app.
   // +optional
   optional bytes caBundle = 4;
+
+  // ServerName is used to verify the hostname on the returned
+  // certificates unless InsecureSkipVerify is given. It is also included
+  // in the client's handshake to support virtual hosting unless it is
+  // an IP address.
+  optional string serverName = 5;
 }
 
 // ObjectReference contains enough information to let you locate the

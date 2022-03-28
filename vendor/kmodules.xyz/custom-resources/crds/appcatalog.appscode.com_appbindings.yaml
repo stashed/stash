@@ -61,6 +61,12 @@ spec:
                       when communicating with this app. This is strongly discouraged.  You
                       should use the CABundle instead.
                     type: boolean
+                  serverName:
+                    description: ServerName is used to verify the hostname on the
+                      returned certificates unless InsecureSkipVerify is given. It
+                      is also included in the client's handshake to support virtual
+                      hosting unless it is an IP address.
+                    type: string
                   service:
                     description: "`service` is a reference to the service for this
                       app. Either `service` or `url` must be specified. \n If the
@@ -211,6 +217,15 @@ spec:
                       type: object
                   type: object
                 type: array
+              tlsSecret:
+                description: TLSSecret is the name of the secret that will hold the
+                  client certificate and private key associated with the AppBinding.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
               type:
                 description: Type used to facilitate programmatic handling of application.
                 type: string

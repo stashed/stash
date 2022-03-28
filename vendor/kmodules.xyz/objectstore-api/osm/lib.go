@@ -53,7 +53,7 @@ func LoadConfig(configPath string) (*OSMConfig, error) {
 	if _, err := os.Stat(configPath); err != nil {
 		return nil, err
 	}
-	err := os.Chmod(configPath, 0600)
+	err := os.Chmod(configPath, 0o600)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +76,11 @@ func (config *OSMConfig) Save(configPath string) error {
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(filepath.Dir(configPath), 0755)
+	err = os.MkdirAll(filepath.Dir(configPath), 0o755)
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(configPath, data, 0600); err != nil {
+	if err := ioutil.WriteFile(configPath, data, 0o600); err != nil {
 		return err
 	}
 	return nil

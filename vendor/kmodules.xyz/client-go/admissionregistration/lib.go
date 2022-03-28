@@ -33,9 +33,11 @@ func init() {
 	pflag.BoolVar(&bypassValidatingWebhookXray, "bypass-validating-webhook-xray", bypassValidatingWebhookXray, "if true, bypasses validating webhook xray checks")
 }
 
-var ErrMissingKind = errors.New("test object missing kind")
-var ErrMissingVersion = errors.New("test object missing version")
-var ErrWebhookNotActivated = errors.New("Admission webhooks are not activated. Enable it by configuring --enable-admission-plugins flag of kube-apiserver. For details, visit: https://appsco.de/kube-apiserver-webhooks")
+var (
+	ErrMissingKind         = errors.New("test object missing kind")
+	ErrMissingVersion      = errors.New("test object missing version")
+	ErrWebhookNotActivated = errors.New("Admission webhooks are not activated. Enable it by configuring --enable-admission-plugins flag of kube-apiserver. For details, visit: https://appsco.de/kube-apiserver-webhooks")
+)
 
 func BypassValidatingWebhookXray() bool {
 	return bypassValidatingWebhookXray

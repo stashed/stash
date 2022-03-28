@@ -25,13 +25,15 @@ import (
 
 type ParserFunc func(map[string]string, string) (interface{}, error)
 
-var _ ParserFunc = GetBool
-var _ ParserFunc = GetInt
-var _ ParserFunc = GetString
-var _ ParserFunc = GetList
-var _ ParserFunc = GetMap
-var _ ParserFunc = GetFloat
-var _ ParserFunc = GetDuration
+var (
+	_ ParserFunc = GetBool
+	_ ParserFunc = GetInt
+	_ ParserFunc = GetString
+	_ ParserFunc = GetList
+	_ ParserFunc = GetMap
+	_ ParserFunc = GetFloat
+	_ ParserFunc = GetDuration
+)
 
 func GetBool(m map[string]string, key string) (interface{}, error) {
 	if m == nil {

@@ -34,9 +34,11 @@ type REST struct {
 	hookFn AdmissionHookFunc
 }
 
-var _ rest.Creater = &REST{}
-var _ rest.Scoper = &REST{}
-var _ rest.GroupVersionKindProvider = &REST{}
+var (
+	_ rest.Creater                  = &REST{}
+	_ rest.Scoper                   = &REST{}
+	_ rest.GroupVersionKindProvider = &REST{}
+)
 
 func NewREST(hookFn AdmissionHookFunc) *REST {
 	return &REST{
@@ -48,7 +50,7 @@ func (r *REST) New() runtime.Object {
 	return &admission.AdmissionReview{}
 }
 
-func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
+func (r *REST) GroupVersionKind(_ schema.GroupVersion) schema.GroupVersionKind {
 	return admission.SchemeGroupVersion.WithKind("AdmissionReview")
 }
 
@@ -59,5 +61,6 @@ func (r *REST) NamespaceScoped() bool {
 func (r *REST) Create(ctx context.Context, obj runtime.Object, _ rest.ValidateObjectFunc, _ *metav1.CreateOptions) (runtime.Object, error) {
 	admissionReview := obj.(*admission.AdmissionReview)
 	admissionReview.Response = r.hookFn(admissionReview.Request)
+	admissionReview.Response.UID = admissionReview.Request.UID
 	return admissionReview, nil
 }

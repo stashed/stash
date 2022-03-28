@@ -254,8 +254,7 @@ func RemoveCertificate(certificates []CertificateSpec, alias string) []Certifica
 	return append(certificates[:idx], certificates[idx+1:]...)
 }
 
-type stringSetMerger struct {
-}
+type stringSetMerger struct{}
 
 func (t stringSetMerger) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
 	if typ == reflect.TypeOf([]string{}) {
