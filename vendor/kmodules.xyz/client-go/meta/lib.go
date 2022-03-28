@@ -37,7 +37,7 @@ const (
 	ComponentLabelKey = "app.kubernetes.io/component"
 	ManagedByLabelKey = "app.kubernetes.io/managed-by"
 
-	MaxCronJobNameLength = 52 //xref: https://github.com/kubernetes/kubernetes/pull/52733
+	MaxCronJobNameLength = 52 // xref: https://github.com/kubernetes/kubernetes/pull/52733
 )
 
 var labelKeyBlacklist = []string{

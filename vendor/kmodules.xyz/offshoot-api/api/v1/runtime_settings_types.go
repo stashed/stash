@@ -29,6 +29,9 @@ type RuntimeSettings struct {
 }
 
 type PodRuntimeSettings struct {
+	// PodAnnotations are the annotations that will be attached with the respective Pod
+	// +optional
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty" protobuf:"bytes,15,rep,name=podAnnotations"`
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
@@ -38,6 +41,9 @@ type PodRuntimeSettings struct {
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty" protobuf:"bytes,2,opt,name=serviceAccountName"`
+	// ServiceAccountAnnotations are the annotations that will be attached with the respective ServiceAccount
+	// +optional
+	ServiceAccountAnnotations map[string]string `json:"serviceAccountAnnotations" protobuf:"bytes,16,rep,name=serviceAccountAnnotations"`
 	// AutomountServiceAccountToken indicates whether a service account token should be automatically mounted.
 	// +optional
 	AutomountServiceAccountToken *bool `json:"automountServiceAccountToken,omitempty" protobuf:"varint,3,opt,name=automountServiceAccountToken"`

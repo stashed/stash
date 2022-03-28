@@ -100,7 +100,7 @@ func UpsertContainer(containers []core.Container, upsert core.Container) []core.
 }
 
 func UpsertContainers(containers []core.Container, addons []core.Container) []core.Container {
-	var out = containers
+	out := containers
 	for _, c := range addons {
 		out = UpsertContainer(out, c)
 	}
