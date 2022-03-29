@@ -127,7 +127,7 @@ func (inv *BackupBatchInvoker) SetCondition(target *v1beta1.TargetRef, newCondit
 		} else {
 			in.Conditions = kmapi.SetCondition(in.Conditions, newCondition)
 		}
-		in.Phase = calculateBackupInvokerPhase(inv.GetDriver(), in.Conditions)
+		in.Phase = CalculateBackupInvokerPhase(inv.GetDriver(), in.Conditions)
 		return inv.backupBatch.UID, in
 	}, metav1.UpdateOptions{})
 	if err != nil {

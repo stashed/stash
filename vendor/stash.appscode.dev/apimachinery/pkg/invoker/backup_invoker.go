@@ -171,7 +171,7 @@ func isConditionSatisfied(conditions []kmapi.Condition, condType string) bool {
 	return true
 }
 
-func calculateBackupInvokerPhase(driver v1beta1.Snapshotter, conditions []kmapi.Condition) v1beta1.BackupInvokerPhase {
+func CalculateBackupInvokerPhase(driver v1beta1.Snapshotter, conditions []kmapi.Condition) v1beta1.BackupInvokerPhase {
 	if !isConditionSatisfied(conditions, v1beta1.RepositoryFound) ||
 		!isConditionSatisfied(conditions, v1beta1.BackendSecretFound) {
 		return v1beta1.BackupInvokerNotReady
