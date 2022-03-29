@@ -316,6 +316,11 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		return err
 	}
 
+	runtimeSettings := targetInfo.RuntimeSettings
+	if runtimeSettings.Pod != nil && runtimeSettings.Pod.ServiceAccountAnnotations != nil {
+		rbacOptions.ServiceAccount.Annotations = runtimeSettings.Pod.ServiceAccountAnnotations
+	}
+
 	rbacOptions.PodSecurityPolicyNames = psps
 
 	if targetInfo.RuntimeSettings.Pod != nil && targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
@@ -380,11 +385,15 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		if err != nil {
 			return err
 		}
+		runtimeSettings := targetInfo.RuntimeSettings
 		// pass offshoot labels to job's pod
 		jobTemplate.Labels = meta_util.OverwriteKeys(jobTemplate.Labels, inv.GetLabels())
 		jobTemplate.Spec.ImagePullSecrets = imagePullSecrets
 		jobTemplate.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 
+		if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
+			jobTemplate.Annotations = runtimeSettings.Pod.PodAnnotations
+		}
 		return c.createRestoreJob(jobTemplate, jobMeta, inv.GetOwnerRef())
 	}
 
@@ -758,7 +767,7 @@ func (c *StashController) getRestoreRBACOptions(inv invoker.RestoreInvoker) (sta
 		},
 		Owner:          inv.GetOwnerRef(),
 		OffshootLabels: inv.GetLabels(),
-		ServiceAccount: kmapi.ObjectReference{
+		ServiceAccount: metav1.ObjectMeta{
 			Namespace: invMeta.Namespace,
 		},
 	}
