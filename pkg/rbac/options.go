@@ -19,7 +19,6 @@ package rbac
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
 type RBACOptions struct {
@@ -28,7 +27,7 @@ type RBACOptions struct {
 	Owner                   *metav1.OwnerReference
 	OffshootLabels          map[string]string
 	PodSecurityPolicyNames  []string
-	ServiceAccount          kmapi.ObjectReference
+	ServiceAccount          metav1.ObjectMeta
 	CrossNamespaceResources *CrossNamespaceResources
 }
 

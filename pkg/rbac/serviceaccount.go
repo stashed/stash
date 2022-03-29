@@ -31,9 +31,10 @@ func (opt *RBACOptions) ensureServiceAccount() error {
 	opt.ServiceAccount.Name = meta.NameWithSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name)
 
 	saMeta := metav1.ObjectMeta{
-		Name:      opt.ServiceAccount.Name,
-		Namespace: opt.ServiceAccount.Namespace,
-		Labels:    opt.OffshootLabels,
+		Name:        opt.ServiceAccount.Name,
+		Namespace:   opt.ServiceAccount.Namespace,
+		Labels:      opt.OffshootLabels,
+		Annotations: opt.ServiceAccount.Annotations,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(
 		context.TODO(),

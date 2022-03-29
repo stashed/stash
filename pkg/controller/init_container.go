@@ -30,9 +30,9 @@ import (
 
 	stringz "gomodules.xyz/x/strings"
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
-	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
@@ -64,7 +64,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 			},
 			Owner:          owner,
 			OffshootLabels: inv.GetLabels(),
-			ServiceAccount: kmapi.ObjectReference{
+			ServiceAccount: metav1.ObjectMeta{
 				Name:      sa,
 				Namespace: invMeta.Namespace,
 			},

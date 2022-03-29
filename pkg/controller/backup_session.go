@@ -267,6 +267,8 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 	invMeta := inv.GetObjectMeta()
 	ownerRef := inv.GetOwnerRef()
 	invRef, err := inv.GetObjectRef()
+	runtimeSettings := inv.GetRuntimeSettings()
+
 	if err != nil {
 		return err
 	}
@@ -385,6 +387,9 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 			in.Spec.BackoffLimit = pointer.Int32P(0)
+			if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
+				in.Spec.Template.Annotations = runtimeSettings.Pod.PodAnnotations
+			}
 			return in
 		},
 		metav1.PatchOptions{},
@@ -736,6 +741,7 @@ func explicitInputs(params []appcat.Param) map[string]string {
 func (c *StashController) getBackupRBACOptions(inv invoker.BackupInvoker) (stash_rbac.RBACOptions, error) {
 	invMeta := inv.GetObjectMeta()
 	repo := inv.GetRepoRef()
+	runtimeSettings := inv.GetRuntimeSettings()
 
 	rbacOptions := stash_rbac.RBACOptions{
 		KubeClient: c.kubeClient,
@@ -745,9 +751,13 @@ func (c *StashController) getBackupRBACOptions(inv invoker.BackupInvoker) (stash
 		},
 		Owner:          inv.GetOwnerRef(),
 		OffshootLabels: inv.GetLabels(),
-		ServiceAccount: kmapi.ObjectReference{
+		ServiceAccount: metav1.ObjectMeta{
 			Namespace: invMeta.Namespace,
 		},
+	}
+
+	if runtimeSettings.Pod != nil && runtimeSettings.Pod.ServiceAccountAnnotations != nil {
+		rbacOptions.ServiceAccount.Annotations = runtimeSettings.Pod.ServiceAccountAnnotations
 	}
 
 	if repo.Namespace != invMeta.Namespace {
