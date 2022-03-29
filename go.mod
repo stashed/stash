@@ -41,7 +41,7 @@ require (
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20220317043828-5ae0114adcad
 	kmodules.xyz/webhook-runtime v0.0.0-20220317222714-0ddfc9e4c221
-	stash.appscode.dev/apimachinery v0.18.1-0.20220329122136-6508ad7ebdef
+	stash.appscode.dev/apimachinery v0.19.0
 )
 
 require github.com/josharian/intern v1.0.0 // indirect
