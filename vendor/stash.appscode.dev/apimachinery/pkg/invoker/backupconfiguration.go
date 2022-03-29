@@ -115,7 +115,7 @@ func (inv *BackupConfigurationInvoker) GetCondition(target *v1beta1.TargetRef, c
 func (inv *BackupConfigurationInvoker) SetCondition(target *v1beta1.TargetRef, newCondition kmapi.Condition) error {
 	updatedBackupConfig, err := v1beta1_util.UpdateBackupConfigurationStatus(context.TODO(), inv.stashClient.StashV1beta1(), inv.backupConfig.ObjectMeta, func(in *v1beta1.BackupConfigurationStatus) (types.UID, *v1beta1.BackupConfigurationStatus) {
 		in.Conditions = kmapi.SetCondition(in.Conditions, newCondition)
-		in.Phase = calculateBackupInvokerPhase(inv.GetDriver(), in.Conditions)
+		in.Phase = CalculateBackupInvokerPhase(inv.GetDriver(), in.Conditions)
 		return inv.backupConfig.UID, in
 	}, metav1.UpdateOptions{})
 	if err != nil {
