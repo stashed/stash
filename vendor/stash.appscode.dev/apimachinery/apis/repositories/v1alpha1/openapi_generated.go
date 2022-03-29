@@ -17298,6 +17298,12 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_AppBindingSpec(ref common.
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
+					"tlsSecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TLSSecret is the name of the secret that will hold the client certificate and private key associated with the AppBinding.",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
 				Required: []string{"clientConfig"},
 			},
@@ -17376,6 +17382,13 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_ClientConfig(ref common.Re
 							Description: "CABundle is a PEM encoded CA bundle which will be used to validate the serving certificate of this app.",
 							Type:        []string{"string"},
 							Format:      "byte",
+						},
+					},
+					"serverName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServerName is used to verify the hostname on the returned certificates unless InsecureSkipVerify is given. It is also included in the client's handshake to support virtual hosting unless it is an IP address.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -18459,6 +18472,22 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodRuntimeSettings(ref common.Refere
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
+					"podAnnotations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodAnnotations are the annotations that will be attached with the respective Pod",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
@@ -18480,6 +18509,22 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodRuntimeSettings(ref common.Refere
 							Description: "ServiceAccountName is the name of the ServiceAccount to use to run this pod. More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"serviceAccountAnnotations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccountAnnotations are the annotations that will be attached with the respective ServiceAccount",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
 						},
 					},
 					"automountServiceAccountToken": {

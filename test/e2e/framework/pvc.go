@@ -125,6 +125,9 @@ func (fi *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim,
 	}
 
 	err := fi.CreateRestoreSession(restoreSession)
+	if err != nil {
+		return nil, err
+	}
 	fi.AppendToCleanupList(restoreSession)
 
 	By("Waiting for restore process to complete")

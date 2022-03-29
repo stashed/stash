@@ -43,7 +43,7 @@ type PodRuntimeSettings struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty" protobuf:"bytes,2,opt,name=serviceAccountName"`
 	// ServiceAccountAnnotations are the annotations that will be attached with the respective ServiceAccount
 	// +optional
-	ServiceAccountAnnotations map[string]string `json:"serviceAccountAnnotations" protobuf:"bytes,16,rep,name=serviceAccountAnnotations"`
+	ServiceAccountAnnotations map[string]string `json:"serviceAccountAnnotations,omitempty" protobuf:"bytes,16,rep,name=serviceAccountAnnotations"`
 	// AutomountServiceAccountToken indicates whether a service account token should be automatically mounted.
 	// +optional
 	AutomountServiceAccountToken *bool `json:"automountServiceAccountToken,omitempty" protobuf:"varint,3,opt,name=automountServiceAccountToken"`

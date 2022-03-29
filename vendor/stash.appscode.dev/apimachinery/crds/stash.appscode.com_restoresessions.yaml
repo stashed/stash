@@ -2501,6 +2501,12 @@ spec:
                           a node''s labels for the pod to be scheduled on that node.
                           More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/'
                         type: object
+                      podAnnotations:
+                        additionalProperties:
+                          type: string
+                        description: PodAnnotations are the annotations that will
+                          be attached with the respective Pod
+                        type: object
                       priority:
                         description: The priority value. Various system components
                           use this field to find the priority of the pod. When Priority
@@ -2707,6 +2713,12 @@ spec:
                                   takes precedence.
                                 type: string
                             type: object
+                        type: object
+                      serviceAccountAnnotations:
+                        additionalProperties:
+                          type: string
+                        description: ServiceAccountAnnotations are the annotations
+                          that will be attached with the respective ServiceAccount
                         type: object
                       serviceAccountName:
                         description: 'ServiceAccountName is the name of the ServiceAccount
