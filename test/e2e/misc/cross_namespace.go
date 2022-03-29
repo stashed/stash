@@ -191,6 +191,9 @@ var _ = Describe("Cross Namespace", func() {
 			err = f.DeleteRepository(repo)
 			Expect(err).NotTo(HaveOccurred())
 
+			By("Verifying that backup invoker phase is: NotReady")
+			f.EventuallyBackupInvokerPhase(inv).Should(BeEquivalentTo(v1beta1.BackupInvokerNotReady))
+
 			restoredDeployment, err := f.DeployDeployment(framework.RestoredDeployment, int32(1), framework.RestoredVolume, func(dp *apps.Deployment) {
 				dp.Namespace = f.RestoreNamespace()
 			})
