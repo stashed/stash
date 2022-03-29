@@ -48,7 +48,12 @@ type BackupBlueprint struct {
 type BackupBlueprintSpec struct {
 	// RepositorySpec is used to create Repository crd for respective workload
 	v1alpha1.RepositorySpec `json:",inline"`
-	Schedule                string `json:"schedule,omitempty"`
+	// RepoNamespace specifies the namespace where the Repository will be created for the respective target
+	// +optional
+	RepoNamespace string `json:"repoNamespace,omitempty"`
+	// Schedule specifies the default schedule for backup.
+	// You can overwrite this schedule for a particular target using 'stash.appscode.com/schedule' annotation.
+	Schedule string `json:"schedule,omitempty"`
 	// Task specify the Task crd that specifies steps for backup process
 	// +optional
 	Task TaskRef `json:"task,omitempty"`

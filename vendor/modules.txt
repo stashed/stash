@@ -1417,7 +1417,7 @@ kmodules.xyz/custom-resources/util/siteinfo
 ## explicit; go 1.15
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
-# kmodules.xyz/offshoot-api v0.0.0-20220323112402-3b0fd2ea77d6
+# kmodules.xyz/offshoot-api v0.0.0-20220329041708-c076b2bcb0f8
 ## explicit; go 1.15
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util
@@ -1439,7 +1439,7 @@ kmodules.xyz/openshift/client/informers/externalversions/security
 kmodules.xyz/openshift/client/informers/externalversions/security/v1
 kmodules.xyz/openshift/client/listers/apps/v1
 kmodules.xyz/openshift/client/listers/security/v1
-# kmodules.xyz/prober v0.0.0-20210618020259-5836fb959027
+# kmodules.xyz/prober v0.0.0-20220317043828-5ae0114adcad
 ## explicit; go 1.15
 kmodules.xyz/prober/api
 kmodules.xyz/prober/api/v1
@@ -1586,7 +1586,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.3.0
 ## explicit; go 1.12
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.18.1-0.20220308093046-7df8eca4f066
+# stash.appscode.dev/apimachinery v0.18.1-0.20220329082622-9db91ba2a472
 ## explicit; go 1.17
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
