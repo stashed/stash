@@ -36,7 +36,7 @@ func Namespace() string {
 		return ns
 	}
 
-	if ns := os.Getenv("MY_POD_NAMESPACE"); ns != "" {
+	if ns := os.Getenv("POD_NAMESPACE"); ns != "" {
 		return ns
 	}
 

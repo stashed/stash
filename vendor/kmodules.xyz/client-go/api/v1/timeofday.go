@@ -43,8 +43,16 @@ func (t *TimeOfDay) DeepCopyInto(out *TimeOfDay) {
 
 // NewTime returns a wrapped instance of the provided time
 func NewTime(t time.Time) TimeOfDay {
-	utc := t.UTC()
-	return TimeOfDay{time.Date(0, 0, 0, utc.Hour(), utc.Minute(), utc.Second(), 0, time.UTC)}
+	return TimeOfDay{time.Date(0, 0, 0, t.Hour(), t.Minute(), t.Second(), 0, time.UTC)}
+}
+
+// NewTimeInLocation returns a wrapped instance of the provided time according to location
+func NewTimeInLocation(t time.Time, loc *time.Location) TimeOfDay {
+	if loc == nil {
+		loc = time.UTC
+	}
+	t = t.In(loc)
+	return TimeOfDay{time.Date(0, 0, 0, t.Hour(), t.Minute(), t.Second(), 0, loc)}
 }
 
 // Date returns the TimeOfDay corresponding to the supplied parameters

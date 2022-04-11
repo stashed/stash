@@ -618,7 +618,7 @@ gomodules.xyz/jsonpatch/v2
 # gomodules.xyz/logs v0.0.6
 ## explicit; go 1.16
 gomodules.xyz/logs
-# gomodules.xyz/mergo v0.3.13-0.20210702100041-9d62ff8ece4d
+# gomodules.xyz/mergo v0.3.13-0.20220214162359-48efe39fd402
 ## explicit; go 1.13
 gomodules.xyz/mergo
 # gomodules.xyz/password-generator v0.2.7
@@ -1370,7 +1370,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20220317213815-2a6d5a5784f2
+# kmodules.xyz/client-go v0.0.0-20220404224906-af7b092cfac5
 ## explicit; go 1.17
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -1447,7 +1447,7 @@ kmodules.xyz/prober/probe
 kmodules.xyz/prober/probe/exec
 kmodules.xyz/prober/probe/http
 kmodules.xyz/prober/probe/tcp
-# kmodules.xyz/resource-metadata v0.10.12
+# kmodules.xyz/resource-metadata v0.10.15
 ## explicit; go 1.17
 kmodules.xyz/resource-metadata/apis/core/v1alpha1
 # kmodules.xyz/resource-metrics v0.0.8
