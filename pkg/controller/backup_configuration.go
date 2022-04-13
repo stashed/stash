@@ -164,19 +164,16 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 		return nil
 	}
 
-	err = inv.AddFinalizer()
-	if err != nil {
+	if err := inv.AddFinalizer(); err != nil {
 		return err
 	}
 
-	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
-		shouldRequeue, err := c.checkForResticSnapshotterRequirements(inv, inv)
-		if err != nil {
-			return err
-		}
-		if shouldRequeue {
-			return c.requeueBackupInvoker(inv, key)
-		}
+	shouldRequeue, err := c.validateDriverRequirements(inv)
+	if err != nil {
+		return err
+	}
+	if shouldRequeue {
+		return c.requeueBackupInvoker(inv, key)
 	}
 
 	someTargetMissing := false
@@ -559,6 +556,15 @@ func (c *StashController) cleanupBackupInvokerOffshoots(inv invoker.BackupInvoke
 	return c.deleteRepositoryReferences(inv)
 }
 
+func (c *StashController) validateDriverRequirements(inv invoker.BackupInvoker) (bool, error) {
+	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
+		return c.checkForResticSnapshotterRequirements(inv, inv)
+	} else if inv.GetDriver() == api_v1beta1.VolumeSnapshotter {
+		return false, c.checkVolumeSnapshotterRequirements(inv)
+	}
+	return false, nil
+}
+
 func (c *StashController) checkForResticSnapshotterRequirements(inv interface{}, r repoReferenceHandler) (bool, error) {
 	repository, err := c.checkForRepositoryExistence(inv, r)
 	if err != nil {
@@ -591,6 +597,11 @@ func (c *StashController) checkForResticSnapshotterRequirements(inv interface{},
 		return false, conditions.SetValidationPassedToFalse(inv, err)
 	}
 	return false, conditions.SetValidationPassedToTrue(inv)
+}
+
+func (c *StashController) checkVolumeSnapshotterRequirements(inv interface{}) error {
+	// nothing to do
+	return conditions.SetValidationPassedToTrue(inv)
 }
 
 func (c *StashController) checkForRepositoryExistence(inv interface{}, r repoReferenceHandler) (*api_v1alpha1.Repository, error) {
