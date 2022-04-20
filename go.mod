@@ -37,7 +37,7 @@ require (
 	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
 	kmodules.xyz/custom-resources v0.0.0-20220317220154-7beb809b1f5e
 	kmodules.xyz/objectstore-api v0.0.0-20220317220441-f1d593d0a778
-	kmodules.xyz/offshoot-api v0.0.0-20220329041708-c076b2bcb0f8
+	kmodules.xyz/offshoot-api v0.0.0-20220420055916-fefb02c26514
 	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
 	kmodules.xyz/prober v0.0.0-20220317043828-5ae0114adcad
 	kmodules.xyz/webhook-runtime v0.0.0-20220317222714-0ddfc9e4c221

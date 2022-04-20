@@ -123,5 +123,8 @@ func ApplyPodRuntimeSettings(podSpec core.PodSpec, settings ofst.PodRuntimeSetti
 	if settings.EnableServiceLinks != nil {
 		podSpec.EnableServiceLinks = settings.EnableServiceLinks
 	}
+	if settings.TopologySpreadConstraints != nil {
+		podSpec.TopologySpreadConstraints = settings.TopologySpreadConstraints
+	}
 	return podSpec
 }

@@ -1417,7 +1417,7 @@ kmodules.xyz/custom-resources/util/siteinfo
 ## explicit; go 1.15
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
-# kmodules.xyz/offshoot-api v0.0.0-20220329041708-c076b2bcb0f8
+# kmodules.xyz/offshoot-api v0.0.0-20220420055916-fefb02c26514
 ## explicit; go 1.15
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util

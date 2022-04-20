@@ -220,6 +220,17 @@ type PodSpec struct {
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 	// +optional
 	ContainerSecurityContext *core.SecurityContext `json:"containerSecurityContext,omitempty" protobuf:"bytes,23,opt,name=containerSecurityContext"`
+
+	// TopologySpreadConstraints describes how a group of pods ought to spread across topology
+	// domains. Scheduler will schedule pods in a way which abides by the constraints.
+	// All topologySpreadConstraints are ANDed.
+	// +optional
+	// +patchMergeKey=topologyKey
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=topologyKey
+	// +listMapKey=whenUnsatisfiable
+	TopologySpreadConstraints []core.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty" patchStrategy:"merge" patchMergeKey:"topologyKey" protobuf:"bytes,24,rep,name=topologySpreadConstraints"`
 }
 
 // ServiceTemplateSpec describes the data a service should have when created from a template
