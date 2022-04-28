@@ -33,18 +33,16 @@ require (
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kubernetes v1.21.1
-	kmodules.xyz/client-go v0.0.0-20220404224906-af7b092cfac5
-	kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
-	kmodules.xyz/custom-resources v0.0.0-20220317220154-7beb809b1f5e
+	kmodules.xyz/client-go v0.0.0-20220427165208-36281a681909
+	kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a
+	kmodules.xyz/custom-resources v0.0.0-20220422215041-237eae1d7ddd
 	kmodules.xyz/objectstore-api v0.0.0-20220317220441-f1d593d0a778
 	kmodules.xyz/offshoot-api v0.0.0-20220420055916-fefb02c26514
-	kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
-	kmodules.xyz/prober v0.0.0-20220317043828-5ae0114adcad
+	kmodules.xyz/openshift v0.0.0-20220317220943-4cb898e77b51
+	kmodules.xyz/prober v0.0.0-20220317221229-28d263b091df
 	kmodules.xyz/webhook-runtime v0.0.0-20220317222714-0ddfc9e4c221
-	stash.appscode.dev/apimachinery v0.19.0
+	stash.appscode.dev/apimachinery v0.19.1-0.20220425033401-c840c081133c
 )
-
-require github.com/josharian/intern v1.0.0 // indirect
 
 require (
 	cloud.google.com/go v0.65.0 // indirect
@@ -100,9 +98,11 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -141,7 +141,7 @@ require (
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8 // indirect
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect

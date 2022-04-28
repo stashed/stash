@@ -175,6 +175,11 @@ func (in *MetricsConfigurationList) DeepCopyObject() runtime.Object {
 func (in *MetricsConfigurationSpec) DeepCopyInto(out *MetricsConfigurationSpec) {
 	*out = *in
 	out.TargetRef = in.TargetRef
+	if in.CommonLabels != nil {
+		in, out := &in.CommonLabels, &out.CommonLabels
+		*out = make([]Label, len(*in))
+		copy(*out, *in)
+	}
 	if in.Metrics != nil {
 		in, out := &in.Metrics, &out.Metrics
 		*out = make([]Metrics, len(*in))

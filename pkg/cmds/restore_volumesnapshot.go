@@ -19,11 +19,9 @@ package cmds
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
-	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
@@ -52,7 +50,7 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 		masterURL      string
 		kubeconfigPath string
 		opt            = VSoption{
-			namespace: meta.Namespace(),
+			namespace: meta.PodNamespace(),
 			metrics: metrics.MetricsOptions{
 				Enabled: true,
 			},
@@ -81,7 +79,7 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 			opt.metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), inv.GetObjectMeta().Namespace, inv.GetObjectMeta().Name)
 
 			for _, targetInfo := range inv.GetTargetInfo() {
-				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetRef.Kind, opt.targetRef.Name, opt.targetRef.Namespace) {
 					restoreOutput, err := opt.restoreVolumeSnapshot(targetInfo)
 					if err != nil {
 						return err
@@ -103,8 +101,9 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.invokerKind, "invoker-kind", opt.invokerKind, "Kind of the restore invoker")
 	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", opt.invokerName, "Name of the respective restore invoker")
-	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
-	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Name, "target-name", opt.targetRef.Name, "Name of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Namespace, "target-namespace", opt.targetRef.Namespace, "Namespace of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Kind, "target-kind", opt.targetRef.Kind, "Kind of the Target")
 	cmd.Flags().BoolVar(&opt.metrics.Enabled, "metrics-enabled", opt.metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metrics.PushgatewayURL, "pushgateway-url", opt.metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
 	return cmd
@@ -117,7 +116,7 @@ func (opt *VSoption) restoreVolumeSnapshot(targetInfo invoker.RestoreTargetInfo)
 	// If preRestore hook is specified, then execute those hooks first
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PreRestore != nil {
 		klog.Infoln("Executing preRestore hooks........")
-		podName := os.Getenv(apis.KeyPodName)
+		podName := meta.PodName()
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
 		}
@@ -243,7 +242,7 @@ func (opt *VSoption) restoreVolumeSnapshot(targetInfo invoker.RestoreTargetInfo)
 	// If postRestore hook is specified, then execute those hooks after restore
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {
 		klog.Infoln("Executing postRestore hooks........")
-		podName := os.Getenv(apis.KeyPodName)
+		podName := meta.PodName()
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
 		}

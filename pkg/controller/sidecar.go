@@ -51,7 +51,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.Back
 
 	// Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != apis.CallerWebhook {
-		rbacOptions, err := c.getBackupRBACOptions(inv)
+		rbacOptions, err := c.getBackupRBACOptions(inv, nil)
 		if err != nil {
 			return err
 		}

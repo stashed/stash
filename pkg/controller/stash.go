@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -41,6 +40,7 @@ import (
 	kutil "kmodules.xyz/client-go"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/meta"
 	meta_util "kmodules.xyz/client-go/meta"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 	ocapps_util "kmodules.xyz/openshift/client/clientset/versioned/typed/apps/v1/util"
@@ -121,11 +121,12 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 		APIVersion: w.APIVersion,
 		Kind:       w.Kind,
 		Name:       w.Name,
+		Namespace:  w.Namespace,
 	}
 
 	if !util.HasStashSidecar(w.Spec.Template.Spec.Containers) {
 		// delete backup ConfigMap lock
-		err := util.DeleteBackupConfigMapLock(c.kubeClient, w.Namespace, r)
+		err := util.DeleteBackupConfigMapLock(c.kubeClient, r)
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
@@ -138,7 +139,7 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 
 	if !util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers) {
 		// delete restore ConfigMap lock
-		err := util.DeleteRestoreConfigMapLock(c.kubeClient, w.Namespace, r)
+		err := util.DeleteRestoreConfigMapLock(c.kubeClient, r)
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
@@ -146,7 +147,7 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 	return nil
 }
 
-func (c *StashController) getTotalHosts(target interface{}, namespace string, driver api_v1beta1.Snapshotter) (*int32, error) {
+func (c *StashController) getTotalHosts(target interface{}, driver api_v1beta1.Snapshotter) (*int32, error) {
 	// for cluster backup/restore, target is nil. in this case, there is only one host
 	var targetRef api_v1beta1.TargetRef
 	var rep *int32
@@ -193,16 +194,16 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 	}
 
 	if driver == api_v1beta1.VolumeSnapshotter {
-		return c.getTotalHostForVolumeSnapshotter(targetRef, namespace, rep)
+		return c.getTotalHostForVolumeSnapshotter(targetRef, rep)
 	} else {
-		return c.getTotalHostForRestic(targetRef, namespace)
+		return c.getTotalHostForRestic(targetRef)
 	}
 }
 
-func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1.TargetRef, namespace string, replica *int32) (*int32, error) {
+func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1.TargetRef, replica *int32) (*int32, error) {
 	switch targetRef.Kind {
 	case apis.KindStatefulSet:
-		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		ss, err := c.kubeClient.AppsV1().StatefulSets(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -211,28 +212,28 @@ func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1
 		}
 		return pointer.Int32P(pointer.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
 	case apis.KindDeployment:
-		deployment, err := c.kubeClient.AppsV1().Deployments(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		deployment, err := c.kubeClient.AppsV1().Deployments(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(deployment.Spec.Template.Spec.Volumes), err
 
 	case apis.KindDaemonSet:
-		daemon, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		daemon, err := c.kubeClient.AppsV1().DaemonSets(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(daemon.Spec.Template.Spec.Volumes), err
 
 	case apis.KindReplicaSet:
-		rs, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		rs, err := c.kubeClient.AppsV1().StatefulSets(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(rs.Spec.Template.Spec.Volumes), err
 
 	case apis.KindReplicationController:
-		rc, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		rc, err := c.kubeClient.CoreV1().ReplicationControllers(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -243,18 +244,18 @@ func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1
 	}
 }
 
-func (c *StashController) getTotalHostForRestic(targetRef api_v1beta1.TargetRef, namespace string) (*int32, error) {
+func (c *StashController) getTotalHostForRestic(targetRef api_v1beta1.TargetRef) (*int32, error) {
 	switch targetRef.Kind {
 	// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
 	case apis.KindStatefulSet:
-		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		ss, err := c.kubeClient.AppsV1().StatefulSets(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return ss.Spec.Replicas, nil
 	// all Daemon pod will take backup/restore. so total number of hosts will be number of ready replicas
 	case apis.KindDaemonSet:
-		dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		dmn, err := c.kubeClient.AppsV1().DaemonSets(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -276,7 +277,7 @@ func countPVC(volList []core.Volume) *int32 {
 }
 
 func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, owner *metav1.OwnerReference) ([]core.LocalObjectReference, error) {
-	operatorNamespace := os.Getenv("MY_POD_NAMESPACE")
+	operatorNamespace := meta.PodNamespace()
 	if operatorNamespace == "" {
 		operatorNamespace = "kube-system"
 	}
@@ -313,7 +314,7 @@ func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, 
 }
 
 func (c *StashController) ensureLatestSidecarConfiguration(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) error {
-	obj, err := c.getTargetWorkload(inv, targetInfo)
+	obj, err := c.getTargetWorkload(targetInfo)
 	if err != nil {
 		return err
 	}
@@ -333,46 +334,45 @@ func (c *StashController) ensureLatestSidecarConfiguration(inv invoker.BackupInv
 	return c.patchTargetWorkload(w, obj, targetInfo)
 }
 
-func (c *StashController) getTargetWorkload(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) (runtime.Object, error) {
-	invMeta := inv.GetObjectMeta()
+func (c *StashController) getTargetWorkload(targetInfo invoker.BackupTargetInfo) (runtime.Object, error) {
 	switch targetInfo.Target.Ref.Kind {
 	case apis.KindDeployment:
-		dp, err := c.dpLister.Deployments(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		dp, err := c.dpLister.Deployments(targetInfo.Target.Ref.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		dp.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDeployment))
 		return dp, nil
 	case apis.KindDaemonSet:
-		ds, err := c.dsLister.DaemonSets(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		ds, err := c.dsLister.DaemonSets(targetInfo.Target.Ref.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		ds.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDaemonSet))
 		return ds, nil
 	case apis.KindStatefulSet:
-		ss, err := c.ssLister.StatefulSets(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		ss, err := c.ssLister.StatefulSets(targetInfo.Target.Ref.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		ss.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindStatefulSet))
 		return ss, nil
 	case apis.KindReplicaSet:
-		rs, err := c.rsLister.ReplicaSets(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		rs, err := c.rsLister.ReplicaSets(targetInfo.Target.Ref.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		rs.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindReplicaSet))
 		return rs, nil
 	case apis.KindReplicationController:
-		rc, err := c.rcLister.ReplicationControllers(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		rc, err := c.rcLister.ReplicationControllers(targetInfo.Target.Ref.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}
 		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindReplicationController))
 		return rc, nil
 	case apis.KindDeploymentConfig:
-		dc, err := c.dcLister.DeploymentConfigs(invMeta.Namespace).Get(targetInfo.Target.Ref.Name)
+		dc, err := c.dcLister.DeploymentConfigs(targetInfo.Target.Ref.Namespace).Get(targetInfo.Target.Ref.Name)
 		if err != nil {
 			return nil, err
 		}

@@ -219,6 +219,8 @@ spec:
                           type: string
                         name:
                           type: string
+                        namespace:
+                          type: string
                       type: object
                     stats:
                       description: Stats shows statistics of individual hosts for

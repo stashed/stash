@@ -16100,6 +16100,20 @@ func schema_custom_resources_apis_metrics_v1alpha1_MetricsConfigurationSpec(ref 
 							Ref:         ref("kmodules.xyz/custom-resources/apis/metrics/v1alpha1.TargetRef"),
 						},
 					},
+					"commonLabels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CommonLabels defines the common labels added to all the exported metrics",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kmodules.xyz/custom-resources/apis/metrics/v1alpha1.Label"),
+									},
+								},
+							},
+						},
+					},
 					"metrics": {
 						SchemaProps: spec.SchemaProps{
 							Description: "List of Metrics configuration for the resource object defined in TargetRef",
@@ -16119,7 +16133,7 @@ func schema_custom_resources_apis_metrics_v1alpha1_MetricsConfigurationSpec(ref 
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/custom-resources/apis/metrics/v1alpha1.Metrics", "kmodules.xyz/custom-resources/apis/metrics/v1alpha1.TargetRef"},
+			"kmodules.xyz/custom-resources/apis/metrics/v1alpha1.Label", "kmodules.xyz/custom-resources/apis/metrics/v1alpha1.Metrics", "kmodules.xyz/custom-resources/apis/metrics/v1alpha1.TargetRef"},
 	}
 }
 
@@ -16235,14 +16249,6 @@ func schema_custom_resources_apis_metrics_v1alpha1_TargetRef(ref common.Referenc
 				Description: "TargetRef contains the Object's apiVersion & kind to specify the target resource",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. In CamelCase.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
 							Description: "APIVersion defines the versioned schema of this representation of an object.",
@@ -16251,8 +16257,16 @@ func schema_custom_resources_apis_metrics_v1alpha1_TargetRef(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. In CamelCase.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"kind", "apiVersion"},
+				Required: []string{"apiVersion", "kind"},
 			},
 		},
 	}

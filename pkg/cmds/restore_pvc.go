@@ -47,7 +47,7 @@ func NewCmdRestorePVC() *cobra.Command {
 		},
 		masterURL:      "",
 		kubeConfigPath: "",
-		namespace:      meta.Namespace(),
+		namespace:      meta.PodNamespace(),
 	}
 
 	cmd := &cobra.Command{
@@ -72,7 +72,7 @@ func NewCmdRestorePVC() *cobra.Command {
 			}
 
 			for _, targetInfo := range inv.GetTargetInfo() {
-				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetRef.Kind, opt.targetRef.Name, opt.targetRef.Namespace) {
 
 					opt.restoreOpt.Host, err = util.GetHostName(targetInfo.Target)
 					if err != nil {
@@ -127,8 +127,9 @@ func NewCmdRestorePVC() *cobra.Command {
 
 	cmd.Flags().StringVar(&opt.invokerKind, "invoker-kind", opt.invokerKind, "Kind of the backup invoker")
 	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", opt.invokerName, "Name of the respective backup invoker")
-	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
-	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Name, "target-name", opt.targetRef.Name, "Name of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Namespace, "target-namespace", opt.targetRef.Namespace, "Namespace of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Kind, "target-kind", opt.targetRef.Kind, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.StorageSecret.Name, "storage-secret-name", opt.StorageSecret.Name, "Name of the StorageSecret")
 	cmd.Flags().StringVar(&opt.StorageSecret.Namespace, "storage-secret-namespace", opt.StorageSecret.Namespace, "Namespace of the StorageSecret")
 	cmd.Flags().StringVar(&opt.outputDir, "output-dir", opt.outputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")

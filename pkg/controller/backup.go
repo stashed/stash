@@ -55,9 +55,7 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 	if newbc != nil && !util.BackupConfigurationEqual(oldbc, newbc) {
 		inv := invoker.NewBackupConfigurationInvoker(c.stashClient, newbc)
 		for _, targetInfo := range inv.GetTargetInfo() {
-			if targetInfo.Target != nil &&
-				targetInfo.Target.Ref.Kind == w.Kind &&
-				targetInfo.Target.Ref.Name == w.Name {
+			if util.IsBackupTarget(targetInfo.Target, w, inv.GetObjectMeta().Namespace) {
 				err = c.ensureBackupSidecar(w, inv, targetInfo, caller)
 				if err != nil {
 					return false, c.handleSidecarInjectionFailure(w, inv, targetInfo.Target.Ref, err)

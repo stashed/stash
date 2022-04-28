@@ -25,20 +25,22 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
-	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
-	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
-	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
@@ -102,7 +104,7 @@ func GetHostName(target interface{}) (string, error) {
 	case apis.KindStatefulSet:
 		// for StatefulSet, host name is 'host-<pod ordinal>'. stash operator set pod's name as 'POD_NAME' env
 		// in the sidecar/init-container through downward api. we have to parse the pod name to get ordinal.
-		podName := os.Getenv(apis.KeyPodName)
+		podName := meta_util.PodName()
 		if podName == "" {
 			return "", fmt.Errorf("missing 'POD_NAME' env in StatefulSet: %s", apis.KindStatefulSet)
 		}
@@ -131,17 +133,24 @@ func GetHostName(target interface{}) (string, error) {
 	}
 }
 
-func BackupModel(kind string) string {
-	switch kind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindStatefulSet, apis.KindDaemonSet, apis.KindDeploymentConfig:
+func BackupModel(kind, taskName string) string {
+	if taskName == "" && isWorkload(kind) {
 		return apis.ModelSidecar
-	default:
-		return apis.ModelCronJob
 	}
+	return apis.ModelCronJob
 }
 
-func RestoreModel(kind string) string {
-	return BackupModel(kind)
+func isWorkload(kind string) bool {
+	return kind == apis.KindDeployment ||
+		kind == apis.KindReplicaSet ||
+		kind == apis.KindReplicationController ||
+		kind == apis.KindStatefulSet ||
+		kind == apis.KindDaemonSet ||
+		kind == apis.KindDeploymentConfig
+}
+
+func RestoreModel(kind, taskName string) string {
+	return BackupModel(kind, taskName)
 }
 
 func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string, err error) {
@@ -244,56 +253,55 @@ func AttachPVC(podSpec core.PodSpec, volumes []core.Volume, volumeMounts []core.
 	return podSpec
 }
 
-type WorkloadClients struct {
-	KubeClient       kubernetes.Interface
-	OcClient         oc_cs.Interface
-	StashClient      cs.Interface
-	CRDClient        crd_cs.Interface
-	AppCatalogClient appcatalog_cs.Interface
-}
-
-func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace string) (bool, error) {
-	var err error
-	switch target.Kind {
-	case apis.KindDeployment:
-		if _, err = wc.KubeClient.AppsV1().Deployments(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
-			return true, nil
-		}
-	case apis.KindDaemonSet:
-		if _, err = wc.KubeClient.AppsV1().DaemonSets(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
-			return true, nil
-		}
-	case apis.KindStatefulSet:
-		if _, err = wc.KubeClient.AppsV1().StatefulSets(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
-			return true, nil
-		}
-	case apis.KindReplicationController:
-		if _, err = wc.KubeClient.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
-			return true, nil
-		}
-	case apis.KindReplicaSet:
-		if _, err = wc.KubeClient.AppsV1().ReplicaSets(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
-			return true, nil
-		}
-	case apis.KindDeploymentConfig:
-		if wc.OcClient != nil {
-			if _, err = wc.OcClient.AppsV1().DeploymentConfigs(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
-				return true, nil
-			}
-		}
-	case apis.KindPersistentVolumeClaim:
-		if _, err = wc.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
-			return true, nil
-		}
-	case apis.KindAppBinding:
-		if _, err = wc.AppCatalogClient.AppcatalogV1alpha1().AppBindings(namespace).Get(context.TODO(), target.Name, metav1.GetOptions{}); err == nil {
-			return true, nil
-		}
+func IsTargetExist(config *rest.Config, target api_v1beta1.TargetRef) (bool, error) {
+	if target.Kind == api_v1beta1.TargetKindEmpty {
+		return true, nil
 	}
-	if err != nil && !kerr.IsNotFound(err) {
+
+	mapping, err := getRESTMapping(config, target)
+	if err != nil {
 		return false, err
 	}
-	return false, nil
+
+	di, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return false, err
+	}
+
+	var ri dynamic.ResourceInterface
+	ri = di.Resource(mapping.Resource)
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		ri = di.Resource(mapping.Resource).Namespace(target.Namespace)
+	}
+
+	_, err = ri.Get(context.TODO(), target.Name, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func getRESTMapping(config *rest.Config, target api_v1beta1.TargetRef) (*meta.RESTMapping, error) {
+	disc, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	apiResources, err := restmapper.GetAPIGroupResources(disc)
+	if err != nil {
+		return nil, err
+	}
+
+	gv, err := schema.ParseGroupVersion(target.APIVersion)
+	if err != nil {
+		return nil, err
+	}
+	gvk := gv.WithKind(target.Kind)
+
+	mapper := restmapper.NewDiscoveryRESTMapper(apiResources)
+	return mapper.RESTMapping(schema.GroupKind{Group: gvk.Group, Kind: gvk.Kind}, gvk.Version)
 }
 
 // CreateBatchPVC creates a batch of PVCs whose definitions has been provided in pvcList argument
@@ -415,7 +423,7 @@ func ResourceKindShortForm(kind string) string {
 	}
 }
 
-func HookExecutorContainer(name string, shiblings []core.Container, invokerKind, invokerName, targetKind, targetName string) core.Container {
+func HookExecutorContainer(name string, shiblings []core.Container, invokerKind, invokerName string, target api_v1beta1.TargetRef) core.Container {
 	hookExecutor := core.Container{
 		Name:  name,
 		Image: "${STASH_DOCKER_REGISTRY:=appscode}/${STASH_DOCKER_IMAGE:=stash}:${STASH_IMAGE_TAG:=latest}",
@@ -424,8 +432,9 @@ func HookExecutorContainer(name string, shiblings []core.Container, invokerKind,
 			"--backupsession=${BACKUP_SESSION:=}",
 			"--invoker-kind=" + invokerKind,
 			"--invoker-name=" + invokerName,
-			"--target-kind=" + targetKind,
-			"--target-name=" + targetName,
+			"--target-kind=" + target.Kind,
+			"--target-namespace=" + target.Namespace,
+			"--target-name=" + target.Name,
 			"--hook-type=${HOOK_TYPE:=}",
 			"--hostname=${HOSTNAME:=}",
 			"--output-dir=${outputDir:=}",

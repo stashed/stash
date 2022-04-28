@@ -60,7 +60,7 @@ func FindBackupConfiguration(lister v1beta1_listers.BackupConfigurationLister, w
 	result := make([]*v1beta1_api.BackupConfiguration, 0)
 	// keep only those BackupConfiguration that has this workload as target
 	for _, bc := range backupConfigurations {
-		if bc.DeletionTimestamp == nil && IsBackupTarget(bc.Spec.Target, w) {
+		if bc.DeletionTimestamp == nil && IsBackupTarget(bc.Spec.Target, w, bc.Namespace) {
 			result = append(result, bc)
 		}
 	}

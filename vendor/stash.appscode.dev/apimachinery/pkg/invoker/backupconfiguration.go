@@ -137,7 +137,7 @@ func (inv *BackupConfigurationInvoker) GetTargetInfo() []BackupTargetInfo {
 	return []BackupTargetInfo{
 		{
 			Task:                  inv.backupConfig.Spec.Task,
-			Target:                inv.backupConfig.Spec.Target,
+			Target:                getBackupTarget(inv.backupConfig.Spec.Target, inv.backupConfig.Namespace),
 			RuntimeSettings:       inv.backupConfig.Spec.RuntimeSettings,
 			TempDir:               inv.backupConfig.Spec.TempDir,
 			InterimVolumeTemplate: inv.backupConfig.Spec.InterimVolumeTemplate,

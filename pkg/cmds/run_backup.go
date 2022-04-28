@@ -41,7 +41,7 @@ func NewCmdRunBackup() *cobra.Command {
 	opt := backup.BackupSessionController{
 		MasterURL:      "",
 		KubeconfigPath: "",
-		Namespace:      meta.Namespace(),
+		Namespace:      meta.PodNamespace(),
 		MaxNumRequeues: 5,
 		NumThreads:     1,
 		ResyncPeriod:   5 * time.Minute,
@@ -80,7 +80,7 @@ func NewCmdRunBackup() *cobra.Command {
 			}
 
 			for _, targetInfo := range inv.GetTargetInfo() {
-				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.BackupTargetKind, opt.BackupTargetName) {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.TargetRef.Kind, opt.TargetRef.Name, opt.TargetRef.Namespace) {
 
 					opt.Host, err = util.GetHostName(targetInfo.Target)
 					if err != nil {
@@ -106,8 +106,9 @@ func NewCmdRunBackup() *cobra.Command {
 	cmd.Flags().StringVar(&opt.KubeconfigPath, "kubeconfig", opt.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.InvokerKind, "invoker-kind", opt.InvokerKind, "Kind of the backup invoker")
 	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective backup invoker")
-	cmd.Flags().StringVar(&opt.BackupTargetKind, "target-kind", opt.BackupTargetKind, "Kind of the Target")
-	cmd.Flags().StringVar(&opt.BackupTargetName, "target-name", opt.BackupTargetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.TargetRef.Kind, "target-kind", opt.TargetRef.Kind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.TargetRef.Name, "target-name", opt.TargetRef.Name, "Name of the Target")
+	cmd.Flags().StringVar(&opt.TargetRef.Namespace, "target-namespace", opt.TargetRef.Namespace, "Namespace of the Target")
 	cmd.Flags().StringVar(&opt.Host, "host", opt.Host, "Name of the host that will be backed up")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
@@ -117,6 +118,6 @@ func NewCmdRunBackup() *cobra.Command {
 	return cmd
 }
 
-func targetMatched(tref v1beta1.TargetRef, expectedKind, expectedName string) bool {
-	return tref.Kind == expectedKind && tref.Name == expectedName
+func targetMatched(tref v1beta1.TargetRef, expectedKind, expectedName, expectedNamespace string) bool {
+	return tref.Kind == expectedKind && tref.Namespace == expectedNamespace && tref.Name == expectedName
 }

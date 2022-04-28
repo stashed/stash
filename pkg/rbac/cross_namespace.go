@@ -26,7 +26,6 @@ import (
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"kmodules.xyz/client-go/meta"
 	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
@@ -96,12 +95,13 @@ func (opt *RBACOptions) ensureCrossNamespaceRoleBinding() error {
 }
 
 func (opt *RBACOptions) getRoleBindingName() string {
-	return meta.NameWithSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name)
+	return meta_util.ValidNameWithPrefixNSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name, opt.Suffix)
 }
 
 func (opt *RBACOptions) getCrossNamespaceRoleName() string {
-	return meta_util.NameWithPrefix(
+	return meta_util.ValidNameWithPrefixNSuffix(
 		opt.Invoker.Namespace,
 		strings.Join([]string{strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name}, "-"),
+		opt.Suffix,
 	)
 }

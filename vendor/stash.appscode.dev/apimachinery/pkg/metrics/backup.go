@@ -313,7 +313,7 @@ func (metricOpt *MetricsOptions) SendBackupTargetMetrics(config *rest.Config, i 
 		return err
 	}
 	// generate target related labels
-	targetLabels, err := targetLabels(config, targetRef, i.GetObjectMeta().Namespace)
+	targetLabels, err := targetLabels(config, targetRef, targetRef.Namespace)
 	if err != nil {
 		return err
 	}

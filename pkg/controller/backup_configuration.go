@@ -31,7 +31,6 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/eventer"
-	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/pointer"
@@ -73,8 +72,7 @@ func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				bc := obj.(*api_v1beta1.BackupConfiguration)
-
-				return nil, c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace)
+				return nil, c.validateBackupConfiguration(bc)
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				bc := newObj.(*api_v1beta1.BackupConfiguration)
@@ -83,10 +81,20 @@ func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
 					return nil, nil
 				}
 
-				return nil, c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace)
+				return nil, c.validateBackupConfiguration(bc)
 			},
 		},
 	)
+}
+
+func (c *StashController) validateBackupConfiguration(bc *api_v1beta1.BackupConfiguration) error {
+	if bc.Spec.Target != nil {
+		err := verifyCrossNamespacePermission(bc.ObjectMeta, bc.Spec.Target.Ref, bc.Spec.Task.Name)
+		if err != nil {
+			return err
+		}
+	}
+	return c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace)
 }
 
 func (c *StashController) initBackupConfigurationWatcher() {
@@ -180,19 +188,11 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 	for _, targetInfo := range inv.GetTargetInfo() {
 		if targetInfo.Target != nil {
 			tref := targetInfo.Target.Ref
-			wc := util.WorkloadClients{
-				KubeClient:       c.kubeClient,
-				OcClient:         c.ocClient,
-				StashClient:      c.stashClient,
-				CRDClient:        c.crdClient,
-				AppCatalogClient: c.appCatalogClient,
-			}
-			targetExist, err := wc.IsTargetExist(tref, invMeta.Namespace)
+			targetExist, err := util.IsTargetExist(c.clientConfig, tref)
 			if err != nil {
-				klog.Errorf("Failed to check whether %s %s %s/%s exist or not. Reason: %v.",
-					tref.APIVersion,
+				klog.Errorf("Failed to check whether Kind: %s Namespace: %s Name: %s exist or not. Reason: %v.",
 					tref.Kind,
-					invMeta.Namespace,
+					tref.Namespace,
 					tref.Name,
 					err.Error(),
 				)
@@ -203,10 +203,9 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 			if !targetExist {
 				// Target does not exist. Log the information.
 				someTargetMissing = true
-				klog.Infof("Backup target %s %s %s/%s does not exist.",
-					tref.APIVersion,
+				klog.Infof("Backup target %s %s/%s does not exist.",
 					tref.Kind,
-					invMeta.Namespace,
+					tref.Namespace,
 					tref.Name)
 				err = conditions.SetBackupTargetFoundConditionToFalse(inv, tref)
 				if err != nil {
@@ -221,8 +220,8 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 				return err
 			}
 			// For sidecar model, ensure the stash sidecar
-			if inv.GetDriver() == api_v1beta1.ResticSnapshotter && util.BackupModel(tref.Kind) == apis.ModelSidecar {
-				err := c.EnsureV1beta1Sidecar(tref, invMeta.Namespace)
+			if inv.GetDriver() == api_v1beta1.ResticSnapshotter && util.BackupModel(tref.Kind, targetInfo.Task.Name) == apis.ModelSidecar {
+				err := c.EnsureV1beta1Sidecar(tref)
 				if err != nil {
 					return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
 				}
@@ -252,20 +251,20 @@ func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.Back
 
 // EnsureV1beta1SidecarDeleted send an event to workload respective controller
 // the workload controller will take care of removing respective sidecar
-func (c *StashController) EnsureV1beta1SidecarDeleted(targetRef api_v1beta1.TargetRef, namespace string) error {
+func (c *StashController) EnsureV1beta1SidecarDeleted(targetRef api_v1beta1.TargetRef) error {
 	return c.sendEventToWorkloadQueue(
 		targetRef.Kind,
-		namespace,
+		targetRef.Namespace,
 		targetRef.Name,
 	)
 }
 
 // EnsureV1beta1Sidecar send an event to workload respective controller
 // the workload controller will take care of injecting backup sidecar
-func (c *StashController) EnsureV1beta1Sidecar(targetRef api_v1beta1.TargetRef, namespace string) error {
+func (c *StashController) EnsureV1beta1Sidecar(targetRef api_v1beta1.TargetRef) error {
 	return c.sendEventToWorkloadQueue(
 		targetRef.Kind,
-		namespace,
+		targetRef.Namespace,
 		targetRef.Name,
 	)
 }
@@ -340,38 +339,22 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      getBackupCronJobName(invMeta.Name),
+		Name:      getBackupCronJobName(inv),
 		Namespace: invMeta.Namespace,
 		Labels:    inv.GetLabels(),
 	}
 
-	// ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
-	var serviceAccountName string
+	rbacOptions, err := c.getBackupRBACOptions(inv, nil)
+	if err != nil {
+		return err
+	}
+	rbacOptions.PodSecurityPolicyNames = c.getBackupSessionCronJobPSPNames()
 
 	if runtimeSettings.Pod != nil && runtimeSettings.Pod.ServiceAccountName != "" {
-		// ServiceAccount has been specified, so use it.
-		serviceAccountName = runtimeSettings.Pod.ServiceAccountName
-	} else {
-		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object prefixed with stash-trigger.
-		serviceAccountName = meta.Name
-
-		_, _, err := core_util.CreateOrPatchServiceAccount(
-			context.TODO(),
-			c.kubeClient,
-			meta,
-			func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, ownerRef)
-				return in
-			},
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return err
-		}
+		rbacOptions.ServiceAccount.Name = runtimeSettings.Pod.ServiceAccountName
 	}
 
-	// now ensure RBAC stuff for this CronJob
-	err := stash_rbac.EnsureCronJobRBAC(c.kubeClient, ownerRef, invMeta.Namespace, serviceAccountName, c.getBackupSessionCronJobPSPNames(), inv.GetLabels())
+	err = rbacOptions.EnsureCronJobRBAC(meta.Name)
 	if err != nil {
 		return err
 	}
@@ -421,7 +404,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 				in.Spec.JobTemplate.Spec.Template.Spec.Containers, container)
 			in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 			in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 
 			// apply the pod level runtime settings to the CronJob
@@ -441,7 +424,7 @@ func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoke
 // Kuebernetes garbage collector will take care of removing the CronJob
 func (c *StashController) EnsureBackupTriggeringCronJobDeleted(inv invoker.BackupInvoker) error {
 	invMeta := inv.GetObjectMeta()
-	cur, err := c.kubeClient.BatchV1beta1().CronJobs(invMeta.Namespace).Get(context.TODO(), getBackupCronJobName(invMeta.Name), metav1.GetOptions{})
+	cur, err := c.kubeClient.BatchV1beta1().CronJobs(invMeta.Namespace).Get(context.TODO(), getBackupCronJobName(inv), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
@@ -461,8 +444,21 @@ func (c *StashController) EnsureBackupTriggeringCronJobDeleted(inv invoker.Backu
 	return err
 }
 
-func getBackupCronJobName(name string) string {
-	return meta2.ValidCronJobNameWithPrefix(apis.PrefixStashTrigger, strings.ReplaceAll(name, ".", "-"))
+func getBackupCronJobName(inv invoker.BackupInvoker) string {
+	invMeta := inv.GetObjectMeta()
+	if getTargetNamespace(inv) != invMeta.Namespace {
+		return meta2.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, invMeta.Namespace, strings.ReplaceAll(invMeta.Name, ".", "-"))
+	}
+	return meta2.ValidCronJobNameWithPrefix(apis.PrefixStashTrigger, strings.ReplaceAll(invMeta.Name, ".", "-"))
+}
+
+func getTargetNamespace(inv invoker.BackupInvoker) string {
+	for _, t := range inv.GetTargetInfo() {
+		if t.Target != nil && t.Target.Ref.Namespace != "" {
+			return t.Target.Ref.Namespace
+		}
+	}
+	return inv.GetObjectMeta().Namespace
 }
 
 func (c *StashController) handleCronJobCreationFailure(ref *core.ObjectReference, err error) error {
@@ -533,7 +529,7 @@ func (c *StashController) requeueBackupInvoker(inv invoker.BackupInvoker, key st
 func (c *StashController) cleanupBackupInvokerOffshoots(inv invoker.BackupInvoker, invokerRef *core.ObjectReference) error {
 	for _, targetInfo := range inv.GetTargetInfo() {
 		if targetInfo.Target != nil {
-			err := c.EnsureV1beta1SidecarDeleted(targetInfo.Target.Ref, inv.GetObjectMeta().Namespace)
+			err := c.EnsureV1beta1SidecarDeleted(targetInfo.Target.Ref)
 			if err != nil {
 				return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
 			}
@@ -544,7 +540,7 @@ func (c *StashController) cleanupBackupInvokerOffshoots(inv invoker.BackupInvoke
 		return err
 	}
 
-	rbacOptions, err := c.getBackupRBACOptions(inv)
+	rbacOptions, err := c.getBackupRBACOptions(inv, nil)
 	if err != nil {
 		return err
 	}
@@ -634,4 +630,18 @@ func (c *StashController) checkForBackendSecretExistence(inv interface{}, reposi
 		return nil, conditions.SetBackendSecretFoundConditionToUnknown(inv, secret.Name, err)
 	}
 	return secret, conditions.SetBackendSecretFoundConditionToTrue(inv, secret.Name)
+}
+
+func verifyCrossNamespacePermission(inv metav1.ObjectMeta, target api_v1beta1.TargetRef, taskName string) error {
+	if target.Namespace == "" || target.Namespace == inv.Namespace {
+		return nil
+	}
+	if strings.HasPrefix(taskName, "kubedump") {
+		return nil
+	}
+	if target.Kind == apis.KindPersistentVolumeClaim ||
+		util.BackupModel(target.Kind, taskName) == apis.ModelSidecar {
+		return fmt.Errorf("cross-namespace target reference is not allowed for %q", target.Kind)
+	}
+	return nil
 }

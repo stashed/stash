@@ -38,6 +38,7 @@ const (
 	KindService               = "Service"
 	KindJob                   = "Job"
 	KindCronJob               = "CronJob"
+	KindNamespace             = "Namespace"
 )
 
 const (

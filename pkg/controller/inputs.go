@@ -152,7 +152,9 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 		if target.Ref.Name != "" {
 			inputs[apis.TargetName] = target.Ref.Name
 		}
-
+		if target.Ref.Namespace != "" {
+			inputs[apis.TargetNamespace] = target.Ref.Namespace
+		}
 		if target.Ref.Kind != "" {
 			inputs[apis.TargetKind] = target.Ref.Kind
 		}
@@ -181,6 +183,9 @@ func (c *StashController) inputsForRestoreTarget(target *api.RestoreTarget) map[
 	if target != nil {
 		if target.Ref.Name != "" {
 			inputs[apis.TargetName] = target.Ref.Name
+		}
+		if target.Ref.Namespace != "" {
+			inputs[apis.TargetNamespace] = target.Ref.Namespace
 		}
 		if target.Ref.Kind != "" {
 			inputs[apis.TargetKind] = target.Ref.Kind

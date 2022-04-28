@@ -48,6 +48,44 @@ spec:
             description: MetricsConfigurationSpec is the spec of MetricsConfiguration
               object.
             properties:
+              commonLabels:
+                description: CommonLabels defines the common labels added to all the
+                  exported metrics
+                items:
+                  description: "Label contains the information of a metric label.
+                    Given labels are always added in the metrics along with resource
+                    name and namespace. Resource's name and namespace are always added
+                    in the labels by default. No configuration is needed for name
+                    and namespace labels. \n Example: kube_pod_info{pod=\"<pod_name>\",
+                    namespace=\"<pod_namespace>\", host_ip=\"172.18.0.2\", pod_ip=\"10.244.0.14\",
+                    node=\"kind-control-plane\"}  1 In the example pod, namespace,
+                    host_ip, pod_ip, node are labels. pod(resource name) and namespace
+                    are default labels. No configurations is needed for those. \n
+                    To generate others labels, config should be given in the following
+                    way \n labels:   - key: host_ip     valuePath: .status.hostIP
+                    \  - key: pod_ip     valuePath: .status.podIP   - key: node     valuePath:
+                    .spec.nodeName \n Either Value or ValuePath must be specified
+                    for a Label. If both is specified, ValuePath is ignored. Note
+                    that if a valuePath doesn't exist for a label key, the label will
+                    be ignored."
+                  properties:
+                    key:
+                      description: Key defines the label key
+                      type: string
+                    value:
+                      description: 'Value defines the hard coded label value. Example:
+                        labels:   - key: unit     value: byte   - key: environment     value:
+                        production'
+                      type: string
+                    valuePath:
+                      description: 'ValuePath defines the label value path. Example:
+                        To add deployment''s resource version as labels, labels:   -
+                        key: version     valuePath: .metadata.resourceVersion'
+                      type: string
+                  required:
+                  - key
+                  type: object
+                type: array
               metrics:
                 description: List of Metrics configuration for the resource object
                   defined in TargetRef

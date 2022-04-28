@@ -19,7 +19,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis/repositories"
@@ -44,6 +43,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1"
 	dynamic_util "kmodules.xyz/client-go/dynamic"
+	"kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	admissionreview "kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1"
@@ -124,7 +124,7 @@ func (c *StashConfig) Complete() CompletedConfig {
 
 // New returns a new instance of StashServer from the given config.
 func (c completedConfig) New() (*StashServer, error) {
-	genericServer, err := c.GenericConfig.New("stash", genericapiserver.NewEmptyDelegate()) // completion is done in Complete, no need for a second time
+	genericServer, err := c.GenericConfig.New("stash-enterprise", genericapiserver.NewEmptyDelegate()) // completion is done in Complete, no need for a second time
 	if err != nil {
 		return nil, err
 	}
@@ -245,8 +245,8 @@ func (c completedConfig) New() (*StashServer, error) {
 							context.TODO(),
 							c.ExtraConfig.ClientConfig,
 							core.SchemeGroupVersion.WithResource("pods"),
-							os.Getenv("MY_POD_NAMESPACE"),
-							os.Getenv("MY_POD_NAME"))
+							meta.PodNamespace(),
+							meta.PodName())
 						if e2 == nil {
 							eventer.CreateEventWithLog(
 								kubernetes.NewForConfigOrDie(c.ExtraConfig.ClientConfig),

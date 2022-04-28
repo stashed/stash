@@ -51,18 +51,22 @@ type MetricsConfigurationSpec struct {
 	// TargetRef defines the object for which metrics will be collected
 	TargetRef TargetRef `json:"targetRef" protobuf:"bytes,1,opt,name=targetRef"`
 
+	// CommonLabels defines the common labels added to all the exported metrics
+	// +optional
+	CommonLabels []Label `json:"commonLabels,omitempty" protobuf:"bytes,2,rep,name=commonLabels"`
+
 	// List of Metrics configuration for the resource object defined in TargetRef
-	Metrics []Metrics `json:"metrics" protobuf:"bytes,2,rep,name=metrics"`
+	Metrics []Metrics `json:"metrics" protobuf:"bytes,3,rep,name=metrics"`
 }
 
 // TargetRef contains the Object's apiVersion & kind to specify the target resource
 type TargetRef struct {
+	// APIVersion defines the versioned schema of this representation of an object.
+	APIVersion string `json:"apiVersion" protobuf:"bytes,1,opt,name=apiVersion"`
+
 	// Kind is a string value representing the REST resource this object represents.
 	// In CamelCase.
-	Kind string `json:"kind" protobuf:"bytes,1,opt,name=kind"`
-
-	// APIVersion defines the versioned schema of this representation of an object.
-	APIVersion string `json:"apiVersion" protobuf:"bytes,2,opt,name=apiVersion"`
+	Kind string `json:"kind" protobuf:"bytes,2,opt,name=kind"`
 }
 
 // Metrics contains the configuration of a metric in prometheus style.
@@ -136,7 +140,7 @@ type Field struct {
 	// "Array" for array field like .spec.containers
 	// "String" for string field like .statue.phase (for pod status)
 	// +kubebuilder:validation:Enum=Integer;DateTime;Array;String
-	Type FieldType `json:"type" protobuf:"bytes,2,opt,name=type"`
+	Type FieldType `json:"type" protobuf:"bytes,2,opt,name=type,casttype=FieldType"`
 }
 
 // Label contains the information of a metric label.
@@ -261,7 +265,7 @@ type MetricValue struct {
 	// As there must be a metric value, metric value is kept as 1.
 	// The metric will look like `kube_pod_info{host_ip="172.18.0.2", pod_ip="10.244.0.14", node="kind-control-plane" .....}  1`
 	// +optional
-	Value *float64 `json:"value,omitempty" protobuf:"bytes,1,opt,name=value"`
+	Value *float64 `json:"value,omitempty" protobuf:"fixed64,1,opt,name=value"`
 
 	// ValueFromPath contains the field path of the manifest file of a object.
 	// ValueFromPath is used when the metric value is coming from

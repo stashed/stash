@@ -140,6 +140,8 @@ type TargetRef struct {
 	APIVersion string `json:"apiVersion,omitempty"`
 	Kind       string `json:"kind,omitempty"`
 	Name       string `json:"name,omitempty"`
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 type ExecutionOrder string

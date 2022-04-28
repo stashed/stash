@@ -47,7 +47,7 @@ type TaskResolver struct {
 	PostTaskHookInput map[string]string
 }
 
-func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetName string) (core.PodSpec, error) {
+func (o TaskResolver) GetPodSpec(invokerType, invokerName string, target v1beta1_api.TargetRef) (core.PodSpec, error) {
 	task, err := o.StashClient.StashV1beta1().Tasks().Get(context.TODO(), o.TaskName, metav1.GetOptions{})
 	if err != nil {
 		return core.PodSpec{}, err
@@ -135,7 +135,7 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 		// 3. Default hook specific inputs
 		inputs := meta_util.OverwriteKeys(taskParams, o.Inputs)
 		inputs = meta_util.OverwriteKeys(o.PreTaskHookInput, inputs)
-		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers, invokerType, invokerName, targetKind, targetName)
+		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers, invokerType, invokerName, target)
 
 		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook. Reason: %v", err)
@@ -152,7 +152,7 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName, targetKind, targetNam
 	if o.PostTaskHookInput != nil {
 		inputs := meta_util.OverwriteKeys(taskParams, o.Inputs)
 		inputs = meta_util.OverwriteKeys(o.PostTaskHookInput, inputs)
-		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers, invokerType, invokerName, targetKind, targetName)
+		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers, invokerType, invokerName, target)
 
 		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook. Reason: %v", err)

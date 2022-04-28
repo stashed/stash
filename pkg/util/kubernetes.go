@@ -39,24 +39,33 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func IsBackupTarget(target *v1beta1_api.BackupTarget, w *wapi.Workload) bool {
+func IsBackupTarget(target *v1beta1_api.BackupTarget, w *wapi.Workload, invNamespace string) bool {
 	if target != nil &&
 		target.Ref.APIVersion == w.APIVersion &&
 		target.Ref.Kind == w.Kind &&
+		getTargetNamespace(target.Ref, invNamespace) == w.Namespace &&
 		target.Ref.Name == w.Name {
 		return true
 	}
 	return false
 }
 
-func IsRestoreTarget(target *v1beta1_api.RestoreTarget, w *wapi.Workload) bool {
+func IsRestoreTarget(target *v1beta1_api.RestoreTarget, w *wapi.Workload, invNamespace string) bool {
 	if target != nil &&
 		target.Ref.APIVersion == w.APIVersion &&
 		target.Ref.Kind == w.Kind &&
+		getTargetNamespace(target.Ref, invNamespace) == w.Namespace &&
 		target.Ref.Name == w.Name {
 		return true
 	}
 	return false
+}
+
+func getTargetNamespace(ref v1beta1_api.TargetRef, invNamespace string) string {
+	if ref.Namespace == "" {
+		return invNamespace
+	}
+	return ref.Namespace
 }
 
 func GetString(m map[string]string, key string) string {
@@ -221,22 +230,22 @@ func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workl
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(context.TODO(), GetConfigmapLockName(workload), metav1.DeleteOptions{})
 }
 
-func DeleteBackupConfigMapLock(k8sClient kubernetes.Interface, namespace string, r v1beta1_api.TargetRef) error {
-	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(context.TODO(), GetBackupConfigmapLockName(r), metav1.DeleteOptions{})
+func DeleteBackupConfigMapLock(k8sClient kubernetes.Interface, r v1beta1_api.TargetRef) error {
+	return k8sClient.CoreV1().ConfigMaps(r.Namespace).Delete(context.TODO(), GetBackupConfigmapLockName(r), metav1.DeleteOptions{})
 }
 
-func DeleteRestoreConfigMapLock(k8sClient kubernetes.Interface, namespace string, r v1beta1_api.TargetRef) error {
-	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(context.TODO(), GetRestoreConfigmapLockName(r), metav1.DeleteOptions{})
+func DeleteRestoreConfigMapLock(k8sClient kubernetes.Interface, r v1beta1_api.TargetRef) error {
+	return k8sClient.CoreV1().ConfigMaps(r.Namespace).Delete(context.TODO(), GetRestoreConfigmapLockName(r), metav1.DeleteOptions{})
 }
 
 func DeleteAllConfigMapLocks(k8sClient kubernetes.Interface, namespace, name, kind string) error {
 	// delete backup configMap lock if exist
-	err := DeleteBackupConfigMapLock(k8sClient, namespace, v1beta1_api.TargetRef{Name: name, Kind: kind})
+	err := DeleteBackupConfigMapLock(k8sClient, v1beta1_api.TargetRef{Name: name, Kind: kind, Namespace: namespace})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	// delete restore configMap lock if exist
-	err = DeleteRestoreConfigMapLock(k8sClient, namespace, v1beta1_api.TargetRef{Name: name, Kind: kind})
+	err = DeleteRestoreConfigMapLock(k8sClient, v1beta1_api.TargetRef{Name: name, Kind: kind, Namespace: namespace})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -319,4 +328,12 @@ func WaitUntilPVCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 		}
 		return false, nil
 	})
+}
+
+func CheckIfNamespaceExists(kubeClient kubernetes.Interface, ns string) error {
+	if ns == "" {
+		return nil
+	}
+	_, err := kubeClient.CoreV1().Namespaces().Get(context.TODO(), ns, metav1.GetOptions{})
+	return err
 }

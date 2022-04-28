@@ -31,11 +31,15 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func Namespace() string {
-	if ns := os.Getenv("KUBE_NAMESPACE"); ns != "" {
-		return ns
+func PodName() string {
+	if name := os.Getenv("POD_NAME"); name != "" {
+		return name
 	}
+	s, _ := os.Hostname()
+	return s
+}
 
+func PodNamespace() string {
 	if ns := os.Getenv("POD_NAMESPACE"); ns != "" {
 		return ns
 	}
@@ -46,6 +50,14 @@ func Namespace() string {
 		}
 	}
 	return core.NamespaceDefault
+}
+
+// Deprecated: use PodNamespace
+func Namespace() string {
+	if ns := os.Getenv("KUBE_NAMESPACE"); ns != "" {
+		return ns
+	}
+	return PodNamespace()
 }
 
 // PossiblyInCluster returns true if loading an inside-kubernetes-cluster is possible.
