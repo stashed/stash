@@ -19,7 +19,6 @@ package restore
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -41,6 +40,7 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/client-go/meta"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -57,8 +57,7 @@ type Options struct {
 
 	InvokerKind string
 	InvokerName string
-	TargetKind  string
-	TargetName  string
+	TargetRef   api_v1beta1.TargetRef
 
 	BackoffMaxWait time.Duration
 
@@ -85,7 +84,7 @@ func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo in
 	klog.Infoln("Attempting to elect restore leader")
 
 	rlc := resourcelock.ResourceLockConfig{
-		Identity:      os.Getenv(apis.KeyPodName),
+		Identity:      meta.PodName(),
 		EventRecorder: eventer.NewEventRecorder(opt.KubeClient, eventer.EventSourceRestoreInitContainer),
 	}
 
@@ -269,7 +268,7 @@ func (opt *Options) executePreRestoreHook(inv invoker.RestoreInvoker, targetInfo
 		Target:  targetInfo.Target.Ref,
 		ExecutorPod: kmapi.ObjectReference{
 			Namespace: opt.Namespace,
-			Name:      os.Getenv(apis.KeyPodName),
+			Name:      meta.PodName(),
 		},
 		Hook:     targetInfo.Hooks.PreRestore,
 		HookType: apis.PreRestoreHook,
@@ -284,7 +283,7 @@ func (opt *Options) executePostRestoreHook(inv invoker.RestoreInvoker, targetInf
 		Target:  targetInfo.Target.Ref,
 		ExecutorPod: kmapi.ObjectReference{
 			Namespace: opt.Namespace,
-			Name:      os.Getenv(apis.KeyPodName),
+			Name:      meta.PodName(),
 		},
 		Hook:     targetInfo.Hooks.PostRestore,
 		HookType: apis.PostRestoreHook,

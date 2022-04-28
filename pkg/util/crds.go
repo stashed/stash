@@ -112,6 +112,7 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--invoker-name=${INVOKER_NAME:=}",
 				"--target-kind=${TARGET_KIND:=}",
 				"--target-name=${TARGET_NAME:=}",
+				"--target-namespace=${TARGET_NAMESPACE:=}",
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",
 				fmt.Sprintf("--metrics-pushgateway-url=%s", metrics.GetPushgatewayURL()),
@@ -146,6 +147,7 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--storage-secret-namespace=${REPOSITORY_SECRET_NAMESPACE}",
 				"--target-kind=${TARGET_KIND:=}",
 				"--target-name=${TARGET_NAME:=}",
+				"--target-namespace=${TARGET_NAMESPACE:=}",
 				"--backupsession=${BACKUP_SESSION:=}",
 				"--retention-keep-last=${RETENTION_KEEP_LAST:=0}",
 				"--retention-keep-hourly=${RETENTION_KEEP_HOURLY:=0}",
@@ -197,6 +199,7 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--storage-secret-namespace=${REPOSITORY_SECRET_NAMESPACE}",
 				"--target-kind=${TARGET_KIND:=}",
 				"--target-name=${TARGET_NAME:=}",
+				"--target-namespace=${TARGET_NAMESPACE:=}",
 			},
 			VolumeMounts: []core.VolumeMount{
 				{

@@ -52,9 +52,7 @@ func (c *StashController) applyRestoreSessionLogic(w *wapi.Workload, caller stri
 	if newrs != nil && !util.RestoreSessionEqual(oldrs, newrs) {
 		inv := invoker.NewRestoreSessionInvoker(c.kubeClient, c.stashClient, newrs)
 		for _, targetInfo := range inv.GetTargetInfo() {
-			if targetInfo.Target != nil &&
-				targetInfo.Target.Ref.Kind == w.Kind &&
-				targetInfo.Target.Ref.Name == w.Name {
+			if util.IsRestoreTarget(targetInfo.Target, w, inv.GetObjectMeta().Namespace) {
 				err = c.ensureRestoreInitContainer(w, inv, targetInfo, caller)
 				if err != nil {
 					return false, c.handleInitContainerInjectionFailure(w, inv, targetInfo.Target.Ref, err)

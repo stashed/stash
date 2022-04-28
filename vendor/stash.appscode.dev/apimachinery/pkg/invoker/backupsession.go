@@ -116,13 +116,13 @@ func IsBackupCompleted(phase v1beta1.BackupSessionPhase) bool {
 		phase == v1beta1.BackupSessionUnknown
 }
 
-func BackupCompletedForAllTargets(status []v1beta1.BackupTargetStatus) bool {
+func BackupCompletedForAllTargets(status []v1beta1.BackupTargetStatus, totalTargets int) bool {
 	for _, t := range status {
 		if t.TotalHosts == nil || !backupCompletedForAllHosts(t.Stats, *t.TotalHosts) {
 			return false
 		}
 	}
-	return len(status) > 0
+	return len(status) == totalTargets
 }
 
 func backupCompletedForAllHosts(status []v1beta1.HostBackupStats, totalHosts int32) bool {

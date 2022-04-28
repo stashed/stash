@@ -139,7 +139,7 @@ func (inv *RestoreSessionInvoker) GetTargetInfo() []RestoreTargetInfo {
 	return []RestoreTargetInfo{
 		{
 			Task:                  inv.restoreSession.Spec.Task,
-			Target:                inv.restoreSession.Spec.Target,
+			Target:                getRestoreTarget(inv.restoreSession.Spec.Target, inv.restoreSession.Namespace),
 			RuntimeSettings:       inv.restoreSession.Spec.RuntimeSettings,
 			TempDir:               inv.restoreSession.Spec.TempDir,
 			InterimVolumeTemplate: inv.restoreSession.Spec.InterimVolumeTemplate,
@@ -383,7 +383,7 @@ func calculateRestoreSessionPhase(status v1beta1.RestoreMemberStatus) v1beta1.Re
 		return v1beta1.RestorePending
 	}
 
-	if RestoreCompletedForAllTargets([]v1beta1.RestoreMemberStatus{status}) {
+	if RestoreCompletedForAllTargets([]v1beta1.RestoreMemberStatus{status}, 1) {
 		if status.Phase == v1beta1.TargetRestorePhaseUnknown {
 			return v1beta1.RestorePhaseUnknown
 		}
@@ -412,13 +412,13 @@ func calculateRestoreSessionPhase(status v1beta1.RestoreMemberStatus) v1beta1.Re
 	return v1beta1.RestoreRunning
 }
 
-func RestoreCompletedForAllTargets(status []v1beta1.RestoreMemberStatus) bool {
+func RestoreCompletedForAllTargets(status []v1beta1.RestoreMemberStatus, totalTargets int) bool {
 	for _, t := range status {
 		if t.TotalHosts == nil || !restoreCompletedForAllHosts(t.Stats, *t.TotalHosts) {
 			return false
 		}
 	}
-	return len(status) > 0
+	return len(status) == totalTargets
 }
 
 func restoreCompletedForAllHosts(status []v1beta1.HostRestoreStats, totalHosts int32) bool {

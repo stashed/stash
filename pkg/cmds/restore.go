@@ -40,7 +40,7 @@ func NewCmdRestore() *cobra.Command {
 	opt := &restore.Options{
 		MasterURL:      "",
 		KubeconfigPath: "",
-		Namespace:      meta.Namespace(),
+		Namespace:      meta.PodNamespace(),
 		SetupOpt: restic.SetupOptions{
 			ScratchDir:  "/tmp",
 			EnableCache: true,
@@ -70,7 +70,7 @@ func NewCmdRestore() *cobra.Command {
 			}
 
 			for _, targetInfo := range inv.GetTargetInfo() {
-				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.TargetKind, opt.TargetName) {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.TargetRef.Kind, opt.TargetRef.Name, opt.TargetRef.Namespace) {
 
 					// Ensure restore order
 					if inv.GetExecutionOrder() == v1beta1_api.Sequential {
@@ -111,8 +111,9 @@ func NewCmdRestore() *cobra.Command {
 	cmd.Flags().StringVar(&opt.KubeconfigPath, "kubeconfig", opt.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.InvokerKind, "invoker-kind", opt.InvokerKind, "Kind of the respective restore invoker")
 	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective restore invoker")
-	cmd.Flags().StringVar(&opt.TargetName, "target-name", opt.TargetName, "Name of the Target")
-	cmd.Flags().StringVar(&opt.TargetKind, "target-kind", opt.TargetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.TargetRef.Name, "target-name", opt.TargetRef.Name, "Name of the Target")
+	cmd.Flags().StringVar(&opt.TargetRef.Namespace, "target-namespace", opt.TargetRef.Namespace, "Namespace of the Target")
+	cmd.Flags().StringVar(&opt.TargetRef.Kind, "target-kind", opt.TargetRef.Kind, "Kind of the Target")
 	cmd.Flags().DurationVar(&opt.BackoffMaxWait, "backoff-max-wait", 0, "Maximum wait for initial response from kube apiserver; 0 disables the timeout")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")

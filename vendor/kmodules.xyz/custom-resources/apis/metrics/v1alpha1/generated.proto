@@ -226,8 +226,12 @@ message MetricsConfigurationSpec {
   // TargetRef defines the object for which metrics will be collected
   optional TargetRef targetRef = 1;
 
+  // CommonLabels defines the common labels added to all the exported metrics
+  // +optional
+  repeated Label commonLabels = 2;
+
   // List of Metrics configuration for the resource object defined in TargetRef
-  repeated Metrics metrics = 2;
+  repeated Metrics metrics = 3;
 }
 
 // Parameter contains the information of a parameter used in expression evaluation
@@ -293,11 +297,11 @@ message StateValues {
 
 // TargetRef contains the Object's apiVersion & kind to specify the target resource
 message TargetRef {
+  // APIVersion defines the versioned schema of this representation of an object.
+  optional string apiVersion = 1;
+
   // Kind is a string value representing the REST resource this object represents.
   // In CamelCase.
-  optional string kind = 1;
-
-  // APIVersion defines the versioned schema of this representation of an object.
-  optional string apiVersion = 2;
+  optional string kind = 2;
 }
 

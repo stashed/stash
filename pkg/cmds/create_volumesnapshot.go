@@ -19,7 +19,6 @@ package cmds
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -61,9 +60,7 @@ type VSoption struct {
 	invokerKind string
 	invokerName string
 
-	// Target
-	targetName string
-	targetKind string
+	targetRef api_v1beta1.TargetRef
 }
 
 func NewCmdCreateVolumeSnapshot() *cobra.Command {
@@ -71,7 +68,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 		masterURL      string
 		kubeconfigPath string
 		opt            = VSoption{
-			namespace: meta.Namespace(),
+			namespace: meta.PodNamespace(),
 			metrics: metrics.MetricsOptions{
 				Enabled: true,
 			},
@@ -107,7 +104,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			opt.metrics.JobName = fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), inv.GetObjectMeta().Namespace, inv.GetObjectMeta().Name)
 
 			for _, targetInfo := range inv.GetTargetInfo() {
-				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+				if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetRef.Kind, opt.targetRef.Name, opt.targetRef.Namespace) {
 					backupOutput, err := opt.createVolumeSnapshot(backupSession.ObjectMeta, inv, targetInfo)
 					if err != nil {
 						return err
@@ -121,8 +118,9 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 						BackupSession: opt.backupsession,
 						Metrics:       opt.metrics,
 					}
-					statOpt.TargetRef.Name = opt.targetName
-					statOpt.TargetRef.Kind = opt.targetKind
+					statOpt.TargetRef.Name = opt.targetRef.Name
+					statOpt.TargetRef.Namespace = opt.targetRef.Namespace
+					statOpt.TargetRef.Kind = opt.targetRef.Kind
 
 					return statOpt.UpdatePostBackupStatus(backupOutput)
 
@@ -133,8 +131,9 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
-	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Name, "target-name", opt.targetRef.Name, "Name of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Namespace, "target-namespace", opt.targetRef.Namespace, "Namespace of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Kind, "target-kind", opt.targetRef.Kind, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.backupsession, "backupsession", "", "Name of the respective BackupSession object")
 	cmd.Flags().BoolVar(&opt.metrics.Enabled, "metrics-enabled", opt.metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metrics.PushgatewayURL, "pushgateway-url", opt.metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
@@ -152,7 +151,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 	// If preBackup hook is specified, then execute those hooks first
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PreBackup != nil {
 		klog.Infoln("Executing preBackup hooks........")
-		podName := os.Getenv(apis.KeyPodName)
+		podName := meta.PodName()
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute preBackup hooks. Reason: POD_NAME environment variable not found")
 		}
@@ -214,7 +213,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 	// If postBackup hook is specified, then execute those hooks after backup
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup != nil {
 		klog.Infoln("Executing postBackup hooks........")
-		podName := os.Getenv(apis.KeyPodName)
+		podName := meta.PodName()
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postBackup hook. Reason: POD_NAME environment variable not found")
 		}

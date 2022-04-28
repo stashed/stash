@@ -41,6 +41,7 @@ func NewRestoreInitContainer(inv invoker.RestoreInvoker, targetInfo invoker.Rest
 			"--invoker-kind=" + inv.GetTypeMeta().Kind,
 			"--invoker-name=" + inv.GetObjectMeta().Name,
 			"--target-name=" + targetInfo.Target.Ref.Name,
+			"--target-namespace=" + targetInfo.Target.Ref.Namespace,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),

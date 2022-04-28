@@ -25,6 +25,7 @@ import (
 const (
 	StashBackupComponent  = "stash-backup"
 	StashRestoreComponent = "stash-restore"
+	TargetKindEmpty       = "EmptyTarget"
 )
 
 // TODO: complete
@@ -37,4 +38,12 @@ func GetOpenAPIDefinitionsWithRetentionPolicy(ref common.ReferenceCallback) map[
 	out := GetOpenAPIDefinitions(ref)
 	out[key] = v1alpha1.GetOpenAPIDefinitions(ref)[key]
 	return out
+}
+
+func EmptyTargetRef() TargetRef {
+	return TargetRef{
+		APIVersion: "na",
+		Kind:       TargetKindEmpty,
+		Name:       "na",
+	}
 }

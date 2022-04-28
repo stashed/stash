@@ -18,7 +18,6 @@ package conditions
 
 import (
 	"fmt"
-	"strings"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
@@ -34,8 +33,8 @@ func SetBackupTargetFoundConditionToUnknown(invoker invoker.BackupInvoker, tref 
 		Status: core.ConditionUnknown,
 		Reason: v1beta1.UnableToCheckTargetAvailability,
 		Message: fmt.Sprintf("Failed to check whether backup target %s %s/%s exist or not. Reason: %v",
-			tref.APIVersion,
-			strings.ToLower(tref.Kind),
+			tref.Kind,
+			tref.Namespace,
 			tref.Name,
 			err.Error(),
 		),
@@ -50,8 +49,8 @@ func SetBackupTargetFoundConditionToFalse(invoker invoker.BackupInvoker, tref v1
 		Status: core.ConditionFalse,
 		Reason: v1beta1.TargetNotAvailable,
 		Message: fmt.Sprintf("Backup target %s %s/%s does not exist.",
-			tref.APIVersion,
-			strings.ToLower(tref.Kind),
+			tref.Kind,
+			tref.Namespace,
 			tref.Name,
 		),
 		LastTransitionTime: metav1.Now(),
@@ -64,8 +63,8 @@ func SetBackupTargetFoundConditionToTrue(invoker invoker.BackupInvoker, tref v1b
 		Status: core.ConditionTrue,
 		Reason: v1beta1.TargetAvailable,
 		Message: fmt.Sprintf("Backup target %s %s/%s found.",
-			tref.APIVersion,
-			strings.ToLower(tref.Kind),
+			tref.Kind,
+			tref.Namespace,
 			tref.Name,
 		),
 		LastTransitionTime: metav1.Now(),
@@ -98,8 +97,8 @@ func SetSidecarInjectedConditionToTrue(invoker invoker.BackupInvoker, tref v1bet
 		Status: core.ConditionTrue,
 		Reason: v1beta1.SidecarInjectionSucceeded,
 		Message: fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s",
-			tref.APIVersion,
-			strings.ToLower(tref.Kind),
+			tref.Kind,
+			tref.Namespace,
 			tref.Name,
 		),
 		LastTransitionTime: metav1.Now(),
@@ -112,8 +111,8 @@ func SetSidecarInjectedConditionToFalse(invoker invoker.BackupInvoker, tref v1be
 		Status: core.ConditionFalse,
 		Reason: v1beta1.SidecarInjectionFailed,
 		Message: fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v",
-			tref.APIVersion,
-			strings.ToLower(tref.Kind),
+			tref.Kind,
+			tref.Namespace,
 			tref.Name,
 			err.Error(),
 		),

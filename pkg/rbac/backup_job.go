@@ -18,6 +18,7 @@ package rbac
 
 import (
 	"context"
+	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -28,12 +29,14 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 func (opt *RBACOptions) EnsureBackupJobRBAC() error {
 	if opt.ServiceAccount.Name == "" {
+		opt.ServiceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name, opt.Suffix)
 		err := opt.ensureServiceAccount()
 		if err != nil {
 			return err

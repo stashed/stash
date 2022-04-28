@@ -18,18 +18,13 @@ package rbac
 
 import (
 	"context"
-	"strings"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"kmodules.xyz/client-go/meta"
 )
 
 func (opt *RBACOptions) ensureServiceAccount() error {
-	// ServiceAccount hasn't been specified. so create new one.
-	opt.ServiceAccount.Name = meta.NameWithSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name)
-
 	saMeta := metav1.ObjectMeta{
 		Name:        opt.ServiceAccount.Name,
 		Namespace:   opt.ServiceAccount.Namespace,

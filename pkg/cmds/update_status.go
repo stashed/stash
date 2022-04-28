@@ -95,6 +95,7 @@ func NewCmdUpdateStatus() *cobra.Command {
 	cmd.Flags().StringVar(&opt.InvokerName, "invoker-name", opt.InvokerName, "Name of the respective backup/restore invoker")
 	cmd.Flags().StringVar(&opt.TargetRef.Kind, "target-kind", "", "Kind of the target")
 	cmd.Flags().StringVar(&opt.TargetRef.Name, "target-name", "", "Name of the target")
+	cmd.Flags().StringVar(&opt.TargetRef.Namespace, "target-namespace", "", "Namespace of the target")
 	cmd.Flags().StringVar(&opt.BackupSession, "backupsession", opt.BackupSession, "Name of the Backup Session")
 	cmd.Flags().StringVar(&opt.OutputDir, "output-dir", opt.OutputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
 	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify whether to export Prometheus metrics")

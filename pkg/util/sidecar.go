@@ -40,6 +40,7 @@ func NewBackupSidecarContainer(inv invoker.BackupInvoker, targetInfo invoker.Bac
 			"--invoker-name=" + inv.GetObjectMeta().Name,
 			"--invoker-kind=" + inv.GetTypeMeta().Kind,
 			"--target-name=" + targetInfo.Target.Ref.Name,
+			"--target-namespace=" + targetInfo.Target.Ref.Namespace,
 			"--target-kind=" + targetInfo.Target.Ref.Kind,
 			fmt.Sprintf("--enable-cache=%v", !targetInfo.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", backend.MaxConnections()),

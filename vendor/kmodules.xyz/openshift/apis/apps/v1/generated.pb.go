@@ -67,8 +67,11 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+
+var (
+	_ = fmt.Errorf
+	_ = math.Inf
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -211,6 +214,7 @@ func init() {
 	proto.RegisterType((*RollingDeploymentStrategyParams)(nil), "github.com.openshift.api.apps.v1.RollingDeploymentStrategyParams")
 	proto.RegisterType((*TagImageHook)(nil), "github.com.openshift.api.apps.v1.TagImageHook")
 }
+
 func (m *CustomDeploymentStrategyParams) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1405,6 +1409,7 @@ func encodeFixed64Generated(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset+7] = uint8(v >> 56)
 	return offset + 8
 }
+
 func encodeFixed32Generated(dAtA []byte, offset int, v uint32) int {
 	dAtA[offset] = uint8(v)
 	dAtA[offset+1] = uint8(v >> 8)
@@ -1412,6 +1417,7 @@ func encodeFixed32Generated(dAtA []byte, offset int, v uint32) int {
 	dAtA[offset+3] = uint8(v >> 24)
 	return offset + 4
 }
+
 func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
@@ -1421,6 +1427,7 @@ func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return offset + 1
 }
+
 func (m *CustomDeploymentStrategyParams) Size() (n int) {
 	var l int
 	_ = l
@@ -1852,14 +1859,17 @@ func sovGenerated(x uint64) (n int) {
 	}
 	return n
 }
+
 func sozGenerated(x uint64) (n int) {
 	return sovGenerated(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+
 func (this *CustomDeploymentStrategyParams) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&CustomDeploymentStrategyParams{`,
+	s := strings.Join([]string{
+		`&CustomDeploymentStrategyParams{`,
 		`Image:` + fmt.Sprintf("%v", this.Image) + `,`,
 		`Environment:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Environment), "EnvVar", "k8s_io_api_core_v1.EnvVar", 1), `&`, ``, 1) + `,`,
 		`Command:` + fmt.Sprintf("%v", this.Command) + `,`,
@@ -1867,32 +1877,38 @@ func (this *CustomDeploymentStrategyParams) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentCause) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentCause{`,
+	s := strings.Join([]string{
+		`&DeploymentCause{`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`ImageTrigger:` + strings.Replace(fmt.Sprintf("%v", this.ImageTrigger), "DeploymentCauseImageTrigger", "DeploymentCauseImageTrigger", 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *DeploymentCauseImageTrigger) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentCauseImageTrigger{`,
+	s := strings.Join([]string{
+		`&DeploymentCauseImageTrigger{`,
 		`From:` + strings.Replace(strings.Replace(this.From.String(), "ObjectReference", "k8s_io_api_core_v1.ObjectReference", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *DeploymentCondition) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentCondition{`,
+	s := strings.Join([]string{
+		`&DeploymentCondition{`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
 		`LastTransitionTime:` + strings.Replace(strings.Replace(this.LastTransitionTime.String(), "Time", "k8s_io_apimachinery_pkg_apis_meta_v1.Time", 1), `&`, ``, 1) + `,`,
@@ -1903,11 +1919,13 @@ func (this *DeploymentCondition) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentConfig) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentConfig{`,
+	s := strings.Join([]string{
+		`&DeploymentConfig{`,
 		`ObjectMeta:` + strings.Replace(strings.Replace(this.ObjectMeta.String(), "ObjectMeta", "k8s_io_apimachinery_pkg_apis_meta_v1.ObjectMeta", 1), `&`, ``, 1) + `,`,
 		`Spec:` + strings.Replace(strings.Replace(this.Spec.String(), "DeploymentConfigSpec", "DeploymentConfigSpec", 1), `&`, ``, 1) + `,`,
 		`Status:` + strings.Replace(strings.Replace(this.Status.String(), "DeploymentConfigStatus", "DeploymentConfigStatus", 1), `&`, ``, 1) + `,`,
@@ -1915,17 +1933,20 @@ func (this *DeploymentConfig) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentConfigList) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentConfigList{`,
+	s := strings.Join([]string{
+		`&DeploymentConfigList{`,
 		`ListMeta:` + strings.Replace(strings.Replace(this.ListMeta.String(), "ListMeta", "k8s_io_apimachinery_pkg_apis_meta_v1.ListMeta", 1), `&`, ``, 1) + `,`,
 		`Items:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Items), "DeploymentConfig", "DeploymentConfig", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *DeploymentConfigRollback) String() string {
 	if this == nil {
 		return "nil"
@@ -1940,7 +1961,8 @@ func (this *DeploymentConfigRollback) String() string {
 		mapStringForUpdatedAnnotations += fmt.Sprintf("%v: %v,", k, this.UpdatedAnnotations[k])
 	}
 	mapStringForUpdatedAnnotations += "}"
-	s := strings.Join([]string{`&DeploymentConfigRollback{`,
+	s := strings.Join([]string{
+		`&DeploymentConfigRollback{`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`UpdatedAnnotations:` + mapStringForUpdatedAnnotations + `,`,
 		`Spec:` + strings.Replace(strings.Replace(this.Spec.String(), "DeploymentConfigRollbackSpec", "DeploymentConfigRollbackSpec", 1), `&`, ``, 1) + `,`,
@@ -1948,11 +1970,13 @@ func (this *DeploymentConfigRollback) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentConfigRollbackSpec) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentConfigRollbackSpec{`,
+	s := strings.Join([]string{
+		`&DeploymentConfigRollbackSpec{`,
 		`From:` + strings.Replace(strings.Replace(this.From.String(), "ObjectReference", "k8s_io_api_core_v1.ObjectReference", 1), `&`, ``, 1) + `,`,
 		`Revision:` + fmt.Sprintf("%v", this.Revision) + `,`,
 		`IncludeTriggers:` + fmt.Sprintf("%v", this.IncludeTriggers) + `,`,
@@ -1963,6 +1987,7 @@ func (this *DeploymentConfigRollbackSpec) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentConfigSpec) String() string {
 	if this == nil {
 		return "nil"
@@ -1977,7 +2002,8 @@ func (this *DeploymentConfigSpec) String() string {
 		mapStringForSelector += fmt.Sprintf("%v: %v,", k, this.Selector[k])
 	}
 	mapStringForSelector += "}"
-	s := strings.Join([]string{`&DeploymentConfigSpec{`,
+	s := strings.Join([]string{
+		`&DeploymentConfigSpec{`,
 		`Strategy:` + strings.Replace(strings.Replace(this.Strategy.String(), "DeploymentStrategy", "DeploymentStrategy", 1), `&`, ``, 1) + `,`,
 		`Triggers:` + strings.Replace(fmt.Sprintf("%v", this.Triggers), "DeploymentTriggerPolicies", "DeploymentTriggerPolicies", 1) + `,`,
 		`Replicas:` + fmt.Sprintf("%v", this.Replicas) + `,`,
@@ -1991,11 +2017,13 @@ func (this *DeploymentConfigSpec) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentConfigStatus) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentConfigStatus{`,
+	s := strings.Join([]string{
+		`&DeploymentConfigStatus{`,
 		`LatestVersion:` + fmt.Sprintf("%v", this.LatestVersion) + `,`,
 		`ObservedGeneration:` + fmt.Sprintf("%v", this.ObservedGeneration) + `,`,
 		`Replicas:` + fmt.Sprintf("%v", this.Replicas) + `,`,
@@ -2009,31 +2037,37 @@ func (this *DeploymentConfigStatus) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentDetails) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentDetails{`,
+	s := strings.Join([]string{
+		`&DeploymentDetails{`,
 		`Message:` + fmt.Sprintf("%v", this.Message) + `,`,
 		`Causes:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Causes), "DeploymentCause", "DeploymentCause", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *DeploymentLog) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentLog{`,
+	s := strings.Join([]string{
+		`&DeploymentLog{`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *DeploymentLogOptions) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentLogOptions{`,
+	s := strings.Join([]string{
+		`&DeploymentLogOptions{`,
 		`Container:` + fmt.Sprintf("%v", this.Container) + `,`,
 		`Follow:` + fmt.Sprintf("%v", this.Follow) + `,`,
 		`Previous:` + fmt.Sprintf("%v", this.Previous) + `,`,
@@ -2048,11 +2082,13 @@ func (this *DeploymentLogOptions) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentRequest) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentRequest{`,
+	s := strings.Join([]string{
+		`&DeploymentRequest{`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`Latest:` + fmt.Sprintf("%v", this.Latest) + `,`,
 		`Force:` + fmt.Sprintf("%v", this.Force) + `,`,
@@ -2061,6 +2097,7 @@ func (this *DeploymentRequest) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentStrategy) String() string {
 	if this == nil {
 		return "nil"
@@ -2085,7 +2122,8 @@ func (this *DeploymentStrategy) String() string {
 		mapStringForAnnotations += fmt.Sprintf("%v: %v,", k, this.Annotations[k])
 	}
 	mapStringForAnnotations += "}"
-	s := strings.Join([]string{`&DeploymentStrategy{`,
+	s := strings.Join([]string{
+		`&DeploymentStrategy{`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`CustomParams:` + strings.Replace(fmt.Sprintf("%v", this.CustomParams), "CustomDeploymentStrategyParams", "CustomDeploymentStrategyParams", 1) + `,`,
 		`RecreateParams:` + strings.Replace(fmt.Sprintf("%v", this.RecreateParams), "RecreateDeploymentStrategyParams", "RecreateDeploymentStrategyParams", 1) + `,`,
@@ -2098,11 +2136,13 @@ func (this *DeploymentStrategy) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentTriggerImageChangeParams) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentTriggerImageChangeParams{`,
+	s := strings.Join([]string{
+		`&DeploymentTriggerImageChangeParams{`,
 		`Automatic:` + fmt.Sprintf("%v", this.Automatic) + `,`,
 		`ContainerNames:` + fmt.Sprintf("%v", this.ContainerNames) + `,`,
 		`From:` + strings.Replace(strings.Replace(this.From.String(), "ObjectReference", "k8s_io_api_core_v1.ObjectReference", 1), `&`, ``, 1) + `,`,
@@ -2111,22 +2151,26 @@ func (this *DeploymentTriggerImageChangeParams) String() string {
 	}, "")
 	return s
 }
+
 func (this *DeploymentTriggerPolicy) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&DeploymentTriggerPolicy{`,
+	s := strings.Join([]string{
+		`&DeploymentTriggerPolicy{`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`ImageChangeParams:` + strings.Replace(fmt.Sprintf("%v", this.ImageChangeParams), "DeploymentTriggerImageChangeParams", "DeploymentTriggerImageChangeParams", 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *ExecNewPodHook) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&ExecNewPodHook{`,
+	s := strings.Join([]string{
+		`&ExecNewPodHook{`,
 		`Command:` + fmt.Sprintf("%v", this.Command) + `,`,
 		`Env:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Env), "EnvVar", "k8s_io_api_core_v1.EnvVar", 1), `&`, ``, 1) + `,`,
 		`ContainerName:` + fmt.Sprintf("%v", this.ContainerName) + `,`,
@@ -2135,11 +2179,13 @@ func (this *ExecNewPodHook) String() string {
 	}, "")
 	return s
 }
+
 func (this *LifecycleHook) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&LifecycleHook{`,
+	s := strings.Join([]string{
+		`&LifecycleHook{`,
 		`FailurePolicy:` + fmt.Sprintf("%v", this.FailurePolicy) + `,`,
 		`ExecNewPod:` + strings.Replace(fmt.Sprintf("%v", this.ExecNewPod), "ExecNewPodHook", "ExecNewPodHook", 1) + `,`,
 		`TagImages:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.TagImages), "TagImageHook", "TagImageHook", 1), `&`, ``, 1) + `,`,
@@ -2147,11 +2193,13 @@ func (this *LifecycleHook) String() string {
 	}, "")
 	return s
 }
+
 func (this *RecreateDeploymentStrategyParams) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&RecreateDeploymentStrategyParams{`,
+	s := strings.Join([]string{
+		`&RecreateDeploymentStrategyParams{`,
 		`TimeoutSeconds:` + valueToStringGenerated(this.TimeoutSeconds) + `,`,
 		`Pre:` + strings.Replace(fmt.Sprintf("%v", this.Pre), "LifecycleHook", "LifecycleHook", 1) + `,`,
 		`Mid:` + strings.Replace(fmt.Sprintf("%v", this.Mid), "LifecycleHook", "LifecycleHook", 1) + `,`,
@@ -2160,11 +2208,13 @@ func (this *RecreateDeploymentStrategyParams) String() string {
 	}, "")
 	return s
 }
+
 func (this *RollingDeploymentStrategyParams) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&RollingDeploymentStrategyParams{`,
+	s := strings.Join([]string{
+		`&RollingDeploymentStrategyParams{`,
 		`UpdatePeriodSeconds:` + valueToStringGenerated(this.UpdatePeriodSeconds) + `,`,
 		`IntervalSeconds:` + valueToStringGenerated(this.IntervalSeconds) + `,`,
 		`TimeoutSeconds:` + valueToStringGenerated(this.TimeoutSeconds) + `,`,
@@ -2176,17 +2226,20 @@ func (this *RollingDeploymentStrategyParams) String() string {
 	}, "")
 	return s
 }
+
 func (this *TagImageHook) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TagImageHook{`,
+	s := strings.Join([]string{
+		`&TagImageHook{`,
 		`ContainerName:` + fmt.Sprintf("%v", this.ContainerName) + `,`,
 		`To:` + strings.Replace(strings.Replace(this.To.String(), "ObjectReference", "k8s_io_api_core_v1.ObjectReference", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func valueToStringGenerated(v interface{}) string {
 	rv := reflect.ValueOf(v)
 	if rv.IsNil() {
@@ -2195,6 +2248,7 @@ func valueToStringGenerated(v interface{}) string {
 	pv := reflect.Indirect(rv).Interface()
 	return fmt.Sprintf("*%v", pv)
 }
+
 func (m *CustomDeploymentStrategyParams) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2334,6 +2388,7 @@ func (m *CustomDeploymentStrategyParams) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentCause) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2446,6 +2501,7 @@ func (m *DeploymentCause) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentCauseImageTrigger) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2526,6 +2582,7 @@ func (m *DeploymentCauseImageTrigger) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentCondition) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2752,6 +2809,7 @@ func (m *DeploymentCondition) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2892,6 +2950,7 @@ func (m *DeploymentConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentConfigList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3003,6 +3062,7 @@ func (m *DeploymentConfigList) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentConfigRollback) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3228,6 +3288,7 @@ func (m *DeploymentConfigRollback) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentConfigRollbackSpec) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3407,6 +3468,7 @@ func (m *DeploymentConfigRollbackSpec) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentConfigSpec) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3767,6 +3829,7 @@ func (m *DeploymentConfigSpec) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentConfigStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4014,6 +4077,7 @@ func (m *DeploymentConfigStatus) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentDetails) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4124,6 +4188,7 @@ func (m *DeploymentDetails) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentLog) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4174,6 +4239,7 @@ func (m *DeploymentLog) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentLogOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4446,6 +4512,7 @@ func (m *DeploymentLogOptions) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4594,6 +4661,7 @@ func (m *DeploymentRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentStrategy) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5054,6 +5122,7 @@ func (m *DeploymentStrategy) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentTriggerImageChangeParams) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5212,6 +5281,7 @@ func (m *DeploymentTriggerImageChangeParams) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentTriggerPolicies) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5293,6 +5363,7 @@ func (m *DeploymentTriggerPolicies) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *DeploymentTriggerPolicy) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5405,6 +5476,7 @@ func (m *DeploymentTriggerPolicy) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *ExecNewPodHook) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5573,6 +5645,7 @@ func (m *ExecNewPodHook) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *LifecycleHook) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5716,6 +5789,7 @@ func (m *LifecycleHook) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *RecreateDeploymentStrategyParams) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5885,6 +5959,7 @@ func (m *RecreateDeploymentStrategyParams) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *RollingDeploymentStrategyParams) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -6127,6 +6202,7 @@ func (m *RollingDeploymentStrategyParams) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *TagImageHook) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -6236,6 +6312,7 @@ func (m *TagImageHook) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skipGenerated(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

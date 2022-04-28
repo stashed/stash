@@ -275,6 +275,8 @@ github.com/liggitt/tabwriter
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
+# github.com/mattn/go-colorable v0.1.12
+## explicit; go 1.13
 # github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
 ## explicit; go 1.9
 github.com/matttproud/golang_protobuf_extensions/pbutil
@@ -544,7 +546,7 @@ golang.org/x/oauth2/jwt
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 ## explicit
 golang.org/x/sync/singleflight
-# golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8
+# golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
@@ -1370,7 +1372,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20220404224906-af7b092cfac5
+# kmodules.xyz/client-go v0.0.0-20220427165208-36281a681909
 ## explicit; go 1.17
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -1392,13 +1394,13 @@ kmodules.xyz/client-go/tools/clusterid
 kmodules.xyz/client-go/tools/exec
 kmodules.xyz/client-go/tools/portforward
 kmodules.xyz/client-go/tools/queue
-# kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278
+# kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a
 ## explicit; go 1.12
 kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/custom-resources v0.0.0-20220317220154-7beb809b1f5e
+# kmodules.xyz/custom-resources v0.0.0-20220422215041-237eae1d7ddd
 ## explicit; go 1.17
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
@@ -1421,7 +1423,7 @@ kmodules.xyz/objectstore-api/osm
 ## explicit; go 1.15
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util
-# kmodules.xyz/openshift v0.0.0-20210618001443-f2507caa512f
+# kmodules.xyz/openshift v0.0.0-20220317220943-4cb898e77b51
 ## explicit; go 1.15
 kmodules.xyz/openshift/apis/apps/install
 kmodules.xyz/openshift/apis/apps/v1
@@ -1439,7 +1441,7 @@ kmodules.xyz/openshift/client/informers/externalversions/security
 kmodules.xyz/openshift/client/informers/externalversions/security/v1
 kmodules.xyz/openshift/client/listers/apps/v1
 kmodules.xyz/openshift/client/listers/security/v1
-# kmodules.xyz/prober v0.0.0-20220317043828-5ae0114adcad
+# kmodules.xyz/prober v0.0.0-20220317221229-28d263b091df
 ## explicit; go 1.15
 kmodules.xyz/prober/api
 kmodules.xyz/prober/api/v1
@@ -1586,7 +1588,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.3.0
 ## explicit; go 1.12
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.19.0
+# stash.appscode.dev/apimachinery v0.19.1-0.20220425033401-c840c081133c
 ## explicit; go 1.17
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories

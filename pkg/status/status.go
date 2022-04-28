@@ -117,7 +117,8 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	for _, t := range inv.GetTargetInfo() {
 		if t.Target != nil &&
 			t.Target.Ref.Kind == o.TargetRef.Kind &&
-			t.Target.Ref.Name == o.TargetRef.Name {
+			t.Target.Ref.Name == o.TargetRef.Name &&
+			t.Target.Ref.Namespace == o.TargetRef.Namespace {
 			targetInfo = t
 		}
 	}

@@ -60,8 +60,11 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+
+var (
+	_ = fmt.Errorf
+	_ = math.Inf
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -198,6 +201,7 @@ func init() {
 	proto.RegisterType((*ServiceAccountPodSecurityPolicyReviewStatus)(nil), "github.com.openshift.api.security.v1.ServiceAccountPodSecurityPolicyReviewStatus")
 	proto.RegisterType((*SupplementalGroupsStrategyOptions)(nil), "github.com.openshift.api.security.v1.SupplementalGroupsStrategyOptions")
 }
+
 func (m *AllowedFlexVolume) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1124,6 +1128,7 @@ func encodeFixed64Generated(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset+7] = uint8(v >> 56)
 	return offset + 8
 }
+
 func encodeFixed32Generated(dAtA []byte, offset int, v uint32) int {
 	dAtA[offset] = uint8(v)
 	dAtA[offset+1] = uint8(v >> 8)
@@ -1131,6 +1136,7 @@ func encodeFixed32Generated(dAtA []byte, offset int, v uint32) int {
 	dAtA[offset+3] = uint8(v >> 24)
 	return offset + 4
 }
+
 func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
@@ -1140,6 +1146,7 @@ func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return offset + 1
 }
+
 func (m *AllowedFlexVolume) Size() (n int) {
 	var l int
 	_ = l
@@ -1461,110 +1468,131 @@ func sovGenerated(x uint64) (n int) {
 	}
 	return n
 }
+
 func sozGenerated(x uint64) (n int) {
 	return sovGenerated(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+
 func (this *AllowedFlexVolume) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&AllowedFlexVolume{`,
+	s := strings.Join([]string{
+		`&AllowedFlexVolume{`,
 		`Driver:` + fmt.Sprintf("%v", this.Driver) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *FSGroupStrategyOptions) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&FSGroupStrategyOptions{`,
+	s := strings.Join([]string{
+		`&FSGroupStrategyOptions{`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`Ranges:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Ranges), "IDRange", "IDRange", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *IDRange) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&IDRange{`,
+	s := strings.Join([]string{
+		`&IDRange{`,
 		`Min:` + fmt.Sprintf("%v", this.Min) + `,`,
 		`Max:` + fmt.Sprintf("%v", this.Max) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *PodSecurityPolicyReview) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PodSecurityPolicyReview{`,
+	s := strings.Join([]string{
+		`&PodSecurityPolicyReview{`,
 		`Spec:` + strings.Replace(strings.Replace(this.Spec.String(), "PodSecurityPolicyReviewSpec", "PodSecurityPolicyReviewSpec", 1), `&`, ``, 1) + `,`,
 		`Status:` + strings.Replace(strings.Replace(this.Status.String(), "PodSecurityPolicyReviewStatus", "PodSecurityPolicyReviewStatus", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *PodSecurityPolicyReviewSpec) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PodSecurityPolicyReviewSpec{`,
+	s := strings.Join([]string{
+		`&PodSecurityPolicyReviewSpec{`,
 		`Template:` + strings.Replace(strings.Replace(this.Template.String(), "PodTemplateSpec", "k8s_io_api_core_v1.PodTemplateSpec", 1), `&`, ``, 1) + `,`,
 		`ServiceAccountNames:` + fmt.Sprintf("%v", this.ServiceAccountNames) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *PodSecurityPolicyReviewStatus) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PodSecurityPolicyReviewStatus{`,
+	s := strings.Join([]string{
+		`&PodSecurityPolicyReviewStatus{`,
 		`AllowedServiceAccounts:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.AllowedServiceAccounts), "ServiceAccountPodSecurityPolicyReviewStatus", "ServiceAccountPodSecurityPolicyReviewStatus", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *PodSecurityPolicySelfSubjectReview) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PodSecurityPolicySelfSubjectReview{`,
+	s := strings.Join([]string{
+		`&PodSecurityPolicySelfSubjectReview{`,
 		`Spec:` + strings.Replace(strings.Replace(this.Spec.String(), "PodSecurityPolicySelfSubjectReviewSpec", "PodSecurityPolicySelfSubjectReviewSpec", 1), `&`, ``, 1) + `,`,
 		`Status:` + strings.Replace(strings.Replace(this.Status.String(), "PodSecurityPolicySubjectReviewStatus", "PodSecurityPolicySubjectReviewStatus", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *PodSecurityPolicySelfSubjectReviewSpec) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PodSecurityPolicySelfSubjectReviewSpec{`,
+	s := strings.Join([]string{
+		`&PodSecurityPolicySelfSubjectReviewSpec{`,
 		`Template:` + strings.Replace(strings.Replace(this.Template.String(), "PodTemplateSpec", "k8s_io_api_core_v1.PodTemplateSpec", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *PodSecurityPolicySubjectReview) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PodSecurityPolicySubjectReview{`,
+	s := strings.Join([]string{
+		`&PodSecurityPolicySubjectReview{`,
 		`Spec:` + strings.Replace(strings.Replace(this.Spec.String(), "PodSecurityPolicySubjectReviewSpec", "PodSecurityPolicySubjectReviewSpec", 1), `&`, ``, 1) + `,`,
 		`Status:` + strings.Replace(strings.Replace(this.Status.String(), "PodSecurityPolicySubjectReviewStatus", "PodSecurityPolicySubjectReviewStatus", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *PodSecurityPolicySubjectReviewSpec) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PodSecurityPolicySubjectReviewSpec{`,
+	s := strings.Join([]string{
+		`&PodSecurityPolicySubjectReviewSpec{`,
 		`Template:` + strings.Replace(strings.Replace(this.Template.String(), "PodTemplateSpec", "k8s_io_api_core_v1.PodTemplateSpec", 1), `&`, ``, 1) + `,`,
 		`User:` + fmt.Sprintf("%v", this.User) + `,`,
 		`Groups:` + fmt.Sprintf("%v", this.Groups) + `,`,
@@ -1572,11 +1600,13 @@ func (this *PodSecurityPolicySubjectReviewSpec) String() string {
 	}, "")
 	return s
 }
+
 func (this *PodSecurityPolicySubjectReviewStatus) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PodSecurityPolicySubjectReviewStatus{`,
+	s := strings.Join([]string{
+		`&PodSecurityPolicySubjectReviewStatus{`,
 		`AllowedBy:` + strings.Replace(fmt.Sprintf("%v", this.AllowedBy), "ObjectReference", "k8s_io_api_core_v1.ObjectReference", 1) + `,`,
 		`Reason:` + fmt.Sprintf("%v", this.Reason) + `,`,
 		`Template:` + strings.Replace(strings.Replace(this.Template.String(), "PodTemplateSpec", "k8s_io_api_core_v1.PodTemplateSpec", 1), `&`, ``, 1) + `,`,
@@ -1584,11 +1614,13 @@ func (this *PodSecurityPolicySubjectReviewStatus) String() string {
 	}, "")
 	return s
 }
+
 func (this *RangeAllocation) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&RangeAllocation{`,
+	s := strings.Join([]string{
+		`&RangeAllocation{`,
 		`ObjectMeta:` + strings.Replace(strings.Replace(this.ObjectMeta.String(), "ObjectMeta", "k8s_io_apimachinery_pkg_apis_meta_v1.ObjectMeta", 1), `&`, ``, 1) + `,`,
 		`Range:` + fmt.Sprintf("%v", this.Range) + `,`,
 		`Data:` + valueToStringGenerated(this.Data) + `,`,
@@ -1596,22 +1628,26 @@ func (this *RangeAllocation) String() string {
 	}, "")
 	return s
 }
+
 func (this *RangeAllocationList) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&RangeAllocationList{`,
+	s := strings.Join([]string{
+		`&RangeAllocationList{`,
 		`ListMeta:` + strings.Replace(strings.Replace(this.ListMeta.String(), "ListMeta", "k8s_io_apimachinery_pkg_apis_meta_v1.ListMeta", 1), `&`, ``, 1) + `,`,
 		`Items:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Items), "RangeAllocation", "RangeAllocation", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *RunAsUserStrategyOptions) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&RunAsUserStrategyOptions{`,
+	s := strings.Join([]string{
+		`&RunAsUserStrategyOptions{`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`UID:` + valueToStringGenerated(this.UID) + `,`,
 		`UIDRangeMin:` + valueToStringGenerated(this.UIDRangeMin) + `,`,
@@ -1620,22 +1656,26 @@ func (this *RunAsUserStrategyOptions) String() string {
 	}, "")
 	return s
 }
+
 func (this *SELinuxContextStrategyOptions) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&SELinuxContextStrategyOptions{`,
+	s := strings.Join([]string{
+		`&SELinuxContextStrategyOptions{`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`SELinuxOptions:` + strings.Replace(fmt.Sprintf("%v", this.SELinuxOptions), "SELinuxOptions", "k8s_io_api_core_v1.SELinuxOptions", 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *SecurityContextConstraints) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&SecurityContextConstraints{`,
+	s := strings.Join([]string{
+		`&SecurityContextConstraints{`,
 		`ObjectMeta:` + strings.Replace(strings.Replace(this.ObjectMeta.String(), "ObjectMeta", "k8s_io_apimachinery_pkg_apis_meta_v1.ObjectMeta", 1), `&`, ``, 1) + `,`,
 		`Priority:` + valueToStringGenerated(this.Priority) + `,`,
 		`AllowPrivilegedContainer:` + fmt.Sprintf("%v", this.AllowPrivilegedContainer) + `,`,
@@ -1665,39 +1705,46 @@ func (this *SecurityContextConstraints) String() string {
 	}, "")
 	return s
 }
+
 func (this *SecurityContextConstraintsList) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&SecurityContextConstraintsList{`,
+	s := strings.Join([]string{
+		`&SecurityContextConstraintsList{`,
 		`ListMeta:` + strings.Replace(strings.Replace(this.ListMeta.String(), "ListMeta", "k8s_io_apimachinery_pkg_apis_meta_v1.ListMeta", 1), `&`, ``, 1) + `,`,
 		`Items:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Items), "SecurityContextConstraints", "SecurityContextConstraints", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *ServiceAccountPodSecurityPolicyReviewStatus) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&ServiceAccountPodSecurityPolicyReviewStatus{`,
+	s := strings.Join([]string{
+		`&ServiceAccountPodSecurityPolicyReviewStatus{`,
 		`PodSecurityPolicySubjectReviewStatus:` + strings.Replace(strings.Replace(this.PodSecurityPolicySubjectReviewStatus.String(), "PodSecurityPolicySubjectReviewStatus", "PodSecurityPolicySubjectReviewStatus", 1), `&`, ``, 1) + `,`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func (this *SupplementalGroupsStrategyOptions) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&SupplementalGroupsStrategyOptions{`,
+	s := strings.Join([]string{
+		`&SupplementalGroupsStrategyOptions{`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`Ranges:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Ranges), "IDRange", "IDRange", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
 }
+
 func valueToStringGenerated(v interface{}) string {
 	rv := reflect.ValueOf(v)
 	if rv.IsNil() {
@@ -1706,6 +1753,7 @@ func valueToStringGenerated(v interface{}) string {
 	pv := reflect.Indirect(rv).Interface()
 	return fmt.Sprintf("*%v", pv)
 }
+
 func (m *AllowedFlexVolume) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1785,6 +1833,7 @@ func (m *AllowedFlexVolume) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *FSGroupStrategyOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1895,6 +1944,7 @@ func (m *FSGroupStrategyOptions) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *IDRange) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1983,6 +2033,7 @@ func (m *IDRange) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *PodSecurityPolicyReview) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2093,6 +2144,7 @@ func (m *PodSecurityPolicyReview) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *PodSecurityPolicyReviewSpec) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2202,6 +2254,7 @@ func (m *PodSecurityPolicyReviewSpec) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *PodSecurityPolicyReviewStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2283,6 +2336,7 @@ func (m *PodSecurityPolicyReviewStatus) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *PodSecurityPolicySelfSubjectReview) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2393,6 +2447,7 @@ func (m *PodSecurityPolicySelfSubjectReview) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *PodSecurityPolicySelfSubjectReviewSpec) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2473,6 +2528,7 @@ func (m *PodSecurityPolicySelfSubjectReviewSpec) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *PodSecurityPolicySubjectReview) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2583,6 +2639,7 @@ func (m *PodSecurityPolicySubjectReview) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *PodSecurityPolicySubjectReviewSpec) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2721,6 +2778,7 @@ func (m *PodSecurityPolicySubjectReviewSpec) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *PodSecurityPolicySubjectReviewStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2863,6 +2921,7 @@ func (m *PodSecurityPolicySubjectReviewStatus) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *RangeAllocation) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3003,6 +3062,7 @@ func (m *RangeAllocation) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *RangeAllocationList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3114,6 +3174,7 @@ func (m *RangeAllocationList) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *RunAsUserStrategyOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3253,6 +3314,7 @@ func (m *RunAsUserStrategyOptions) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *SELinuxContextStrategyOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3365,6 +3427,7 @@ func (m *SELinuxContextStrategyOptions) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *SecurityContextConstraints) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4059,6 +4122,7 @@ func (m *SecurityContextConstraints) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *SecurityContextConstraintsList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4170,6 +4234,7 @@ func (m *SecurityContextConstraintsList) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *ServiceAccountPodSecurityPolicyReviewStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4279,6 +4344,7 @@ func (m *ServiceAccountPodSecurityPolicyReviewStatus) Unmarshal(dAtA []byte) err
 	}
 	return nil
 }
+
 func (m *SupplementalGroupsStrategyOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4389,6 +4455,7 @@ func (m *SupplementalGroupsStrategyOptions) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skipGenerated(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

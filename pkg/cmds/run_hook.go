@@ -19,7 +19,6 @@ package cmds
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -46,8 +45,7 @@ type hookOptions struct {
 	namespace         string
 	hookType          string
 	backupSessionName string
-	targetKind        string
-	targetName        string
+	targetRef         v1beta1.TargetRef
 	invokerKind       string
 	invokerName       string
 	hostname          string
@@ -63,7 +61,7 @@ func NewCmdRunHook() *cobra.Command {
 	opt := hookOptions{
 		masterURL:      "",
 		kubeConfigPath: "",
-		namespace:      meta.Namespace(),
+		namespace:      meta.PodNamespace(),
 		hostname:       apis.DefaultHost,
 	}
 
@@ -101,8 +99,9 @@ func NewCmdRunHook() *cobra.Command {
 	cmd.Flags().StringVar(&opt.backupSessionName, "backupsession", opt.backupSessionName, "Name of the respective BackupSession object")
 	cmd.Flags().StringVar(&opt.invokerKind, "invoker-kind", opt.invokerKind, "Type of the backup invoker")
 	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", opt.invokerName, "Name of the respective backup invoker")
-	cmd.Flags().StringVar(&opt.targetName, "target-name", opt.targetName, "Name of the Target")
-	cmd.Flags().StringVar(&opt.targetKind, "target-kind", opt.targetName, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Name, "target-name", opt.targetRef.Name, "Name of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Namespace, "target-namespace", opt.targetRef.Namespace, "Namespace of the Target")
+	cmd.Flags().StringVar(&opt.targetRef.Kind, "target-kind", opt.targetRef.Name, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.hookType, "hook-type", opt.hookType, "Type of hook to execute")
 	cmd.Flags().StringVar(&opt.hostname, "hostname", opt.hostname, "Name of the host that is being backed up or restored")
 	cmd.Flags().BoolVar(&opt.metricOpts.Enabled, "metrics-enabled", opt.metricOpts.Enabled, "Specify whether to export Prometheus metrics")
@@ -128,8 +127,8 @@ func (opt *hookOptions) executeBackupHook() error {
 	targetInfo := opt.getBackupTargetInfo(inv)
 	if targetInfo == nil {
 		return fmt.Errorf("backup target %s/%s did not matched with any target of the %s %s/%s",
-			opt.targetKind,
-			opt.targetName,
+			opt.targetRef.Kind,
+			opt.targetRef.Name,
 			opt.invokerKind,
 			opt.namespace,
 			opt.invokerName,
@@ -166,7 +165,7 @@ func (opt *hookOptions) executeBackupHook() error {
 
 func (opt *hookOptions) getBackupTargetInfo(inv invoker.BackupInvoker) *invoker.BackupTargetInfo {
 	for _, targetInfo := range inv.GetTargetInfo() {
-		if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+		if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetRef.Kind, opt.targetRef.Name, opt.targetRef.Namespace) {
 			return &targetInfo
 		}
 	}
@@ -182,8 +181,8 @@ func (opt *hookOptions) executeRestoreHook() error {
 	targetInfo := opt.getRestoreTargetInfo(inv)
 	if targetInfo == nil {
 		return fmt.Errorf("restore target %s/%s did not matched with any target of the %s %s/%s",
-			opt.targetKind,
-			opt.targetName,
+			opt.targetRef.Kind,
+			opt.targetRef.Name,
 			opt.invokerKind,
 			opt.namespace,
 			opt.invokerName,
@@ -215,7 +214,7 @@ func (opt *hookOptions) executeRestoreHook() error {
 
 func (opt *hookOptions) getRestoreTargetInfo(inv invoker.RestoreInvoker) *invoker.RestoreTargetInfo {
 	for _, targetInfo := range inv.GetTargetInfo() {
-		if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetKind, opt.targetName) {
+		if targetInfo.Target != nil && targetMatched(targetInfo.Target.Ref, opt.targetRef.Kind, opt.targetRef.Name, opt.targetRef.Namespace) {
 			return &targetInfo
 		}
 	}
@@ -229,7 +228,7 @@ func (opt *hookOptions) getHookExecutorPodName(targetRef v1beta1.TargetRef) (str
 		return opt.getAppPodName(targetRef.Name)
 	default:
 		// For other types of target, hook will be executed where this process is running.
-		return os.Getenv(apis.KeyPodName), nil
+		return meta.PodName(), nil
 	}
 }
 

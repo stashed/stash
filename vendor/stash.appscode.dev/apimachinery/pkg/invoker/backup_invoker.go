@@ -112,7 +112,10 @@ func getMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.Ta
 }
 
 func TargetMatched(t1, t2 v1beta1.TargetRef) bool {
-	return t1.APIVersion == t2.APIVersion && t1.Kind == t2.Kind && t1.Name == t2.Name
+	return t1.APIVersion == t2.APIVersion &&
+		t1.Kind == t2.Kind &&
+		t1.Namespace == t2.Namespace &&
+		t1.Name == t2.Name
 }
 
 func setMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.TargetRef, newCondition kmapi.Condition) []v1beta1.MemberConditions {

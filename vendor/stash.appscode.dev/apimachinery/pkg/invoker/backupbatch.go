@@ -153,7 +153,7 @@ func (inv *BackupBatchInvoker) GetTargetInfo() []BackupTargetInfo {
 	for _, member := range inv.backupBatch.Spec.Members {
 		targetInfo = append(targetInfo, BackupTargetInfo{
 			Task:                  member.Task,
-			Target:                member.Target,
+			Target:                getBackupTarget(member.Target, inv.backupBatch.Namespace),
 			RuntimeSettings:       member.RuntimeSettings,
 			TempDir:               member.TempDir,
 			InterimVolumeTemplate: member.InterimVolumeTemplate,
@@ -161,6 +161,18 @@ func (inv *BackupBatchInvoker) GetTargetInfo() []BackupTargetInfo {
 		})
 	}
 	return targetInfo
+}
+
+func getBackupTarget(target *v1beta1.BackupTarget, invNamespace string) *v1beta1.BackupTarget {
+	if target == nil {
+		return &v1beta1.BackupTarget{
+			Ref: v1beta1.EmptyTargetRef(),
+		}
+	}
+	if target.Ref.Namespace == "" {
+		target.Ref.Namespace = invNamespace
+	}
+	return target
 }
 
 func (inv *BackupBatchInvoker) GetDriver() v1beta1.Snapshotter {

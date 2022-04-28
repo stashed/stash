@@ -19,7 +19,6 @@ package backup
 import (
 	"context"
 	"fmt"
-	"os"
 	"reflect"
 	"time"
 
@@ -64,16 +63,16 @@ type BackupSessionController struct {
 	MaxNumRequeues       int
 	NumThreads           int
 	ResyncPeriod         time.Duration
-	// backupConfiguration/BackupBatch
-	InvokerKind      string
-	InvokerName      string
-	Namespace        string
-	BackupTargetName string
-	BackupTargetKind string
+	// BackupConfiguration/BackupBatch
+	InvokerKind string
+	InvokerName string
+	Namespace   string
 	// Backup Session
 	bsQueue    *queue.Worker
 	bsInformer cache.SharedIndexInformer
 	bsLister   v1beta1.BackupSessionLister
+
+	TargetRef api_v1beta1.TargetRef
 
 	SetupOpt restic.SetupOptions
 	Host     string
@@ -132,7 +131,7 @@ func (c *BackupSessionController) runBackupSessionController(invokerRef *core.Ob
 }
 
 func (c *BackupSessionController) initBackupSessionWatcher() error {
-	// Only watches for BackupSession of the respective invoker.
+	// Only watches for BackupSession of the respective inv.
 	// Respective CronJob creates BackupSession with invoker's name and kind as label.
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -301,7 +300,7 @@ func (c *BackupSessionController) electLeaderPod(targetInfo invoker.BackupTarget
 	klog.Infoln("Attempting to elect leader pod")
 
 	rlc := resourcelock.ResourceLockConfig{
-		Identity:      os.Getenv(apis.KeyPodName),
+		Identity:      meta.PodName(),
 		EventRecorder: eventer.NewEventRecorder(c.K8sClient, BackupEventComponent),
 	}
 	resLock, err := resourcelock.New(
@@ -359,7 +358,7 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 	klog.Infoln("Attempting to acquire leadership for backup")
 
 	rlc := resourcelock.ResourceLockConfig{
-		Identity:      os.Getenv(apis.KeyPodName),
+		Identity:      meta.PodName(),
 		EventRecorder: eventer.NewEventRecorder(c.K8sClient, BackupEventComponent),
 	}
 
@@ -413,7 +412,7 @@ func (c *BackupSessionController) HandleBackupSetupFailure(ref *core.ObjectRefer
 		ref,
 		core.EventTypeWarning,
 		eventer.EventReasonFailedToStartBackupSessionController,
-		fmt.Sprintf("failed to start BackupSession controller in pod %s/%s Reason: %v", meta.Namespace(), os.Getenv(apis.KeyPodName), setupErr),
+		fmt.Sprintf("failed to start BackupSession controller in pod %s/%s Reason: %v", meta.PodNamespace(), meta.PodName(), setupErr),
 	)
 	return errors.NewAggregate([]error{setupErr, err})
 }
@@ -429,7 +428,7 @@ func (c *BackupSessionController) handleBackupSetupSuccess(invokerRef *core.Obje
 		invokerRef,
 		core.EventTypeNormal,
 		eventer.EventReasonBackupSessionControllerStarted,
-		fmt.Sprintf("BackupSession controller started successfully in pod %s/%s.", meta.Namespace(), os.Getenv(apis.KeyPodName)),
+		fmt.Sprintf("BackupSession controller started successfully in pod %s/%s.", meta.PodNamespace(), meta.PodName()),
 	)
 	return err
 }
@@ -495,8 +494,9 @@ func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1
 	// if backupSession has entry for this host in status field, then it has been already processed for this host
 	for _, target := range backupSession.Status.Targets {
 		if backupTarget != nil &&
-			backupTarget.Ref.Kind == c.BackupTargetKind &&
-			backupTarget.Ref.Name == c.BackupTargetName {
+			backupTarget.Ref.Kind == c.TargetRef.Kind &&
+			backupTarget.Ref.Namespace == c.TargetRef.Namespace &&
+			backupTarget.Ref.Name == c.TargetRef.Name {
 			for _, hostStats := range target.Stats {
 				if hostStats.Hostname == c.Host {
 					return true
@@ -508,8 +508,9 @@ func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1
 }
 
 func (c *BackupSessionController) targetMatched(ref api_v1beta1.TargetRef) bool {
-	if ref.Kind == c.BackupTargetKind &&
-		ref.Name == c.BackupTargetName {
+	if ref.Kind == c.TargetRef.Kind &&
+		ref.Namespace == c.TargetRef.Namespace &&
+		ref.Name == c.TargetRef.Name {
 		return true
 	}
 	return false
@@ -562,7 +563,7 @@ func (c *BackupSessionController) executePreBackupHook(inv invoker.BackupInvoker
 		Target:        targetInfo.Target.Ref,
 		ExecutorPod: kmapi.ObjectReference{
 			Namespace: c.Namespace,
-			Name:      os.Getenv(apis.KeyPodName),
+			Name:      meta.PodName(),
 		},
 		Hook:     targetInfo.Hooks.PreBackup,
 		HookType: apis.PreBackupHook,
@@ -579,7 +580,7 @@ func (c *BackupSessionController) executePostBackupHook(inv invoker.BackupInvoke
 		Target:        targetInfo.Target.Ref,
 		ExecutorPod: kmapi.ObjectReference{
 			Namespace: c.Namespace,
-			Name:      os.Getenv(apis.KeyPodName),
+			Name:      meta.PodName(),
 		},
 		Hook:     targetInfo.Hooks.PostBackup,
 		HookType: apis.PostBackupHook,

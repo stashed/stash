@@ -29,6 +29,7 @@ type RBACOptions struct {
 	PodSecurityPolicyNames  []string
 	ServiceAccount          metav1.ObjectMeta
 	CrossNamespaceResources *CrossNamespaceResources
+	Suffix                  string
 }
 
 type InvokerOptions struct {

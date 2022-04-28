@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -134,7 +133,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 		return nil
 	}
 
-	if invoker.BackupCompletedForAllTargets(session.GetTargetStatus()) {
+	if invoker.BackupCompletedForAllTargets(session.GetTargetStatus(), len(inv.GetTargetInfo())) {
 		if !backupMetricPushed(session.GetConditions()) {
 			err = c.sendBackupMetrics(inv, session)
 			if err != nil {
@@ -195,7 +194,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 		if targetInfo.Target != nil {
 			// Skip processing if the backup has been already initiated before for this target
 			if invoker.TargetBackupInitiated(targetInfo.Target.Ref, session.GetTargetStatus()) {
-				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup has been already initiated for this target.", targetInfo.Target.Ref.Kind, session.GetObjectMeta().Namespace, targetInfo.Target.Ref.Name)
+				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup has been already initiated for this target.", targetInfo.Target.Ref.Kind, targetInfo.Target.Ref.Namespace, targetInfo.Target.Ref.Name)
 				continue
 			}
 
@@ -204,7 +203,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 				!inv.NextInOrder(targetInfo.Target.Ref, session.GetTargetStatus()) {
 				// backup order is sequential and the current target is not yet to be executed.
 				// so, set its phase to "Pending".
-				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.", targetInfo.Target.Ref.Kind, session.GetObjectMeta().Namespace, targetInfo.Target.Ref.Name)
+				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.", targetInfo.Target.Ref.Kind, targetInfo.Target.Ref.Namespace, targetInfo.Target.Ref.Name)
 				err = c.setTargetBackupPending(targetInfo.Target.Ref, session)
 				if err != nil {
 					return err
@@ -228,7 +227,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 }
 
 func (c *StashController) ensureBackupExecutor(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, session *invoker.BackupSessionHandler, idx int) error {
-	switch backupExecutor(inv, targetInfo.Target.Ref) {
+	switch backupExecutor(inv, targetInfo) {
 	case BackupExecutorSidecar:
 		// Backup model is sidecar. For sidecar model, controller inside sidecar will take care of it.
 		klog.Infof("Skipping processing BackupSession %s/%s for target %s %s/%s. Reason: Backup model is sidecar."+
@@ -236,7 +235,7 @@ func (c *StashController) ensureBackupExecutor(inv invoker.BackupInvoker, target
 			session.GetObjectMeta().Namespace,
 			session.GetObjectMeta().Name,
 			targetInfo.Target.Ref.Kind,
-			session.GetObjectMeta().Namespace,
+			targetInfo.Target.Ref.Namespace,
 			targetInfo.Target.Ref.Name,
 		)
 		// After upgrading Stash operator, the existing stash sidecar may still use the old configuration (i.e. image tag).
@@ -267,7 +266,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 	invMeta := inv.GetObjectMeta()
 	ownerRef := inv.GetOwnerRef()
 	invRef, err := inv.GetObjectRef()
-	runtimeSettings := inv.GetRuntimeSettings()
+	runtimeSettings := targetInfo.RuntimeSettings
 
 	if err != nil {
 		return err
@@ -283,14 +282,20 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		return err
 	}
 
-	rbacOptions, err := c.getBackupRBACOptions(inv)
+	rbacOptions, err := c.getBackupRBACOptions(inv, &index)
 	if err != nil {
 		return err
 	}
-
 	rbacOptions.PodSecurityPolicyNames = psps
-	if targetInfo.RuntimeSettings.Pod != nil && targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
-		rbacOptions.ServiceAccount.Name = targetInfo.RuntimeSettings.Pod.ServiceAccountName
+
+	if runtimeSettings.Pod != nil {
+		if runtimeSettings.Pod.ServiceAccountName != "" {
+			rbacOptions.ServiceAccount.Name = runtimeSettings.Pod.ServiceAccountName
+		}
+
+		if runtimeSettings.Pod.ServiceAccountAnnotations != nil {
+			rbacOptions.ServiceAccount.Annotations = runtimeSettings.Pod.ServiceAccountAnnotations
+		}
 	}
 
 	err = rbacOptions.EnsureBackupJobRBAC()
@@ -313,7 +318,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		return err
 	}
 
-	addon, err := api_util.ExtractAddonInfo(c.appCatalogClient, targetInfo.Task, targetInfo.Target.Ref, invMeta.Namespace)
+	addon, err := api_util.ExtractAddonInfo(c.appCatalogClient, targetInfo.Task, targetInfo.Target.Ref)
 	if err != nil {
 		return err
 	}
@@ -358,7 +363,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		taskResolver.PostTaskHookInput[apis.HookType] = apis.PostBackupHook
 	}
 
-	podSpec, err := taskResolver.GetPodSpec(invRef.Kind, invRef.Name, targetInfo.Target.Ref.Kind, targetInfo.Target.Ref.Name)
+	podSpec, err := taskResolver.GetPodSpec(invRef.Kind, invRef.Name, targetInfo.Target.Ref)
 	if err != nil {
 		return fmt.Errorf("can't get PodSpec for backup invoker %s/%s, reason: %s", invMeta.Namespace, invMeta.Name, err)
 	}
@@ -382,7 +387,6 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 			// pass offshoot labels to job's pod
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
-
 			in.Spec.Template.Spec = podSpec
 			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
@@ -500,7 +504,7 @@ func (c *StashController) initiateTargetBackup(inv invoker.BackupInvoker, sessio
 	targetsInfo := inv.GetTargetInfo()
 	target := targetsInfo[index].Target
 	// find out the total number of hosts in target that will be backed up in this backup session
-	totalHosts, err := c.getTotalHosts(target, session.GetObjectMeta().Namespace, inv.GetDriver())
+	totalHosts, err := c.getTotalHosts(target, inv.GetDriver())
 	if err != nil {
 		return err
 	}
@@ -598,9 +602,9 @@ func (c *StashController) cleanupBackupHistory(session *invoker.BackupSessionHan
 	return conditions.SetBackupHistoryCleanedConditionToTrue(session)
 }
 
-func backupExecutor(inv invoker.BackupInvoker, tref api_v1beta1.TargetRef) string {
+func backupExecutor(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) string {
 	if inv.GetDriver() == api_v1beta1.ResticSnapshotter &&
-		util.BackupModel(tref.Kind) == apis.ModelSidecar {
+		util.BackupModel(targetInfo.Target.Ref.Kind, targetInfo.Task.Name) == apis.ModelSidecar {
 		return BackupExecutorSidecar
 	}
 	if inv.GetDriver() == api_v1beta1.VolumeSnapshotter {
@@ -630,8 +634,8 @@ func (c *StashController) executeGlobalPostBackupHook(inv invoker.BackupInvoker,
 		Config: c.clientConfig,
 		Hook:   inv.GetGlobalHooks().PostBackup,
 		ExecutorPod: kmapi.ObjectReference{
-			Namespace: os.Getenv("MY_POD_NAMESPACE"),
-			Name:      os.Getenv("MY_POD_NAME"),
+			Namespace: meta.PodNamespace(),
+			Name:      meta.PodName(),
 		},
 		Summary: summary,
 	}
@@ -655,8 +659,8 @@ func (c *StashController) executeGlobalPreBackupHook(inv invoker.BackupInvoker, 
 		Config: c.clientConfig,
 		Hook:   inv.GetGlobalHooks().PreBackup,
 		ExecutorPod: kmapi.ObjectReference{
-			Namespace: os.Getenv("MY_POD_NAMESPACE"),
-			Name:      os.Getenv("MY_POD_NAME"),
+			Namespace: meta.PodNamespace(),
+			Name:      meta.PodName(),
 		},
 		Summary: inv.GetSummary(api_v1beta1.TargetRef{}, kmapi.ObjectReference{
 			Namespace: session.GetObjectMeta().Namespace,
@@ -738,10 +742,9 @@ func explicitInputs(params []appcat.Param) map[string]string {
 	return inputs
 }
 
-func (c *StashController) getBackupRBACOptions(inv invoker.BackupInvoker) (stash_rbac.RBACOptions, error) {
+func (c *StashController) getBackupRBACOptions(inv invoker.BackupInvoker, index *int) (stash_rbac.RBACOptions, error) {
 	invMeta := inv.GetObjectMeta()
 	repo := inv.GetRepoRef()
-	runtimeSettings := inv.GetRuntimeSettings()
 
 	rbacOptions := stash_rbac.RBACOptions{
 		KubeClient: c.kubeClient,
@@ -754,10 +757,6 @@ func (c *StashController) getBackupRBACOptions(inv invoker.BackupInvoker) (stash
 		ServiceAccount: metav1.ObjectMeta{
 			Namespace: invMeta.Namespace,
 		},
-	}
-
-	if runtimeSettings.Pod != nil && runtimeSettings.Pod.ServiceAccountAnnotations != nil {
-		rbacOptions.ServiceAccount.Annotations = runtimeSettings.Pod.ServiceAccountAnnotations
 	}
 
 	if repo.Namespace != invMeta.Namespace {
@@ -774,6 +773,10 @@ func (c *StashController) getBackupRBACOptions(inv invoker.BackupInvoker) (stash
 			Namespace:  repo.Namespace,
 			Secret:     repository.Spec.Backend.StorageSecretName,
 		}
+	}
+	rbacOptions.Suffix = "0"
+	if index != nil {
+		rbacOptions.Suffix = fmt.Sprintf("%d", *index)
 	}
 
 	return rbacOptions, nil

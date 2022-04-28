@@ -119,7 +119,9 @@ func JobsTargetMatch(job batchv1.Job, targetRef v1beta1.TargetRef) bool {
 	for _, c := range containers {
 		targetKindMatched, _ := arrays.Contains(c.Args, fmt.Sprintf("--target-kind=%s", targetRef.Kind))
 		targetNameMatched, _ := arrays.Contains(c.Args, fmt.Sprintf("--target-name=%s", targetRef.Name))
-		if targetKindMatched && targetNameMatched {
+		targetNamespaceMatched, _ := arrays.Contains(c.Args, fmt.Sprintf("--target-namespace=%s", targetRef.Namespace))
+
+		if targetKindMatched && targetNamespaceMatched && targetNameMatched {
 			return true
 		}
 	}

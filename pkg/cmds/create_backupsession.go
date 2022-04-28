@@ -56,7 +56,7 @@ func NewCmdCreateBackupSession() *cobra.Command {
 		kubeconfigPath string
 
 		opt = options{
-			namespace: meta.Namespace(),
+			namespace: meta.PodNamespace(),
 		}
 	)
 

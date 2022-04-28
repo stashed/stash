@@ -18,7 +18,6 @@ package conditions
 
 import (
 	"fmt"
-	"strings"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
@@ -35,8 +34,8 @@ func SetRestoreTargetFoundConditionToTrue(inv invoker.RestoreInvoker, index int)
 		Status: core.ConditionTrue,
 		Reason: v1beta1.TargetAvailable,
 		Message: fmt.Sprintf("Restore target %s %s/%s found.",
-			target.Ref.APIVersion,
-			strings.ToLower(target.Ref.Kind),
+			target.Ref.Kind,
+			target.Ref.Namespace,
 			target.Ref.Name,
 		),
 		LastTransitionTime: metav1.Now(),
@@ -50,8 +49,8 @@ func SetRestoreTargetFoundConditionToFalse(inv invoker.RestoreInvoker, index int
 		Status: core.ConditionFalse,
 		Reason: v1beta1.TargetNotAvailable,
 		Message: fmt.Sprintf("Restore target %s %s/%s does not exist.",
-			target.Ref.APIVersion,
-			strings.ToLower(target.Ref.Kind),
+			target.Ref.Kind,
+			target.Ref.Namespace,
 			target.Ref.Name,
 		),
 		LastTransitionTime: metav1.Now(),
@@ -65,8 +64,8 @@ func SetRestoreTargetFoundConditionToUnknown(inv invoker.RestoreInvoker, index i
 		Status: core.ConditionUnknown,
 		Reason: v1beta1.UnableToCheckTargetAvailability,
 		Message: fmt.Sprintf("Failed to check whether restore target %s %s/%s exist or not. Reason: %v",
-			target.Ref.APIVersion,
-			strings.ToLower(target.Ref.Kind),
+			target.Ref.Kind,
+			target.Ref.Namespace,
 			target.Ref.Name,
 			err,
 		),
