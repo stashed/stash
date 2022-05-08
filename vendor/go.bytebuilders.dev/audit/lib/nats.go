@@ -116,7 +116,7 @@ func NewConnection(natscred NatsCredential) (nc *nats.Conn, err error) {
 	}
 
 	credFile := "/tmp/nats.creds"
-	if err = ioutil.WriteFile(credFile, natscred.Credential, 0600); err != nil {
+	if err = ioutil.WriteFile(credFile, natscred.Credential, 0o600); err != nil {
 		return nil, err
 	}
 
