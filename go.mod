@@ -11,7 +11,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.19
+	go.bytebuilders.dev/audit v0.0.20
 	go.bytebuilders.dev/license-verifier v0.9.7
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.7
 	golang.org/x/text v0.3.7
@@ -24,7 +24,7 @@ require (
 	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/runtime v0.2.0
 	gomodules.xyz/stow v0.2.4
-	gomodules.xyz/x v0.0.13
+	gomodules.xyz/x v0.0.14
 	k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery v0.21.1
@@ -110,7 +110,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nats-io/nats.go v1.13.0 // indirect
+	github.com/nats-io/nats.go v1.15.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/ncw/swift v1.0.49 // indirect
@@ -167,7 +167,7 @@ require (
 	k8s.io/component-base v0.21.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b // indirect
-	kmodules.xyz/resource-metadata v0.10.15 // indirect
+	kmodules.xyz/resource-metadata v0.10.16-0.20220419233724-fbd1b7e25b05 // indirect
 	kmodules.xyz/resource-metrics v0.0.8 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.15 // indirect
 	sigs.k8s.io/cli-utils v0.26.1 // indirect
