@@ -1276,7 +1276,6 @@ kmodules.xyz/client-go v0.0.0-20211107190155-5bb4090d2728/go.mod h1:ENUu8pPK19xz
 kmodules.xyz/client-go v0.0.0-20220104114408-2a3a05dbe89f/go.mod h1:xxl1ve1Obe4xaW+XjXsNHyLTni4QPIvHn9TfnYEoQRo=
 kmodules.xyz/client-go v0.0.0-20220215012708-9963581d69a7/go.mod h1:sOq5P3AkZdv6D/skvUPwEG15NDYy5olwBllH/JXfhGI=
 kmodules.xyz/client-go v0.0.0-20220317213815-2a6d5a5784f2/go.mod h1:7pExIHGzUdu8ZGveYvAaXEhS4GdczoOy8z+hq6x6K9A=
-kmodules.xyz/client-go v0.0.0-20220404224906-af7b092cfac5/go.mod h1:7pExIHGzUdu8ZGveYvAaXEhS4GdczoOy8z+hq6x6K9A=
 kmodules.xyz/client-go v0.0.0-20220427165208-36281a681909 h1:c/7SJgQbmEzPdziKnx5uC7EtkTmbbyLBz7gQGfVGvSg=
 kmodules.xyz/client-go v0.0.0-20220427165208-36281a681909/go.mod h1:7pExIHGzUdu8ZGveYvAaXEhS4GdczoOy8z+hq6x6K9A=
 kmodules.xyz/constants v0.0.0-20210218100002-2c304bfda278/go.mod h1:DbiFk1bJ1KEO94t1SlAn7tzc+Zz95rSXgyUKa2nzPmY=
@@ -1285,7 +1284,6 @@ kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a/go.mod h1:3C5i73Z7fcMV
 kmodules.xyz/crd-schema-fuzz v0.0.0-20210618002152-fae23aef5fb4/go.mod h1:IIkUctlfoptoci0BOrsUf8ya+MOG5uaeh1PE4uzaIbA=
 kmodules.xyz/crd-schema-fuzz v0.0.0-20211025154117-6edb24ef11bc/go.mod h1:yLOBJKasPhnCodKSZGFZ6OGFFrp0tq3ALS9rDnYFjkg=
 kmodules.xyz/custom-resources v0.0.0-20220208103158-61b298634e43/go.mod h1:/XjDeILFV2wBota5kHo21DMvOt08nSAk1vm6buCuwt4=
-kmodules.xyz/custom-resources v0.0.0-20220317220154-7beb809b1f5e/go.mod h1:OCLmlMhRowPtBPP1bu4xreNLj8/TYu/4lY477+eAzUM=
 kmodules.xyz/custom-resources v0.0.0-20220422215041-237eae1d7ddd h1:Y5w0ZxHMSPUnzjAlVKXS6+ED/wXlxXyWVYckarkiBBA=
 kmodules.xyz/custom-resources v0.0.0-20220422215041-237eae1d7ddd/go.mod h1:OCLmlMhRowPtBPP1bu4xreNLj8/TYu/4lY477+eAzUM=
 kmodules.xyz/objectstore-api v0.0.0-20220317220441-f1d593d0a778 h1:1biCLf6zjBzg9YI9xDjrH6RrKtizpKVB7iuo/5NWOo0=
@@ -1340,5 +1338,5 @@ sigs.k8s.io/yaml v1.2.0/go.mod h1:yfXDCHCao9+ENCvLSE62v9VSji2MKu5jeNfTrofGhJc=
 sigs.k8s.io/yaml v1.3.0 h1:a2VclLzOGrwOHDiV8EfBGhvjHvP46CtW5j6POvhYGGo=
 sigs.k8s.io/yaml v1.3.0/go.mod h1:GeOyir5tyXNByN85N/dRIT9es5UQNerPYEKK56eTBm8=
 sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0/go.mod h1:hI742Nqp5OhwiqlzhgfbWU4mW4yO10fP+LoT9WOswdU=
-stash.appscode.dev/apimachinery v0.19.1-0.20220425033401-c840c081133c h1:lF8fUoGuSGoZfA2L/dSMVD3uWBiSgkD3r0WKAlMfRvQ=
-stash.appscode.dev/apimachinery v0.19.1-0.20220425033401-c840c081133c/go.mod h1:LYvEexF9dSGr9+NmeED+LOo6+6xb+6lMfgyLoEKrPbs=
+stash.appscode.dev/apimachinery v0.20.0 h1:JxBT94F/bfV6hkc8PxYoNOFiNeXa8YRLBp1hAX2NDz0=
+stash.appscode.dev/apimachinery v0.20.0/go.mod h1:HyYlJ56VT8QgUM7NPCMrRRr/9e+eltUHGtd7GBXUCJo=
