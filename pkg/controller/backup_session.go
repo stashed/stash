@@ -388,7 +388,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 			// pass offshoot labels to job's pod
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template.Spec = podSpec
-			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
+			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 			in.Spec.BackoffLimit = pointer.Int32P(0)
 			if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
@@ -478,7 +478,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, 
 			// pass offshoot labels to job's pod
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template = *jobTemplate
-			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
+			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			in.Spec.BackoffLimit = pointer.Int32P(0)

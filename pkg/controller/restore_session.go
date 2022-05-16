@@ -399,7 +399,7 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 		runtimeSettings := targetInfo.RuntimeSettings
 		// pass offshoot labels to job's pod
 		jobTemplate.Labels = meta_util.OverwriteKeys(jobTemplate.Labels, inv.GetLabels())
-		jobTemplate.Spec.ImagePullSecrets = imagePullSecrets
+		jobTemplate.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(jobTemplate.Spec.ImagePullSecrets, imagePullSecrets)
 		jobTemplate.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 		if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
 			jobTemplate.Annotations = runtimeSettings.Pod.PodAnnotations
@@ -467,7 +467,7 @@ func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int
 			restoreJobTemplate.Spec.Containers[i].Env = core_util.UpsertEnvVars(c.Env, ordinalEnv)
 		}
 
-		restoreJobTemplate.Spec.ImagePullSecrets = imagePullSecrets
+		restoreJobTemplate.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(restoreJobTemplate.Spec.ImagePullSecrets, imagePullSecrets)
 		restoreJobTemplate.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 
 		// create restore job
@@ -647,7 +647,7 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 			// pass offshoot labels to job's pod
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template = *jobTemplate
-			in.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
+			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			in.Spec.BackoffLimit = pointer.Int32P(0)
 			return in

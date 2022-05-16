@@ -71,7 +71,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, inv invoker.Back
 		if err != nil {
 			return err
 		}
-		w.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
+		w.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(w.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 	}
 
 	repository, err := inv.GetRepository()
