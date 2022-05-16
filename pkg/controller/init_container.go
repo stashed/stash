@@ -91,7 +91,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, inv invok
 		if err != nil {
 			return err
 		}
-		w.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
+		w.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(w.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 	}
 
 	if w.Spec.Template.Annotations == nil {
