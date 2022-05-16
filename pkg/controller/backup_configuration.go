@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -75,16 +76,26 @@ func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
 				return nil, c.validateBackupConfiguration(bc)
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				bc := newObj.(*api_v1beta1.BackupConfiguration)
+				newBc := newObj.(*api_v1beta1.BackupConfiguration)
 
-				if bc.ObjectMeta.DeletionTimestamp != nil {
+				if newBc.ObjectMeta.DeletionTimestamp != nil {
 					return nil, nil
 				}
 
-				return nil, c.validateBackupConfiguration(bc)
+				oldBc := oldObj.(*api_v1beta1.BackupConfiguration)
+
+				if oldBc.Status.Phase == api_v1beta1.BackupInvokerReady && isTargetUpdated(*oldBc, *newBc) {
+					return nil, fmt.Errorf("Updating target is forbidden when BackupConfiguration is in READY state")
+				}
+
+				return nil, c.validateBackupConfiguration(newBc)
 			},
 		},
 	)
+}
+
+func isTargetUpdated(oldBc api_v1beta1.BackupConfiguration, newBc api_v1beta1.BackupConfiguration) bool {
+	return !reflect.DeepEqual(oldBc.Spec.Target, newBc.Spec.Target)
 }
 
 func (c *StashController) validateBackupConfiguration(bc *api_v1beta1.BackupConfiguration) error {
