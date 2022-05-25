@@ -166,12 +166,16 @@ func (opt *Options) restoreHost(inv invoker.RestoreInvoker, targetInfo invoker.R
 			},
 		}
 	}
-	statusErr := opt.updateHostRestoreStatus(restoreOutput, inv, targetInfo)
-	if statusErr != nil {
-		restoreErr = errors.NewAggregate([]error{restoreErr, statusErr})
+
+	if restoreOutput != nil {
+		statusErr := opt.updateHostRestoreStatus(restoreOutput, inv, targetInfo)
+		if statusErr != nil {
+			restoreErr = errors.NewAggregate([]error{restoreErr, statusErr})
+		}
+		return restoreErr
 	}
 
-	return restoreErr
+	return nil
 }
 
 func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) (*restic.RestoreOutput, error) {
