@@ -133,6 +133,12 @@ spec:
                 - Failed
                 - Unknown
                 type: string
+              sessionDeadline:
+                description: SessionDeadline specifies the deadline of backup. BackupSession
+                  will be considered Failed if backup does not complete within this
+                  deadline
+                format: date-time
+                type: string
               sessionDuration:
                 description: SessionDuration specify total time taken to complete
                   current backup session (sum of backup duration of all targets)

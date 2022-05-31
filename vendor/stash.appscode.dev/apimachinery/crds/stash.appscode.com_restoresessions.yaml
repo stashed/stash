@@ -3370,6 +3370,11 @@ spec:
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                 type: object
+              timeOut:
+                description: TimeOut specifies the maximum duration of restore. RestoreSession
+                  will be considered Failed if restore does not complete within this
+                  time limit. By default, Stash don't set any timeout for restore.
+                type: string
             type: object
           status:
             properties:
@@ -3432,6 +3437,12 @@ spec:
                 - Failed
                 - Unknown
                 - Invalid
+                type: string
+              sessionDeadline:
+                description: SessionDeadline specifies the deadline of restore process.
+                  RestoreSession will be considered Failed if restore does not complete
+                  within this deadline
+                format: date-time
                 type: string
               sessionDuration:
                 description: SessionDuration specify total time taken to complete

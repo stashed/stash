@@ -183,6 +183,10 @@ func (inv *BackupBatchInvoker) GetDriver() v1beta1.Snapshotter {
 	return driver
 }
 
+func (inv *BackupBatchInvoker) GetTimeOut() string {
+	return inv.backupBatch.Spec.TimeOut
+}
+
 func (inv *BackupBatchInvoker) GetRepoRef() kmapi.ObjectReference {
 	var repo kmapi.ObjectReference
 	repo.Name = inv.backupBatch.Spec.Repository.Name

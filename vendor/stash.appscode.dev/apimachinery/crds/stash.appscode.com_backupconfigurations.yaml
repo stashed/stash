@@ -3024,6 +3024,11 @@ spec:
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                 type: object
+              timeOut:
+                description: TimeOut specifies the maximum duration of backup. BackupSession
+                  will be considered Failed if backup does not complete within this
+                  time limit. By default, Stash don't set any timeout for backup.
+                type: string
             required:
             - retentionPolicy
             type: object

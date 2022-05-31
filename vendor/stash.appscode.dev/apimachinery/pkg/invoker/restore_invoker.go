@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
@@ -44,6 +43,7 @@ type RestoreInvoker interface {
 	RestoreTargetHandler
 	RepositoryGetter
 	DriverHandler
+	TimeOutGetter
 	Eventer
 	KubeDBIntegrator
 	ObjectFormatter
@@ -69,6 +69,7 @@ type RestoreStatusHandler interface {
 type RestoreInvokerStatus struct {
 	Phase           v1beta1.RestorePhase
 	SessionDuration string
+	SessionDeadline metav1.Time
 	Conditions      []kmapi.Condition
 	TargetStatus    []v1beta1.RestoreMemberStatus
 }
@@ -184,12 +185,14 @@ func getInvokerStatusFromRestoreBatch(restoreBatch *v1beta1.RestoreBatch) Restor
 		SessionDuration: restoreBatch.Status.SessionDuration,
 		Conditions:      restoreBatch.Status.Conditions,
 		TargetStatus:    restoreBatch.Status.Members,
+		SessionDeadline: restoreBatch.Status.SessionDeadline,
 	}
 }
 
 func getInvokerStatusFromRestoreSession(restoreSession *v1beta1.RestoreSession) RestoreInvokerStatus {
 	invokerStatus := RestoreInvokerStatus{
-		SessionDuration: time.Since(restoreSession.CreationTimestamp.Time).Round(time.Second).String(),
+		SessionDuration: restoreSession.Status.SessionDuration,
+		SessionDeadline: restoreSession.Status.SessionDeadline,
 		Conditions:      restoreSession.Status.Conditions,
 	}
 	var targetStatus v1beta1.RestoreMemberStatus

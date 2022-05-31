@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash"
@@ -44,6 +45,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -131,6 +133,16 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 			api_v1beta1.BackupSkipped,
 		)
 		return nil
+	}
+
+	if isBackupRunning(session) && isBackupDeadlineSet(session) {
+		if isBackupDeadlineExceeded(session) {
+			klog.Infof("Time Limit exceeded for BackupSession  %s/%s.",
+				session.GetObjectMeta().Namespace,
+				session.GetObjectMeta().Name,
+			)
+			return conditions.SetBackupDeadlineExceededConditionToTrue(session, inv.GetTimeOut())
+		}
 	}
 
 	if invoker.BackupCompletedForAllTargets(session.GetTargetStatus(), len(inv.GetTargetInfo())) {
@@ -223,6 +235,52 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 			return c.initiateTargetBackup(inv, session, i)
 		}
 	}
+
+	if inv.GetTimeOut() != "" {
+		if err := c.requeueBackupAfterTimeOut(session, inv.GetTimeOut()); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func isBackupDeadlineSet(session *invoker.BackupSessionHandler) bool {
+	deadline := session.GetStatus().SessionDeadline
+	return !deadline.IsZero()
+}
+
+func (c *StashController) requeueBackupAfterTimeOut(session *invoker.BackupSessionHandler, timeOut string) error {
+	if !isBackupDeadlineSet(session) {
+		timeOut, err := time.ParseDuration(timeOut)
+		if err != nil {
+			return err
+		}
+		if err := c.requeueBackupSession(session, timeOut); err != nil {
+			return err
+		}
+		return c.setBackupDeadline(session, timeOut)
+	}
+	return nil
+}
+
+func isBackupDeadlineExceeded(session *invoker.BackupSessionHandler) bool {
+	return metav1.Now().After(session.GetStatus().SessionDeadline.Time)
+}
+
+func (c *StashController) requeueBackupSession(session *invoker.BackupSessionHandler, timeOut time.Duration) error {
+	klog.Infof("Timeout is set for BackupSession: %s/%s.\nRequeueing after %s seconds.....",
+		session.GetObjectMeta().Namespace,
+		session.GetObjectMeta().Name,
+		timeOut.String(),
+	)
+
+	key, err := cache.MetaNamespaceKeyFunc(session.GetBackupSession())
+	if err != nil {
+		return err
+	}
+	c.backupSessionQueue.GetQueue().AddAfter(key, timeOut)
+
 	return nil
 }
 
@@ -500,6 +558,12 @@ func (c *StashController) setTargetBackupPending(targetRef api_v1beta1.TargetRef
 	})
 }
 
+func (c *StashController) setBackupDeadline(session *invoker.BackupSessionHandler, timeOut time.Duration) error {
+	return session.UpdateStatus(&api_v1beta1.BackupSessionStatus{
+		SessionDeadline: metav1.NewTime(session.GetObjectMeta().CreationTimestamp.Add(timeOut)),
+	})
+}
+
 func (c *StashController) initiateTargetBackup(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler, index int) error {
 	targetsInfo := inv.GetTargetInfo()
 	target := targetsInfo[index].Target
@@ -701,6 +765,10 @@ func (c *StashController) checkIfBackupShouldBeSkipped(inv invoker.BackupInvoker
 
 func isSessionSkipped(session *invoker.BackupSessionHandler) bool {
 	return kmapi.IsConditionTrue(session.GetConditions(), api_v1beta1.BackupSkipped)
+}
+
+func isBackupRunning(session *invoker.BackupSessionHandler) bool {
+	return session.GetStatus().Phase == api_v1beta1.BackupSessionRunning
 }
 
 func isBackupPending(session *invoker.BackupSessionHandler) bool {
