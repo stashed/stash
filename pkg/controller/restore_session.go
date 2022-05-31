@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash"
@@ -171,6 +172,17 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 }
 
 func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.RestoreInvoker, key string) error {
+	if isRestoreRunning(inv) && isRestoreDeadlineSet(inv) {
+		if isRestoreTimeLimitExceeded(inv) {
+			klog.Infof("Time Limit exceeded for %s  %s/%s.",
+				inv.GetTypeMeta().Kind,
+				inv.GetObjectMeta().Namespace,
+				inv.GetObjectMeta().Name,
+			)
+			return conditions.SetRestoreDeadlineExceededConditionToTrue(inv, inv.GetTimeOut())
+		}
+	}
+
 	// if the restore invoker is being deleted then remove respective init-container
 	invMeta := inv.GetObjectMeta()
 	invokerRef, err := inv.GetObjectRef()
@@ -233,7 +245,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 			return err
 		}
 		if shouldRequeue {
-			return c.requeueRestoreInvoker(inv, key)
+			return c.requeueRestoreInvoker(inv, key, requeueTimeInterval)
 		}
 	}
 
@@ -285,7 +297,7 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 					inv.GetObjectMeta().Namespace,
 					inv.GetObjectMeta().Name,
 				)
-				return c.requeueRestoreInvoker(inv, key)
+				return c.requeueRestoreInvoker(inv, key, requeueTimeInterval)
 			}
 
 			err = c.ensureRestoreExecutor(inv, targetInfo, i)
@@ -297,7 +309,52 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 			return c.initiateTargetRestore(inv, i)
 		}
 	}
+
+	if inv.GetTimeOut() != "" {
+		if err := c.requeueRestoreAfterTimeOut(inv, key, inv.GetTimeOut()); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func isRestoreDeadlineSet(inv invoker.RestoreInvoker) bool {
+	deadline := inv.GetStatus().SessionDeadline
+	return !deadline.IsZero()
+}
+
+func isRestoreRunning(inv invoker.RestoreInvoker) bool {
+	return inv.GetStatus().Phase == api_v1beta1.RestoreRunning
+}
+
+func isRestoreTimeLimitExceeded(inv invoker.RestoreInvoker) bool {
+	return metav1.Now().After(inv.GetStatus().SessionDeadline.Time)
+}
+
+func (c *StashController) requeueRestoreAfterTimeOut(inv invoker.RestoreInvoker, key string, timeOut string) error {
+	if !isRestoreDeadlineSet(inv) {
+		duration, err := time.ParseDuration(timeOut)
+		if err != nil {
+			return err
+		}
+		if err := c.requeueRestoreInvoker(inv, key, duration); err != nil {
+			return err
+		}
+		klog.Infof("Timeout is set for %s: %s/%s.\nRequeueing after %v .....",
+			inv.GetTypeMeta().Kind,
+			inv.GetObjectMeta().Namespace,
+			inv.GetObjectMeta().Name,
+			timeOut,
+		)
+		return c.setRestoreDeadline(inv, duration)
+	}
+	return nil
+}
+
+func (c *StashController) setRestoreDeadline(inv invoker.RestoreInvoker, timeOut time.Duration) error {
+	return inv.UpdateStatus(invoker.RestoreInvokerStatus{
+		SessionDeadline: metav1.NewTime(inv.GetObjectMeta().CreationTimestamp.Add(timeOut)),
+	})
 }
 
 func (c *StashController) ensureRestoreJob(inv invoker.RestoreInvoker, index int) error {
@@ -679,7 +736,7 @@ func (c *StashController) restorerEntity(targetInfo invoker.RestoreTargetInfo, d
 	}
 }
 
-func (c *StashController) requeueRestoreInvoker(inv invoker.RestoreInvoker, key string) error {
+func (c *StashController) requeueRestoreInvoker(inv invoker.RestoreInvoker, key string, requeueTimeInterval time.Duration) error {
 	invTypeMeta := inv.GetTypeMeta()
 	switch invTypeMeta.Kind {
 	case api_v1beta1.ResourceKindRestoreSession:

@@ -154,6 +154,10 @@ func (inv *BackupConfigurationInvoker) GetDriver() v1beta1.Snapshotter {
 	return driver
 }
 
+func (inv *BackupConfigurationInvoker) GetTimeOut() string {
+	return inv.backupConfig.Spec.TimeOut
+}
+
 func (inv *BackupConfigurationInvoker) GetRepoRef() kmapi.ObjectReference {
 	var repo kmapi.ObjectReference
 	repo.Name = inv.backupConfig.Spec.Repository.Name

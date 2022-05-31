@@ -252,3 +252,13 @@ func SetGlobalPostRestoreHookSucceededConditionToTrue(invoker invoker.RestoreInv
 		LastTransitionTime: metav1.Now(),
 	})
 }
+
+func SetRestoreDeadlineExceededConditionToTrue(invoker invoker.RestoreInvoker, timeOut string) error {
+	return invoker.SetCondition(nil, kmapi.Condition{
+		Type:               v1beta1.DeadlineExceeded,
+		Status:             core.ConditionTrue,
+		Reason:             v1beta1.FailedToCompleteWithinDeadline,
+		Message:            fmt.Sprintf("Failed to complete restore within %s.", timeOut),
+		LastTransitionTime: metav1.Now(),
+	})
+}

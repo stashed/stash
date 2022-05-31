@@ -62,6 +62,10 @@ type RestoreSessionSpec struct {
 	// +optional
 	// Deprecated. Use rules section inside `target`.
 	Rules []Rule `json:"rules,omitempty"`
+	// TimeOut specifies the maximum duration of restore. RestoreSession will be considered Failed
+	// if restore does not complete within this time limit. By default, Stash don't set any timeout for restore.
+	// +optional
+	TimeOut string `json:"timeOut,omitempty"`
 }
 
 type RestoreTargetSpec struct {
@@ -148,6 +152,10 @@ type RestoreSessionStatus struct {
 	// Conditions shows current restore condition of the RestoreSession.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// SessionDeadline specifies the deadline of restore process. RestoreSession will be
+	// considered Failed if restore does not complete within this deadline
+	// +optional
+	SessionDeadline metav1.Time `json:"sessionDeadline,omitempty"`
 }
 
 type HostRestoreStats struct {

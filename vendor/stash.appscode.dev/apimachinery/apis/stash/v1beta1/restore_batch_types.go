@@ -36,6 +36,7 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Repository",type="string",JSONPath=".spec.repository.name"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=".status.sessionDuration"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type RestoreBatch struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
@@ -66,6 +67,10 @@ type RestoreBatchSpec struct {
 	// Cannot be updated.
 	// +optional
 	Hooks *RestoreHooks `json:"hooks,omitempty"`
+	// TimeOut specifies the maximum duration of restore. RestoreBatch will be considered Failed
+	// if restore does not complete within this time limit. By default, Stash don't set any timeout for restore.
+	// +optional
+	TimeOut string `json:"timeOut,omitempty"`
 }
 
 type RestoreBatchStatus struct {
@@ -82,6 +87,10 @@ type RestoreBatchStatus struct {
 	// Members shows the restore status for the members of the RestoreBatch.
 	// +optional
 	Members []RestoreMemberStatus `json:"members,omitempty"`
+	// SessionDeadline specifies the deadline of restore process. RestoreBatch will be
+	// considered Failed if restore does not complete within this deadline
+	// +optional
+	SessionDeadline metav1.Time `json:"sessionDeadline,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Succeeded;Running;Failed

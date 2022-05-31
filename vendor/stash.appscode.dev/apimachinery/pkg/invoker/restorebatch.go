@@ -179,6 +179,10 @@ func (inv *RestoreBatchInvoker) GetDriver() v1beta1.Snapshotter {
 	return driver
 }
 
+func (inv *RestoreBatchInvoker) GetTimeOut() string {
+	return inv.restoreBatch.Spec.TimeOut
+}
+
 func (inv *RestoreBatchInvoker) GetRepoRef() kmapi.ObjectReference {
 	var repo kmapi.ObjectReference
 	repo.Name = inv.restoreBatch.Spec.Repository.Name
@@ -326,6 +330,11 @@ func (inv *RestoreBatchInvoker) UpdateStatus(status RestoreInvokerStatus) error 
 				duration := time.Since(startTime.Time)
 				in.SessionDuration = duration.Round(time.Second).String()
 			}
+
+			if in.SessionDeadline.IsZero() {
+				in.SessionDeadline = status.SessionDeadline
+			}
+
 			return inv.restoreBatch.ObjectMeta.UID, in
 		},
 		metav1.UpdateOptions{},
@@ -354,7 +363,8 @@ func upsertRestoreMemberStatus(cur []v1beta1.RestoreMemberStatus, new v1beta1.Re
 func calculateRestoreBatchPhase(status *v1beta1.RestoreBatchStatus, totalTargets int) v1beta1.RestorePhase {
 	if kmapi.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) ||
 		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPreRestoreHookSucceeded) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPostRestoreHookSucceeded) {
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPostRestoreHookSucceeded) ||
+		kmapi.IsConditionTrue(status.Conditions, v1beta1.DeadlineExceeded) {
 		return v1beta1.RestoreFailed
 	}
 

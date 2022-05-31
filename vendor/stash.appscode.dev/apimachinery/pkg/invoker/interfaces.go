@@ -52,6 +52,10 @@ type DriverHandler interface {
 	GetDriver() v1beta1.Snapshotter
 }
 
+type TimeOutGetter interface {
+	GetTimeOut() string
+}
+
 type Eventer interface {
 	CreateEvent(eventType, source, reason, message string) error
 }

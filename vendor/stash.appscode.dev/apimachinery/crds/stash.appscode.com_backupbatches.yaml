@@ -5659,6 +5659,11 @@ spec:
               schedule:
                 description: Schedule specifies the schedule for invoking backup sessions
                 type: string
+              timeOut:
+                description: TimeOut specifies the maximum duration of backup. BackupBatch
+                  will be considered Failed if backup does not complete within this
+                  time limit. By default, Stash don't set any timeout for backup.
+                type: string
             required:
             - retentionPolicy
             type: object

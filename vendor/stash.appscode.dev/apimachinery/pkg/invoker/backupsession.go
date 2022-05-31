@@ -57,9 +57,13 @@ func (h *BackupSessionHandler) UpdateStatus(status *v1beta1.BackupSessionStatus)
 			}
 
 			in.Phase = calculateBackupSessionPhase(in)
-			if IsBackupCompleted(in.Phase) {
+			if IsBackupCompleted(in.Phase) && in.SessionDuration == "" {
 				in.SessionDuration = time.Since(h.backupSession.ObjectMeta.CreationTimestamp.Time).Round(time.Second).String()
 			}
+			if in.SessionDeadline.IsZero() {
+				in.SessionDeadline = status.SessionDeadline
+			}
+
 			return h.backupSession.ObjectMeta.UID, in
 		},
 		metav1.UpdateOptions{},
@@ -230,7 +234,8 @@ func calculateBackupSessionPhase(status *v1beta1.BackupSessionStatus) v1beta1.Ba
 		kmapi.IsConditionFalse(status.Conditions, v1beta1.BackupHistoryCleaned) ||
 		kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryIntegrityVerified) ||
 		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPreBackupHookSucceeded) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPostBackupHookSucceeded) {
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPostBackupHookSucceeded) ||
+		kmapi.IsConditionTrue(status.Conditions, v1beta1.DeadlineExceeded) {
 		return v1beta1.BackupSessionFailed
 	}
 

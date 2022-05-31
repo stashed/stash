@@ -88,7 +88,7 @@ type FileMetrics struct {
 	UnmodifiedFiles prometheus.Gauge
 }
 
-func newBackupSessionMetrics(labels prometheus.Labels) *BackupMetrics {
+func legacyBackupSessionMetrics(labels prometheus.Labels) *BackupMetrics {
 	return &BackupMetrics{
 		BackupSessionMetrics: &BackupSessionMetrics{
 			SessionSuccess: prometheus.NewGauge(
@@ -131,7 +131,50 @@ func newBackupSessionMetrics(labels prometheus.Labels) *BackupMetrics {
 	}
 }
 
-func newBackupTargetMetrics(labels prometheus.Labels) *BackupMetrics {
+func newBackupSessionMetrics(labels prometheus.Labels) *BackupMetrics {
+	return &BackupMetrics{
+		BackupSessionMetrics: &BackupSessionMetrics{
+			SessionSuccess: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "success",
+					Help:        "Indicates whether the entire backup session was succeeded or not",
+					ConstLabels: labels,
+				},
+			),
+			SessionDuration: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "duration_seconds",
+					Help:        "Indicates total time taken to complete the entire backup session",
+					ConstLabels: labels,
+				},
+			),
+			TargetCount: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "target_count_total",
+					Help:        "Indicates the total number of target that was backed up in this backup session",
+					ConstLabels: labels,
+				},
+			),
+			LastSuccessTime: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "last_success_time_seconds",
+					Help:        "Indicates total time taken to complete the entire backup session",
+					ConstLabels: labels,
+				},
+			),
+		},
+	}
+}
+
+func legacyBackupTargetMetrics(labels prometheus.Labels) *BackupMetrics {
 	return &BackupMetrics{
 		BackupTargetMetrics: &BackupTargetMetrics{
 			TargetBackupSucceeded: prometheus.NewGauge(
@@ -165,7 +208,41 @@ func newBackupTargetMetrics(labels prometheus.Labels) *BackupMetrics {
 	}
 }
 
-func newBackupHostMetrics(labels prometheus.Labels) *BackupMetrics {
+func newBackupTargetMetrics(labels prometheus.Labels) *BackupMetrics {
+	return &BackupMetrics{
+		BackupTargetMetrics: &BackupTargetMetrics{
+			TargetBackupSucceeded: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "target_success",
+					Help:        "Indicates whether the backup for a target has succeeded or not",
+					ConstLabels: labels,
+				},
+			),
+			HostCount: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "target_host_count_total",
+					Help:        "Indicates the total number of hosts that was backed up for this target",
+					ConstLabels: labels,
+				},
+			),
+			LastSuccessTime: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "target_last_success_time_seconds",
+					Help:        "Indicates total time taken to complete the entire backup session",
+					ConstLabels: labels,
+				},
+			),
+		},
+	}
+}
+
+func legacyBackupHostMetrics(labels prometheus.Labels) *BackupMetrics {
 	return &BackupMetrics{
 		BackupHostMetrics: &BackupHostMetrics{
 			BackupSuccess: prometheus.NewGauge(
@@ -255,6 +332,96 @@ func newBackupHostMetrics(labels prometheus.Labels) *BackupMetrics {
 	}
 }
 
+func newBackupHostMetrics(labels prometheus.Labels) *BackupMetrics {
+	return &BackupMetrics{
+		BackupHostMetrics: &BackupHostMetrics{
+			BackupSuccess: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "host_backup_success",
+					Help:        "Indicates whether the backup for a host succeeded or not",
+					ConstLabels: labels,
+				},
+			),
+			BackupDuration: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "host_backup_duration_seconds",
+					Help:        "Indicates total time taken to complete the backup process for a host",
+					ConstLabels: labels,
+				},
+			),
+			DataSize: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "host_data_size_bytes",
+					Help:        "Total size of the target data to backup for a host (in bytes)",
+					ConstLabels: labels,
+				},
+			),
+			DataUploaded: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "host_data_uploaded_bytes",
+					Help:        "Amount of data uploaded to the repository for a host (in bytes)",
+					ConstLabels: labels,
+				},
+			),
+			DataProcessingTime: prometheus.NewGauge(
+				prometheus.GaugeOpts{
+					Namespace:   "stash_appscode_com",
+					Subsystem:   "backupsession",
+					Name:        "host_data_processing_time_seconds",
+					Help:        "Total time taken to process the target data for a host",
+					ConstLabels: labels,
+				},
+			),
+			FileMetrics: &FileMetrics{
+				TotalFiles: prometheus.NewGauge(
+					prometheus.GaugeOpts{
+						Namespace:   "stash_appscode_com",
+						Subsystem:   "backupsession",
+						Name:        "host_files_total",
+						Help:        "Total number of files that has been backed up for a host",
+						ConstLabels: labels,
+					},
+				),
+				NewFiles: prometheus.NewGauge(
+					prometheus.GaugeOpts{
+						Namespace:   "stash_appscode_com",
+						Subsystem:   "backupsession",
+						Name:        "host_files_new",
+						Help:        "Total number of new files that has been created since last backup for a host",
+						ConstLabels: labels,
+					},
+				),
+				ModifiedFiles: prometheus.NewGauge(
+					prometheus.GaugeOpts{
+						Namespace:   "stash_appscode_com",
+						Subsystem:   "backupsession",
+						Name:        "host_files_modified",
+						Help:        "Total number of files that has been modified since last backup for a host",
+						ConstLabels: labels,
+					},
+				),
+				UnmodifiedFiles: prometheus.NewGauge(
+					prometheus.GaugeOpts{
+						Namespace:   "stash_appscode_com",
+						Subsystem:   "backupsession",
+						Name:        "host_files_unmodified",
+						Help:        "Total number of files that has not been changed since last backup for a host",
+						ConstLabels: labels,
+					},
+				),
+			},
+		},
+	}
+}
+
 // SendBackupSessionMetrics send backup session related metrics to the Pushgateway
 func (metricOpt *MetricsOptions) SendBackupSessionMetrics(inv invoker.BackupInvoker, status api_v1beta1.BackupSessionStatus) error {
 	// create metric registry
@@ -265,11 +432,33 @@ func (metricOpt *MetricsOptions) SendBackupSessionMetrics(inv invoker.BackupInvo
 	if err != nil {
 		return err
 	}
-	// create metrics
-	metrics := newBackupSessionMetrics(labels)
 
+	err = exportBackupSessionMetrics(labels, status, registry)
+	if err != nil {
+		return err
+	}
+
+	err = exportBackupSessionLegacyMetrics(labels, status, registry)
+	if err != nil {
+		return err
+	}
+
+	// send metrics to the pushgateway
+	return metricOpt.sendMetrics(registry, metricOpt.JobName)
+}
+
+func exportBackupSessionMetrics(labels prometheus.Labels, status api_v1beta1.BackupSessionStatus, registry *prometheus.Registry) error {
+	metrics := newBackupSessionMetrics(labels)
+	return setBackupSessionMetrics(metrics, status, registry)
+}
+
+func exportBackupSessionLegacyMetrics(labels prometheus.Labels, status api_v1beta1.BackupSessionStatus, registry *prometheus.Registry) error {
+	metrics := legacyBackupSessionMetrics(labels)
+	return setBackupSessionMetrics(metrics, status, registry)
+}
+
+func setBackupSessionMetrics(metrics *BackupMetrics, status api_v1beta1.BackupSessionStatus, registry *prometheus.Registry) error {
 	if status.Phase == api_v1beta1.BackupSessionSucceeded {
-		// mark entire backup session as succeeded
 		metrics.BackupSessionMetrics.SessionSuccess.Set(1)
 
 		// set total time taken to complete the entire backup session
@@ -298,8 +487,7 @@ func (metricOpt *MetricsOptions) SendBackupSessionMetrics(inv invoker.BackupInvo
 		registry.MustRegister(metrics.BackupSessionMetrics.SessionSuccess)
 	}
 
-	// send metrics to the pushgateway
-	return metricOpt.sendMetrics(registry, metricOpt.JobName)
+	return nil
 }
 
 // SendBackupSessionMetrics send backup session metrics to the Pushgateway
@@ -319,41 +507,53 @@ func (metricOpt *MetricsOptions) SendBackupTargetMetrics(config *rest.Config, i 
 	}
 	labels = upsertLabel(labels, targetLabels)
 
-	// create metrics
-	metrics := newBackupTargetMetrics(labels)
-
 	// only send the metric for the target specified by targetRef
 	for _, targetStatus := range status.Targets {
 		if invoker.TargetMatched(targetStatus.Ref, targetRef) {
-			if targetStatus.Phase == api_v1beta1.TargetBackupSucceeded {
-				// mark target backup as succeeded
-				metrics.BackupTargetMetrics.TargetBackupSucceeded.Set(1)
-
-				// set last successful backup time for this target to current time
-				metrics.BackupTargetMetrics.LastSuccessTime.SetToCurrentTime()
-
-				// set total number of target that was backed up in this backup session
-				if targetStatus.TotalHosts != nil {
-					metrics.BackupTargetMetrics.HostCount.Set(float64(*targetStatus.TotalHosts))
-				}
-
-				// register metrics to the registry
-				registry.MustRegister(
-					metrics.BackupTargetMetrics.TargetBackupSucceeded,
-					metrics.BackupTargetMetrics.LastSuccessTime,
-					metrics.BackupTargetMetrics.HostCount,
-				)
-			} else {
-				// mark target backup as failed
-				metrics.BackupTargetMetrics.TargetBackupSucceeded.Set(0)
-				registry.MustRegister(metrics.BackupTargetMetrics.TargetBackupSucceeded)
-			}
+			exportBackupTargetMetrics(labels, targetStatus, registry)
+			exportBackupTargetLegacyMetrics(labels, targetStatus, registry)
 
 			// send metrics to the pushgateway
 			return metricOpt.sendMetrics(registry, metricOpt.JobName)
 		}
 	}
 	return nil
+}
+
+func exportBackupTargetMetrics(labels prometheus.Labels, targetStatus api_v1beta1.BackupTargetStatus, registry *prometheus.Registry) {
+	metrics := newBackupTargetMetrics(labels)
+	setBackupTargetMetrics(metrics, targetStatus, registry)
+}
+
+func exportBackupTargetLegacyMetrics(labels prometheus.Labels, targetStatus api_v1beta1.BackupTargetStatus, registry *prometheus.Registry) {
+	metrics := legacyBackupTargetMetrics(labels)
+	setBackupTargetMetrics(metrics, targetStatus, registry)
+}
+
+func setBackupTargetMetrics(metrics *BackupMetrics, targetStatus api_v1beta1.BackupTargetStatus, registry *prometheus.Registry) {
+	if targetStatus.Phase == api_v1beta1.TargetBackupSucceeded {
+		// mark target backup as succeeded
+		metrics.BackupTargetMetrics.TargetBackupSucceeded.Set(1)
+
+		// set last successful backup time for this target to current time
+		metrics.BackupTargetMetrics.LastSuccessTime.SetToCurrentTime()
+
+		// set total number of target that was backed up in this backup session
+		if targetStatus.TotalHosts != nil {
+			metrics.BackupTargetMetrics.HostCount.Set(float64(*targetStatus.TotalHosts))
+		}
+
+		// register metrics to the registry
+		registry.MustRegister(
+			metrics.BackupTargetMetrics.TargetBackupSucceeded,
+			metrics.BackupTargetMetrics.LastSuccessTime,
+			metrics.BackupTargetMetrics.HostCount,
+		)
+	} else {
+		// mark target backup as failed
+		metrics.BackupTargetMetrics.TargetBackupSucceeded.Set(0)
+		registry.MustRegister(metrics.BackupTargetMetrics.TargetBackupSucceeded)
+	}
 }
 
 // SendBackupSessionMetrics send backup metrics for individual hosts to the Pushgateway
@@ -383,38 +583,62 @@ func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, i in
 		hostLabel := map[string]string{
 			MetricLabelHostname: hostStats.Hostname,
 		}
-		metrics := newBackupHostMetrics(upsertLabel(labels, hostLabel))
 
-		if hostStats.Error == "" {
-			// set metrics values from backupOutput
-			err := metrics.setValues(hostStats)
-			if err != nil {
-				return err
-			}
-			metrics.BackupHostMetrics.BackupSuccess.Set(1)
+		metricLabels := upsertLabel(labels, hostLabel)
 
-			registry.MustRegister(
-				// register backup session metrics
-				metrics.BackupHostMetrics.BackupSuccess,
-				metrics.BackupHostMetrics.BackupDuration,
-				metrics.BackupHostMetrics.FileMetrics.TotalFiles,
-				metrics.BackupHostMetrics.FileMetrics.NewFiles,
-				metrics.BackupHostMetrics.FileMetrics.ModifiedFiles,
-				metrics.BackupHostMetrics.FileMetrics.UnmodifiedFiles,
-				metrics.BackupHostMetrics.DataSize,
-				metrics.BackupHostMetrics.DataUploaded,
-				metrics.BackupHostMetrics.DataProcessingTime,
-			)
-		} else {
-			metrics.BackupHostMetrics.BackupSuccess.Set(0)
+		err := exportBackupHostMetrics(metricLabels, hostStats, registry)
+		if err != nil {
+			return err
+		}
 
-			registry.MustRegister(
-				// register backup session metrics
-				metrics.BackupHostMetrics.BackupSuccess,
-			)
+		err = exportBackupHostLegacyMetrics(metricLabels, hostStats, registry)
+		if err != nil {
+			return err
 		}
 	}
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
+}
+
+func exportBackupHostMetrics(labels prometheus.Labels, hostStats api_v1beta1.HostBackupStats, registry *prometheus.Registry) error {
+	metrics := newBackupHostMetrics(labels)
+	return setBackupHostMetrics(metrics, hostStats, registry)
+}
+
+func exportBackupHostLegacyMetrics(labels prometheus.Labels, hostStats api_v1beta1.HostBackupStats, registry *prometheus.Registry) error {
+	metrics := legacyBackupHostMetrics(labels)
+	return setBackupHostMetrics(metrics, hostStats, registry)
+}
+
+func setBackupHostMetrics(metrics *BackupMetrics, hostStats api_v1beta1.HostBackupStats, registry *prometheus.Registry) error {
+	if hostStats.Error == "" {
+		// set metrics values from backupOutput
+		err := metrics.setValues(hostStats)
+		if err != nil {
+			return err
+		}
+		metrics.BackupHostMetrics.BackupSuccess.Set(1)
+
+		registry.MustRegister(
+			// register backup session metrics
+			metrics.BackupHostMetrics.BackupSuccess,
+			metrics.BackupHostMetrics.BackupDuration,
+			metrics.BackupHostMetrics.FileMetrics.TotalFiles,
+			metrics.BackupHostMetrics.FileMetrics.NewFiles,
+			metrics.BackupHostMetrics.FileMetrics.ModifiedFiles,
+			metrics.BackupHostMetrics.FileMetrics.UnmodifiedFiles,
+			metrics.BackupHostMetrics.DataSize,
+			metrics.BackupHostMetrics.DataUploaded,
+			metrics.BackupHostMetrics.DataProcessingTime,
+		)
+	} else {
+		metrics.BackupHostMetrics.BackupSuccess.Set(0)
+
+		registry.MustRegister(
+			metrics.BackupHostMetrics.BackupSuccess,
+		)
+	}
+
+	return nil
 }
 
 // nolint:unparam

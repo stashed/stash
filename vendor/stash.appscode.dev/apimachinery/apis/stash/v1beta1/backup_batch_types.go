@@ -87,6 +87,10 @@ type BackupBatchSpec struct {
 	// +kubebuilder:default=Parallel
 	// +optional
 	ExecutionOrder ExecutionOrder `json:"executionOrder,omitempty"`
+	// TimeOut specifies the maximum duration of backup. BackupBatch will be considered Failed
+	// if backup does not complete within this time limit. By default, Stash don't set any timeout for backup.
+	// +optional
+	TimeOut string `json:"timeOut,omitempty"`
 }
 
 type BackupBatchStatus struct {

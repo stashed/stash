@@ -156,6 +156,10 @@ func (inv *RestoreSessionInvoker) GetDriver() v1beta1.Snapshotter {
 	return driver
 }
 
+func (inv *RestoreSessionInvoker) GetTimeOut() string {
+	return inv.restoreSession.Spec.TimeOut
+}
+
 func (inv *RestoreSessionInvoker) GetRepoRef() kmapi.ObjectReference {
 	var repo kmapi.ObjectReference
 	repo.Name = inv.restoreSession.Spec.Repository.Name
@@ -285,26 +289,33 @@ func (inv *RestoreSessionInvoker) UpdateStatus(status RestoreInvokerStatus) erro
 		inv.stashClient.StashV1beta1(),
 		inv.restoreSession.ObjectMeta,
 		func(in *v1beta1.RestoreSessionStatus) (types.UID, *v1beta1.RestoreSessionStatus) {
-			curStatus := v1beta1.RestoreMemberStatus{
-				Conditions: in.Conditions,
-				TotalHosts: in.TotalHosts,
-				Stats:      in.Stats,
-			}
-			newStatus := v1beta1.RestoreMemberStatus{
-				Conditions: status.TargetStatus[0].Conditions,
-				TotalHosts: status.TargetStatus[0].TotalHosts,
-				Stats:      status.TargetStatus[0].Stats,
-			}
-			updatedStatus := upsertRestoreTargetStatus(curStatus, newStatus)
+			if len(status.TargetStatus) != 0 {
+				curStatus := v1beta1.RestoreMemberStatus{
+					Conditions: in.Conditions,
+					TotalHosts: in.TotalHosts,
+					Stats:      in.Stats,
+				}
+				newStatus := v1beta1.RestoreMemberStatus{
+					Conditions: status.TargetStatus[0].Conditions,
+					TotalHosts: status.TargetStatus[0].TotalHosts,
+					Stats:      status.TargetStatus[0].Stats,
+				}
+				updatedStatus := upsertRestoreTargetStatus(curStatus, newStatus)
 
-			in.Conditions = updatedStatus.Conditions
-			in.Stats = updatedStatus.Stats
-			in.TotalHosts = updatedStatus.TotalHosts
-			in.Phase = calculateRestoreSessionPhase(updatedStatus)
+				in.Conditions = updatedStatus.Conditions
+				in.Stats = updatedStatus.Stats
+				in.TotalHosts = updatedStatus.TotalHosts
+				in.Phase = calculateRestoreSessionPhase(updatedStatus)
 
-			if IsRestoreCompleted(in.Phase) && in.SessionDuration == "" {
-				in.SessionDuration = time.Since(startTime).Round(time.Second).String()
+				if IsRestoreCompleted(in.Phase) && in.SessionDuration == "" {
+					in.SessionDuration = time.Since(startTime).Round(time.Second).String()
+				}
 			}
+
+			if in.SessionDeadline.IsZero() {
+				in.SessionDeadline = status.SessionDeadline
+			}
+
 			return inv.restoreSession.ObjectMeta.UID, in
 		},
 		metav1.UpdateOptions{},
@@ -365,17 +376,19 @@ func checkRestoreFailureInHostStatus(status []v1beta1.HostRestoreStats) (bool, s
 
 func checkFailureInConditions(conditions []kmapi.Condition) (bool, string) {
 	for _, c := range conditions {
-		if c.Status == core.ConditionFalse {
+		if c.Status == core.ConditionFalse || c.Type == v1beta1.DeadlineExceeded {
 			return true, c.Message
 		}
 	}
+
 	return false, ""
 }
 
 func calculateRestoreSessionPhase(status v1beta1.RestoreMemberStatus) v1beta1.RestorePhase {
 	if kmapi.IsConditionFalse(status.Conditions, v1beta1.RestoreExecutorEnsured) ||
 		kmapi.IsConditionFalse(status.Conditions, v1beta1.PreRestoreHookExecutionSucceeded) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.PostRestoreHookExecutionSucceeded) {
+		kmapi.IsConditionFalse(status.Conditions, v1beta1.PostRestoreHookExecutionSucceeded) ||
+		kmapi.IsConditionTrue(status.Conditions, v1beta1.DeadlineExceeded) {
 		return v1beta1.RestoreFailed
 	}
 
