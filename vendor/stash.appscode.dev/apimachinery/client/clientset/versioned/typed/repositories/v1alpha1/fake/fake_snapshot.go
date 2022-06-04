@@ -87,7 +87,7 @@ func (c *FakeSnapshots) UpdateStatus(ctx context.Context, snapshot *v1alpha1.Sna
 // Delete takes name of the snapshot and deletes it. Returns an error if one occurs.
 func (c *FakeSnapshots) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(snapshotsResource, c.ns, name), &v1alpha1.Snapshot{})
+		Invokes(testing.NewDeleteActionWithOptions(snapshotsResource, c.ns, name, opts), &v1alpha1.Snapshot{})
 
 	return err
 }

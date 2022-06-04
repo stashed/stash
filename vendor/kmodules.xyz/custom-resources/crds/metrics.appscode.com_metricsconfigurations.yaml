@@ -62,25 +62,24 @@ spec:
                     host_ip, pod_ip, node are labels. pod(resource name) and namespace
                     are default labels. No configurations is needed for those. \n
                     To generate others labels, config should be given in the following
-                    way \n labels:   - key: host_ip     valuePath: .status.hostIP
-                    \  - key: pod_ip     valuePath: .status.podIP   - key: node     valuePath:
-                    .spec.nodeName \n Either Value or ValuePath must be specified
-                    for a Label. If both is specified, ValuePath is ignored. Note
-                    that if a valuePath doesn't exist for a label key, the label will
-                    be ignored."
+                    way \n labels: - key: host_ip valuePath: .status.hostIP - key:
+                    pod_ip valuePath: .status.podIP - key: node valuePath: .spec.nodeName
+                    \n Either Value or ValuePath must be specified for a Label. If
+                    both is specified, ValuePath is ignored. Note that if a valuePath
+                    doesn't exist for a label key, the label will be ignored."
                   properties:
                     key:
                       description: Key defines the label key
                       type: string
                     value:
                       description: 'Value defines the hard coded label value. Example:
-                        labels:   - key: unit     value: byte   - key: environment     value:
+                        labels: - key: unit value: byte - key: environment value:
                         production'
                       type: string
                     valuePath:
                       description: 'ValuePath defines the label value path. Example:
-                        To add deployment''s resource version as labels, labels:   -
-                        key: version     valuePath: .metadata.resourceVersion'
+                        To add deployment''s resource version as labels, labels: -
+                        key: version valuePath: .metadata.resourceVersion'
                       type: string
                   required:
                   - key
@@ -137,25 +136,25 @@ spec:
                           host_ip, pod_ip, node are labels. pod(resource name) and
                           namespace are default labels. No configurations is needed
                           for those. \n To generate others labels, config should be
-                          given in the following way \n labels:   - key: host_ip     valuePath:
-                          .status.hostIP   - key: pod_ip     valuePath: .status.podIP
-                          \  - key: node     valuePath: .spec.nodeName \n Either Value
-                          or ValuePath must be specified for a Label. If both is specified,
-                          ValuePath is ignored. Note that if a valuePath doesn't exist
-                          for a label key, the label will be ignored."
+                          given in the following way \n labels: - key: host_ip valuePath:
+                          .status.hostIP - key: pod_ip valuePath: .status.podIP -
+                          key: node valuePath: .spec.nodeName \n Either Value or ValuePath
+                          must be specified for a Label. If both is specified, ValuePath
+                          is ignored. Note that if a valuePath doesn't exist for a
+                          label key, the label will be ignored."
                         properties:
                           key:
                             description: Key defines the label key
                             type: string
                           value:
                             description: 'Value defines the hard coded label value.
-                              Example: labels:   - key: unit     value: byte   - key:
-                              environment     value: production'
+                              Example: labels: - key: unit value: byte - key: environment
+                              value: production'
                             type: string
                           valuePath:
                             description: 'ValuePath defines the label value path.
                               Example: To add deployment''s resource version as labels,
-                              labels:   - key: version     valuePath: .metadata.resourceVersion'
+                              labels: - key: version valuePath: .metadata.resourceVersion'
                             type: string
                         required:
                         - key
@@ -190,22 +189,21 @@ spec:
                             value, then it will simply return it. roundUp is an optional
                             field. By default, its value is false. If roundUp is set
                             as `true`, the resultant value will be rounded up. example:
-                            (i) percentage(\"25%\", 4) will return 1.         (ii)
-                            percentage(\"25%\", 1 , true) will return 1 as roundUp
-                            is set as true.        (iii) percentage(2, 4) will return
-                            2 as percent is representing an Integer value. \n cpu_cores()
-                            returns the cpu in unit core example: cpu_cores(cpu),
-                            for cpu value 150m, it will return 0.15 \n bytes() returns
-                            the memory size in byte example: bytes(memory), for memory
-                            value 1 ki, it will return 1024 \n unix() returns the
-                            DateTime string into unix format. example: unix(dateTime)
-                            will return the corresponding unix value for the given
-                            dateTime \n in above examples phase, replicas, maxUnavailable,
-                            cpu, memory, dateTime are Parameter's key those values
-                            will come from corresponding Parameter's value \n Some
-                            expression evaluation functions are used for calculating
-                            resource requests and limits. Those functions are stated
-                            here: https://github.com/kmodules/resource-metrics/blob/master/eval.go"
+                            (i) percentage(\"25%\", 4) will return 1. (ii) percentage(\"25%\",
+                            1 , true) will return 1 as roundUp is set as true. (iii)
+                            percentage(2, 4) will return 2 as percent is representing
+                            an Integer value. \n cpu_cores() returns the cpu in unit
+                            core example: cpu_cores(cpu), for cpu value 150m, it will
+                            return 0.15 \n bytes() returns the memory size in byte
+                            example: bytes(memory), for memory value 1 ki, it will
+                            return 1024 \n unix() returns the DateTime string into
+                            unix format. example: unix(dateTime) will return the corresponding
+                            unix value for the given dateTime \n in above examples
+                            phase, replicas, maxUnavailable, cpu, memory, dateTime
+                            are Parameter's key those values will come from corresponding
+                            Parameter's value \n Some expression evaluation functions
+                            are used for calculating resource requests and limits.
+                            Those functions are stated here: https://github.com/kmodules/resource-metrics/blob/master/eval.go"
                           type: string
                         valueFromPath:
                           description: "ValueFromPath contains the field path of the
@@ -243,8 +241,8 @@ spec:
                           valuePath:
                             description: 'ValuePath defines the manifest field path
                               for the parameter''s value. Example: To add deployment''s
-                              spec replica count as parameter, params:   - key: replica     valuePath:
-                              .spec.replicas'
+                              spec replica count as parameter, params: - key: replica
+                              valuePath: .spec.replicas'
                             type: string
                         required:
                         - key
@@ -313,24 +311,23 @@ spec:
                                       optional field. By default, its value is false.
                                       If roundUp is set as `true`, the resultant value
                                       will be rounded up. example: (i) percentage(\"25%\",
-                                      4) will return 1.         (ii) percentage(\"25%\",
-                                      1 , true) will return 1 as roundUp is set as
-                                      true.        (iii) percentage(2, 4) will return
-                                      2 as percent is representing an Integer value.
-                                      \n cpu_cores() returns the cpu in unit core
-                                      example: cpu_cores(cpu), for cpu value 150m,
-                                      it will return 0.15 \n bytes() returns the memory
-                                      size in byte example: bytes(memory), for memory
-                                      value 1 ki, it will return 1024 \n unix() returns
-                                      the DateTime string into unix format. example:
-                                      unix(dateTime) will return the corresponding
-                                      unix value for the given dateTime \n in above
-                                      examples phase, replicas, maxUnavailable, cpu,
-                                      memory, dateTime are Parameter's key those values
-                                      will come from corresponding Parameter's value
-                                      \n Some expression evaluation functions are
-                                      used for calculating resource requests and limits.
-                                      Those functions are stated here: https://github.com/kmodules/resource-metrics/blob/master/eval.go"
+                                      4) will return 1. (ii) percentage(\"25%\", 1
+                                      , true) will return 1 as roundUp is set as true.
+                                      (iii) percentage(2, 4) will return 2 as percent
+                                      is representing an Integer value. \n cpu_cores()
+                                      returns the cpu in unit core example: cpu_cores(cpu),
+                                      for cpu value 150m, it will return 0.15 \n bytes()
+                                      returns the memory size in byte example: bytes(memory),
+                                      for memory value 1 ki, it will return 1024 \n
+                                      unix() returns the DateTime string into unix
+                                      format. example: unix(dateTime) will return
+                                      the corresponding unix value for the given dateTime
+                                      \n in above examples phase, replicas, maxUnavailable,
+                                      cpu, memory, dateTime are Parameter's key those
+                                      values will come from corresponding Parameter's
+                                      value \n Some expression evaluation functions
+                                      are used for calculating resource requests and
+                                      limits. Those functions are stated here: https://github.com/kmodules/resource-metrics/blob/master/eval.go"
                                     type: string
                                   valueFromPath:
                                     description: "ValueFromPath contains the field

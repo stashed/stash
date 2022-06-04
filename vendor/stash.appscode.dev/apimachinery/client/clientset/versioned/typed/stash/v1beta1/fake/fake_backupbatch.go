@@ -118,7 +118,7 @@ func (c *FakeBackupBatches) UpdateStatus(ctx context.Context, backupBatch *v1bet
 // Delete takes name of the backupBatch and deletes it. Returns an error if one occurs.
 func (c *FakeBackupBatches) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(backupbatchesResource, c.ns, name), &v1beta1.BackupBatch{})
+		Invokes(testing.NewDeleteActionWithOptions(backupbatchesResource, c.ns, name, opts), &v1beta1.BackupBatch{})
 
 	return err
 }

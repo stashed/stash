@@ -71,10 +71,6 @@ func EnsureContainerDeleted(containers []core.Container, name string) []core.Con
 func UpsertContainer(containers []core.Container, upsert core.Container) []core.Container {
 	for i, container := range containers {
 		if container.Name == upsert.Name {
-			// can't be updated. So, keep existing values. usually not set in upsert.
-			upsert.TerminationMessagePath = container.TerminationMessagePath
-			upsert.TerminationMessagePolicy = container.TerminationMessagePolicy
-
 			err := mergo.Merge(&container, upsert, mergo.WithOverride)
 			if err != nil {
 				panic(err)

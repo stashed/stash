@@ -100,7 +100,7 @@ func (c *FakeFunctions) Update(ctx context.Context, function *v1beta1.Function, 
 // Delete takes name of the function and deletes it. Returns an error if one occurs.
 func (c *FakeFunctions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(functionsResource, name), &v1beta1.Function{})
+		Invokes(testing.NewRootDeleteActionWithOptions(functionsResource, name, opts), &v1beta1.Function{})
 	return err
 }
 

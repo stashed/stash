@@ -36,7 +36,7 @@ func SANsForIPs(s string, ips ...string) cert.AltNames {
 }
 
 type CertStore struct {
-	fs           *blobfs.BlobFS
+	fs           blobfs.Interface
 	dir          string
 	organization []string
 	prefix       string
@@ -45,7 +45,7 @@ type CertStore struct {
 	caCert       *x509.Certificate
 }
 
-func New(fs *blobfs.BlobFS, dir string, organization ...string) (*CertStore, error) {
+func New(fs blobfs.Interface, dir string, organization ...string) (*CertStore, error) {
 	return &CertStore{fs: fs, dir: dir, ca: "ca", organization: append([]string(nil), organization...)}, nil
 }
 

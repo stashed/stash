@@ -118,7 +118,7 @@ func (c *FakeRepositories) UpdateStatus(ctx context.Context, repository *v1alpha
 // Delete takes name of the repository and deletes it. Returns an error if one occurs.
 func (c *FakeRepositories) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(repositoriesResource, c.ns, name), &v1alpha1.Repository{})
+		Invokes(testing.NewDeleteActionWithOptions(repositoriesResource, c.ns, name, opts), &v1alpha1.Repository{})
 
 	return err
 }

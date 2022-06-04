@@ -81,7 +81,10 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 	return c.tracker
 }
 
-var _ clientset.Interface = &Clientset{}
+var (
+	_ clientset.Interface = &Clientset{}
+	_ testing.FakeClient  = &Clientset{}
+)
 
 // RepositoriesV1alpha1 retrieves the RepositoriesV1alpha1Client
 func (c *Clientset) RepositoriesV1alpha1() repositoriesv1alpha1.RepositoriesV1alpha1Interface {

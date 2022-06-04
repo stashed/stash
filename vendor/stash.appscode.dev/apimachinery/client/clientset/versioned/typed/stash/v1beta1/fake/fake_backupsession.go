@@ -118,7 +118,7 @@ func (c *FakeBackupSessions) UpdateStatus(ctx context.Context, backupSession *v1
 // Delete takes name of the backupSession and deletes it. Returns an error if one occurs.
 func (c *FakeBackupSessions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(backupsessionsResource, c.ns, name), &v1beta1.BackupSession{})
+		Invokes(testing.NewDeleteActionWithOptions(backupsessionsResource, c.ns, name, opts), &v1beta1.BackupSession{})
 
 	return err
 }

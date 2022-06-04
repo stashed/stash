@@ -50,7 +50,7 @@ type informerCache struct {
 	*internal.InformersMap
 }
 
-// Get implements Reader
+// Get implements Reader.
 func (ip *informerCache) Get(ctx context.Context, key client.ObjectKey, out client.Object) error {
 	gvk, err := apiutil.GVKForObject(out, ip.Scheme)
 	if err != nil {
@@ -68,9 +68,8 @@ func (ip *informerCache) Get(ctx context.Context, key client.ObjectKey, out clie
 	return cache.Reader.Get(ctx, key, out)
 }
 
-// List implements Reader
+// List implements Reader.
 func (ip *informerCache) List(ctx context.Context, out client.ObjectList, opts ...client.ListOption) error {
-
 	gvk, cacheTypeObj, err := ip.objectTypeForListObject(out)
 	if err != nil {
 		return err
@@ -97,11 +96,11 @@ func (ip *informerCache) objectTypeForListObject(list client.ObjectList) (*schem
 		return nil, nil, err
 	}
 
-	if !strings.HasSuffix(gvk.Kind, "List") {
-		return nil, nil, fmt.Errorf("non-list type %T (kind %q) passed as output", list, gvk)
-	}
 	// we need the non-list GVK, so chop off the "List" from the end of the kind
-	gvk.Kind = gvk.Kind[:len(gvk.Kind)-4]
+	if strings.HasSuffix(gvk.Kind, "List") && apimeta.IsListType(list) {
+		gvk.Kind = gvk.Kind[:len(gvk.Kind)-4]
+	}
+
 	_, isUnstructured := list.(*unstructured.UnstructuredList)
 	var cacheTypeObj runtime.Object
 	if isUnstructured {
@@ -130,7 +129,7 @@ func (ip *informerCache) objectTypeForListObject(list client.ObjectList) (*schem
 	return &gvk, cacheTypeObj, nil
 }
 
-// GetInformerForKind returns the informer for the GroupVersionKind
+// GetInformerForKind returns the informer for the GroupVersionKind.
 func (ip *informerCache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (Informer, error) {
 	// Map the gvk to an object
 	obj, err := ip.Scheme.New(gvk)
@@ -145,7 +144,7 @@ func (ip *informerCache) GetInformerForKind(ctx context.Context, gvk schema.Grou
 	return i.Informer, err
 }
 
-// GetInformer returns the informer for the obj
+// GetInformer returns the informer for the obj.
 func (ip *informerCache) GetInformer(ctx context.Context, obj client.Object) (Informer, error) {
 	gvk, err := apiutil.GVKForObject(obj, ip.Scheme)
 	if err != nil {
@@ -160,7 +159,7 @@ func (ip *informerCache) GetInformer(ctx context.Context, obj client.Object) (In
 }
 
 // NeedLeaderElection implements the LeaderElectionRunnable interface
-// to indicate that this can be started without requiring the leader lock
+// to indicate that this can be started without requiring the leader lock.
 func (ip *informerCache) NeedLeaderElection() bool {
 	return false
 }
@@ -194,8 +193,8 @@ func indexByField(indexer Informer, field string, extractor client.IndexerFunc) 
 		rawVals := extractor(obj)
 		var vals []string
 		if ns == "" {
-			// if we're not doubling the keys for the namespaced case, just re-use what was returned to us
-			vals = rawVals
+			// if we're not doubling the keys for the namespaced case, just create a new slice with same length
+			vals = make([]string, len(rawVals))
 		} else {
 			// if we need to add non-namespaced versions too, double the length
 			vals = make([]string, len(rawVals)*2)
