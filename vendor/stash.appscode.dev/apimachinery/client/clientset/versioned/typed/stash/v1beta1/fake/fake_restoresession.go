@@ -118,7 +118,7 @@ func (c *FakeRestoreSessions) UpdateStatus(ctx context.Context, restoreSession *
 // Delete takes name of the restoreSession and deletes it. Returns an error if one occurs.
 func (c *FakeRestoreSessions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(restoresessionsResource, c.ns, name), &v1beta1.RestoreSession{})
+		Invokes(testing.NewDeleteActionWithOptions(restoresessionsResource, c.ns, name, opts), &v1beta1.RestoreSession{})
 
 	return err
 }

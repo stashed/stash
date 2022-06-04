@@ -27,7 +27,7 @@ import "k8s.io/apimachinery/pkg/runtime/generated.proto";
 import "k8s.io/apimachinery/pkg/runtime/schema/generated.proto";
 
 // Package-wide variables from generator "generated".
-option go_package = "v1alpha1";
+option go_package = "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1";
 
 // AddKeyTransform specifies that Service Catalog should add an
 // additional entry to the Secret associated with the ServiceBinding.

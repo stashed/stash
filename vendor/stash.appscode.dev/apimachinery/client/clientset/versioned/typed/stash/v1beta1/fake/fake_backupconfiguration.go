@@ -118,7 +118,7 @@ func (c *FakeBackupConfigurations) UpdateStatus(ctx context.Context, backupConfi
 // Delete takes name of the backupConfiguration and deletes it. Returns an error if one occurs.
 func (c *FakeBackupConfigurations) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(backupconfigurationsResource, c.ns, name), &v1beta1.BackupConfiguration{})
+		Invokes(testing.NewDeleteActionWithOptions(backupconfigurationsResource, c.ns, name, opts), &v1beta1.BackupConfiguration{})
 
 	return err
 }

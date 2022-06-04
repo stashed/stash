@@ -89,7 +89,7 @@ func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo in
 	}
 
 	resLock, err := resourcelock.New(
-		resourcelock.ConfigMapsResourceLock,
+		resourcelock.ConfigMapsLeasesResourceLock,
 		inv.GetObjectMeta().Namespace,
 		util.GetRestoreConfigmapLockName(targetInfo.Target.Ref),
 		opt.KubeClient.CoreV1(),

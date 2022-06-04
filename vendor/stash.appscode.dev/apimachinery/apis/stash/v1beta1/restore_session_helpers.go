@@ -22,7 +22,6 @@ import (
 
 	"stash.appscode.dev/apimachinery/crds"
 
-	hashutil "k8s.io/kubernetes/pkg/util/hash"
 	"kmodules.xyz/client-go/apiextensions"
 	meta_util "kmodules.xyz/client-go/meta"
 )
@@ -33,7 +32,7 @@ func (_ RestoreSession) CustomResourceDefinition() *apiextensions.CustomResource
 
 func (r RestoreSession) GetSpecHash() string {
 	hash := fnv.New64a()
-	hashutil.DeepHashObject(hash, r.Spec)
+	meta_util.DeepHashObject(hash, r.Spec)
 	return strconv.FormatUint(hash.Sum64(), 10)
 }
 

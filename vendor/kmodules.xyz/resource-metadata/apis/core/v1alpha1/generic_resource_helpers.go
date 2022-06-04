@@ -91,7 +91,7 @@ func ToGenericResource(item client.Object, apiType *kmapi.ResourceID, cmeta *kma
 			Annotations:                map[string]string{},
 			// OwnerReferences:            item.GetOwnerReferences(),
 			// Finalizers:                 item.GetFinalizers(),
-			ClusterName: item.GetClusterName(),
+			// ClusterName: item.GetClusterName(),
 			// ManagedFields:              nil,
 		},
 		Spec: GenericResourceSpec{

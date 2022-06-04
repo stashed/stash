@@ -304,7 +304,7 @@ func (c *BackupSessionController) electLeaderPod(targetInfo invoker.BackupTarget
 		EventRecorder: eventer.NewEventRecorder(c.K8sClient, BackupEventComponent),
 	}
 	resLock, err := resourcelock.New(
-		resourcelock.ConfigMapsResourceLock,
+		resourcelock.ConfigMapsLeasesResourceLock,
 		c.Namespace,
 		util.GetBackupConfigmapLockName(targetInfo.Target.Ref),
 		c.K8sClient.CoreV1(),
@@ -363,7 +363,7 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 	}
 
 	resLock, err := resourcelock.New(
-		resourcelock.ConfigMapsResourceLock,
+		resourcelock.ConfigMapsLeasesResourceLock,
 		c.Namespace,
 		util.GetBackupConfigmapLockName(targetInfo.Target.Ref),
 		c.K8sClient.CoreV1(),

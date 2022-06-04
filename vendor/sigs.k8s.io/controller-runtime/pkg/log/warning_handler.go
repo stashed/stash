@@ -23,7 +23,7 @@ import (
 )
 
 // KubeAPIWarningLoggerOptions controls the behavior
-// of a rest.WarningHandler constructed using NewKubeAPIWarningLogger()
+// of a rest.WarningHandler constructed using NewKubeAPIWarningLogger().
 type KubeAPIWarningLoggerOptions struct {
 	// Deduplicate indicates a given warning message should only be written once.
 	// Setting this to true in a long-running process handling many warnings can
@@ -47,7 +47,7 @@ type KubeAPIWarningLogger struct {
 }
 
 // HandleWarningHeader handles logging for responses from API server that are
-// warnings with code being 299 and uses a logr.Logger for it's logging purposes.
+// warnings with code being 299 and uses a logr.Logger for its logging purposes.
 func (l *KubeAPIWarningLogger) HandleWarningHeader(code int, agent string, message string) {
 	if code != 299 || len(message) == 0 {
 		return

@@ -9,6 +9,7 @@
 //  * Current
 //  * Failed
 //  * Terminating
+//  * NotFound
 //  * Unknown
 //
 // Computing the status of a resources can be done by calling the

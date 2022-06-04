@@ -48,7 +48,7 @@ import (
 
 // Default Constants
 const (
-	Version                   = "1.15.0"
+	Version                   = "1.16.0"
 	DefaultURL                = "nats://127.0.0.1:4222"
 	DefaultPort               = 4222
 	DefaultMaxReconnect       = 60
@@ -466,6 +466,10 @@ type Options struct {
 	// For websocket connections, indicates to the server that the connection
 	// supports compression. If the server does too, then data will be compressed.
 	Compression bool
+
+	// For websocket connections, adds a path to connections url.
+	// This is useful when connecting to NATS behind a proxy.
+	ProxyPath string
 
 	// InboxPrefix allows the default _INBOX prefix to be customized
 	InboxPrefix string
@@ -1143,6 +1147,15 @@ func RetryOnFailedConnect(retry bool) Option {
 func Compression(enabled bool) Option {
 	return func(o *Options) error {
 		o.Compression = enabled
+		return nil
+	}
+}
+
+// ProxyPath is an option for websocket connections that adds a path to connections url.
+// This is useful when connecting to NATS behind a proxy.
+func ProxyPath(path string) Option {
+	return func(o *Options) error {
+		o.ProxyPath = path
 		return nil
 	}
 }

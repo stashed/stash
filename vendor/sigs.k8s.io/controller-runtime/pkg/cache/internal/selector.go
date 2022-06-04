@@ -23,16 +23,27 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// SelectorsByGVK associate a GroupVersionKind to a field/label selector
+// SelectorsByGVK associate a GroupVersionKind to a field/label selector.
 type SelectorsByGVK map[schema.GroupVersionKind]Selector
 
-// Selector specify the label/field selector to fill in ListOptions
+func (s SelectorsByGVK) forGVK(gvk schema.GroupVersionKind) Selector {
+	if specific, found := s[gvk]; found {
+		return specific
+	}
+	if defaultSelector, found := s[schema.GroupVersionKind{}]; found {
+		return defaultSelector
+	}
+
+	return Selector{}
+}
+
+// Selector specify the label/field selector to fill in ListOptions.
 type Selector struct {
 	Label labels.Selector
 	Field fields.Selector
 }
 
-// ApplyToList fill in ListOptions LabelSelector and FieldSelector if needed
+// ApplyToList fill in ListOptions LabelSelector and FieldSelector if needed.
 func (s Selector) ApplyToList(listOpts *metav1.ListOptions) {
 	if s.Label != nil {
 		listOpts.LabelSelector = s.Label.String()

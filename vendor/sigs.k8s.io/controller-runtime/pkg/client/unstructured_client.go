@@ -36,7 +36,7 @@ type unstructuredClient struct {
 	paramCodec runtime.ParameterCodec
 }
 
-// Create implements client.Client
+// Create implements client.Client.
 func (uc *unstructuredClient) Create(ctx context.Context, obj Object, opts ...CreateOption) error {
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
@@ -64,7 +64,7 @@ func (uc *unstructuredClient) Create(ctx context.Context, obj Object, opts ...Cr
 	return result
 }
 
-// Update implements client.Client
+// Update implements client.Client.
 func (uc *unstructuredClient) Update(ctx context.Context, obj Object, opts ...UpdateOption) error {
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
@@ -93,10 +93,9 @@ func (uc *unstructuredClient) Update(ctx context.Context, obj Object, opts ...Up
 	return result
 }
 
-// Delete implements client.Client
+// Delete implements client.Client.
 func (uc *unstructuredClient) Delete(ctx context.Context, obj Object, opts ...DeleteOption) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if !ok {
+	if _, ok := obj.(*unstructured.Unstructured); !ok {
 		return fmt.Errorf("unstructured client did not understand object: %T", obj)
 	}
 
@@ -116,10 +115,9 @@ func (uc *unstructuredClient) Delete(ctx context.Context, obj Object, opts ...De
 		Error()
 }
 
-// DeleteAllOf implements client.Client
+// DeleteAllOf implements client.Client.
 func (uc *unstructuredClient) DeleteAllOf(ctx context.Context, obj Object, opts ...DeleteAllOfOption) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if !ok {
+	if _, ok := obj.(*unstructured.Unstructured); !ok {
 		return fmt.Errorf("unstructured client did not understand object: %T", obj)
 	}
 
@@ -139,10 +137,9 @@ func (uc *unstructuredClient) DeleteAllOf(ctx context.Context, obj Object, opts 
 		Error()
 }
 
-// Patch implements client.Client
+// Patch implements client.Client.
 func (uc *unstructuredClient) Patch(ctx context.Context, obj Object, patch Patch, opts ...PatchOption) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if !ok {
+	if _, ok := obj.(*unstructured.Unstructured); !ok {
 		return fmt.Errorf("unstructured client did not understand object: %T", obj)
 	}
 
@@ -167,7 +164,7 @@ func (uc *unstructuredClient) Patch(ctx context.Context, obj Object, patch Patch
 		Into(obj)
 }
 
-// Get implements client.Client
+// Get implements client.Client.
 func (uc *unstructuredClient) Get(ctx context.Context, key ObjectKey, obj Object) error {
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
@@ -193,7 +190,7 @@ func (uc *unstructuredClient) Get(ctx context.Context, key ObjectKey, obj Object
 	return result
 }
 
-// List implements client.Client
+// List implements client.Client.
 func (uc *unstructuredClient) List(ctx context.Context, obj ObjectList, opts ...ListOption) error {
 	u, ok := obj.(*unstructured.UnstructuredList)
 	if !ok {
@@ -201,9 +198,7 @@ func (uc *unstructuredClient) List(ctx context.Context, obj ObjectList, opts ...
 	}
 
 	gvk := u.GroupVersionKind()
-	if strings.HasSuffix(gvk.Kind, "List") {
-		gvk.Kind = gvk.Kind[:len(gvk.Kind)-4]
-	}
+	gvk.Kind = strings.TrimSuffix(gvk.Kind, "List")
 
 	listOpts := ListOptions{}
 	listOpts.ApplyOptions(opts)
@@ -222,8 +217,7 @@ func (uc *unstructuredClient) List(ctx context.Context, obj ObjectList, opts ...
 }
 
 func (uc *unstructuredClient) UpdateStatus(ctx context.Context, obj Object, opts ...UpdateOption) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if !ok {
+	if _, ok := obj.(*unstructured.Unstructured); !ok {
 		return fmt.Errorf("unstructured client did not understand object: %T", obj)
 	}
 
