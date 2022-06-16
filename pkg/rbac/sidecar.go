@@ -25,6 +25,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	apps "k8s.io/api/apps/v1"
+	coordination "k8s.io/api/coordination/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -120,6 +121,11 @@ func (opt *RBACOptions) ensureSidecarClusterRole() error {
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"serviceaccounts"},
 				Verbs:     []string{"get", "create"},
+			},
+			{
+				APIGroups: []string{coordination.GroupName},
+				Resources: []string{"leases"},
+				Verbs:     []string{"*"},
 			},
 		}
 		return in

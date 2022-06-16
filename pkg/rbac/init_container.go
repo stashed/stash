@@ -24,6 +24,7 @@ import (
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
+	coordination "k8s.io/api/coordination/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -88,6 +89,11 @@ func (opt *RBACOptions) ensureRestoreInitContainerClusterRole() error {
 				APIGroups: []string{core.SchemeGroupVersion.Group},
 				Resources: []string{"secrets", "endpoints", "pods"},
 				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{coordination.GroupName},
+				Resources: []string{"leases"},
+				Verbs:     []string{"*"},
 			},
 		}
 		return in
