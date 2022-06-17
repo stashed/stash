@@ -229,6 +229,11 @@ func (in *BackupBlueprintSpec) DeepCopyInto(out *BackupBlueprintSpec) {
 		*out = new(apiv1.PersistentVolumeClaim)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Hooks != nil {
+		in, out := &in.Hooks, &out.Hooks
+		*out = new(BackupHooks)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.BackupHistoryLimit != nil {
 		in, out := &in.BackupHistoryLimit, &out.BackupHistoryLimit
 		*out = new(int32)

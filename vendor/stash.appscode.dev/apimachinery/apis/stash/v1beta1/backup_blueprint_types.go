@@ -77,11 +77,18 @@ type BackupBlueprintSpec struct {
 	// Don't specify it in sidecar model.
 	// +optional
 	InterimVolumeTemplate *ofst.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty"`
+	// Hooks specifies the actions Stash should execute before or after backup.
+	// +optional
+	Hooks *BackupHooks `json:"hooks,omitempty"`
 	// BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
 	// This is helpful for debugging purpose.
 	// Default: 1
 	// +optional
 	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty"`
+	// TimeOut specifies the maximum duration of backup. BackupSession will be considered Failed
+	// if backup does not complete within this time limit. By default, Stash don't set any timeout for backup.
+	// +optional
+	TimeOut string `json:"timeOut,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

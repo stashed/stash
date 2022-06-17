@@ -20056,6 +20056,12 @@ func schema_apimachinery_apis_stash_v1beta1_BackupBlueprintSpec(ref common.Refer
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim"),
 						},
 					},
+					"hooks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Hooks specifies the actions Stash should execute before or after backup.",
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupHooks"),
+						},
+					},
 					"backupHistoryLimit": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep. This is helpful for debugging purpose. Default: 1",
@@ -20063,12 +20069,19 @@ func schema_apimachinery_apis_stash_v1beta1_BackupBlueprintSpec(ref common.Refer
 							Format:      "int32",
 						},
 					},
+					"timeOut": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TimeOut specifies the maximum duration of backup. BackupSession will be considered Failed if backup does not complete within this time limit. By default, Stash don't set any timeout for backup.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"retentionPolicy"},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.UsagePolicy", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
+			"kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.UsagePolicy", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
 	}
 }
 
