@@ -70,12 +70,14 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup workload Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									HTTPGet: &core.HTTPGetAction{
-										Scheme: "HTTP",
-										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
-										Path:   "/success",
-										Port:   intstr.FromInt(framework.HttpPort),
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										HTTPGet: &core.HTTPGetAction{
+											Scheme: "HTTP",
+											Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+											Path:   "/success",
+											Port:   intstr.FromInt(framework.HttpPort),
+										},
 									},
 								},
 							}
@@ -114,13 +116,15 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									HTTPGet: &core.HTTPGetAction{
-										Scheme: "HTTP",
-										Path:   "/success",
-										Port:   intstr.FromString(framework.HttpPortName),
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										HTTPGet: &core.HTTPGetAction{
+											Scheme: "HTTP",
+											Path:   "/success",
+											Port:   intstr.FromString(framework.HttpPortName),
+										},
+										ContainerName: framework.ProberDemoPodPrefix,
 									},
-									ContainerName: framework.ProberDemoPodPrefix,
 								},
 							}
 						})
@@ -159,13 +163,15 @@ var _ = Describe("PostBackup Hook", func() {
 					// Setup Backup
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
-								HTTPGet: &core.HTTPGetAction{
-									Scheme: "HTTP",
-									Path:   "/fail",
-									Port:   intstr.FromString(framework.HttpPortName),
+							PostBackup: v1beta1.PostBackupHook{
+								Handler: &probev1.Handler{
+									HTTPGet: &core.HTTPGetAction{
+										Scheme: "HTTP",
+										Path:   "/fail",
+										Port:   intstr.FromString(framework.HttpPortName),
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
 								},
-								ContainerName: framework.ProberDemoPodPrefix,
 							},
 						}
 					})
@@ -214,12 +220,14 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup workload Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									HTTPPost: &probev1.HTTPPostAction{
-										Scheme: "HTTP",
-										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
-										Path:   "/post-demo",
-										Port:   intstr.FromInt(framework.HttpPort),
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										HTTPPost: &probev1.HTTPPostAction{
+											Scheme: "HTTP",
+											Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+											Path:   "/post-demo",
+											Port:   intstr.FromInt(framework.HttpPort),
+										},
 									},
 								},
 							}
@@ -258,13 +266,15 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									HTTPPost: &probev1.HTTPPostAction{
-										Scheme: "HTTP",
-										Path:   "/post-demo",
-										Port:   intstr.FromString(framework.HttpPortName),
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										HTTPPost: &probev1.HTTPPostAction{
+											Scheme: "HTTP",
+											Path:   "/post-demo",
+											Port:   intstr.FromString(framework.HttpPortName),
+										},
+										ContainerName: framework.ProberDemoPodPrefix,
 									},
-									ContainerName: framework.ProberDemoPodPrefix,
 								},
 							}
 						})
@@ -302,14 +312,16 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									HTTPPost: &probev1.HTTPPostAction{
-										Scheme: "HTTP",
-										Path:   "/post-demo",
-										Port:   intstr.FromString(framework.HttpPortName),
-										Body:   `{"expectedCode":"200","expectedResponse":"success"}`,
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										HTTPPost: &probev1.HTTPPostAction{
+											Scheme: "HTTP",
+											Path:   "/post-demo",
+											Port:   intstr.FromString(framework.HttpPortName),
+											Body:   `{"expectedCode":"200","expectedResponse":"success"}`,
+										},
+										ContainerName: framework.ProberDemoPodPrefix,
 									},
-									ContainerName: framework.ProberDemoPodPrefix,
 								},
 							}
 						})
@@ -347,23 +359,25 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									HTTPPost: &probev1.HTTPPostAction{
-										Scheme: "HTTP",
-										Path:   "/post-demo",
-										Port:   intstr.FromString(framework.HttpPortName),
-										Form: []probev1.FormEntry{
-											{
-												Key:    "expectedResponse",
-												Values: []string{"success"},
-											},
-											{
-												Key:    "expectedCode",
-												Values: []string{"202"},
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										HTTPPost: &probev1.HTTPPostAction{
+											Scheme: "HTTP",
+											Path:   "/post-demo",
+											Port:   intstr.FromString(framework.HttpPortName),
+											Form: []probev1.FormEntry{
+												{
+													Key:    "expectedResponse",
+													Values: []string{"success"},
+												},
+												{
+													Key:    "expectedCode",
+													Values: []string{"202"},
+												},
 											},
 										},
+										ContainerName: framework.ProberDemoPodPrefix,
 									},
-									ContainerName: framework.ProberDemoPodPrefix,
 								},
 							}
 						})
@@ -402,23 +416,25 @@ var _ = Describe("PostBackup Hook", func() {
 					// Setup Backup
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
-								HTTPPost: &probev1.HTTPPostAction{
-									Scheme: "HTTP",
-									Path:   "/post-demo",
-									Port:   intstr.FromString(framework.HttpPortName),
-									Form: []probev1.FormEntry{
-										{
-											Key:    "expectedResponse",
-											Values: []string{"fail"},
-										},
-										{
-											Key:    "expectedCode",
-											Values: []string{"403"},
+							PostBackup: v1beta1.PostBackupHook{
+								Handler: &probev1.Handler{
+									HTTPPost: &probev1.HTTPPostAction{
+										Scheme: "HTTP",
+										Path:   "/post-demo",
+										Port:   intstr.FromString(framework.HttpPortName),
+										Form: []probev1.FormEntry{
+											{
+												Key:    "expectedResponse",
+												Values: []string{"fail"},
+											},
+											{
+												Key:    "expectedCode",
+												Values: []string{"403"},
+											},
 										},
 									},
+									ContainerName: framework.ProberDemoPodPrefix,
 								},
-								ContainerName: framework.ProberDemoPodPrefix,
 							},
 						}
 					})
@@ -467,10 +483,12 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup workload Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									TCPSocket: &core.TCPSocketAction{
-										Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
-										Port: intstr.FromInt(framework.TcpPort),
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										TCPSocket: &core.TCPSocketAction{
+											Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+											Port: intstr.FromInt(framework.TcpPort),
+										},
 									},
 								},
 							}
@@ -509,11 +527,13 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									TCPSocket: &core.TCPSocketAction{
-										Port: intstr.FromString(framework.TcpPortName),
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										TCPSocket: &core.TCPSocketAction{
+											Port: intstr.FromString(framework.TcpPortName),
+										},
+										ContainerName: framework.ProberDemoPodPrefix,
 									},
-									ContainerName: framework.ProberDemoPodPrefix,
 								},
 							}
 						})
@@ -552,11 +572,13 @@ var _ = Describe("PostBackup Hook", func() {
 					// Setup Backup
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
-								TCPSocket: &core.TCPSocketAction{
-									Port: intstr.FromInt(9091),
+							PostBackup: v1beta1.PostBackupHook{
+								Handler: &probev1.Handler{
+									TCPSocket: &core.TCPSocketAction{
+										Port: intstr.FromInt(9091),
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
 								},
-								ContainerName: framework.ProberDemoPodPrefix,
 							},
 						}
 					})
@@ -608,11 +630,13 @@ var _ = Describe("PostBackup Hook", func() {
 					// Setup Backup
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
-								Exec: &core.ExecAction{
-									Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
+							PostBackup: v1beta1.PostBackupHook{
+								Handler: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
 								},
-								ContainerName: framework.ProberDemoPodPrefix,
 							},
 						}
 					})
@@ -660,11 +684,13 @@ var _ = Describe("PostBackup Hook", func() {
 					// Remove old data in postBackup hook
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
-								Exec: &core.ExecAction{
-									Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
+							PostBackup: v1beta1.PostBackupHook{
+								Handler: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
 								},
-								ContainerName: framework.ProberDemoPodPrefix,
 							},
 						}
 						bc.Spec.RetentionPolicy.KeepLast = 0 // invalid retention value to force backup process fail on cleanup step
@@ -714,11 +740,13 @@ var _ = Describe("PostBackup Hook", func() {
 					// Return non-zero exit code so that the postBackup hook fail
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
-								Exec: &core.ExecAction{
-									Command: []string{"/bin/sh", "-c", "exit 1"},
+							PostBackup: v1beta1.PostBackupHook{
+								Handler: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", "exit 1"},
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
 								},
-								ContainerName: framework.ProberDemoPodPrefix,
 							},
 						}
 					})
@@ -774,11 +802,13 @@ var _ = Describe("PostBackup Hook", func() {
 						// Remove old data in postBackup hook
 						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									Exec: &core.ExecAction{
-										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										Exec: &core.ExecAction{
+											Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
+										},
+										ContainerName: apis.PostTaskHook,
 									},
-									ContainerName: apis.PostTaskHook,
 								},
 							}
 						})
@@ -830,11 +860,13 @@ var _ = Describe("PostBackup Hook", func() {
 						// Remove old data in postBackup hook
 						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									Exec: &core.ExecAction{
-										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										Exec: &core.ExecAction{
+											Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
+										},
+										ContainerName: apis.PostTaskHook,
 									},
-									ContainerName: apis.PostTaskHook,
 								},
 							}
 							bc.Spec.RetentionPolicy.KeepLast = 0 // invalid retention value to force backup process fail on cleanup step
@@ -888,11 +920,13 @@ var _ = Describe("PostBackup Hook", func() {
 						// Return non-zero exit code from postBackup hook so that it fail
 						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: &probev1.Handler{
-									Exec: &core.ExecAction{
-										Command: []string{"/bin/sh", "-c", "exit 1"},
+								PostBackup: v1beta1.PostBackupHook{
+									Handler: &probev1.Handler{
+										Exec: &core.ExecAction{
+											Command: []string{"/bin/sh", "-c", "exit 1"},
+										},
+										ContainerName: apis.PostTaskHook,
 									},
-									ContainerName: apis.PostTaskHook,
 								},
 							}
 						})
@@ -918,27 +952,28 @@ var _ = Describe("PostBackup Hook", func() {
 				})
 			})
 		})
+	})
+	Context("Template", func() {
+		Context("Templated data in the request Body", func() {
+			It("should resolve the template successfully", func() {
+				// Deploy a StatefulSet.
+				statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+				Expect(err).NotTo(HaveOccurred())
 
-		Context("Template", func() {
-			Context("Templated data in the request Body", func() {
-				It("should resolve the template successfully", func() {
-					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
-					Expect(err).NotTo(HaveOccurred())
+				// Generate Sample Data
+				_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
 
-					// Generate Sample Data
-					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
-					Expect(err).NotTo(HaveOccurred())
+				// Setup a Minio Repository
+				repo, err := f.SetupMinioRepository()
+				Expect(err).NotTo(HaveOccurred())
+				f.AppendToCleanupList(repo)
 
-					// Setup a Minio Repository
-					repo, err := f.SetupMinioRepository()
-					Expect(err).NotTo(HaveOccurred())
-					f.AppendToCleanupList(repo)
-
-					// Setup Backup
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
-						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
+				// Setup Backup
+				backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+					bc.Spec.Hooks = &v1beta1.BackupHooks{
+						PostBackup: v1beta1.PostBackupHook{
+							Handler: &probev1.Handler{
 								HTTPPost: &probev1.HTTPPostAction{
 									Scheme: "HTTP",
 									Path:   "/post-demo",
@@ -947,43 +982,45 @@ var _ = Describe("PostBackup Hook", func() {
 								},
 								ContainerName: framework.ProberDemoPodPrefix,
 							},
-						}
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					// Take an Instant Backup of the Sample Data
-					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
-						Name: backupConfig.Name,
-						Kind: v1beta1.ResourceKindBackupConfiguration,
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Verifying that BackupSession has succeeded")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+						},
+					}
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// Take an Instant Backup of the Sample Data
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+					Name: backupConfig.Name,
+					Kind: v1beta1.ResourceKindBackupConfiguration,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that BackupSession has succeeded")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 			})
+		})
 
-			Context("Failure Test", func() {
-				It("should take a backup even when the postBackup hook failed", func() {
-					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
-					Expect(err).NotTo(HaveOccurred())
+		Context("Failure Test", func() {
+			It("should take a backup even when the postBackup hook failed", func() {
+				// Deploy a StatefulSet.
+				statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+				Expect(err).NotTo(HaveOccurred())
 
-					// Generate Sample Data
-					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
-					Expect(err).NotTo(HaveOccurred())
+				// Generate Sample Data
+				_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
 
-					// Setup a Minio Repository
-					repo, err := f.SetupMinioRepository()
-					Expect(err).NotTo(HaveOccurred())
-					f.AppendToCleanupList(repo)
+				// Setup a Minio Repository
+				repo, err := f.SetupMinioRepository()
+				Expect(err).NotTo(HaveOccurred())
+				f.AppendToCleanupList(repo)
 
-					// Setup Backup
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
-						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
+				// Setup Backup
+				backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+					bc.Spec.Hooks = &v1beta1.BackupHooks{
+						PostBackup: v1beta1.PostBackupHook{
+							Handler: &probev1.Handler{
 								HTTPPost: &probev1.HTTPPostAction{
 									Scheme: "HTTP",
 									Path:   "/post-demo",
@@ -1001,54 +1038,56 @@ var _ = Describe("PostBackup Hook", func() {
 								},
 								ContainerName: framework.ProberDemoPodPrefix,
 							},
-						}
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					// Take an Instant Backup of the Sample Data
-					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
-						Name: backupConfig.Name,
-						Kind: v1beta1.ResourceKindBackupConfiguration,
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
-
-					By("Verifying that a backup has been taken")
-					items, err := f.BrowseMinioRepository(repo)
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(items).ShouldNot(BeEmpty())
-				})
-			})
-
-			Context("Send notification to Slack webhook", func() {
-				BeforeEach(func() {
-					if f.SlackWebhookURL == "" {
-						Skip("Slack Webhook URL is missing")
+						},
 					}
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				It("should send backup success notification", func() {
-					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
-					Expect(err).NotTo(HaveOccurred())
+				// Take an Instant Backup of the Sample Data
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+					Name: backupConfig.Name,
+					Kind: v1beta1.ResourceKindBackupConfiguration,
+				})
+				Expect(err).NotTo(HaveOccurred())
 
-					// Generate Sample Data
-					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
-					Expect(err).NotTo(HaveOccurred())
+				By("Verifying that BackupSession has failed")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
-					// Setup a Minio Repository
-					repo, err := f.SetupMinioRepository()
-					Expect(err).NotTo(HaveOccurred())
-					f.AppendToCleanupList(repo)
+				By("Verifying that a backup has been taken")
+				items, err := f.BrowseMinioRepository(repo)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(items).ShouldNot(BeEmpty())
+			})
+		})
 
-					// Setup Backup
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
-						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
+		Context("Send notification to Slack webhook", func() {
+			BeforeEach(func() {
+				if f.SlackWebhookURL == "" {
+					Skip("Slack Webhook URL is missing")
+				}
+			})
+
+			It("should send backup success notification", func() {
+				// Deploy a StatefulSet.
+				statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Generate Sample Data
+				_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Setup a Minio Repository
+				repo, err := f.SetupMinioRepository()
+				Expect(err).NotTo(HaveOccurred())
+				f.AppendToCleanupList(repo)
+
+				// Setup Backup
+				backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+					bc.Spec.Hooks = &v1beta1.BackupHooks{
+						PostBackup: v1beta1.PostBackupHook{
+							Handler: &probev1.Handler{
 								HTTPPost: &probev1.HTTPPostAction{
 									Host:   "hooks.slack.com",
 									Path:   f.SlackWebhookURL,
@@ -1064,40 +1103,42 @@ var _ = Describe("PostBackup Hook", func() {
 								},
 								ContainerName: framework.ProberDemoPodPrefix,
 							},
-						}
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					// Take an Instant Backup of the Sample Data
-					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
-						Name: backupConfig.Name,
-						Kind: v1beta1.ResourceKindBackupConfiguration,
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Verifying that BackupSession has succeeded")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+						},
+					}
 				})
-				It("should send backup failure notification", func() {
-					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
-					Expect(err).NotTo(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-					// Generate Sample Data
-					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
-					Expect(err).NotTo(HaveOccurred())
+				// Take an Instant Backup of the Sample Data
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+					Name: backupConfig.Name,
+					Kind: v1beta1.ResourceKindBackupConfiguration,
+				})
+				Expect(err).NotTo(HaveOccurred())
 
-					// Setup a Minio Repository
-					repo, err := f.SetupMinioRepository()
-					Expect(err).NotTo(HaveOccurred())
-					f.AppendToCleanupList(repo)
+				By("Verifying that BackupSession has succeeded")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+			})
+			It("should send backup failure notification", func() {
+				// Deploy a StatefulSet.
+				statefulset, err := f.DeployStatefulSetWithProbeClient(framework.ProberDemoPodPrefix)
+				Expect(err).NotTo(HaveOccurred())
 
-					// Setup Backup
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
-						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: &probev1.Handler{
+				// Generate Sample Data
+				_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Setup a Minio Repository
+				repo, err := f.SetupMinioRepository()
+				Expect(err).NotTo(HaveOccurred())
+				f.AppendToCleanupList(repo)
+
+				// Setup Backup
+				backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+					bc.Spec.Hooks = &v1beta1.BackupHooks{
+						PostBackup: v1beta1.PostBackupHook{
+							Handler: &probev1.Handler{
 								HTTPPost: &probev1.HTTPPostAction{
 									Host:   "hooks.slack.com",
 									Path:   f.SlackWebhookURL,
@@ -1113,23 +1154,23 @@ var _ = Describe("PostBackup Hook", func() {
 								},
 								ContainerName: framework.ProberDemoPodPrefix,
 							},
-						}
-						bc.Spec.Target.Paths = []string{"/some/non-existing/path"}
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					// Take an Instant Backup of the Sample Data
-					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
-						Name: backupConfig.Name,
-						Kind: v1beta1.ResourceKindBackupConfiguration,
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+						},
+					}
+					bc.Spec.Target.Paths = []string{"/some/non-existing/path"}
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// Take an Instant Backup of the Sample Data
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+					Name: backupConfig.Name,
+					Kind: v1beta1.ResourceKindBackupConfiguration,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that BackupSession has failed")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 			})
 		})
 	})

@@ -211,13 +211,13 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 	}
 
 	// If postBackup hook is specified, then execute those hooks after backup
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup.Handler != nil {
 		klog.Infoln("Executing postBackup hooks........")
 		podName := meta.PodName()
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postBackup hook. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, targetInfo.Hooks.PostBackup, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, targetInfo.Hooks.PostBackup.Handler, podName, opt.namespace)
 		if err != nil {
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual backup process may be succeeded." +
 				"Hence, the backup snapshots might be present in the backend even if the overall BackupSession phase is 'Failed'")

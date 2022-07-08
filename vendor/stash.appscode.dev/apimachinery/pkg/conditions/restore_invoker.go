@@ -204,11 +204,15 @@ func SetPostRestoreHookExecutionSucceededToFalse(inv invoker.RestoreInvoker, err
 }
 
 func SetPostRestoreHookExecutionSucceededToTrue(inv invoker.RestoreInvoker) error {
+	return SetPostRestoreHookExecutionSucceededToTrueWithMsg(inv, "Successfully executed postRestore hook.")
+}
+
+func SetPostRestoreHookExecutionSucceededToTrueWithMsg(inv invoker.RestoreInvoker, msg string) error {
 	return inv.SetCondition(nil, kmapi.Condition{
 		Type:               v1beta1.PostRestoreHookExecutionSucceeded,
 		Status:             core.ConditionTrue,
 		Reason:             v1beta1.SuccessfullyExecutedPostRestoreHook,
-		Message:            "Successfully executed postRestore hook.",
+		Message:            msg,
 		LastTransitionTime: metav1.Now(),
 	})
 }
@@ -244,11 +248,15 @@ func SetGlobalPostRestoreHookSucceededConditionToFalse(invoker invoker.RestoreIn
 }
 
 func SetGlobalPostRestoreHookSucceededConditionToTrue(invoker invoker.RestoreInvoker) error {
+	return SetGlobalPostRestoreHookSucceededConditionToTrueWithMsg(invoker, "Global PostRestore hook has been executed successfully")
+}
+
+func SetGlobalPostRestoreHookSucceededConditionToTrueWithMsg(invoker invoker.RestoreInvoker, msg string) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:               v1beta1.GlobalPostRestoreHookSucceeded,
 		Status:             core.ConditionTrue,
 		Reason:             v1beta1.GlobalPostRestoreHookExecutedSuccessfully,
-		Message:            "Global PostRestore hook has been executed successfully",
+		Message:            msg,
 		LastTransitionTime: metav1.Now(),
 	})
 }

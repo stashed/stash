@@ -59,7 +59,7 @@ func (opt *RBACOptions) ensureCrossNamespaceRole() error {
 			},
 			{
 				APIGroups:     []string{core.SchemeGroupVersion.Group},
-				Resources:     []string{"secrets"},
+				Resources:     []string{"secrets", "pods", "endpoints"},
 				Verbs:         []string{"get"},
 				ResourceNames: []string{opt.CrossNamespaceResources.Secret},
 			},

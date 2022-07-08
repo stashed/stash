@@ -210,6 +210,15 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 
 	status := inv.GetStatus()
 	if invoker.RestoreCompletedForAllTargets(status.TargetStatus, len(inv.GetTargetInfo())) {
+		if !postRestoreHooksExecuted(inv) {
+			klog.Infof("Waiting for postRestore hook to be executed for %s %s/%s.....",
+				inv.GetTypeMeta().Kind,
+				invMeta.Namespace,
+				invMeta.Name,
+			)
+			return nil
+		}
+
 		if !restoreMetricsPushed(status.Conditions) {
 			err = c.sendRestoreMetrics(inv)
 			if err != nil {
@@ -590,7 +599,7 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 		taskResolver.PreTaskHookInput = make(map[string]string)
 		taskResolver.PreTaskHookInput[apis.HookType] = apis.PreRestoreHook
 	}
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore.Handler != nil {
 		taskResolver.PostTaskHookInput = make(map[string]string)
 		taskResolver.PostTaskHookInput[apis.HookType] = apis.PostRestoreHook
 	}
@@ -750,8 +759,35 @@ func (c *StashController) requeueRestoreInvoker(inv invoker.RestoreInvoker, key 
 	return nil
 }
 
+func postRestoreHooksExecuted(inv invoker.RestoreInvoker) bool {
+	for _, targetInfo := range inv.GetTargetInfo() {
+		if targetInfo.Hooks != nil {
+			if !postRestoreHookExecutedForTarget(inv, targetInfo) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func postRestoreHookExecutedForTarget(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) bool {
+	if targetInfo.Target == nil {
+		return true
+	}
+	status := inv.GetStatus()
+
+	for _, s := range status.TargetStatus {
+		if invoker.TargetMatched(s.Ref, targetInfo.Target.Ref) {
+			if kmapi.HasCondition(s.Conditions, api_v1beta1.PostRestoreHookExecutionSucceeded) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func globalPostRestoreHookExecuted(inv invoker.RestoreInvoker) bool {
-	if inv.GetGlobalHooks() == nil || inv.GetGlobalHooks().PostRestore == nil {
+	if inv.GetGlobalHooks() == nil || inv.GetGlobalHooks().PostRestore.Handler == nil {
 		return true
 	}
 	return kmapi.HasCondition(inv.GetStatus().Conditions, api_v1beta1.GlobalPostRestoreHookSucceeded) &&
@@ -761,7 +797,7 @@ func globalPostRestoreHookExecuted(inv invoker.RestoreInvoker) bool {
 func (c *StashController) executeGlobalPostRestoreHook(inv invoker.RestoreInvoker) error {
 	hookExecutor := stashHooks.HookExecutor{
 		Config: c.clientConfig,
-		Hook:   inv.GetGlobalHooks().PostRestore,
+		Hook:   inv.GetGlobalHooks().PostRestore.Handler,
 		ExecutorPod: kmapi.ObjectReference{
 			Namespace: meta.PodNamespace(),
 			Name:      meta.PodName(),
@@ -771,6 +807,21 @@ func (c *StashController) executeGlobalPostRestoreHook(inv invoker.RestoreInvoke
 			Name:      inv.GetObjectMeta().Name,
 		}),
 	}
+
+	executionPolicy := inv.GetGlobalHooks().PostRestore.ExecutionPolicy
+	if executionPolicy == "" {
+		executionPolicy = api_v1beta1.ExecuteAlways
+	}
+
+	if !stashHooks.IsAllowedByExecutionPolicy(executionPolicy, hookExecutor.Summary) {
+		reason := fmt.Sprintf("Skipping executing %s. Reason: executionPolicy is %q but phase is %q.",
+			apis.PostRestoreHook,
+			executionPolicy,
+			hookExecutor.Summary.Status.Phase,
+		)
+		return conditions.SetGlobalPostRestoreHookSucceededConditionToTrueWithMsg(inv, reason)
+	}
+
 	if err := hookExecutor.Execute(); err != nil {
 		return err
 	}
