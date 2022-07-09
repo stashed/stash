@@ -147,14 +147,14 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 
 	if invoker.BackupCompletedForAllTargets(session.GetTargetStatus(), len(inv.GetTargetInfo())) {
 
-		//if !postRestoreHooksExecuted(inv) {
-		//	klog.Infof("Waiting for postRestore hook to be executed for %s %s/%s.",
-		//		inv.GetTypeMeta().Kind,
-		//		invMeta.Namespace,
-		//		invMeta.Name,
-		//	)
-		//	return nil
-		//}
+		if !postBackupHooksExecuted(inv.GetTargetInfo(), session.GetTargetStatus()) {
+			klog.Infof("Waiting for postBackup hook to be executed for %s %s/%s.",
+				inv.GetTypeMeta().Kind,
+				inv.GetObjectMeta().Namespace,
+				inv.GetObjectMeta().Name,
+			)
+			return nil
+		}
 
 		if !backupMetricPushed(session.GetConditions()) {
 			err = c.sendBackupMetrics(inv, session)
@@ -687,32 +687,31 @@ func backupExecutor(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetIn
 	return BackupExecutorJob
 }
 
-//func postBackupHooksExecuted(session invoker.BackupSessionHandler) bool {
-//	for _, targetInfo := range session.GetTargetInfo() {
-//		if targetInfo.Hooks != nil {
-//			if !postRestoreHookExecutedForTarget(inv, targetInfo) {
-//				return false
-//			}
-//		}
-//	}
-//	return true
-//}
-//
-//func postBackupHookExecutedForTarget(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) bool {
-//	if targetInfo.Target == nil {
-//		return true
-//	}
-//	status := inv.
-//
-//	for _, s := range status.TargetStatus {
-//		if invoker.TargetMatched(s.Ref, targetInfo.Target.Ref) {
-//			if kmapi.HasCondition(s.Conditions, api_v1beta1.PostRestoreHookExecutionSucceeded) {
-//				return true
-//			}
-//		}
-//	}
-//	return false
-//}
+func postBackupHooksExecuted(targetInfo []invoker.BackupTargetInfo, targetStatus []api_v1beta1.BackupTargetStatus) bool {
+	for _, target := range targetInfo {
+		if target.Hooks != nil {
+			if !postBackupHookExecutedForTarget(target, targetStatus) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func postBackupHookExecutedForTarget(targetInfo invoker.BackupTargetInfo, targetStatus []api_v1beta1.BackupTargetStatus) bool {
+	if targetInfo.Target == nil {
+		return true
+	}
+
+	for _, s := range targetStatus {
+		if invoker.TargetMatched(s.Ref, targetInfo.Target.Ref) {
+			if kmapi.HasCondition(s.Conditions, api_v1beta1.PostBackupHookExecutionSucceeded) {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 func globalPostBackupHookExecuted(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler) bool {
 	backupHooks := inv.GetGlobalHooks()

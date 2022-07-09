@@ -869,7 +869,7 @@ var _ = Describe("PostBackup Hook", func() {
 									},
 								},
 							}
-							bc.Spec.RetentionPolicy.KeepLast = 0 // invalid retention value to force backup process fail on cleanup step
+							bc.Spec.Target.Args = []string{"--invalid-arg"} // invalid args to force the backup process to fail
 						})
 						Expect(err).NotTo(HaveOccurred())
 

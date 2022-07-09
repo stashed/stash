@@ -123,6 +123,7 @@ func NewCmdRestorePVC() *cobra.Command {
 	cmd.Flags().StringSliceVar(&opt.restoreOpt.RestorePaths, "restore-paths", opt.restoreOpt.RestorePaths, "List of paths to restore")
 	cmd.Flags().StringSliceVar(&opt.restoreOpt.Exclude, "exclude", opt.restoreOpt.Exclude, "List of pattern for directory/file to ignore during restore. Stash will not restore those files that matches these patterns.")
 	cmd.Flags().StringSliceVar(&opt.restoreOpt.Include, "include", opt.restoreOpt.Include, "List of pattern for directory/file to restore. Stash will restore only those files that matches these patterns.")
+	cmd.Flags().StringSliceVar(&opt.restoreOpt.Args, "args", opt.restoreOpt.Args, "Arguments to pass to the restore command.")
 	cmd.Flags().StringSliceVar(&opt.restoreOpt.Snapshots, "snapshots", opt.restoreOpt.Snapshots, "List of snapshots to be restored")
 
 	cmd.Flags().StringVar(&opt.invokerKind, "invoker-kind", opt.invokerKind, "Kind of the backup invoker")
