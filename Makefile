@@ -489,5 +489,9 @@ push-to-kind: container
 	@kind load docker-image $(REGISTRY)/stash:$(TAG)
 	@echo "Image has been pushed successfully into kind cluster."
 
+restart:
+	@echo "Restarting operator pod....."
+	kubectl delete pod -n $(KUBE_NAMESPACE) -l 'app.kubernetes.io/name=stash-community,app.kubernetes.io/instance=stash'
+
 .PHONY: deploy-to-kind
 deploy-to-kind: uninstall push-to-kind install
