@@ -105,11 +105,13 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Restoring the backed up data in the original StatefulSet")
 					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
-							PostRestore: &probev1.Handler{
-								Exec: &core.ExecAction{
-									Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", framework.TestSourceDataMountPath)},
+							PostRestore: v1beta1.PostRestoreHook{
+								Handler: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", framework.TestSourceDataMountPath)},
+									},
+									ContainerName: apis.StashInitContainer,
 								},
-								ContainerName: apis.StashInitContainer,
 							},
 						}
 					})
@@ -177,11 +179,13 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Restoring the backed up data in the original StatefulSet")
 					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
-							PostRestore: &probev1.Handler{
-								Exec: &core.ExecAction{
-									Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", framework.TestSourceDataMountPath)},
+							PostRestore: v1beta1.PostRestoreHook{
+								Handler: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", framework.TestSourceDataMountPath)},
+									},
+									ContainerName: apis.StashInitContainer,
 								},
-								ContainerName: apis.StashInitContainer,
 							},
 						}
 						restore.Spec.Target.Rules = []v1beta1.Rule{
@@ -263,11 +267,13 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Restoring the backed up data in the original StatefulSet")
 					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
-							PostRestore: &probev1.Handler{
-								Exec: &core.ExecAction{
-									Command: []string{"/bin/sh", "-c", "exit 1"},
+							PostRestore: v1beta1.PostRestoreHook{
+								Handler: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", "exit 1"},
+									},
+									ContainerName: apis.StashInitContainer,
 								},
-								ContainerName: apis.StashInitContainer,
 							},
 						}
 					})
@@ -350,11 +356,13 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Restoring the backed up data")
 						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo, func(restore *v1beta1.RestoreSession) {
 							restore.Spec.Hooks = &v1beta1.RestoreHooks{
-								PostRestore: &probev1.Handler{
-									Exec: &core.ExecAction{
-										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", apis.StashDefaultMountPath)},
+								PostRestore: v1beta1.PostRestoreHook{
+									Handler: &probev1.Handler{
+										Exec: &core.ExecAction{
+											Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", apis.StashDefaultMountPath)},
+										},
+										ContainerName: apis.PostTaskHook,
 									},
-									ContainerName: apis.PostTaskHook,
 								},
 							}
 						})
@@ -424,11 +432,13 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Restoring the backed up data")
 						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo, func(restore *v1beta1.RestoreSession) {
 							restore.Spec.Hooks = &v1beta1.RestoreHooks{
-								PostRestore: &probev1.Handler{
-									Exec: &core.ExecAction{
-										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", apis.StashDefaultMountPath)},
+								PostRestore: v1beta1.PostRestoreHook{
+									Handler: &probev1.Handler{
+										Exec: &core.ExecAction{
+											Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", apis.StashDefaultMountPath)},
+										},
+										ContainerName: apis.PostTaskHook,
 									},
-									ContainerName: apis.PostTaskHook,
 								},
 							}
 							restore.Spec.Target.Rules = []v1beta1.Rule{
@@ -501,11 +511,13 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Restoring the backed up data")
 						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo, func(restore *v1beta1.RestoreSession) {
 							restore.Spec.Hooks = &v1beta1.RestoreHooks{
-								PostRestore: &probev1.Handler{
-									Exec: &core.ExecAction{
-										Command: []string{"/bin/sh", "-c", "exit 1"},
+								PostRestore: v1beta1.PostRestoreHook{
+									Handler: &probev1.Handler{
+										Exec: &core.ExecAction{
+											Command: []string{"/bin/sh", "-c", "exit 1"},
+										},
+										ContainerName: apis.PostTaskHook,
 									},
-									ContainerName: apis.PostTaskHook,
 								},
 							}
 						})
@@ -580,21 +592,23 @@ var _ = Describe("PostRestore Hook", func() {
 			By("Restoring the backed up data in the original StatefulSet")
 			restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 				restore.Spec.Hooks = &v1beta1.RestoreHooks{
-					PostRestore: &probev1.Handler{
-						HTTPPost: &probev1.HTTPPostAction{
-							Host:   "hooks.slack.com",
-							Path:   f.SlackWebhookURL,
-							Port:   intstr.FromInt(443),
-							Scheme: "HTTPS",
-							HTTPHeaders: []core.HTTPHeader{
-								{
-									Name:  "Content-Type",
-									Value: "application/json",
+					PostRestore: v1beta1.PostRestoreHook{
+						Handler: &probev1.Handler{
+							HTTPPost: &probev1.HTTPPostAction{
+								Host:   "hooks.slack.com",
+								Path:   f.SlackWebhookURL,
+								Port:   intstr.FromInt(443),
+								Scheme: "HTTPS",
+								HTTPHeaders: []core.HTTPHeader{
+									{
+										Name:  "Content-Type",
+										Value: "application/json",
+									},
 								},
+								Body: "{\"blocks\": [{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"{{if eq .Status.Phase `Succeeded`}}:white_check_mark: Restore succeeded for {{ .Namespace }}/{{.Target.Name}}{{else}}:x: Restore failed for {{ .Namespace }}/{{.Target.Name}} Reason: {{.Status.Error}}.{{end}}\"}}]}",
 							},
-							Body: "{\"blocks\": [{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"{{if eq .Status.Phase `Succeeded`}}:white_check_mark: Restore succeeded for {{ .Namespace }}/{{.Target.Name}}{{else}}:x: Restore failed for {{ .Namespace }}/{{.Target.Name}} Reason: {{.Status.Error}}.{{end}}\"}}]}",
+							ContainerName: framework.ProberDemoPodPrefix,
 						},
-						ContainerName: framework.ProberDemoPodPrefix,
 					},
 				}
 			})
@@ -658,21 +672,23 @@ var _ = Describe("PostRestore Hook", func() {
 			By("Restoring the backed up data in the original StatefulSet")
 			restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 				restore.Spec.Hooks = &v1beta1.RestoreHooks{
-					PostRestore: &probev1.Handler{
-						HTTPPost: &probev1.HTTPPostAction{
-							Host:   "hooks.slack.com",
-							Path:   f.SlackWebhookURL,
-							Port:   intstr.FromInt(443),
-							Scheme: "HTTPS",
-							HTTPHeaders: []core.HTTPHeader{
-								{
-									Name:  "Content-Type",
-									Value: "application/json",
+					PostRestore: v1beta1.PostRestoreHook{
+						Handler: &probev1.Handler{
+							HTTPPost: &probev1.HTTPPostAction{
+								Host:   "hooks.slack.com",
+								Path:   f.SlackWebhookURL,
+								Port:   intstr.FromInt(443),
+								Scheme: "HTTPS",
+								HTTPHeaders: []core.HTTPHeader{
+									{
+										Name:  "Content-Type",
+										Value: "application/json",
+									},
 								},
+								Body: "{\"blocks\": [{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"{{if eq .Status.Phase `Succeeded`}}:white_check_mark: Restore succeeded for {{ .Namespace }}/{{.Target.Name}}{{else}}:x: Restore failed for {{ .Namespace }}/{{.Target.Name}} Reason: {{.Status.Error}}.{{end}}\"}}]}",
 							},
-							Body: "{\"blocks\": [{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"{{if eq .Status.Phase `Succeeded`}}:white_check_mark: Restore succeeded for {{ .Namespace }}/{{.Target.Name}}{{else}}:x: Restore failed for {{ .Namespace }}/{{.Target.Name}} Reason: {{.Status.Error}}.{{end}}\"}}]}",
+							ContainerName: framework.ProberDemoPodPrefix,
 						},
-						ContainerName: framework.ProberDemoPodPrefix,
 					},
 				}
 				restore.Spec.Target.Rules = []v1beta1.Rule{

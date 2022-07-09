@@ -114,10 +114,29 @@ type BackupHooks struct {
 	// +optional
 	PreBackup *prober.Handler `json:"preBackup,omitempty"`
 
-	// PostBackup is called immediately after a backup session is complete.
+	// PostBackup is called according to executionPolicy after a backup session is complete.
 	// +optional
-	PostBackup *prober.Handler `json:"postBackup,omitempty"`
+	PostBackup PostBackupHook `json:"postBackup,omitempty"`
 }
+
+type PostBackupHook struct {
+	*prober.Handler `json:",inline"`
+	// ExecutionPolicy specifies when to execute a hook.
+	// Supported values are "Always", "OnFailure", "OnSuccess".
+	// Default value: "Always".
+	// +optional
+	// +kubebuilder:default=Always
+	// +kubebuilder:validation:Enum=Always;OnFailure;OnSuccess
+	ExecutionPolicy HookExecutionPolicy `json:"executionPolicy,omitempty"`
+}
+
+type HookExecutionPolicy string
+
+const (
+	ExecuteAlways    HookExecutionPolicy = "Always"
+	ExecuteOnFailure HookExecutionPolicy = "OnFailure"
+	ExecuteOnSuccess HookExecutionPolicy = "OnSuccess"
+)
 
 type EmptyDirSettings struct {
 	Medium    core.StorageMedium `json:"medium,omitempty"`

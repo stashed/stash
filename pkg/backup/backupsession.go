@@ -459,7 +459,7 @@ func (c *BackupSessionController) handleBackupFailure(backupSession *api_v1beta1
 func (c *BackupSessionController) handleBackupCompletion(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, backupSession *api_v1beta1.BackupSession, backupOutput *restic.BackupOutput) error {
 	// execute hooks at the end of backup completion. no matter if the backup succeed or fail.
 	defer func() {
-		if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup != nil {
+		if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup.Handler != nil {
 			hookErr := c.executePostBackupHook(inv, targetInfo, backupSession)
 			if hookErr != nil {
 				klog.Infof("failed to execute postBackup hook. Reason: ", hookErr)
@@ -582,8 +582,9 @@ func (c *BackupSessionController) executePostBackupHook(inv invoker.BackupInvoke
 			Namespace: c.Namespace,
 			Name:      meta.PodName(),
 		},
-		Hook:     targetInfo.Hooks.PostBackup,
-		HookType: apis.PostBackupHook,
+		Hook:            targetInfo.Hooks.PostBackup.Handler,
+		ExecutionPolicy: targetInfo.Hooks.PostBackup.ExecutionPolicy,
+		HookType:        apis.PostBackupHook,
 	}
 	return hookExecutor.Execute()
 }

@@ -141,14 +141,15 @@ func (opt *hookOptions) executeBackupHook() error {
 		Invoker:     inv,
 		Target:      targetInfo.Target.Ref,
 		ExecutorPod: kmapi.ObjectReference{
-			Namespace: opt.namespace,
+			Namespace: opt.targetRef.Namespace,
 		},
 	}
 	if opt.hookType == apis.PreBackupHook {
 		hookExecutor.Hook = targetInfo.Hooks.PreBackup
 		hookExecutor.HookType = apis.PreBackupHook
 	} else {
-		hookExecutor.Hook = targetInfo.Hooks.PostBackup
+		hookExecutor.Hook = targetInfo.Hooks.PostBackup.Handler
+		hookExecutor.ExecutionPolicy = targetInfo.Hooks.PostBackup.ExecutionPolicy
 		hookExecutor.HookType = apis.PostBackupHook
 	}
 	hookExecutor.ExecutorPod.Name, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
@@ -194,7 +195,7 @@ func (opt *hookOptions) executeRestoreHook() error {
 		Invoker: inv,
 		Target:  targetInfo.Target.Ref,
 		ExecutorPod: kmapi.ObjectReference{
-			Namespace: opt.namespace,
+			Namespace: opt.targetRef.Namespace,
 		},
 	}
 
@@ -202,7 +203,8 @@ func (opt *hookOptions) executeRestoreHook() error {
 		hookExecutor.Hook = targetInfo.Hooks.PreRestore
 		hookExecutor.HookType = apis.PreRestoreHook
 	} else {
-		hookExecutor.Hook = targetInfo.Hooks.PostRestore
+		hookExecutor.Hook = targetInfo.Hooks.PostRestore.Handler
+		hookExecutor.ExecutionPolicy = targetInfo.Hooks.PostRestore.ExecutionPolicy
 		hookExecutor.HookType = apis.PostRestoreHook
 	}
 	hookExecutor.ExecutorPod.Name, err = opt.getHookExecutorPodName(targetInfo.Target.Ref)
@@ -225,15 +227,15 @@ func (opt *hookOptions) getHookExecutorPodName(targetRef v1beta1.TargetRef) (str
 	switch targetRef.Kind {
 	case apis.KindAppBinding:
 		// For AppBinding, we will execute the hooks in the respective app pod
-		return opt.getAppPodName(targetRef.Name)
+		return opt.getAppPodName()
 	default:
 		// For other types of target, hook will be executed where this process is running.
 		return meta.PodName(), nil
 	}
 }
 
-func (opt *hookOptions) getAppPodName(appbindingName string) (string, error) {
-	appbinding, err := opt.appClient.AppcatalogV1alpha1().AppBindings(opt.namespace).Get(context.TODO(), appbindingName, metav1.GetOptions{})
+func (opt *hookOptions) getAppPodName() (string, error) {
+	appbinding, err := opt.appClient.AppcatalogV1alpha1().AppBindings(opt.targetRef.Namespace).Get(context.TODO(), opt.targetRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -241,7 +243,7 @@ func (opt *hookOptions) getAppPodName(appbindingName string) (string, error) {
 	// AppBinding should have a Service in ClientConfig field. This service selects the app pod. We will execute the hooks in the app pod.
 	if appbinding.Spec.ClientConfig.Service != nil {
 		// there should be an endpoint with same name as the service which contains the name of the selected pods.
-		endPoint, err := opt.kubeClient.CoreV1().Endpoints(opt.namespace).Get(context.TODO(), appbinding.Spec.ClientConfig.Service.Name, metav1.GetOptions{})
+		endPoint, err := opt.kubeClient.CoreV1().Endpoints(opt.targetRef.Namespace).Get(context.TODO(), appbinding.Spec.ClientConfig.Service.Name, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
@@ -261,7 +263,7 @@ func (opt *hookOptions) getAppPodName(appbindingName string) (string, error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("no pod found for AppBinding %s/%s", opt.namespace, appbindingName)
+	return "", fmt.Errorf("no pod found for AppBinding %s/%s", opt.targetRef.Namespace, opt.targetRef.Name)
 }
 
 func (opt *hookOptions) shouldFailContainer() bool {

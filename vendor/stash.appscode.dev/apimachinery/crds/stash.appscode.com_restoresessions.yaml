@@ -65,8 +65,8 @@ spec:
                   sessions.
                 properties:
                   postRestore:
-                    description: PostRestore is called immediately after a restore
-                      session is complete.
+                    description: PostRestore is called according to executionPolicy
+                      after a restore session is complete.
                     properties:
                       containerName:
                         description: ContainerName specifies the name of the container
@@ -90,6 +90,16 @@ spec:
                               type: string
                             type: array
                         type: object
+                      executionPolicy:
+                        default: Always
+                        description: ExecutionPolicy specifies when to execute a hook.
+                          Supported values are "Always", "OnFailure", "OnSuccess".
+                          Default value is "Always".
+                        enum:
+                        - Always
+                        - OnFailure
+                        - OnSuccess
+                        type: string
                       httpGet:
                         description: HTTPGet specifies the http Get request to perform.
                         properties:

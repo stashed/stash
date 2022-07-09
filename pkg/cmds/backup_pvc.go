@@ -150,6 +150,7 @@ func NewCmdBackupPVC() *cobra.Command {
 	cmd.Flags().StringVar(&opt.backupOpt.Host, "hostname", opt.backupOpt.Host, "Name of the host machine")
 	cmd.Flags().StringSliceVar(&opt.backupOpt.BackupPaths, "backup-paths", opt.backupOpt.BackupPaths, "List of paths to backup")
 	cmd.Flags().StringSliceVar(&opt.backupOpt.Exclude, "exclude", opt.backupOpt.Exclude, "List of pattern for directory/file to ignore during backup. Stash will not backup those files that matches these patterns.")
+	cmd.Flags().StringSliceVar(&opt.backupOpt.Args, "args", opt.backupOpt.Args, "Arguments to pass to the backup command.")
 	cmd.Flags().StringVar(&opt.invokerKind, "invoker-kind", opt.invokerKind, "Kind of the backup invoker")
 	cmd.Flags().StringVar(&opt.invokerName, "invoker-name", opt.invokerName, "Name of the respective backup invoker")
 	cmd.Flags().StringVar(&opt.targetRef.Name, "target-name", opt.targetRef.Name, "Name of the Target")

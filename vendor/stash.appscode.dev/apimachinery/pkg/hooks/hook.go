@@ -18,7 +18,6 @@ package hooks
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -30,6 +29,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
+	sprig "github.com/Masterminds/sprig/v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/rest"
@@ -47,7 +47,7 @@ type HookExecutor struct {
 }
 
 func (e *HookExecutor) Execute() error {
-	if strings.Contains(e.Hook.String(), "{{") {
+	if e.Hook.HTTPPost != nil && strings.Contains(e.Hook.HTTPPost.Body, "{{") {
 		if err := e.renderTemplate(); err != nil {
 			return err
 		}
@@ -62,12 +62,7 @@ var pool = sync.Pool{
 }
 
 func (e *HookExecutor) renderTemplate() error {
-	hookContent, err := json.Marshal(e.Hook)
-	if err != nil {
-		return err
-	}
-
-	tpl, err := template.New("hook-template").Parse(string(hookContent))
+	tpl, err := template.New("hook-template").Funcs(sprig.TxtFuncMap()).Parse(e.Hook.HTTPPost.Body)
 	if err != nil {
 		return err
 	}
@@ -81,18 +76,21 @@ func (e *HookExecutor) renderTemplate() error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(buf.Bytes(), &e.Hook)
+
+	e.Hook.HTTPPost.Body = strings.TrimSpace(buf.String())
+	return nil
 }
 
 type BackupHookExecutor struct {
-	Config        *rest.Config
-	StashClient   cs.Interface
-	BackupSession *v1beta1.BackupSession
-	Invoker       invoker.BackupInvoker
-	Target        v1beta1.TargetRef
-	ExecutorPod   kmapi.ObjectReference
-	Hook          *prober.Handler
-	HookType      string
+	Config          *rest.Config
+	StashClient     cs.Interface
+	BackupSession   *v1beta1.BackupSession
+	Invoker         invoker.BackupInvoker
+	Target          v1beta1.TargetRef
+	ExecutorPod     kmapi.ObjectReference
+	Hook            *prober.Handler
+	HookType        string
+	ExecutionPolicy v1beta1.HookExecutionPolicy
 }
 
 func (e *BackupHookExecutor) Execute() error {
@@ -107,6 +105,16 @@ func (e *BackupHookExecutor) Execute() error {
 	}
 
 	session := invoker.NewBackupSessionHandler(e.StashClient, e.BackupSession)
+
+	if !IsAllowedByExecutionPolicy(e.ExecutionPolicy, hookExecutor.Summary) {
+		reason := fmt.Sprintf("Skipping executing %s. Reason: executionPolicy is %q but phase is %q.",
+			e.HookType,
+			getExecutionPolicyWithDefault(e.ExecutionPolicy),
+			getTargetPhase(hookExecutor.Summary),
+		)
+		return e.skipHookExecution(session, reason)
+	}
+
 	if e.alreadyExecuted(session) {
 		return e.skipHookReExecution(session)
 	}
@@ -118,11 +126,43 @@ func (e *BackupHookExecutor) Execute() error {
 	return e.setBackupHookExecutionSucceededToTrue(session)
 }
 
+func IsAllowedByExecutionPolicy(executionPolicy v1beta1.HookExecutionPolicy, summary *v1beta1.Summary) bool {
+	if summary == nil {
+		return false
+	}
+	if executionPolicy == v1beta1.ExecuteOnFailure && getTargetPhase(summary) != string(v1beta1.TargetBackupFailed) {
+		return false
+	}
+	if executionPolicy == v1beta1.ExecuteOnSuccess && getTargetPhase(summary) != string(v1beta1.TargetBackupSucceeded) {
+		return false
+	}
+	return true
+}
+
+func getExecutionPolicyWithDefault(executionPolicy v1beta1.HookExecutionPolicy) v1beta1.HookExecutionPolicy {
+	if executionPolicy == "" {
+		return v1beta1.ExecuteAlways
+	}
+	return executionPolicy
+}
+
+func getTargetPhase(summary *v1beta1.Summary) string {
+	if summary == nil {
+		return ""
+	}
+	return summary.Status.Phase
+}
+
 func (e *BackupHookExecutor) alreadyExecuted(session *invoker.BackupSessionHandler) bool {
 	if e.HookType == apis.PreBackupHook {
 		return kmapi.HasCondition(session.GetTargetConditions(e.Target), v1beta1.PreBackupHookExecutionSucceeded)
 	}
 	return kmapi.HasCondition(session.GetTargetConditions(e.Target), v1beta1.PostBackupHookExecutionSucceeded)
+}
+
+func (e *BackupHookExecutor) skipHookExecution(session *invoker.BackupSessionHandler, reason string) error {
+	klog.Infoln(reason)
+	return conditions.SetPostBackupHookExecutionSucceededToTrueWithMsg(session, e.Target, reason)
 }
 
 func (e *BackupHookExecutor) skipHookReExecution(session *invoker.BackupSessionHandler) error {
@@ -157,12 +197,13 @@ func (e *BackupHookExecutor) setBackupHookExecutionSucceededToTrue(session *invo
 }
 
 type RestoreHookExecutor struct {
-	Config      *rest.Config
-	Invoker     invoker.RestoreInvoker
-	Target      v1beta1.TargetRef
-	ExecutorPod kmapi.ObjectReference
-	Hook        *prober.Handler
-	HookType    string
+	Config          *rest.Config
+	Invoker         invoker.RestoreInvoker
+	Target          v1beta1.TargetRef
+	ExecutorPod     kmapi.ObjectReference
+	Hook            *prober.Handler
+	HookType        string
+	ExecutionPolicy v1beta1.HookExecutionPolicy
 }
 
 func (e *RestoreHookExecutor) Execute() error {
@@ -174,6 +215,15 @@ func (e *RestoreHookExecutor) Execute() error {
 			Namespace: e.Invoker.GetObjectMeta().Namespace,
 			Name:      e.Invoker.GetObjectMeta().Name,
 		}),
+	}
+
+	if !IsAllowedByExecutionPolicy(e.ExecutionPolicy, hookExecutor.Summary) {
+		reason := fmt.Sprintf("Skipping executing %s. Reason: executionPolicy is %q but phase is %q.",
+			e.HookType,
+			getExecutionPolicyWithDefault(e.ExecutionPolicy),
+			getTargetPhase(hookExecutor.Summary),
+		)
+		return e.skipHookExecution(reason)
 	}
 
 	previouslyExecuted, err := e.alreadyExecuted()
@@ -196,6 +246,11 @@ func (e *RestoreHookExecutor) alreadyExecuted() (bool, error) {
 		return e.Invoker.HasCondition(&e.Target, v1beta1.PreRestoreHookExecutionSucceeded)
 	}
 	return e.Invoker.HasCondition(&e.Target, v1beta1.PostRestoreHookExecutionSucceeded)
+}
+
+func (e *RestoreHookExecutor) skipHookExecution(msg string) error {
+	klog.Infoln(msg)
+	return conditions.SetPostRestoreHookExecutionSucceededToTrueWithMsg(e.Invoker, msg)
 }
 
 func (e *RestoreHookExecutor) skipHookReExecution() error {

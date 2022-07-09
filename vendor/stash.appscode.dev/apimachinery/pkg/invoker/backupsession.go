@@ -261,7 +261,7 @@ func calculateBackupSessionPhase(status *v1beta1.BackupSessionStatus) v1beta1.Ba
 	completedTargets := successfulTargetCount + failedTargetCount
 
 	if completedTargets == len(status.Targets) {
-		if failedTargetCount > 0 {
+		if failedTargetCount > 0 && kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) {
 			return v1beta1.BackupSessionFailed
 		}
 

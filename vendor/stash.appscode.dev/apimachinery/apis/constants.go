@@ -62,6 +62,7 @@ const (
 
 	ExcludePatterns = "EXCLUDE_PATTERNS"
 	IncludePatterns = "INCLUDE_PATTERNS"
+	DriverArgs      = "DRIVER_ARGS"
 
 	RestorePaths     = "RESTORE_PATHS"
 	RestoreSnapshots = "RESTORE_SNAPSHOTS"

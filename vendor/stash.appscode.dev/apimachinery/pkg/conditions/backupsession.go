@@ -151,6 +151,10 @@ func SetPostBackupHookExecutionSucceededToFalse(session *invoker.BackupSessionHa
 }
 
 func SetPostBackupHookExecutionSucceededToTrue(session *invoker.BackupSessionHandler, target v1beta1.TargetRef) error {
+	return SetPostBackupHookExecutionSucceededToTrueWithMsg(session, target, "Successfully executed postBackup hook.")
+}
+
+func SetPostBackupHookExecutionSucceededToTrueWithMsg(session *invoker.BackupSessionHandler, target v1beta1.TargetRef, msg string) error {
 	return session.UpdateStatus(&v1beta1.BackupSessionStatus{
 		Targets: []v1beta1.BackupTargetStatus{
 			{
@@ -160,7 +164,7 @@ func SetPostBackupHookExecutionSucceededToTrue(session *invoker.BackupSessionHan
 						Type:               v1beta1.PostBackupHookExecutionSucceeded,
 						Status:             core.ConditionTrue,
 						Reason:             v1beta1.SuccessfullyExecutedPostBackupHook,
-						Message:            "Successfully executed postBackup hook.",
+						Message:            msg,
 						LastTransitionTime: metav1.Now(),
 					},
 				},
@@ -212,13 +216,17 @@ func SetGlobalPostBackupHookSucceededConditionToFalse(session *invoker.BackupSes
 }
 
 func SetGlobalPostBackupHookSucceededConditionToTrue(session *invoker.BackupSessionHandler) error {
+	return SetGlobalPostBackupHookSucceededConditionToTrueWithMsg(session, "Global PostBackup hook has been executed successfully")
+}
+
+func SetGlobalPostBackupHookSucceededConditionToTrueWithMsg(session *invoker.BackupSessionHandler, msg string) error {
 	return session.UpdateStatus(&v1beta1.BackupSessionStatus{
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.GlobalPostBackupHookSucceeded,
 				Status:             core.ConditionTrue,
 				Reason:             v1beta1.GlobalPostBackupHookExecutedSuccessfully,
-				Message:            "Global PostBackup hook has been executed successfully",
+				Message:            msg,
 				LastTransitionTime: metav1.Now(),
 			},
 		},

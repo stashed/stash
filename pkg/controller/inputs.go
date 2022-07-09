@@ -167,6 +167,9 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 		if len(target.Exclude) > 0 {
 			inputs[apis.ExcludePatterns] = strings.Join(target.Exclude, ",")
 		}
+		if len(target.Args) > 0 {
+			inputs[apis.DriverArgs] = strings.Join(target.Args, " ")
+		}
 
 		// If mount path is provided, then use it. Otherwise, use stash default mount path.
 		if len(target.VolumeMounts) > 0 {
@@ -189,6 +192,9 @@ func (c *StashController) inputsForRestoreTarget(target *api.RestoreTarget) map[
 		}
 		if target.Ref.Kind != "" {
 			inputs[apis.TargetKind] = target.Ref.Kind
+		}
+		if len(target.Args) > 0 {
+			inputs[apis.DriverArgs] = strings.Join(target.Args, " ")
 		}
 		// If mount path is provided, then use it. Otherwise, use stash default mount path.
 		if len(target.VolumeMounts) > 0 {

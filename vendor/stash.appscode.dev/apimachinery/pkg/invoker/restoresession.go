@@ -397,6 +397,10 @@ func calculateRestoreSessionPhase(status v1beta1.RestoreMemberStatus) v1beta1.Re
 	}
 
 	if RestoreCompletedForAllTargets([]v1beta1.RestoreMemberStatus{status}, 1) {
+		if !kmapi.HasCondition(status.Conditions, v1beta1.MetricsPushed) {
+			return v1beta1.RestoreRunning
+		}
+
 		if status.Phase == v1beta1.TargetRestorePhaseUnknown {
 			return v1beta1.RestorePhaseUnknown
 		}
@@ -405,10 +409,7 @@ func calculateRestoreSessionPhase(status v1beta1.RestoreMemberStatus) v1beta1.Re
 			kmapi.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) {
 			return v1beta1.RestoreFailed
 		}
-
-		if kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) {
-			return v1beta1.RestoreSucceeded
-		}
+		return v1beta1.RestoreSucceeded
 	}
 
 	if status.Phase == v1beta1.TargetRestorePending ||

@@ -423,6 +423,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.HostRestoreStats":                schema_apimachinery_apis_stash_v1beta1_HostRestoreStats(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.MemberConditions":                schema_apimachinery_apis_stash_v1beta1_MemberConditions(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.Param":                           schema_apimachinery_apis_stash_v1beta1_Param(ref),
+		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.PostBackupHook":                  schema_apimachinery_apis_stash_v1beta1_PostBackupHook(ref),
+		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.PostRestoreHook":                 schema_apimachinery_apis_stash_v1beta1_PostRestoreHook(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreBatch":                    schema_apimachinery_apis_stash_v1beta1_RestoreBatch(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreBatchList":                schema_apimachinery_apis_stash_v1beta1_RestoreBatchList(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreBatchSpec":                schema_apimachinery_apis_stash_v1beta1_RestoreBatchSpec(ref),
@@ -20391,15 +20393,16 @@ func schema_apimachinery_apis_stash_v1beta1_BackupHooks(ref common.ReferenceCall
 					},
 					"postBackup": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PostBackup is called immediately after a backup session is complete.",
-							Ref:         ref("kmodules.xyz/prober/api/v1.Handler"),
+							Description: "PostBackup is called according to executionPolicy after a backup session is complete.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.PostBackupHook"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/prober/api/v1.Handler"},
+			"kmodules.xyz/prober/api/v1.Handler", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.PostBackupHook"},
 	}
 }
 
@@ -21296,6 +21299,110 @@ func schema_apimachinery_apis_stash_v1beta1_Param(ref common.ReferenceCallback) 
 	}
 }
 
+func schema_apimachinery_apis_stash_v1beta1_PostBackupHook(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"exec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One and only one of the following should be specified. Exec specifies the action to take.",
+							Ref:         ref("k8s.io/api/core/v1.ExecAction"),
+						},
+					},
+					"httpGet": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTPGet specifies the http Get request to perform.",
+							Ref:         ref("k8s.io/api/core/v1.HTTPGetAction"),
+						},
+					},
+					"httpPost": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTPPost specifies the http Post request to perform.",
+							Ref:         ref("kmodules.xyz/prober/api/v1.HTTPPostAction"),
+						},
+					},
+					"tcpSocket": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TCPSocket specifies an action involving a TCP port. TCP hooks not yet supported",
+							Ref:         ref("k8s.io/api/core/v1.TCPSocketAction"),
+						},
+					},
+					"containerName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ContainerName specifies the name of the container where to execute the commands for Exec probe or where to find the port for HTTP or TCP probe",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"executionPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExecutionPolicy specifies when to execute a hook. Supported values are \"Always\", \"OnFailure\", \"OnSuccess\". Default value: \"Always\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ExecAction", "k8s.io/api/core/v1.HTTPGetAction", "k8s.io/api/core/v1.TCPSocketAction", "kmodules.xyz/prober/api/v1.HTTPPostAction"},
+	}
+}
+
+func schema_apimachinery_apis_stash_v1beta1_PostRestoreHook(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"exec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One and only one of the following should be specified. Exec specifies the action to take.",
+							Ref:         ref("k8s.io/api/core/v1.ExecAction"),
+						},
+					},
+					"httpGet": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTPGet specifies the http Get request to perform.",
+							Ref:         ref("k8s.io/api/core/v1.HTTPGetAction"),
+						},
+					},
+					"httpPost": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTPPost specifies the http Post request to perform.",
+							Ref:         ref("kmodules.xyz/prober/api/v1.HTTPPostAction"),
+						},
+					},
+					"tcpSocket": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TCPSocket specifies an action involving a TCP port. TCP hooks not yet supported",
+							Ref:         ref("k8s.io/api/core/v1.TCPSocketAction"),
+						},
+					},
+					"containerName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ContainerName specifies the name of the container where to execute the commands for Exec probe or where to find the port for HTTP or TCP probe",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"executionPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExecutionPolicy specifies when to execute a hook. Supported values are \"Always\", \"OnFailure\", \"OnSuccess\". Default value is \"Always\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ExecAction", "k8s.io/api/core/v1.HTTPGetAction", "k8s.io/api/core/v1.TCPSocketAction", "kmodules.xyz/prober/api/v1.HTTPPostAction"},
+	}
+}
+
 func schema_apimachinery_apis_stash_v1beta1_RestoreBatch(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -21529,15 +21636,16 @@ func schema_apimachinery_apis_stash_v1beta1_RestoreHooks(ref common.ReferenceCal
 					},
 					"postRestore": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PostRestore is called immediately after a restore session is complete.",
-							Ref:         ref("kmodules.xyz/prober/api/v1.Handler"),
+							Description: "PostRestore is called according to executionPolicy after a restore session is complete.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.PostRestoreHook"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/prober/api/v1.Handler"},
+			"kmodules.xyz/prober/api/v1.Handler", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.PostRestoreHook"},
 	}
 }
 

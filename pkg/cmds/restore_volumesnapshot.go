@@ -240,13 +240,13 @@ func (opt *VSoption) restoreVolumeSnapshot(targetInfo invoker.RestoreTargetInfo)
 		})
 	}
 	// If postRestore hook is specified, then execute those hooks after restore
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {
+	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore.Handler != nil {
 		klog.Infoln("Executing postRestore hooks........")
 		podName := meta.PodName()
 		if podName == "" {
 			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
 		}
-		err := prober.RunProbe(opt.config, targetInfo.Hooks.PostRestore, podName, opt.namespace)
+		err := prober.RunProbe(opt.config, targetInfo.Hooks.PostRestore.Handler, podName, opt.namespace)
 		if err != nil {
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual restore process may be succeeded." +
 				"Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")

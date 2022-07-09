@@ -33,6 +33,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	meta_util "kmodules.xyz/client-go/meta"
+	store "kmodules.xyz/objectstore-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
@@ -162,10 +163,7 @@ func (o TaskResolver) GetPodSpec(invokerType, invokerName string, target v1beta1
 		if o.RuntimeSettings.Container != nil {
 			hookExecutor = ofst_util.ApplyContainerRuntimeSettings(hookExecutor, *o.RuntimeSettings.Container)
 		}
-
-		lastContainer := containers[len(containers)-1]
-		containers[len(containers)-1] = hookExecutor
-		containers = append(containers, lastContainer)
+		containers = append(containers, hookExecutor)
 	}
 	// podSpec from task
 	podSpec := core.PodSpec{
@@ -206,8 +204,8 @@ func resolveWithInputs(obj interface{}, inputs map[string]string) error {
 	return json.Unmarshal([]byte(resolved), obj)
 }
 
-func ResolveBackupBlueprint(bb *v1beta1_api.BackupBlueprint, input map[string]string) error {
-	return resolveWithInputs(bb, input)
+func BackendTemplate(backend *store.Backend, input map[string]string) error {
+	return resolveWithInputs(backend, input)
 }
 
 func ResolvePVCSpec(pvc *core.PersistentVolumeClaim, input map[string]string) error {
