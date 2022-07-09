@@ -74,18 +74,28 @@ func (opt *RBACOptions) ensureSidecarClusterRole() error {
 			},
 			{
 				APIGroups: []string{apps.GroupName},
-				Resources: []string{"deployments", "statefulsets"},
+				Resources: []string{"deployments", "statefulsets", "daemonsets", "replicasets"},
 				Verbs:     []string{"get", "list", "patch"},
 			},
 			{
 				APIGroups: []string{apps.GroupName},
-				Resources: []string{"daemonsets", "replicasets"},
-				Verbs:     []string{"get", "list", "patch"},
+				Resources: []string{
+					"deployments/finalizers",
+					"statefulsets/finalizers",
+					"daemonsets/finalizers",
+					"replicasets/finalizers",
+				},
+				Verbs: []string{"update"},
 			},
 			{
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"replicationcontrollers"},
 				Verbs:     []string{"get", "list", "patch"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"replicationcontrollers/finalizers"},
+				Verbs:     []string{"update"},
 			},
 			{
 				APIGroups: []string{core.GroupName},
@@ -126,6 +136,16 @@ func (opt *RBACOptions) ensureSidecarClusterRole() error {
 				APIGroups: []string{coordination.GroupName},
 				Resources: []string{"leases"},
 				Verbs:     []string{"*"},
+			},
+			{
+				APIGroups: []string{"apps.openshift.io"},
+				Resources: []string{"deploymentconfigs"},
+				Verbs:     []string{"get", "list", "patch"},
+			},
+			{
+				APIGroups: []string{"apps.openshift.io"},
+				Resources: []string{"deploymentconfigs/finalizers"},
+				Verbs:     []string{"update"},
 			},
 		}
 		return in

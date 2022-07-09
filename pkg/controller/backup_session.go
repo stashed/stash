@@ -440,7 +440,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		c.kubeClient,
 		jobMeta,
 		func(in *batchv1.Job) *batchv1.Job {
-			// set BackupSession as owner of this Job so that the it get cleaned automatically
+			// set BackupSession as owner of this Job so that it get cleaned automatically
 			// when the BackupSession gets deleted according to backupHistoryLimit
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 			// pass offshoot labels to job's pod
@@ -528,7 +528,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, 
 		c.kubeClient,
 		jobMeta,
 		func(in *batchv1.Job) *batchv1.Job {
-			// set BackupSession as owner of this Job so that the it get cleaned automatically
+			// set BackupSession as owner of this Job so that it get cleaned automatically
 			// when the BackupSession gets deleted according to backupHistoryLimit
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 
