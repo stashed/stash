@@ -10,7 +10,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.22
+	go.bytebuilders.dev/audit v0.0.21
 	go.bytebuilders.dev/license-verifier v0.10.0
 	go.bytebuilders.dev/license-verifier/kubernetes v0.10.0
 	golang.org/x/text v0.3.7
@@ -80,6 +80,7 @@ require (
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
+	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -103,7 +104,6 @@ require (
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
-	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
@@ -112,7 +112,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nats-io/jwt/v2 v2.2.0 // indirect
+	github.com/nats-io/nats-server/v2 v2.8.4 // indirect
 	github.com/nats-io/nats.go v1.16.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
@@ -182,7 +182,7 @@ require (
 	k8s.io/component-base v0.24.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220413171646-5e7f5fdc6da6 // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
-	kmodules.xyz/resource-metadata v0.11.0 // indirect
+	kmodules.xyz/resource-metadata v0.10.17 // indirect
 	kmodules.xyz/resource-metrics v0.10.1 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.30 // indirect
 	sigs.k8s.io/cli-utils v0.31.1 // indirect

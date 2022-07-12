@@ -175,6 +175,9 @@ github.com/go-openapi/jsonpointer
 ## explicit; go 1.13
 github.com/go-openapi/jsonreference
 github.com/go-openapi/jsonreference/internal
+# github.com/go-openapi/spec v0.19.5
+## explicit; go 1.13
+github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.19.15
 ## explicit; go 1.11
 github.com/go-openapi/swag
@@ -285,8 +288,6 @@ github.com/mailru/easyjson/jwriter
 # github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
 ## explicit; go 1.9
 github.com/matttproud/golang_protobuf_extensions/pbutil
-# github.com/minio/highwayhash v1.0.2
-## explicit; go 1.15
 # github.com/mitchellh/copystructure v1.0.0
 ## explicit
 github.com/mitchellh/copystructure
@@ -312,8 +313,8 @@ github.com/monochromegane/go-gitignore
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
-# github.com/nats-io/jwt/v2 v2.2.0
-## explicit; go 1.16
+# github.com/nats-io/nats-server/v2 v2.8.4
+## explicit; go 1.17
 # github.com/nats-io/nats.go v1.16.0
 ## explicit; go 1.16
 github.com/nats-io/nats.go
@@ -435,8 +436,8 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
-# go.bytebuilders.dev/audit v0.0.22
-## explicit; go 1.18
+# go.bytebuilders.dev/audit v0.0.21
+## explicit; go 1.17
 go.bytebuilders.dev/audit/api/v1
 go.bytebuilders.dev/audit/lib
 # go.bytebuilders.dev/license-verifier v0.10.0
@@ -1593,8 +1594,8 @@ kmodules.xyz/prober/probe
 kmodules.xyz/prober/probe/exec
 kmodules.xyz/prober/probe/http
 kmodules.xyz/prober/probe/tcp
-# kmodules.xyz/resource-metadata v0.11.0
-## explicit; go 1.18
+# kmodules.xyz/resource-metadata v0.10.17
+## explicit; go 1.17
 kmodules.xyz/resource-metadata/apis/core/v1alpha1
 # kmodules.xyz/resource-metrics v0.10.1
 ## explicit; go 1.18
