@@ -62,7 +62,7 @@ func FindRestoreSession(lister v1beta1_listers.RestoreSessionLister, w *wapi.Wor
 	result := make([]*v1beta1_api.RestoreSession, 0)
 	// keep only those RestoreSession that has this workload as target
 	for _, restoreSession := range restoreSessions {
-		if restoreSession.DeletionTimestamp == nil && IsRestoreTarget(restoreSession.Spec.Target, w, restoreSession.Namespace) {
+		if restoreSession.DeletionTimestamp == nil && IsRestoreTarget(restoreSession.Spec.Target, w, restoreSession.Namespace) && restoreSession.Spec.Driver == v1beta1_api.ResticSnapshotter {
 			result = append(result, restoreSession)
 		}
 	}
