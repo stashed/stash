@@ -146,7 +146,6 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 	}
 
 	if invoker.BackupCompletedForAllTargets(session.GetTargetStatus(), len(inv.GetTargetInfo())) {
-
 		if !postBackupHooksExecuted(inv.GetTargetInfo(), session.GetTargetStatus()) {
 			klog.Infof("Waiting for postBackup hook to be executed for %s %s/%s.",
 				inv.GetTypeMeta().Kind,
@@ -199,6 +198,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 	if err != nil {
 		return err
 	}
+
 	if skippingReason != "" {
 		klog.Infof(skippingReason)
 		return conditions.SetBackupSkippedConditionToTrue(session, skippingReason)
@@ -473,6 +473,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, session *invoker.BackupSessionHandler, index int) error {
 	invMeta := inv.GetObjectMeta()
 	ownerRef := inv.GetOwnerRef()
+	runtimeSettings := targetInfo.RuntimeSettings
 
 	jobMeta := metav1.ObjectMeta{
 		Name:      getVolumeSnapshotterJobName(targetInfo.Target.Ref, session.GetObjectMeta().Name),
@@ -480,33 +481,22 @@ func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, 
 		Labels:    inv.GetLabels(),
 	}
 
-	var serviceAccountName string
-	// Ensure respective RBAC stuffs
-	if targetInfo.RuntimeSettings.Pod != nil && targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
-		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
-	} else {
-		// Create new ServiceAccount
-		serviceAccountName = getVolumeSnapshotterServiceAccountName(invMeta.Name, strconv.Itoa(index))
-		saMeta := metav1.ObjectMeta{
-			Name:      serviceAccountName,
-			Namespace: invMeta.Namespace,
-			Labels:    inv.GetLabels(),
+	rbacOptions, err := c.getBackupRBACOptions(inv, &index)
+	if err != nil {
+		return err
+	}
+
+	if runtimeSettings.Pod != nil {
+		if runtimeSettings.Pod.ServiceAccountName != "" {
+			rbacOptions.ServiceAccount.Name = runtimeSettings.Pod.ServiceAccountName
 		}
-		_, _, err := core_util.CreateOrPatchServiceAccount(
-			context.TODO(),
-			c.kubeClient,
-			saMeta,
-			func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, ownerRef)
-				return in
-			},
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return err
+
+		if runtimeSettings.Pod.ServiceAccountAnnotations != nil {
+			rbacOptions.ServiceAccount.Annotations = runtimeSettings.Pod.ServiceAccountAnnotations
 		}
 	}
-	err := stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, ownerRef, invMeta.Namespace, serviceAccountName, inv.GetLabels())
+
+	err = rbacOptions.EnsureVolumeSnapshotterJobRBAC()
 	if err != nil {
 		return err
 	}
@@ -543,12 +533,15 @@ func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, 
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 
 			in.Labels = inv.GetLabels()
-			// pass offshoot labels to job's pod
 			in.Spec.Template = *jobTemplate
+			// pass offshoot labels to job's pod
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
-			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 
+			if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
+				in.Spec.Template.Annotations = runtimeSettings.Pod.PodAnnotations
+			}
 			in.Spec.BackoffLimit = pointer.Int32P(0)
 			return in
 		},
@@ -615,10 +608,6 @@ func getVolumeSnapshotterJobName(targetRef api_v1beta1.TargetRef, name string) s
 	parts := strings.Split(name, "-")
 	suffix := parts[len(parts)-1]
 	return meta.ValidNameWithPrefix(apis.PrefixStashVolumeSnapshot, fmt.Sprintf("%s-%s-%s", util.ResourceKindShortForm(targetRef.Kind), targetRef.Name, suffix))
-}
-
-func getVolumeSnapshotterServiceAccountName(invokerName, index string) string {
-	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(invokerName, ".", "-"), index)
 }
 
 func backupHistoryCleaned(conditions []kmapi.Condition) bool {
