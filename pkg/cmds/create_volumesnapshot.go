@@ -266,6 +266,7 @@ func (opt *VSoption) getTargetPVCNames(targetRef api_v1beta1.TargetRef, replicas
 			return nil, err
 		}
 		pvcList = getPVCsForStatefulset(ss.Spec.VolumeClaimTemplates, ss, replicas)
+		pvcList = append(pvcList, getPVCs(ss.Spec.Template.Spec.Volumes)...)
 
 	case apis.KindPersistentVolumeClaim:
 		pvcList = []string{targetRef.Name}

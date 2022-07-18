@@ -639,43 +639,17 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 
 	targetInfo := inv.GetTargetInfo()[index]
 
-	// ensure respective RBAC stuffs
-	var serviceAccountName string
-	if targetInfo.RuntimeSettings.Pod != nil &&
-		targetInfo.RuntimeSettings.Pod.ServiceAccountName != "" {
-		// ServiceAccount has been specified, so use it.
-		serviceAccountName = targetInfo.RuntimeSettings.Pod.ServiceAccountName
-	} else {
-		serviceAccountName = getVolumeRestorerServiceAccountName(invMeta.Name, strconv.Itoa(index))
-		saMeta := metav1.ObjectMeta{
-			Name:      serviceAccountName,
-			Namespace: invMeta.Namespace,
-			Labels:    inv.GetLabels(),
-		}
-
-		_, _, err := core_util.CreateOrPatchServiceAccount(
-			context.TODO(),
-			c.kubeClient,
-			saMeta,
-			func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
-				in.Labels = inv.GetLabels()
-				return in
-			},
-			metav1.PatchOptions{},
-		)
-		if err != nil {
-			return err
-		}
+	rbacOptions, err := c.getRestoreRBACOptions(inv, &index)
+	if err != nil {
+		return err
 	}
 
-	err := stash_rbac.EnsureVolumeSnapshotRestorerJobRBAC(
-		c.kubeClient,
-		inv.GetOwnerRef(),
-		invMeta.Namespace,
-		serviceAccountName,
-		inv.GetLabels(),
-	)
+	runtimeSettings := targetInfo.RuntimeSettings
+	if runtimeSettings.Pod != nil && runtimeSettings.Pod.ServiceAccountAnnotations != nil {
+		rbacOptions.ServiceAccount.Annotations = runtimeSettings.Pod.ServiceAccountAnnotations
+	}
+
+	err = rbacOptions.EnsureVolumeSnapshotRestorerJobRBAC()
 	if err != nil {
 		return err
 	}
@@ -710,12 +684,15 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
 
 			in.Labels = inv.GetLabels()
-			// pass offshoot labels to job's pod
 			in.Spec.Template = *jobTemplate
+			// pass offshoot labels to job's pod
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
-			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 			in.Spec.BackoffLimit = pointer.Int32P(0)
+			if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
+				jobTemplate.Annotations = runtimeSettings.Pod.PodAnnotations
+			}
 			return in
 		},
 		metav1.PatchOptions{},
@@ -729,10 +706,6 @@ func getRestoreJobName(invokerMeta metav1.ObjectMeta, suffix string) string {
 
 func getVolumeRestorerJobName(invokerMeta metav1.ObjectMeta, index string) string {
 	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(invokerMeta.Name, ".", "-"), index)
-}
-
-func getVolumeRestorerServiceAccountName(name, index string) string {
-	return meta.ValidNameWithPrefixNSuffix(apis.PrefixStashVolumeSnapshot, strings.ReplaceAll(name, ".", "-"), index)
 }
 
 func (c *StashController) restorerEntity(targetInfo invoker.RestoreTargetInfo, driver api_v1beta1.Snapshotter) string {
