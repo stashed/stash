@@ -30,21 +30,28 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	storage_api_v1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/meta"
 	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
-func EnsureVolumeSnapshotterJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) EnsureVolumeSnapshotterJobRBAC() error {
+	if opt.ServiceAccount.Name == "" {
+		opt.ServiceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name, opt.Suffix)
+		err := opt.ensureServiceAccount()
+		if err != nil {
+			return err
+		}
+	}
 	// ensure ClusterRole for VolumeSnapshot job
-	err := ensureVolumeSnapshotterJobClusterRole(kubeClient, labels)
+	err := opt.ensureVolumeSnapshotterJobClusterRole()
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for VolumeSnapshot job
-	err = ensureVolumeSnapshotterJobRoleBinding(kubeClient, owner, namespace, sa, labels)
+	err = opt.ensureVolumeSnapshotterJobRoleBinding()
 	if err != nil {
 		return err
 	}
@@ -52,12 +59,12 @@ func EnsureVolumeSnapshotterJobRBAC(kubeClient kubernetes.Interface, owner *meta
 	return nil
 }
 
-func ensureVolumeSnapshotterJobClusterRole(kc kubernetes.Interface, labels map[string]string) error {
+func (opt *RBACOptions) ensureVolumeSnapshotterJobClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashVolumeSnapshotterClusterRole,
-		Labels: labels,
+		Labels: opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
@@ -110,14 +117,14 @@ func ensureVolumeSnapshotterJobClusterRole(kc kubernetes.Interface, labels map[s
 	return err
 }
 
-func ensureVolumeSnapshotterJobRoleBinding(kc kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) ensureVolumeSnapshotterJobRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Namespace: namespace,
-		Name:      getVolumesnapshotterJobRoleBindingName(sa),
-		Labels:    labels,
+		Name:      opt.getRoleBindingName(),
+		Namespace: opt.Invoker.Namespace,
+		Labels:    opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -127,8 +134,8 @@ func ensureVolumeSnapshotterJobRoleBinding(kc kubernetes.Interface, resource *me
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      sa,
-				Namespace: namespace,
+				Name:      opt.ServiceAccount.Name,
+				Namespace: opt.ServiceAccount.Namespace,
 			},
 		}
 		return in
@@ -136,33 +143,34 @@ func ensureVolumeSnapshotterJobRoleBinding(kc kubernetes.Interface, resource *me
 	return err
 }
 
-func getVolumesnapshotterJobRoleBindingName(name string) string {
-	// Create RoleBinding with name same as the ServiceAccount name.
-	// The ServiceAccount already has Stash specific prefix in it's name.
-	return strings.ReplaceAll(name, ".", "-")
-}
-
-func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) EnsureVolumeSnapshotRestorerJobRBAC() error {
+	if opt.ServiceAccount.Name == "" {
+		opt.ServiceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name, opt.Suffix)
+		err := opt.ensureServiceAccount()
+		if err != nil {
+			return err
+		}
+	}
 	// ensure ClusterRole for restore job
-	err := ensureVolumeSnapshotRestorerJobClusterRole(kubeClient, labels)
+	err := opt.ensureVolumeSnapshotRestorerJobClusterRole()
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore job
-	err = ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient, owner, namespace, sa, labels)
+	err = opt.ensureVolumeSnapshotRestorerJobRoleBinding()
 	if err != nil {
 		return err
 	}
 
 	// ensure storageClass ClusterRole for restore job
-	err = ensureStorageReaderClassClusterRole(kubeClient, labels)
+	err = opt.ensureStorageReaderClassClusterRole()
 	if err != nil {
 		return err
 	}
 
 	// ensure storageClass ClusterRoleBinding for restore job
-	err = ensureStorageClassReaderClusterRoleBinding(kubeClient, owner, namespace, sa, labels)
+	err = opt.ensureStorageClassReaderClusterRoleBinding()
 	if err != nil {
 		return err
 	}
@@ -170,12 +178,12 @@ func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, owner 
 	return nil
 }
 
-func ensureVolumeSnapshotRestorerJobClusterRole(kc kubernetes.Interface, labels map[string]string) error {
+func (opt *RBACOptions) ensureVolumeSnapshotRestorerJobClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashVolumeSnapshotRestorerClusterRole,
-		Labels: labels,
+		Labels: opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
@@ -208,14 +216,14 @@ func ensureVolumeSnapshotRestorerJobClusterRole(kc kubernetes.Interface, labels 
 	return err
 }
 
-func ensureVolumeSnapshotRestorerJobRoleBinding(kc kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) ensureVolumeSnapshotRestorerJobRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Namespace: namespace,
-		Name:      getVolumeSnapshotRestorerJobRoleBindingName(sa),
-		Labels:    labels,
+		Name:      opt.getRoleBindingName(),
+		Namespace: opt.Invoker.Namespace,
+		Labels:    opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), kc, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -225,8 +233,8 @@ func ensureVolumeSnapshotRestorerJobRoleBinding(kc kubernetes.Interface, resourc
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      sa,
-				Namespace: namespace,
+				Name:      opt.ServiceAccount.Name,
+				Namespace: opt.ServiceAccount.Namespace,
 			},
 		}
 		return in
@@ -234,18 +242,12 @@ func ensureVolumeSnapshotRestorerJobRoleBinding(kc kubernetes.Interface, resourc
 	return err
 }
 
-func getVolumeSnapshotRestorerJobRoleBindingName(name string) string {
-	// Create RoleBinding with name same as the ServiceAccount name.
-	// The ServiceAccount already has Stash specific prefix in it's name.
-	return strings.ReplaceAll(name, ".", "-")
-}
-
-func ensureStorageReaderClassClusterRole(kc kubernetes.Interface, labels map[string]string) error {
+func (opt *RBACOptions) ensureStorageReaderClassClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashStorageClassReaderClusterRole,
-		Labels: labels,
+		Labels: opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), kc, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{storage_api_v1.GroupName},
@@ -263,14 +265,14 @@ func ensureStorageReaderClassClusterRole(kc kubernetes.Interface, labels map[str
 	return err
 }
 
-func ensureStorageClassReaderClusterRoleBinding(kc kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
+func (opt *RBACOptions) ensureStorageClassReaderClusterRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Name:      getStorageClassReaderClusterRoleBindingName(sa),
-		Namespace: namespace,
-		Labels:    labels,
+		Name:      meta_util.ValidCronJobNameWithSuffix(opt.getRoleBindingName(), apis.StashStorageClassReaderClusterRole),
+		Namespace: opt.Invoker.Namespace,
+		Labels:    opt.OffshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), kc, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -280,15 +282,11 @@ func ensureStorageClassReaderClusterRoleBinding(kc kubernetes.Interface, resourc
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      sa,
-				Namespace: namespace,
+				Name:      opt.ServiceAccount.Name,
+				Namespace: opt.ServiceAccount.Namespace,
 			},
 		}
 		return in
 	}, metav1.PatchOptions{})
 	return err
-}
-
-func getStorageClassReaderClusterRoleBindingName(name string) string {
-	return meta_util.ValidNameWithPrefix(apis.StashStorageClassReaderClusterRole, strings.ReplaceAll(name, ".", "-"))
 }
