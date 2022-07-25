@@ -900,8 +900,13 @@ func (c *StashController) sendBackupMetrics(inv invoker.BackupInvoker, session *
 		JobName:        fmt.Sprintf("%s-%s-%s", strings.ToLower(inv.GetTypeMeta().Kind), inv.GetObjectMeta().Namespace, inv.GetObjectMeta().Name),
 	}
 
+	status := session.GetStatus()
+	if status.SessionDuration == "" {
+		status.SessionDuration = time.Since(session.GetObjectMeta().CreationTimestamp.Time).Round(time.Second).String()
+	}
+
 	// send backup session related metrics
-	err := metricsOpt.SendBackupSessionMetrics(inv, session.GetStatus())
+	err := metricsOpt.SendBackupSessionMetrics(inv, status)
 	if err != nil {
 		return err
 	}
