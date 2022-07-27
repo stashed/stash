@@ -354,7 +354,7 @@ func (f *Framework) MinioServiceAddres() string {
 	return fmt.Sprintf("%s.%s.svc", f.GetMinioServiceName(), f.namespace)
 }
 
-func (fi Invocation) CreateBackendSecretForMinio(transformFuncs ...func(in *core.Secret)) (*core.Secret, error) {
+func (fi *Invocation) CreateBackendSecretForMinio(transformFuncs ...func(in *core.Secret)) (*core.Secret, error) {
 	// Create Storage Secret
 	cred := fi.SecretForMinioBackend(true)
 
@@ -368,7 +368,7 @@ func (fi Invocation) CreateBackendSecretForMinio(transformFuncs ...func(in *core
 
 	By(fmt.Sprintf("Creating Storage Secret for Minio: %s/%s", cred.Namespace, cred.Name))
 	createdCred, err := fi.CreateSecret(cred)
-	fi.AppendToCleanupList(&cred)
+	fi.AppendToCleanupList(createdCred)
 
 	return createdCred, err
 }

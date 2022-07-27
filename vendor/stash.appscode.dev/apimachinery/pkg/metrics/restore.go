@@ -415,7 +415,7 @@ func exportRestoreHostLegacyMetrics(labels prometheus.Labels, registry *promethe
 }
 
 func setRestoreHostMetrics(metrics *RestoreMetrics, registry *prometheus.Registry, hostStats api_v1beta1.HostRestoreStats) error {
-	if hostStats.Error == "" {
+	if hostStats.Phase == api_v1beta1.HostRestoreSucceeded {
 		metrics.RestoreHostMetrics.RestoreSuccess.Set(1)
 
 		// set the time that has been taken to restore the host

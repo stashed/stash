@@ -33,6 +33,7 @@ import (
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -52,7 +53,7 @@ var _ = Describe("Snapshot Tests", func() {
 
 	type testResources struct {
 		workloadMeta  metav1.ObjectMeta
-		workload      interface{}
+		workload      runtime.Object
 		workloadKind  string
 		repository    *v1alpha1.Repository
 		backupConfig  *v1beta1.BackupConfiguration

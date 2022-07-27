@@ -36,26 +36,25 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
-	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func IsBackupTarget(target *v1beta1_api.BackupTarget, w *wapi.Workload, invNamespace string) bool {
+func IsBackupTarget(target *v1beta1_api.BackupTarget, tref v1beta1_api.TargetRef, invNamespace string) bool {
 	if target != nil &&
-		target.Ref.APIVersion == w.APIVersion &&
-		target.Ref.Kind == w.Kind &&
-		getTargetNamespace(target.Ref, invNamespace) == w.Namespace &&
-		target.Ref.Name == w.Name {
+		target.Ref.APIVersion == tref.APIVersion &&
+		target.Ref.Kind == tref.Kind &&
+		getTargetNamespace(target.Ref, invNamespace) == tref.Namespace &&
+		target.Ref.Name == tref.Name {
 		return true
 	}
 	return false
 }
 
-func IsRestoreTarget(target *v1beta1_api.RestoreTarget, w *wapi.Workload, invNamespace string) bool {
+func IsRestoreTarget(target *v1beta1_api.RestoreTarget, tref v1beta1_api.TargetRef, invNamespace string) bool {
 	if target != nil &&
-		target.Ref.APIVersion == w.APIVersion &&
-		target.Ref.Kind == w.Kind &&
-		getTargetNamespace(target.Ref, invNamespace) == w.Namespace &&
-		target.Ref.Name == w.Name {
+		target.Ref.APIVersion == tref.APIVersion &&
+		target.Ref.Kind == tref.Kind &&
+		getTargetNamespace(target.Ref, invNamespace) == tref.Namespace &&
+		target.Ref.Name == tref.Name {
 		return true
 	}
 	return false

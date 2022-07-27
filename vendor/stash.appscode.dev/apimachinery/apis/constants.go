@@ -19,6 +19,47 @@ package apis
 import "time"
 
 const (
+	StashKey   = "stash.appscode.com"
+	VersionTag = StashKey + "/tag"
+
+	KeyDeleteJobOnCompletion     = StashKey + "/delete-job-on-completion"
+	AllowDeletingJobOnCompletion = "true"
+)
+
+const (
+	KindDeployment            = "Deployment"
+	KindReplicaSet            = "ReplicaSet"
+	KindReplicationController = "ReplicationController"
+	KindStatefulSet           = "StatefulSet"
+	KindDaemonSet             = "DaemonSet"
+	KindPod                   = "Pod"
+	KindPersistentVolumeClaim = "PersistentVolumeClaim"
+	KindAppBinding            = "AppBinding"
+	KindDeploymentConfig      = "DeploymentConfig"
+	KindSecret                = "Secret"
+	KindService               = "Service"
+	KindJob                   = "Job"
+	KindCronJob               = "CronJob"
+	KindNamespace             = "Namespace"
+	KindRole                  = "Role"
+	KindClusterRole           = "ClusterRole"
+)
+
+const (
+	ResourcePluralDeployment            = "deployments"
+	ResourcePluralReplicaSet            = "replicasets"
+	ResourcePluralReplicationController = "replicationcontrollers"
+	ResourcePluralStatefulSet           = "statefulsets"
+	ResourcePluralDaemonSet             = "daemonsets"
+	ResourcePluralPod                   = "pods"
+	ResourcePluralPersistentVolumeClaim = "persistentvolumeclaims"
+	ResourcePluralAppBinding            = "appbindings"
+	ResourcePluralDeploymentConfig      = "deploymentconfigs"
+	ResourcePluralSecret                = "secrets"
+	ResourcePluralService               = "services"
+)
+
+const (
 	StashDockerRegistry = "STASH_DOCKER_REGISTRY"
 	StashDockerImage    = "STASH_DOCKER_IMAGE"
 	StashImageTag       = "STASH_IMAGE_TAG"
@@ -141,9 +182,6 @@ const (
 
 	ModelSidecar        = "sidecar"
 	ModelCronJob        = "cronjob"
-	LabelApp            = "app"
-	LabelInvokerType    = StashKey + "/invoker-type"
-	LabelInvokerName    = StashKey + "/invoker-name"
 	StashSecretVolume   = "stash-secret-volume"
 	StashSecretMountDir = "/etc/stash/repository/secret"
 	StashNetVolAccessor = "stash-netvol-accessor"
@@ -154,6 +192,15 @@ const (
 
 	RetryInterval    = 50 * time.Millisecond
 	ReadinessTimeout = 2 * time.Minute
+)
+
+const (
+	LabelApp             = "app"
+	LabelInvokerType     = StashKey + "/invoker-type"
+	LabelInvokerName     = StashKey + "/invoker-name"
+	LabelTargetKind      = StashKey + "/target-kind"
+	LabelTargetNamespace = StashKey + "/target-namespace"
+	LabelTargetName      = StashKey + "/target-name"
 )
 
 const (
@@ -170,9 +217,6 @@ const (
 
 // ==================== RBAC related constants ==========================
 const (
-	KindRole        = "Role"
-	KindClusterRole = "ClusterRole"
-
 	StashBackupJobClusterRole            = "stash-backup-job"
 	StashRestoreJobClusterRole           = "stash-restore-job"
 	StashCronJobClusterRole              = "stash-cron-job"
