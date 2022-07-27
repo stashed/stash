@@ -156,6 +156,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 		}
 
 		if !backupMetricPushed(session.GetConditions()) {
+
 			err = c.sendBackupMetrics(inv, session)
 			if err != nil {
 				condErr := conditions.SetBackupMetricsPushedConditionToFalse(session, err)
@@ -212,38 +213,55 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 	}
 
 	// ===================== Run Backup for the Individual Targets ============================
+	shouldRequeue := false
 	for i, targetInfo := range inv.GetTargetInfo() {
 		if targetInfo.Target != nil {
 			// Skip processing if the backup has been already initiated before for this target
 			if invoker.TargetBackupInitiated(targetInfo.Target.Ref, session.GetTargetStatus()) {
-				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup has been already initiated for this target.", targetInfo.Target.Ref.Kind, targetInfo.Target.Ref.Namespace, targetInfo.Target.Ref.Name)
+				klog.Infof("Skipping initiating backup by BackupSession %s/%s for target %s %s/%s. Reason: Backup already initiated.",
+					session.GetObjectMeta().Namespace,
+					session.GetObjectMeta().Name,
+					targetInfo.Target.Ref.Kind,
+					targetInfo.Target.Ref.Namespace,
+					targetInfo.Target.Ref.Name,
+				)
 				continue
 			}
 
-			// Skip processing if the target is not in next in order
-			if inv.GetExecutionOrder() == api_v1beta1.Sequential &&
-				!inv.NextInOrder(targetInfo.Target.Ref, session.GetTargetStatus()) {
-				// backup order is sequential and the current target is not yet to be executed.
-				// so, set its phase to "Pending".
-				klog.Infof("Skipping initiating backup for %s %s/%s. Reason: Backup order is sequential and some previous targets hasn't completed their backup process.", targetInfo.Target.Ref.Kind, targetInfo.Target.Ref.Namespace, targetInfo.Target.Ref.Name)
+			pendingReason, err := c.checkIfBackupShouldBePending(inv, session, targetInfo.Target.Ref)
+			if err != nil {
+				return err
+			}
+			if pendingReason != "" {
+				klog.Infof("Skipping initiating backup for BackupSession %s/%s. Reason: %s.",
+					session.GetObjectMeta().Namespace,
+					session.GetObjectMeta().Name,
+					pendingReason,
+				)
 				err = c.setTargetBackupPending(targetInfo.Target.Ref, session)
 				if err != nil {
 					return err
 				}
+				shouldRequeue = true
 				continue
 			}
 
 			err = c.ensureBackupExecutor(inv, targetInfo, session, i)
 			if err != nil {
 				msg := fmt.Sprintf("failed to ensure backup executor. Reason: %v", err)
-				klog.Warning(msg)
-				klog.Infoln("targetRef: ", targetInfo.Target.Ref)
+				klog.Warning(msg, fmt.Sprint("target: ", targetInfo.Target.Ref))
 				return conditions.SetBackupExecutorEnsuredToFalse(session, targetInfo.Target.Ref, err)
 			}
 
 			// Set target backup phase to "Running"
-			return c.initiateTargetBackup(inv, session, i)
+			err = c.initiateTargetBackup(inv, session, i)
+			if err != nil {
+				return err
+			}
 		}
+	}
+	if shouldRequeue {
+		return c.requeueBackupSession(session, requeueTimeInterval)
 	}
 
 	if inv.GetTimeOut() != "" {
@@ -261,6 +279,10 @@ func isBackupDeadlineSet(session *invoker.BackupSessionHandler) bool {
 }
 
 func (c *StashController) requeueBackupAfterTimeOut(session *invoker.BackupSessionHandler, timeOut string) error {
+	klog.Infof("\nTimeOut set for BackupSession %s/%s",
+		session.GetObjectMeta().Namespace,
+		session.GetObjectMeta().Name,
+	)
 	if !isBackupDeadlineSet(session) {
 		timeOut, err := time.ParseDuration(timeOut)
 		if err != nil {
@@ -279,7 +301,7 @@ func isBackupDeadlineExceeded(session *invoker.BackupSessionHandler) bool {
 }
 
 func (c *StashController) requeueBackupSession(session *invoker.BackupSessionHandler, timeOut time.Duration) error {
-	klog.Infof("Timeout is set for BackupSession: %s/%s.\nRequeueing after %s seconds.....",
+	klog.Infof("Requeueing BackupSession %s/%s after %s seconds.....",
 		session.GetObjectMeta().Namespace,
 		session.GetObjectMeta().Name,
 		timeOut.String(),
@@ -290,25 +312,13 @@ func (c *StashController) requeueBackupSession(session *invoker.BackupSessionHan
 		return err
 	}
 	c.backupSessionQueue.GetQueue().AddAfter(key, timeOut)
-
 	return nil
 }
 
 func (c *StashController) ensureBackupExecutor(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, session *invoker.BackupSessionHandler, idx int) error {
 	switch backupExecutor(inv, targetInfo) {
 	case BackupExecutorSidecar:
-		// Backup model is sidecar. For sidecar model, controller inside sidecar will take care of it.
-		klog.Infof("Skipping processing BackupSession %s/%s for target %s %s/%s. Reason: Backup model is sidecar."+
-			"Controller inside sidecar will take care of it.",
-			session.GetObjectMeta().Namespace,
-			session.GetObjectMeta().Name,
-			targetInfo.Target.Ref.Kind,
-			targetInfo.Target.Ref.Namespace,
-			targetInfo.Target.Ref.Name,
-		)
-		// After upgrading Stash operator, the existing stash sidecar may still use the old configuration (i.e. image tag).
-		// So, make sure that stash sidecar has the latest configurations.
-		err := c.ensureLatestSidecarConfiguration(inv, targetInfo)
+		err := c.ensureLatestSidecarConfiguration(targetInfo)
 		if err != nil {
 			return err
 		}
@@ -587,7 +597,9 @@ func (c *StashController) initiateTargetBackup(inv invoker.BackupInvoker, sessio
 			postBackupActions = []string{api_v1beta1.ApplyRetentionPolicy, api_v1beta1.VerifyRepositoryIntegrity, api_v1beta1.SendRepositoryMetrics}
 		}
 	}
-
+	if session.GetStatus().Phase != api_v1beta1.BackupSessionRunning {
+		klog.Infof("Initiating backup for BackupSession %s/%s", session.GetObjectMeta().Namespace, session.GetObjectMeta().Name)
+	}
 	return session.UpdateStatus(&api_v1beta1.BackupSessionStatus{
 		Targets: []api_v1beta1.BackupTargetStatus{
 			{
@@ -787,7 +799,7 @@ func (c *StashController) checkIfBackupShouldBeSkipped(inv invoker.BackupInvoker
 	}
 
 	// Skip taking backup if there is another running BackupSession
-	runningBS, err := c.checkForAnotherRunningBackupSession(inv, session)
+	runningBS, err := c.checkForAnotherRunningBackupSessionWithSameInvoker(inv, session)
 	if err != nil {
 		return "", err
 	}
@@ -802,6 +814,60 @@ func (c *StashController) checkIfBackupShouldBeSkipped(inv invoker.BackupInvoker
 	return "", nil
 }
 
+func (c *StashController) checkIfBackupShouldBePending(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler, targetRef api_v1beta1.TargetRef) (string, error) {
+	// Keep backup pending if the target is not in next in order
+	if inv.GetExecutionOrder() == api_v1beta1.Sequential &&
+		!inv.NextInOrder(targetRef, session.GetTargetStatus()) {
+		return "Backup order is sequential and some previous targets hasn't completed their backup process.", nil
+	}
+
+	yes, err := c.hasMultipleBackupInvokers(targetRef)
+	if err != nil || !yes {
+		return "", err
+	}
+
+	otherSession, err := c.checkForAnotherIncompleteBackupSessionWithDifferentInvoker(inv, targetRef)
+	if err != nil {
+		return "", err
+	}
+	if otherSession == nil {
+		if time.Since(session.GetObjectMeta().CreationTimestamp.Time) < 2*time.Second {
+			return "Multiple backup invoker found. Will be processed in the next requeue to handle concurrent session.", nil
+		}
+		return "", nil
+	}
+
+	if shouldKeepCurrentSessionPending(session.GetBackupSession(), otherSession) {
+		return fmt.Sprintf("Found another incomplete BackupSession %s/%s invoked by %s/%s",
+			otherSession.Namespace,
+			otherSession.Name,
+			otherSession.Spec.Invoker.Kind,
+			otherSession.Spec.Invoker.Name,
+		), nil
+	}
+	return "", nil
+}
+
+func shouldKeepCurrentSessionPending(cur, other *api_v1beta1.BackupSession) bool {
+	if other.Status.Phase == api_v1beta1.BackupSessionRunning {
+		return true
+	}
+
+	if cur.CreationTimestamp.Equal(other.CreationTimestamp.DeepCopy()) {
+		return other.Name < cur.Name
+	}
+	return cur.CreationTimestamp.After(other.CreationTimestamp.Time)
+}
+
+func (c *StashController) hasMultipleBackupInvokers(targetRef api_v1beta1.TargetRef) (bool, error) {
+	invokers, err := util.FindBackupInvokers(c.bcLister, targetRef)
+	if err != nil {
+		return false, err
+	}
+
+	return len(invokers) > 1, nil
+}
+
 func isSessionSkipped(session *invoker.BackupSessionHandler) bool {
 	return kmapi.IsConditionTrue(session.GetConditions(), api_v1beta1.BackupSkipped)
 }
@@ -814,7 +880,7 @@ func isBackupPending(session *invoker.BackupSessionHandler) bool {
 	return session.GetStatus().Phase == "" || session.GetStatus().Phase == api_v1beta1.BackupSessionPending
 }
 
-func (c *StashController) checkForAnotherRunningBackupSession(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler) (*api_v1beta1.BackupSession, error) {
+func (c *StashController) checkForAnotherRunningBackupSessionWithSameInvoker(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler) (*api_v1beta1.BackupSession, error) {
 	runningBS, err := c.getRunningBackupSessionForInvoker(inv)
 	if err != nil {
 		return nil, err
@@ -839,6 +905,60 @@ func (c *StashController) getRunningBackupSessionForInvoker(inv invoker.BackupIn
 		}
 	}
 	return nil, nil
+}
+
+func (c *StashController) checkForAnotherIncompleteBackupSessionWithDifferentInvoker(inv invoker.BackupInvoker, targetRef api_v1beta1.TargetRef) (*api_v1beta1.BackupSession, error) {
+	sessions, err := c.getIncompleteBackupSessionForTarget(inv, targetRef)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(sessions) > 1 {
+		sort.Slice(sessions, func(i, j int) bool {
+			if sessions[i].Status.Phase == sessions[j].Status.Phase {
+				return sessions[i].Name < sessions[j].Name
+			}
+			if sessions[i].Status.Phase == api_v1beta1.BackupSessionRunning && sessions[j].Status.Phase != api_v1beta1.BackupSessionRunning {
+				return true
+			}
+			return false
+		})
+	}
+
+	for i, s := range sessions {
+		if invokedByDifferentInvoker(inv, s.Spec.Invoker) {
+			s := sessions[i]
+			return &s, nil
+		}
+	}
+	return nil, nil
+}
+
+func invokedByDifferentInvoker(inv invoker.BackupInvoker, invRef api_v1beta1.BackupInvokerRef) bool {
+	return invRef.Kind != inv.GetTypeMeta().Kind ||
+		invRef.Name != inv.GetObjectMeta().Name
+}
+
+func (c *StashController) getIncompleteBackupSessionForTarget(inv invoker.BackupInvoker, targetRef api_v1beta1.TargetRef) ([]api_v1beta1.BackupSession, error) {
+	selector := labels.SelectorFromSet(map[string]string{
+		apis.LabelTargetKind:      targetRef.Kind,
+		apis.LabelTargetName:      targetRef.Name,
+		apis.LabelTargetNamespace: targetRef.Namespace,
+	})
+	bsList, err := c.stashClient.StashV1beta1().BackupSessions(inv.GetObjectMeta().Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: selector.String()})
+	if err != nil {
+		return nil, err
+	}
+
+	sessions := make([]api_v1beta1.BackupSession, 0)
+	for i := range bsList.Items {
+		if bsList.Items[i].Status.Phase == api_v1beta1.BackupSessionRunning ||
+			bsList.Items[i].Status.Phase == api_v1beta1.BackupSessionPending ||
+			bsList.Items[i].Status.Phase == "" {
+			sessions = append(sessions, bsList.Items[i])
+		}
+	}
+	return sessions, nil
 }
 
 func explicitInputs(params []appcat.Param) map[string]string {

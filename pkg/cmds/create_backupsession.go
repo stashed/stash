@@ -123,6 +123,14 @@ func (opt *options) createBackupSession() error {
 			in.Labels[apis.LabelInvokerName] = opt.invokerName
 			in.Labels[apis.LabelInvokerType] = opt.invokerKind
 
+			// BackupConfiguration has single target. Add target info as label so that BackupSession watcher of sidecar
+			// can avoid processing the BackupSessions that are not responsible for its backup.
+			if opt.invokerKind == api_v1beta1.ResourceKindBackupConfiguration {
+				targets := inv.GetTargetInfo()
+				in.Labels[apis.LabelTargetKind] = targets[0].Target.Ref.Kind
+				in.Labels[apis.LabelTargetName] = targets[0].Target.Ref.Name
+				in.Labels[apis.LabelTargetNamespace] = targets[0].Target.Ref.Namespace
+			}
 			return in
 		},
 		metav1.PatchOptions{},

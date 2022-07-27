@@ -62,7 +62,7 @@ func (fi *Invocation) CreateRestoreSession(restoreSession *v1beta1.RestoreSessio
 	return err
 }
 
-func (fi Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
+func (fi *Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
 	err := fi.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Delete(context.TODO(), meta.Name, metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err

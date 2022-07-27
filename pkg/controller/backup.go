@@ -20,12 +20,14 @@ import (
 	"fmt"
 
 	"stash.appscode.dev/apimachinery/apis"
+	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/util"
 
 	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
@@ -33,29 +35,41 @@ import (
 // applyBackupLogic check if Backup annotations or BackupConfiguration is configured for this workload
 // and perform operation accordingly
 func (c *StashController) applyBackupLogic(w *wapi.Workload, caller string) (bool, error) {
-	// check if any BackupConfiguration exist for this workload.
-	// if exist then inject sidecar container
-	return c.applyBackupConfigurationLogic(w, caller)
+	return c.applyBackupInvokerLogic(w, caller)
 }
 
-func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller string) (bool, error) {
-	// detect old BackupConfiguration from annotations if it does exist.
-	oldbc, err := util.GetAppliedBackupConfiguration(w.Annotations)
+func (c *StashController) applyBackupInvokerLogic(w *wapi.Workload, caller string) (bool, error) {
+	oldInvoker, err := util.ExtractAppliedBackupInvokerFromAnnotation(w.Annotations)
 	if err != nil {
 		return false, err
 	}
-	// find existing BackupConfiguration for this workload
-	newbc, err := util.FindBackupConfiguration(c.bcLister, w)
+	targetRef := api_v1beta1.TargetRef{
+		APIVersion: w.APIVersion,
+		Kind:       w.Kind,
+		Name:       w.Name,
+		Namespace:  w.Namespace,
+	}
+	newInvoker, err := util.FindLatestBackupInvoker(c.bcLister, targetRef)
 	if err != nil {
 		return false, err
 	}
-	// if BackupConfiguration currently exist for this workload but it is not same as old one,
-	// this means BackupConfiguration has been newly created/updated.
-	// in this case, we have to add/update sidecar container accordingly.
-	if newbc != nil && !util.BackupConfigurationEqual(oldbc, newbc) {
-		inv := invoker.NewBackupConfigurationInvoker(c.stashClient, newbc)
+	yes, err := backupInvokerCreatedOrUpdated(oldInvoker, newInvoker)
+	if err != nil {
+		return false, err
+	}
+	if yes {
+		inv, err := invoker.NewBackupInvoker(
+			c.stashClient,
+			newInvoker.GetKind(),
+			newInvoker.GetName(),
+			newInvoker.GetNamespace(),
+		)
+		if err != nil {
+			return false, err
+		}
+
 		for _, targetInfo := range inv.GetTargetInfo() {
-			if util.IsBackupTarget(targetInfo.Target, w, inv.GetObjectMeta().Namespace) {
+			if util.IsBackupTarget(targetInfo.Target, targetRef, inv.GetObjectMeta().Namespace) {
 				err = c.ensureBackupSidecar(w, inv, targetInfo, caller)
 				if err != nil {
 					return false, c.handleSidecarInjectionFailure(w, inv, targetInfo.Target.Ref, err)
@@ -64,16 +78,26 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 			}
 		}
 
-	} else if oldbc != nil && newbc == nil {
-		// there was BackupConfiguration before but it does not exist now.
-		// this means BackupConfiguration has been removed.
-		// in this case, we have to delete the backup sidecar container
-		// and remove respective annotations from the workload.
+	} else if backupInvokerDeleted(oldInvoker, newInvoker) {
 		c.ensureBackupSidecarDeleted(w)
-		// write sidecar deletion failure/success event
 		return true, c.handleSidecarDeletionSuccess(w)
 	}
 	return false, nil
+}
+
+func backupInvokerCreatedOrUpdated(old, new unstructured.Unstructured) (bool, error) {
+	if new.Object == nil {
+		return false, nil
+	}
+	equal, err := util.InvokerEqual(old, new)
+	if err != nil {
+		return false, err
+	}
+	return !equal, nil
+}
+
+func backupInvokerDeleted(old, new unstructured.Unstructured) bool {
+	return old.Object != nil && new.Object == nil
 }
 
 func ownerWorkload(w *wapi.Workload) (*metav1.OwnerReference, error) {

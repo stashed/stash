@@ -25,6 +25,7 @@ import (
 	"gomodules.xyz/blobfs"
 	"gomodules.xyz/cert/certstore"
 	"gomodules.xyz/x/crypto/rand"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -88,7 +89,7 @@ func (f *Framework) Invoke() *Invocation {
 	inv := &Invocation{
 		Framework:     f,
 		app:           rand.WithUniqSuffix("stash-e2e"),
-		testResources: make([]interface{}, 0),
+		testResources: make([]runtime.Object, 0),
 	}
 	inv.backupNamespace = meta.NameWithSuffix(inv.app, "backup")
 	inv.restoreNamespace = meta.NameWithSuffix(inv.app, "restore")
@@ -116,5 +117,5 @@ type Invocation struct {
 	app              string
 	backupNamespace  string
 	restoreNamespace string
-	testResources    []interface{}
+	testResources    []runtime.Object
 }
