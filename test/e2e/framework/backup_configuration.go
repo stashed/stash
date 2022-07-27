@@ -80,20 +80,6 @@ func (fi *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfigur
 	return nil
 }
 
-func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(
-		func() bool {
-			_, err := f.GetCronJob(meta)
-			if err == nil && !kerr.IsNotFound(err) {
-				return true
-			}
-			return false
-		},
-		WaitTimeOut,
-		PullInterval,
-	)
-}
-
 func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batchv1beta1.CronJob, error) {
 	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
 }

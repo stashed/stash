@@ -48,7 +48,7 @@ import (
 	wcs "kmodules.xyz/webhook-runtime/client/workload/v1"
 )
 
-// applyStashLogic takes an workload and perform some processing on it if any backup or restore is configured for this workload.
+// applyStashLogic takes a workload and perform some processing on it if any backup or restore is configured for this workload.
 func (c *StashController) applyStashLogic(w *wapi.Workload, caller string) (bool, error) {
 	// check if restore is configured for this workload and perform respective operations
 	modifiedByRestoreLogic, err := c.applyRestoreLogic(w, caller)
@@ -313,12 +313,31 @@ func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, 
 	return imagePullSecrets, nil
 }
 
-func (c *StashController) ensureLatestSidecarConfiguration(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo) error {
+func (c *StashController) ensureLatestSidecarConfiguration(targetInfo invoker.BackupTargetInfo) error {
 	obj, err := c.getTargetWorkload(targetInfo)
 	if err != nil {
 		return err
 	}
 	w, err := wcs.ConvertToWorkload(obj.DeepCopyObject())
+	if err != nil {
+		return err
+	}
+	targetRef := api_v1beta1.TargetRef{
+		APIVersion: w.APIVersion,
+		Kind:       w.Kind,
+		Name:       w.Name,
+		Namespace:  w.Namespace,
+	}
+	latestInvoker, err := util.FindLatestBackupInvoker(c.bcLister, targetRef)
+	if err != nil {
+		return err
+	}
+	inv, err := invoker.NewBackupInvoker(
+		c.stashClient,
+		latestInvoker.GetKind(),
+		latestInvoker.GetName(),
+		latestInvoker.GetNamespace(),
+	)
 	if err != nil {
 		return err
 	}

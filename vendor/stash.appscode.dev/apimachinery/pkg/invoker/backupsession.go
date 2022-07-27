@@ -122,6 +122,9 @@ func IsBackupCompleted(phase v1beta1.BackupSessionPhase) bool {
 
 func BackupCompletedForAllTargets(status []v1beta1.BackupTargetStatus, totalTargets int) bool {
 	for _, t := range status {
+		if t.Phase == v1beta1.TargetBackupFailed || t.Phase == v1beta1.TargetBackupSucceeded {
+			continue
+		}
 		if t.TotalHosts == nil || !backupCompletedForAllHosts(t.Stats, *t.TotalHosts) {
 			return false
 		}
@@ -296,7 +299,7 @@ func upsertArray(cur, new []string) []string {
 
 func isAllTargetBackupPending(status []v1beta1.BackupTargetStatus) bool {
 	for _, t := range status {
-		if t.Phase != v1beta1.TargetBackupPending {
+		if t.Phase != v1beta1.TargetBackupPending && t.Phase != "" {
 			return false
 		}
 	}

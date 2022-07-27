@@ -38,6 +38,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -131,23 +132,11 @@ func (c *BackupSessionController) runBackupSessionController(invokerRef *core.Ob
 }
 
 func (c *BackupSessionController) initBackupSessionWatcher() error {
-	// Only watches for BackupSession of the respective inv.
-	// Respective CronJob creates BackupSession with invoker's name and kind as label.
-	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			apis.LabelInvokerType: c.InvokerKind,
-			apis.LabelInvokerName: c.InvokerName,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
 	c.bsInformer = c.StashInformerFactory.Stash().V1beta1().BackupSessions().Informer()
 	c.bsQueue = queue.New(api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.processBackupSession)
 	c.bsInformer.AddEventHandler(queue.NewFilteredHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			if backupsession, ok := obj.(*api_v1beta1.BackupSession); ok {
+			if backupsession, ok := obj.(*api_v1beta1.BackupSession); ok && c.selectedByLabels(backupsession) {
 				queue.Enqueue(c.bsQueue.GetQueue(), backupsession)
 			}
 		},
@@ -162,11 +151,11 @@ func (c *BackupSessionController) initBackupSessionWatcher() error {
 				klog.Errorf("Invalid BackupSession Object")
 				return
 			}
-			if !reflect.DeepEqual(&oldBS.Status, &newBS.Status) {
+			if c.selectedByLabels(newBS) && !reflect.DeepEqual(&oldBS.Status, &newBS.Status) {
 				queue.Enqueue(c.bsQueue.GetQueue(), newObj)
 			}
 		},
-	}, selector))
+	}, labels.Everything()))
 	c.bsLister = c.StashInformerFactory.Stash().V1beta1().BackupSessions().Lister()
 	return nil
 }
@@ -505,6 +494,25 @@ func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1
 		}
 	}
 	return false
+}
+
+func (c *BackupSessionController) selectedByLabels(b *api_v1beta1.BackupSession) bool {
+	return c.selectedByInvokerLabels(b) || c.selectedByTargetLabels(b)
+}
+
+func (c *BackupSessionController) selectedByInvokerLabels(b *api_v1beta1.BackupSession) bool {
+	invokerKind, _ := meta.GetStringValueForKeys(b.Labels, apis.LabelInvokerType)
+	invokerName, _ := meta.GetStringValueForKeys(b.Labels, apis.LabelInvokerName)
+
+	return invokerKind == c.InvokerKind && invokerName == c.InvokerName
+}
+
+func (c *BackupSessionController) selectedByTargetLabels(b *api_v1beta1.BackupSession) bool {
+	targetKind, _ := meta.GetStringValueForKeys(b.Labels, apis.LabelTargetKind)
+	targetName, _ := meta.GetStringValueForKeys(b.Labels, apis.LabelTargetName)
+	targetNamespace, _ := meta.GetStringValueForKeys(b.Labels, apis.LabelTargetNamespace)
+
+	return targetKind == c.TargetRef.Kind && targetName == c.TargetRef.Name && targetNamespace == c.TargetRef.Namespace
 }
 
 func (c *BackupSessionController) targetMatched(ref api_v1beta1.TargetRef) bool {

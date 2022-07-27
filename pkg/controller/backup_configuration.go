@@ -460,7 +460,7 @@ func getBackupCronJobName(inv invoker.BackupInvoker) string {
 	if getTargetNamespace(inv) != invMeta.Namespace {
 		return meta2.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, invMeta.Namespace, strings.ReplaceAll(invMeta.Name, ".", "-"))
 	}
-	return meta2.ValidCronJobNameWithPrefix(apis.PrefixStashTrigger, strings.ReplaceAll(invMeta.Name, ".", "-"))
+	return meta2.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, "", strings.ReplaceAll(invMeta.Name, ".", "-"))
 }
 
 func getTargetNamespace(inv invoker.BackupInvoker) string {

@@ -24,6 +24,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
+	invoker2 "stash.appscode.dev/apimachinery/pkg/invoker"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -96,8 +97,9 @@ func (fi *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1al
 	createdBC, err := fi.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(context.TODO(), backupConfig, metav1.CreateOptions{})
 	fi.AppendToCleanupList(createdBC)
 
-	By("Verifying that backup triggering CronJob has been created")
-	fi.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
+	By("Verifying that backup invoker is ready")
+	inv := invoker2.NewBackupConfigurationInvoker(fi.StashClient, backupConfig)
+	fi.EventuallyBackupInvokerPhase(inv).Should(BeEquivalentTo(v1beta1.BackupInvokerReady))
 
 	return createdBC, err
 }
