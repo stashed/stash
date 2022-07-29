@@ -102,14 +102,14 @@ type RestoreHooks struct {
 
 	// PostRestore is called according to executionPolicy after a restore session is complete.
 	// +optional
-	PostRestore PostRestoreHook `json:"postRestore,omitempty"`
+	PostRestore *PostRestoreHook `json:"postRestore,omitempty"`
 }
 
 type PostRestoreHook struct {
 	*prober.Handler `json:",inline"`
 	// ExecutionPolicy specifies when to execute a hook.
 	// Supported values are "Always", "OnFailure", "OnSuccess".
-	// Default value is "Always".
+	// Default value: "Always".
 	// +optional
 	// +kubebuilder:default=Always
 	// +kubebuilder:validation:Enum=Always;OnFailure;OnSuccess

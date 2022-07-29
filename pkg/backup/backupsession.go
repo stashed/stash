@@ -226,7 +226,7 @@ func (c *BackupSessionController) backupHost(inv invoker.BackupInvoker, targetIn
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PreBackup != nil {
 		err := c.executePreBackupHook(inv, targetInfo, backupSession)
 		if err != nil {
-			klog.Infof("failed to execute preBackup hook. Reason: ", err)
+			klog.Infof("failed to execute preBackup hook. Reason: %s", err.Error())
 			return nil
 		}
 	}
@@ -301,7 +301,7 @@ func (c *BackupSessionController) electLeaderPod(targetInfo invoker.BackupTarget
 		rlc,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create resource lock. Reason: %s", err)
+		return fmt.Errorf("failed to create resource lock. Reason: %v", err)
 	}
 
 	// use a Go context so we can tell the leader election code when we
@@ -360,7 +360,7 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 		rlc,
 	)
 	if err != nil {
-		return fmt.Errorf("error during leader election: %s", err)
+		return fmt.Errorf("error during leader election: %v", err)
 	}
 
 	// use a Go context so we can tell the leader election code when we
@@ -378,7 +378,10 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 			OnStartedLeading: func(ctx context.Context) {
 				klog.Infoln("Got leadership, preparing for backup")
 				// run backup process
-				_ = c.backupHost(inv, targetInfo, backupSession)
+				err := c.backupHost(inv, targetInfo, backupSession)
+				if err != nil {
+					klog.Errorf("failed to backup host. Reason: %v", err)
+				}
 
 				// backup process is complete. now, step down from leadership so that other replicas can start
 				cancel()
@@ -448,10 +451,12 @@ func (c *BackupSessionController) handleBackupFailure(backupSession *api_v1beta1
 func (c *BackupSessionController) handleBackupCompletion(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetInfo, backupSession *api_v1beta1.BackupSession, backupOutput *restic.BackupOutput) error {
 	// execute hooks at the end of backup completion. no matter if the backup succeed or fail.
 	defer func() {
-		if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup.Handler != nil {
+		if targetInfo.Hooks != nil &&
+			targetInfo.Hooks.PostBackup != nil &&
+			targetInfo.Hooks.PostBackup.Handler != nil {
 			hookErr := c.executePostBackupHook(inv, targetInfo, backupSession)
 			if hookErr != nil {
-				klog.Infof("failed to execute postBackup hook. Reason: ", hookErr)
+				klog.Infof("failed to execute postBackup hook. Reason: %v", hookErr)
 			}
 		}
 	}()

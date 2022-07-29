@@ -105,7 +105,7 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Restoring the backed up data in the original StatefulSet")
 					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
-							PostRestore: v1beta1.PostRestoreHook{
+							PostRestore: &v1beta1.PostRestoreHook{
 								Handler: &probev1.Handler{
 									Exec: &core.ExecAction{
 										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", framework.TestSourceDataMountPath)},
@@ -179,7 +179,7 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Restoring the backed up data in the original StatefulSet")
 					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
-							PostRestore: v1beta1.PostRestoreHook{
+							PostRestore: &v1beta1.PostRestoreHook{
 								Handler: &probev1.Handler{
 									Exec: &core.ExecAction{
 										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", framework.TestSourceDataMountPath)},
@@ -267,7 +267,7 @@ var _ = Describe("PostRestore Hook", func() {
 					By("Restoring the backed up data in the original StatefulSet")
 					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
-							PostRestore: v1beta1.PostRestoreHook{
+							PostRestore: &v1beta1.PostRestoreHook{
 								Handler: &probev1.Handler{
 									Exec: &core.ExecAction{
 										Command: []string{"/bin/sh", "-c", "exit 1"},
@@ -356,7 +356,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Restoring the backed up data")
 						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo, func(restore *v1beta1.RestoreSession) {
 							restore.Spec.Hooks = &v1beta1.RestoreHooks{
-								PostRestore: v1beta1.PostRestoreHook{
+								PostRestore: &v1beta1.PostRestoreHook{
 									Handler: &probev1.Handler{
 										Exec: &core.ExecAction{
 											Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", apis.StashDefaultMountPath)},
@@ -432,7 +432,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Restoring the backed up data")
 						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo, func(restore *v1beta1.RestoreSession) {
 							restore.Spec.Hooks = &v1beta1.RestoreHooks{
-								PostRestore: v1beta1.PostRestoreHook{
+								PostRestore: &v1beta1.PostRestoreHook{
 									Handler: &probev1.Handler{
 										Exec: &core.ExecAction{
 											Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", apis.StashDefaultMountPath)},
@@ -511,7 +511,7 @@ var _ = Describe("PostRestore Hook", func() {
 						By("Restoring the backed up data")
 						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo, func(restore *v1beta1.RestoreSession) {
 							restore.Spec.Hooks = &v1beta1.RestoreHooks{
-								PostRestore: v1beta1.PostRestoreHook{
+								PostRestore: &v1beta1.PostRestoreHook{
 									Handler: &probev1.Handler{
 										Exec: &core.ExecAction{
 											Command: []string{"/bin/sh", "-c", "exit 1"},
@@ -592,7 +592,7 @@ var _ = Describe("PostRestore Hook", func() {
 			By("Restoring the backed up data in the original StatefulSet")
 			restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 				restore.Spec.Hooks = &v1beta1.RestoreHooks{
-					PostRestore: v1beta1.PostRestoreHook{
+					PostRestore: &v1beta1.PostRestoreHook{
 						Handler: &probev1.Handler{
 							HTTPPost: &probev1.HTTPPostAction{
 								Host:   "hooks.slack.com",
@@ -672,7 +672,7 @@ var _ = Describe("PostRestore Hook", func() {
 			By("Restoring the backed up data in the original StatefulSet")
 			restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 				restore.Spec.Hooks = &v1beta1.RestoreHooks{
-					PostRestore: v1beta1.PostRestoreHook{
+					PostRestore: &v1beta1.PostRestoreHook{
 						Handler: &probev1.Handler{
 							HTTPPost: &probev1.HTTPPostAction{
 								Host:   "hooks.slack.com",

@@ -136,7 +136,9 @@ func (opt *Options) electRestoreLeader(inv invoker.RestoreInvoker, targetInfo in
 func (opt *Options) restoreHost(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo) error {
 	// execute at the end of restore. no matter if the restore succeed or fail.
 	defer func() {
-		if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore.Handler != nil {
+		if targetInfo.Hooks != nil &&
+			targetInfo.Hooks.PostRestore != nil &&
+			targetInfo.Hooks.PostRestore.Handler != nil {
 			err := opt.executePostRestoreHook(inv, targetInfo)
 			if err != nil {
 				klog.Infoln("failed to execute postRestore hook. Reason: ", err)

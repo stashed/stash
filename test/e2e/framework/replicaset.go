@@ -76,7 +76,9 @@ func (fi *Invocation) WaitUntilRSReadyWithSidecar(meta metav1.ObjectMeta) error 
 				if err != nil {
 					return false, err
 				}
-
+				if len(pods) == 0 {
+					return false, nil
+				}
 				for i := range pods {
 					hasSidecar := false
 					for _, c := range pods[i].Spec.Containers {

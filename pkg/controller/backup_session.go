@@ -155,17 +155,6 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 			return nil
 		}
 
-		if !backupMetricPushed(session.GetConditions()) {
-
-			err = c.sendBackupMetrics(inv, session)
-			if err != nil {
-				condErr := conditions.SetBackupMetricsPushedConditionToFalse(session, err)
-				if condErr != nil {
-					return condErr
-				}
-			}
-		}
-
 		// Cleanup old BackupSession according to backupHistoryLimit
 		if !backupHistoryCleaned(session.GetConditions()) {
 			err = c.cleanupBackupHistory(session, inv.GetBackupHistoryLimit())
@@ -181,6 +170,16 @@ func (c *StashController) applyBackupSessionReconciliationLogic(session *invoker
 			err = c.executeGlobalPostBackupHook(inv, session)
 			if err != nil {
 				condErr := conditions.SetGlobalPostBackupHookSucceededConditionToFalse(session, err)
+				if condErr != nil {
+					return condErr
+				}
+			}
+		}
+
+		if !backupMetricPushed(session.GetConditions()) {
+			err = c.sendBackupMetrics(inv, session)
+			if err != nil {
+				condErr := conditions.SetBackupMetricsPushedConditionToFalse(session, err)
 				if condErr != nil {
 					return condErr
 				}
@@ -436,7 +435,9 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		taskResolver.PreTaskHookInput = make(map[string]string)
 		taskResolver.PreTaskHookInput[apis.HookType] = apis.PreBackupHook
 	}
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup.Handler != nil {
+	if targetInfo.Hooks != nil &&
+		targetInfo.Hooks.PostBackup != nil &&
+		targetInfo.Hooks.PostBackup.Handler != nil {
 		taskResolver.PostTaskHookInput = make(map[string]string)
 		taskResolver.PostTaskHookInput[apis.HookType] = apis.PostBackupHook
 	}
@@ -690,7 +691,7 @@ func backupExecutor(inv invoker.BackupInvoker, targetInfo invoker.BackupTargetIn
 
 func postBackupHooksExecuted(targetInfo []invoker.BackupTargetInfo, targetStatus []api_v1beta1.BackupTargetStatus) bool {
 	for _, target := range targetInfo {
-		if target.Hooks != nil {
+		if target.Hooks != nil && target.Hooks.PostBackup != nil {
 			if !postBackupHookExecutedForTarget(target, targetStatus) {
 				return false
 			}
@@ -716,7 +717,9 @@ func postBackupHookExecutedForTarget(targetInfo invoker.BackupTargetInfo, target
 
 func globalPostBackupHookExecuted(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler) bool {
 	backupHooks := inv.GetGlobalHooks()
-	if backupHooks == nil || backupHooks.PostBackup.Handler == nil {
+	if backupHooks == nil ||
+		backupHooks.PostBackup == nil ||
+		backupHooks.PostBackup.Handler == nil {
 		return true
 	}
 	return kmapi.HasCondition(session.GetConditions(), api_v1beta1.GlobalPostBackupHookSucceeded) &&

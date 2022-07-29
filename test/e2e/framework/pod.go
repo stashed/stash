@@ -37,6 +37,7 @@ const (
 	TestSourceDataMountPath  = "/source/data"
 	TestSafeDataMountPath    = "/safe/data"
 	OperatorNamespace        = "kube-system"
+	ContainerBusyBox         = "busybox"
 )
 
 func (fi *Invocation) PodTemplate(labels map[string]string, pvcName, volName string) core.PodTemplateSpec {
@@ -47,7 +48,7 @@ func (fi *Invocation) PodTemplate(labels map[string]string, pvcName, volName str
 		Spec: core.PodSpec{
 			Containers: []core.Container{
 				{
-					Name:            "busybox",
+					Name:            ContainerBusyBox,
 					Image:           "busybox",
 					ImagePullPolicy: core.PullIfNotPresent,
 					Command: []string{
@@ -101,10 +102,7 @@ func (f *Framework) GetAllPods(meta metav1.ObjectMeta) ([]core.Pod, error) {
 			pods = append(pods, pod)
 		}
 	}
-	if len(pods) > 0 {
-		return pods, nil
-	}
-	return nil, fmt.Errorf("no pod found for workload %v", meta.Name)
+	return pods, nil
 }
 
 func (f *Framework) GetOperatorPod() (*core.Pod, error) {
@@ -151,7 +149,7 @@ func (fi *Invocation) Pod(pvcName string) core.Pod {
 		Spec: core.PodSpec{
 			Containers: []core.Container{
 				{
-					Name:            "busybox",
+					Name:            ContainerBusyBox,
 					Image:           "busybox",
 					ImagePullPolicy: core.PullIfNotPresent,
 					Command: []string{

@@ -211,7 +211,9 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 	}
 
 	// If postBackup hook is specified, then execute those hooks after backup
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PostBackup.Handler != nil {
+	if targetInfo.Hooks != nil &&
+		targetInfo.Hooks.PostBackup != nil &&
+		targetInfo.Hooks.PostBackup.Handler != nil {
 		klog.Infoln("Executing postBackup hooks........")
 		podName := meta.PodName()
 		if podName == "" {

@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 )
 
 func NewCmdUpdateStatus() *cobra.Command {
@@ -69,11 +70,11 @@ func NewCmdUpdateStatus() *cobra.Command {
 				return err
 			}
 
-			if opt.BackupSession != "" {
-				return opt.UpdateBackupStatusFromFile()
-			} else {
-				return opt.UpdateRestoreStatusFromFile()
+			err = updateStatus(opt)
+			if err != nil {
+				klog.Errorln(err)
 			}
+			return nil
 		},
 	}
 
@@ -103,4 +104,12 @@ func NewCmdUpdateStatus() *cobra.Command {
 	cmd.Flags().StringSliceVar(&opt.Metrics.Labels, "metrics-labels", opt.Metrics.Labels, "Labels to apply in exported metrics")
 
 	return cmd
+}
+
+func updateStatus(opt status.UpdateStatusOptions) error {
+	if opt.BackupSession != "" {
+		return opt.UpdateBackupStatusFromFile()
+	} else {
+		return opt.UpdateRestoreStatusFromFile()
+	}
 }

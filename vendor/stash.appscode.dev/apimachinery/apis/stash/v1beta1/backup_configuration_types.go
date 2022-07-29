@@ -116,7 +116,7 @@ type BackupHooks struct {
 
 	// PostBackup is called according to executionPolicy after a backup session is complete.
 	// +optional
-	PostBackup PostBackupHook `json:"postBackup,omitempty"`
+	PostBackup *PostBackupHook `json:"postBackup,omitempty"`
 }
 
 type PostBackupHook struct {
