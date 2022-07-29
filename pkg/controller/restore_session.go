@@ -219,20 +219,20 @@ func (c *StashController) applyRestoreInvokerReconciliationLogic(inv invoker.Res
 			return nil
 		}
 
-		if !restoreMetricsPushed(status.Conditions) {
-			err = c.sendRestoreMetrics(inv)
+		if !globalPostRestoreHookExecuted(inv) {
+			err = c.executeGlobalPostRestoreHook(inv)
 			if err != nil {
-				condErr := conditions.SetRestoreMetricsPushedConditionToFalse(inv, err)
+				condErr := conditions.SetGlobalPostRestoreHookSucceededConditionToFalse(inv, err)
 				if condErr != nil {
 					return condErr
 				}
 			}
 		}
 
-		if !globalPostRestoreHookExecuted(inv) {
-			err = c.executeGlobalPostRestoreHook(inv)
+		if !restoreMetricsPushed(status.Conditions) {
+			err = c.sendRestoreMetrics(inv)
 			if err != nil {
-				condErr := conditions.SetGlobalPostRestoreHookSucceededConditionToFalse(inv, err)
+				condErr := conditions.SetRestoreMetricsPushedConditionToFalse(inv, err)
 				if condErr != nil {
 					return condErr
 				}
@@ -599,7 +599,9 @@ func (c *StashController) resolveRestoreTask(inv invoker.RestoreInvoker, reposit
 		taskResolver.PreTaskHookInput = make(map[string]string)
 		taskResolver.PreTaskHookInput[apis.HookType] = apis.PreRestoreHook
 	}
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore.Handler != nil {
+	if targetInfo.Hooks != nil &&
+		targetInfo.Hooks.PostRestore != nil &&
+		targetInfo.Hooks.PostRestore.Handler != nil {
 		taskResolver.PostTaskHookInput = make(map[string]string)
 		taskResolver.PostTaskHookInput[apis.HookType] = apis.PostRestoreHook
 	}
@@ -734,7 +736,7 @@ func (c *StashController) requeueRestoreInvoker(inv invoker.RestoreInvoker, key 
 
 func postRestoreHooksExecuted(inv invoker.RestoreInvoker) bool {
 	for _, targetInfo := range inv.GetTargetInfo() {
-		if targetInfo.Hooks != nil {
+		if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore != nil {
 			if !postRestoreHookExecutedForTarget(inv, targetInfo) {
 				return false
 			}
@@ -760,7 +762,9 @@ func postRestoreHookExecutedForTarget(inv invoker.RestoreInvoker, targetInfo inv
 }
 
 func globalPostRestoreHookExecuted(inv invoker.RestoreInvoker) bool {
-	if inv.GetGlobalHooks() == nil || inv.GetGlobalHooks().PostRestore.Handler == nil {
+	if inv.GetGlobalHooks() == nil ||
+		inv.GetGlobalHooks().PostRestore == nil ||
+		inv.GetGlobalHooks().PostRestore.Handler == nil {
 		return true
 	}
 	return kmapi.HasCondition(inv.GetStatus().Conditions, api_v1beta1.GlobalPostRestoreHookSucceeded) &&

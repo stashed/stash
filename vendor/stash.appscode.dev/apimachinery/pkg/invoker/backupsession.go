@@ -231,11 +231,8 @@ func calculateBackupTargetPhase(status v1beta1.BackupTargetStatus) v1beta1.Targe
 }
 
 func calculateBackupSessionPhase(status *v1beta1.BackupSessionStatus) v1beta1.BackupSessionPhase {
-	if kmapi.IsConditionFalse(status.Conditions, v1beta1.RetentionPolicyApplied) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryMetricsPushed) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) ||
+	if kmapi.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) ||
 		kmapi.IsConditionFalse(status.Conditions, v1beta1.BackupHistoryCleaned) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryIntegrityVerified) ||
 		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPreBackupHookSucceeded) ||
 		kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPostBackupHookSucceeded) ||
 		kmapi.IsConditionTrue(status.Conditions, v1beta1.DeadlineExceeded) {
@@ -263,15 +260,14 @@ func calculateBackupSessionPhase(status *v1beta1.BackupSessionStatus) v1beta1.Ba
 	}
 	completedTargets := successfulTargetCount + failedTargetCount
 
-	if completedTargets == len(status.Targets) {
-		if failedTargetCount > 0 && kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) {
+	if completedTargets == len(status.Targets) && kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) { // Pushing metrics is the last step.
+		if failedTargetCount > 0 ||
+			kmapi.IsConditionFalse(status.Conditions, v1beta1.RetentionPolicyApplied) ||
+			kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryMetricsPushed) ||
+			kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryIntegrityVerified) {
 			return v1beta1.BackupSessionFailed
 		}
-
-		if kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) &&
-			kmapi.IsConditionTrue(status.Conditions, v1beta1.BackupHistoryCleaned) {
-			return v1beta1.BackupSessionSucceeded
-		}
+		return v1beta1.BackupSessionSucceeded
 	}
 
 	return v1beta1.BackupSessionRunning

@@ -143,7 +143,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		statusErr = errors.NewAggregate([]error{statusErr, err})
 	}
 
-	// create status against the BackupSession for each hosts
+	// create event against the BackupSession for each hosts
 	for _, hostStats := range backupOutput.BackupTargetStatus.Stats {
 		var eventType, eventReason, eventMessage string
 		if hostStats.Error != "" {

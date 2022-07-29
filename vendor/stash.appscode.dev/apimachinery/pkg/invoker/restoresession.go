@@ -139,7 +139,7 @@ func (inv *RestoreSessionInvoker) GetTargetInfo() []RestoreTargetInfo {
 	return []RestoreTargetInfo{
 		{
 			Task:                  inv.restoreSession.Spec.Task,
-			Target:                getRestoreTarget(inv.restoreSession.Spec.Target, inv.restoreSession.Namespace),
+			Target:                getRestoreTarget(inv.restoreSession.Spec.Target.DeepCopy(), inv.restoreSession.Namespace),
 			RuntimeSettings:       inv.restoreSession.Spec.RuntimeSettings,
 			TempDir:               inv.restoreSession.Spec.TempDir,
 			InterimVolumeTemplate: inv.restoreSession.Spec.InterimVolumeTemplate,

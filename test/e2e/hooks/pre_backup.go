@@ -73,7 +73,7 @@ var _ = Describe("PreBackup Hook", func() {
 								PreBackup: &probev1.Handler{
 									HTTPGet: &core.HTTPGetAction{
 										Scheme: "HTTP",
-										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+										Host:   fmt.Sprintf("%s-0.%s.%s.svc.cluster.local", statefulset.Name, statefulset.Name, statefulset.Namespace),
 										Path:   "/success",
 										Port:   intstr.FromInt(framework.HttpPort),
 									},
@@ -221,7 +221,7 @@ var _ = Describe("PreBackup Hook", func() {
 								PreBackup: &probev1.Handler{
 									HTTPPost: &probev1.HTTPPostAction{
 										Scheme: "HTTP",
-										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+										Host:   fmt.Sprintf("%s-0.%s.%s.svc.cluster.local", statefulset.Name, statefulset.Name, f.Namespace()),
 										Path:   "/post-demo",
 										Port:   intstr.FromInt(framework.HttpPort),
 									},
@@ -477,7 +477,7 @@ var _ = Describe("PreBackup Hook", func() {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
 								PreBackup: &probev1.Handler{
 									TCPSocket: &core.TCPSocketAction{
-										Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+										Host: fmt.Sprintf("%s-0.%s.%s.svc.cluster.local", statefulset.Name, statefulset.Name, f.Namespace()),
 										Port: intstr.FromInt(framework.TcpPort),
 									},
 								},

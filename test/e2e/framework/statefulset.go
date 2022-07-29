@@ -117,6 +117,9 @@ func (fi *Invocation) WaitUntilStatefulSetReadyWithSidecar(meta metav1.ObjectMet
 				if err != nil {
 					return false, err
 				}
+				if len(pods) == 0 {
+					return false, nil
+				}
 
 				for i := range pods {
 					hasSidecar := false

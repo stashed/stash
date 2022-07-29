@@ -154,7 +154,7 @@ func (inv *RestoreBatchInvoker) GetTargetInfo() []RestoreTargetInfo {
 	for _, member := range inv.restoreBatch.Spec.Members {
 		targetInfo = append(targetInfo, RestoreTargetInfo{
 			Task:                  member.Task,
-			Target:                getRestoreTarget(member.Target, inv.restoreBatch.Namespace),
+			Target:                getRestoreTarget(member.Target.DeepCopy(), inv.restoreBatch.Namespace),
 			RuntimeSettings:       member.RuntimeSettings,
 			TempDir:               member.TempDir,
 			InterimVolumeTemplate: member.InterimVolumeTemplate,

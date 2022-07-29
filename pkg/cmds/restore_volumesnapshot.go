@@ -240,7 +240,9 @@ func (opt *VSoption) restoreVolumeSnapshot(targetInfo invoker.RestoreTargetInfo)
 		})
 	}
 	// If postRestore hook is specified, then execute those hooks after restore
-	if targetInfo.Hooks != nil && targetInfo.Hooks.PostRestore.Handler != nil {
+	if targetInfo.Hooks != nil &&
+		targetInfo.Hooks.PostRestore != nil &&
+		targetInfo.Hooks.PostRestore.Handler != nil {
 		klog.Infoln("Executing postRestore hooks........")
 		podName := meta.PodName()
 		if podName == "" {

@@ -92,9 +92,9 @@ spec:
                         type: object
                       executionPolicy:
                         default: Always
-                        description: ExecutionPolicy specifies when to execute a hook.
-                          Supported values are "Always", "OnFailure", "OnSuccess".
-                          Default value is "Always".
+                        description: 'ExecutionPolicy specifies when to execute a
+                          hook. Supported values are "Always", "OnFailure", "OnSuccess".
+                          Default value: "Always".'
                         enum:
                         - Always
                         - OnFailure

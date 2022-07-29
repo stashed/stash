@@ -70,11 +70,11 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup workload Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										HTTPGet: &core.HTTPGetAction{
 											Scheme: "HTTP",
-											Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+											Host:   fmt.Sprintf("%s-0.%s.%s.svc.cluster.local", statefulset.Name, statefulset.Name, statefulset.Namespace),
 											Path:   "/success",
 											Port:   intstr.FromInt(framework.HttpPort),
 										},
@@ -116,7 +116,7 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										HTTPGet: &core.HTTPGetAction{
 											Scheme: "HTTP",
@@ -163,7 +163,7 @@ var _ = Describe("PostBackup Hook", func() {
 					// Setup Backup
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: v1beta1.PostBackupHook{
+							PostBackup: &v1beta1.PostBackupHook{
 								Handler: &probev1.Handler{
 									HTTPGet: &core.HTTPGetAction{
 										Scheme: "HTTP",
@@ -220,11 +220,11 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup workload Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										HTTPPost: &probev1.HTTPPostAction{
 											Scheme: "HTTP",
-											Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+											Host:   fmt.Sprintf("%s-0.%s.%s.svc.cluster.local", statefulset.Name, statefulset.Name, statefulset.Namespace),
 											Path:   "/post-demo",
 											Port:   intstr.FromInt(framework.HttpPort),
 										},
@@ -266,7 +266,7 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										HTTPPost: &probev1.HTTPPostAction{
 											Scheme: "HTTP",
@@ -312,7 +312,7 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										HTTPPost: &probev1.HTTPPostAction{
 											Scheme: "HTTP",
@@ -359,7 +359,7 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										HTTPPost: &probev1.HTTPPostAction{
 											Scheme: "HTTP",
@@ -416,7 +416,7 @@ var _ = Describe("PostBackup Hook", func() {
 					// Setup Backup
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: v1beta1.PostBackupHook{
+							PostBackup: &v1beta1.PostBackupHook{
 								Handler: &probev1.Handler{
 									HTTPPost: &probev1.HTTPPostAction{
 										Scheme: "HTTP",
@@ -483,10 +483,10 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup workload Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										TCPSocket: &core.TCPSocketAction{
-											Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, statefulset.Name, f.Namespace()),
+											Host: fmt.Sprintf("%s-0.%s.%s.svc.cluster.local", statefulset.Name, statefulset.Name, statefulset.Namespace),
 											Port: intstr.FromInt(framework.TcpPort),
 										},
 									},
@@ -527,7 +527,7 @@ var _ = Describe("PostBackup Hook", func() {
 						// Setup Backup
 						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										TCPSocket: &core.TCPSocketAction{
 											Port: intstr.FromString(framework.TcpPortName),
@@ -572,7 +572,7 @@ var _ = Describe("PostBackup Hook", func() {
 					// Setup Backup
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: v1beta1.PostBackupHook{
+							PostBackup: &v1beta1.PostBackupHook{
 								Handler: &probev1.Handler{
 									TCPSocket: &core.TCPSocketAction{
 										Port: intstr.FromInt(9091),
@@ -630,7 +630,7 @@ var _ = Describe("PostBackup Hook", func() {
 					// Setup Backup
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: v1beta1.PostBackupHook{
+							PostBackup: &v1beta1.PostBackupHook{
 								Handler: &probev1.Handler{
 									Exec: &core.ExecAction{
 										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
@@ -684,7 +684,7 @@ var _ = Describe("PostBackup Hook", func() {
 					// Remove old data in postBackup hook
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: v1beta1.PostBackupHook{
+							PostBackup: &v1beta1.PostBackupHook{
 								Handler: &probev1.Handler{
 									Exec: &core.ExecAction{
 										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
@@ -740,7 +740,7 @@ var _ = Describe("PostBackup Hook", func() {
 					// Return non-zero exit code so that the postBackup hook fail
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
-							PostBackup: v1beta1.PostBackupHook{
+							PostBackup: &v1beta1.PostBackupHook{
 								Handler: &probev1.Handler{
 									Exec: &core.ExecAction{
 										Command: []string{"/bin/sh", "-c", "exit 1"},
@@ -802,7 +802,7 @@ var _ = Describe("PostBackup Hook", func() {
 						// Remove old data in postBackup hook
 						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										Exec: &core.ExecAction{
 											Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
@@ -860,7 +860,7 @@ var _ = Describe("PostBackup Hook", func() {
 						// Remove old data in postBackup hook
 						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										Exec: &core.ExecAction{
 											Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
@@ -920,7 +920,7 @@ var _ = Describe("PostBackup Hook", func() {
 						// Return non-zero exit code from postBackup hook so that it fail
 						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PostBackup: v1beta1.PostBackupHook{
+								PostBackup: &v1beta1.PostBackupHook{
 									Handler: &probev1.Handler{
 										Exec: &core.ExecAction{
 											Command: []string{"/bin/sh", "-c", "exit 1"},
@@ -972,7 +972,7 @@ var _ = Describe("PostBackup Hook", func() {
 				// Setup Backup
 				backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 					bc.Spec.Hooks = &v1beta1.BackupHooks{
-						PostBackup: v1beta1.PostBackupHook{
+						PostBackup: &v1beta1.PostBackupHook{
 							Handler: &probev1.Handler{
 								HTTPPost: &probev1.HTTPPostAction{
 									Scheme: "HTTP",
@@ -1019,7 +1019,7 @@ var _ = Describe("PostBackup Hook", func() {
 				// Setup Backup
 				backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 					bc.Spec.Hooks = &v1beta1.BackupHooks{
-						PostBackup: v1beta1.PostBackupHook{
+						PostBackup: &v1beta1.PostBackupHook{
 							Handler: &probev1.Handler{
 								HTTPPost: &probev1.HTTPPostAction{
 									Scheme: "HTTP",
@@ -1086,7 +1086,7 @@ var _ = Describe("PostBackup Hook", func() {
 				// Setup Backup
 				backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 					bc.Spec.Hooks = &v1beta1.BackupHooks{
-						PostBackup: v1beta1.PostBackupHook{
+						PostBackup: &v1beta1.PostBackupHook{
 							Handler: &probev1.Handler{
 								HTTPPost: &probev1.HTTPPostAction{
 									Host:   "hooks.slack.com",
@@ -1137,7 +1137,7 @@ var _ = Describe("PostBackup Hook", func() {
 				// Setup Backup
 				backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 					bc.Spec.Hooks = &v1beta1.BackupHooks{
-						PostBackup: v1beta1.PostBackupHook{
+						PostBackup: &v1beta1.PostBackupHook{
 							Handler: &probev1.Handler{
 								HTTPPost: &probev1.HTTPPostAction{
 									Host:   "hooks.slack.com",

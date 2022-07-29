@@ -37,7 +37,7 @@ func (fi *Invocation) HeadlessService(name string) core.Service {
 			Ports: []core.ServicePort{
 				{
 					Name: "http",
-					Port: 80,
+					Port: HttpPort,
 				},
 			},
 		},

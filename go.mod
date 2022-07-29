@@ -41,7 +41,7 @@ require (
 	kmodules.xyz/openshift v0.24.0
 	kmodules.xyz/prober v0.24.0
 	kmodules.xyz/webhook-runtime v0.24.0
-	stash.appscode.dev/apimachinery v0.22.1-0.20220726122311-2e6ad371979a
+	stash.appscode.dev/apimachinery v0.22.1-0.20220729111526-719487cd4f0b
 )
 
 require (

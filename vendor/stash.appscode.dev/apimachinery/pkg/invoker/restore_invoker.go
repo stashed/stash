@@ -184,9 +184,16 @@ func getInvokerStatusFromRestoreBatch(restoreBatch *v1beta1.RestoreBatch) Restor
 		Phase:           restoreBatch.Status.Phase,
 		SessionDuration: restoreBatch.Status.SessionDuration,
 		Conditions:      restoreBatch.Status.Conditions,
-		TargetStatus:    restoreBatch.Status.Members,
+		TargetStatus:    getMemberStatus(restoreBatch.DeepCopy()),
 		SessionDeadline: restoreBatch.Status.SessionDeadline,
 	}
+}
+
+func getMemberStatus(restoreBatch *v1beta1.RestoreBatch) []v1beta1.RestoreMemberStatus {
+	for i := range restoreBatch.Status.Members {
+		restoreBatch.Status.Members[i].Ref = defaultTargetNamespace(restoreBatch.Status.Members[i].Ref, restoreBatch.Namespace)
+	}
+	return restoreBatch.Status.Members
 }
 
 func getInvokerStatusFromRestoreSession(restoreSession *v1beta1.RestoreSession) RestoreInvokerStatus {
@@ -198,7 +205,7 @@ func getInvokerStatusFromRestoreSession(restoreSession *v1beta1.RestoreSession) 
 	var targetStatus v1beta1.RestoreMemberStatus
 	if restoreSession.Spec.Target != nil {
 		targetStatus = v1beta1.RestoreMemberStatus{
-			Ref:        restoreSession.Spec.Target.Ref,
+			Ref:        defaultTargetNamespace(restoreSession.Spec.Target.Ref, restoreSession.Namespace),
 			Conditions: restoreSession.Status.Conditions,
 			TotalHosts: restoreSession.Status.TotalHosts,
 			Stats:      restoreSession.Status.Stats,
@@ -210,6 +217,13 @@ func getInvokerStatusFromRestoreSession(restoreSession *v1beta1.RestoreSession) 
 	invokerStatus.Phase = calculateRestoreSessionPhase(targetStatus)
 
 	return invokerStatus
+}
+
+func defaultTargetNamespace(ref v1beta1.TargetRef, invNamespace string) v1beta1.TargetRef {
+	if ref.Namespace == "" {
+		ref.Namespace = invNamespace
+	}
+	return ref
 }
 
 func TargetRestoreCompleted(ref v1beta1.TargetRef, targetStatus []v1beta1.RestoreMemberStatus) bool {

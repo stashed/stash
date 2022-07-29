@@ -402,7 +402,11 @@ func (in *BackupHooks) DeepCopyInto(out *BackupHooks) {
 		*out = new(proberapiv1.Handler)
 		(*in).DeepCopyInto(*out)
 	}
-	in.PostBackup.DeepCopyInto(&out.PostBackup)
+	if in.PostBackup != nil {
+		in, out := &in.PostBackup, &out.PostBackup
+		*out = new(PostBackupHook)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -1067,7 +1071,11 @@ func (in *RestoreHooks) DeepCopyInto(out *RestoreHooks) {
 		*out = new(proberapiv1.Handler)
 		(*in).DeepCopyInto(*out)
 	}
-	in.PostRestore.DeepCopyInto(&out.PostRestore)
+	if in.PostRestore != nil {
+		in, out := &in.PostRestore, &out.PostRestore
+		*out = new(PostRestoreHook)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
