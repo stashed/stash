@@ -149,91 +149,90 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 
 func (c *StashController) getTotalHosts(target interface{}, driver api_v1beta1.Snapshotter) (*int32, error) {
 	// for cluster backup/restore, target is nil. in this case, there is only one host
-	var targetRef api_v1beta1.TargetRef
-	var rep *int32
 	if target == nil {
 		return pointer.Int32P(1), nil
 	}
-
-	// target interface can be BackupTarget or RestoreTarget. We need to extract TargetRef from it.
 	switch t := target.(type) {
 	case *api_v1beta1.BackupTarget:
-		if t.Replicas != nil {
-			rep = t.Replicas
-		}
-		if t == nil {
-			return pointer.Int32P(1), nil
-		}
-		targetRef = t.Ref
+		return c.getTotalHostForBackup(t, driver)
 
 	case *api_v1beta1.RestoreTarget:
-		if t == nil {
-			return pointer.Int32P(1), nil
-		}
-		targetRef = t.Ref
-
-		// for VolumeSnapshot, we consider each PVC as a separate host.
-		// hence, number of host = replica * number of PVC in each replica
-		if driver == api_v1beta1.VolumeSnapshotter {
-			replica := int32(1)
-			if t.Replicas != nil {
-				replica = pointer.Int32(t.Replicas)
-			}
-			return pointer.Int32P(replica * int32(len(t.VolumeClaimTemplates))), nil
-		}
-
-		// if volumeClaimTemplates is specified when using Restic driver, restore is done through job.
-		// stash creates restore job for each replica. hence, number of total host is the number of replicas.
-		if len(t.VolumeClaimTemplates) != 0 || t.Replicas != nil {
-			if t.Replicas == nil {
-				return pointer.Int32P(1), nil
-			} else {
-				return t.Replicas, nil
-			}
-		}
+		return c.getTotalHostForRestore(t, driver)
 	}
+	return nil, nil
+}
 
+func (c *StashController) getTotalHostForBackup(t *api_v1beta1.BackupTarget, driver api_v1beta1.Snapshotter) (*int32, error) {
+	if t == nil {
+		return pointer.Int32P(1), nil
+	}
 	if driver == api_v1beta1.VolumeSnapshotter {
-		return c.getTotalHostForVolumeSnapshotter(targetRef, rep)
+		return c.getNumberOfVolumeToSnapshot(t)
 	} else {
-		return c.getTotalHostForRestic(targetRef)
+		return c.getTotalHostForRestic(t.Ref)
 	}
 }
 
-func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1.TargetRef, replica *int32) (*int32, error) {
-	switch targetRef.Kind {
+func (c *StashController) getTotalHostForRestore(t *api_v1beta1.RestoreTarget, driver api_v1beta1.Snapshotter) (*int32, error) {
+	if t == nil {
+		return pointer.Int32P(1), nil
+	}
+
+	// if volumeClaimTemplates is specified, Stash creates the PVCs and restore into it.
+	if len(t.VolumeClaimTemplates) != 0 {
+		return getNumberOfPVCToCreate(t, driver), nil
+	}
+	return c.getTotalHostForRestic(t.Ref)
+}
+
+func getNumberOfPVCToCreate(t *api_v1beta1.RestoreTarget, driver api_v1beta1.Snapshotter) *int32 {
+	replica := int32(1)
+	if t.Replicas != nil {
+		replica = pointer.Int32(t.Replicas)
+	}
+	return pointer.Int32P(replica * int32(len(t.VolumeClaimTemplates)))
+}
+
+func (c *StashController) getNumberOfVolumeToSnapshot(t *api_v1beta1.BackupTarget) (*int32, error) {
+	switch t.Ref.Kind {
 	case apis.KindStatefulSet:
-		ss, err := c.kubeClient.AppsV1().StatefulSets(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		ss, err := c.kubeClient.AppsV1().StatefulSets(t.Ref.Namespace).Get(context.TODO(), t.Ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
-		if replica != nil {
-			return pointer.Int32P(*replica * int32(len(ss.Spec.VolumeClaimTemplates))), err
+		claimedVolumes := int32(0)
+		if t.Replicas != nil {
+			claimedVolumes = *t.Replicas * int32(len(ss.Spec.VolumeClaimTemplates))
+		} else {
+			claimedVolumes = pointer.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))
 		}
-		return pointer.Int32P(pointer.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
+		nonClaimedVolumes := countPVC(ss.Spec.Template.Spec.Volumes)
+
+		return pointer.Int32P(claimedVolumes + *nonClaimedVolumes), nil
+
 	case apis.KindDeployment:
-		deployment, err := c.kubeClient.AppsV1().Deployments(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		deployment, err := c.kubeClient.AppsV1().Deployments(t.Ref.Namespace).Get(context.TODO(), t.Ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(deployment.Spec.Template.Spec.Volumes), err
 
 	case apis.KindDaemonSet:
-		daemon, err := c.kubeClient.AppsV1().DaemonSets(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		daemon, err := c.kubeClient.AppsV1().DaemonSets(t.Ref.Namespace).Get(context.TODO(), t.Ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(daemon.Spec.Template.Spec.Volumes), err
 
 	case apis.KindReplicaSet:
-		rs, err := c.kubeClient.AppsV1().StatefulSets(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		rs, err := c.kubeClient.AppsV1().StatefulSets(t.Ref.Namespace).Get(context.TODO(), t.Ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return countPVC(rs.Spec.Template.Spec.Volumes), err
 
 	case apis.KindReplicationController:
-		rc, err := c.kubeClient.CoreV1().ReplicationControllers(targetRef.Namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
+		rc, err := c.kubeClient.CoreV1().ReplicationControllers(t.Ref.Namespace).Get(context.TODO(), t.Ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

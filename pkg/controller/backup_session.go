@@ -547,11 +547,10 @@ func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, 
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
-
+			in.Spec.BackoffLimit = pointer.Int32P(0)
 			if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
 				in.Spec.Template.Annotations = runtimeSettings.Pod.PodAnnotations
 			}
-			in.Spec.BackoffLimit = pointer.Int32P(0)
 			return in
 		},
 		metav1.PatchOptions{},
