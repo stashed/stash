@@ -554,7 +554,8 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 			// set RestoreSession as owner of this Job
 			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
-			in.Spec.Template = *jobTemplate
+			in.Spec.Template.Spec = jobTemplate.Spec
+			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, jobTemplate.Labels)
 			in.Spec.BackoffLimit = pointer.Int32P(0)
 			return in
 		},
@@ -685,9 +686,7 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 			// set restore invoker as owner of this Job
 			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
 
-			in.Labels = inv.GetLabels()
-			in.Spec.Template = *jobTemplate
-			// pass offshoot labels to job's pod
+			in.Spec.Template.Spec = jobTemplate.Spec
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name

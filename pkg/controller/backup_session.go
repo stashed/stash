@@ -464,9 +464,9 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 			// set BackupSession as owner of this Job so that it get cleaned automatically
 			// when the BackupSession gets deleted according to backupHistoryLimit
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
-			// pass offshoot labels to job's pod
-			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
+
 			in.Spec.Template.Spec = podSpec
+			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
 			in.Spec.BackoffLimit = pointer.Int32P(0)
@@ -543,9 +543,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, 
 			// when the BackupSession gets deleted according to backupHistoryLimit
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 
-			in.Labels = inv.GetLabels()
-			in.Spec.Template = *jobTemplate
-			// pass offshoot labels to job's pod
+			in.Spec.Template.Spec = jobTemplate.Spec
 			in.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.Template.Labels, inv.GetLabels())
 			in.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(in.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets)
 			in.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
