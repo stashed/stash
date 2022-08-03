@@ -157,7 +157,7 @@ func (c *StashController) getTotalHosts(target interface{}, driver api_v1beta1.S
 		return c.getTotalHostForBackup(t, driver)
 
 	case *api_v1beta1.RestoreTarget:
-		return c.getTotalHostForRestore(t, driver)
+		return c.getTotalHostForRestore(t)
 	}
 	return nil, nil
 }
@@ -172,19 +172,19 @@ func (c *StashController) getTotalHostForBackup(t *api_v1beta1.BackupTarget, dri
 	return c.getTotalHostForRestic(t.Ref)
 }
 
-func (c *StashController) getTotalHostForRestore(t *api_v1beta1.RestoreTarget, driver api_v1beta1.Snapshotter) (*int32, error) {
+func (c *StashController) getTotalHostForRestore(t *api_v1beta1.RestoreTarget) (*int32, error) {
 	if t == nil {
 		return pointer.Int32P(1), nil
 	}
 
 	// if volumeClaimTemplates is specified, Stash creates the PVCs and restore into it.
 	if len(t.VolumeClaimTemplates) != 0 {
-		return getNumberOfPVCToCreate(t, driver), nil
+		return getNumberOfPVCToCreate(t), nil
 	}
 	return c.getTotalHostForRestic(t.Ref)
 }
 
-func getNumberOfPVCToCreate(t *api_v1beta1.RestoreTarget, driver api_v1beta1.Snapshotter) *int32 {
+func getNumberOfPVCToCreate(t *api_v1beta1.RestoreTarget) *int32 {
 	replica := int32(1)
 	if t.Replicas != nil {
 		replica = pointer.Int32(t.Replicas)
