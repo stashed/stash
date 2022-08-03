@@ -1,8 +1,8 @@
 package sprig
 
 import (
-	"github.com/imdario/mergo"
 	"github.com/mitchellh/copystructure"
+	"gomodules.xyz/mergo"
 )
 
 func get(d map[string]interface{}, key string) interface{} {
@@ -162,9 +162,9 @@ func dig(ps ...interface{}) (interface{}, error) {
 }
 
 func digFromDict(dict map[string]interface{}, d interface{}, ks []string) (interface{}, error) {
-	k, ns := ks[0], ks[1:len(ks)]
+	k, ns := ks[0], ks[1:]
 	step, has := dict[k]
-	if !has {
+	if !has || step == nil {
 		return d, nil
 	}
 	if len(ns) == 0 {
