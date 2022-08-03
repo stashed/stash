@@ -168,9 +168,8 @@ func (c *StashController) getTotalHostForBackup(t *api_v1beta1.BackupTarget, dri
 	}
 	if driver == api_v1beta1.VolumeSnapshotter {
 		return c.getNumberOfVolumeToSnapshot(t)
-	} else {
-		return c.getTotalHostForRestic(t.Ref)
 	}
+	return c.getTotalHostForRestic(t.Ref)
 }
 
 func (c *StashController) getTotalHostForRestore(t *api_v1beta1.RestoreTarget, driver api_v1beta1.Snapshotter) (*int32, error) {
