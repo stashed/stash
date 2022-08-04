@@ -27,9 +27,8 @@ import (
 	"io"
 	"math/big"
 	"net"
-	"time"
-
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	bcrypt_lib "golang.org/x/crypto/bcrypt"
@@ -84,11 +83,13 @@ var masterPasswordSeed = "com.lyndir.masterpassword"
 
 var passwordTypeTemplates = map[string][][]byte{
 	"maximum": {[]byte("anoxxxxxxxxxxxxxxxxx"), []byte("axxxxxxxxxxxxxxxxxno")},
-	"long": {[]byte("CvcvnoCvcvCvcv"), []byte("CvcvCvcvnoCvcv"), []byte("CvcvCvcvCvcvno"), []byte("CvccnoCvcvCvcv"), []byte("CvccCvcvnoCvcv"),
+	"long": {
+		[]byte("CvcvnoCvcvCvcv"), []byte("CvcvCvcvnoCvcv"), []byte("CvcvCvcvCvcvno"), []byte("CvccnoCvcvCvcv"), []byte("CvccCvcvnoCvcv"),
 		[]byte("CvccCvcvCvcvno"), []byte("CvcvnoCvccCvcv"), []byte("CvcvCvccnoCvcv"), []byte("CvcvCvccCvcvno"), []byte("CvcvnoCvcvCvcc"),
 		[]byte("CvcvCvcvnoCvcc"), []byte("CvcvCvcvCvccno"), []byte("CvccnoCvccCvcv"), []byte("CvccCvccnoCvcv"), []byte("CvccCvccCvcvno"),
 		[]byte("CvcvnoCvccCvcc"), []byte("CvcvCvccnoCvcc"), []byte("CvcvCvccCvccno"), []byte("CvccnoCvcvCvcc"), []byte("CvccCvcvnoCvcc"),
-		[]byte("CvccCvcvCvccno")},
+		[]byte("CvccCvcvCvccno"),
+	},
 	"medium": {[]byte("CvcnoCvc"), []byte("CvcCvcno")},
 	"short":  {[]byte("Cvcn")},
 	"basic":  {[]byte("aaanaaan"), []byte("aannaaan"), []byte("aaannaaa")},
@@ -108,7 +109,7 @@ var templateCharacters = map[byte]string{
 }
 
 func derivePassword(counter uint32, passwordType, password, user, site string) string {
-	var templates = passwordTypeTemplates[passwordType]
+	templates := passwordTypeTemplates[passwordType]
 	if templates == nil {
 		return fmt.Sprintf("cannot find password template %s", passwordType)
 	}
@@ -129,10 +130,10 @@ func derivePassword(counter uint32, passwordType, password, user, site string) s
 	buffer.WriteString(site)
 	binary.Write(&buffer, binary.BigEndian, counter)
 
-	var hmacv = hmac.New(sha256.New, key)
+	hmacv := hmac.New(sha256.New, key)
 	hmacv.Write(buffer.Bytes())
-	var seed = hmacv.Sum(nil)
-	var temp = templates[int(seed[0])%len(templates)]
+	seed := hmacv.Sum(nil)
+	temp := templates[int(seed[0])%len(templates)]
 
 	buffer.Truncate(0)
 	for i, element := range temp {

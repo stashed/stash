@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,10 +29,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
+	proxyserver "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
+	proxyclient "go.bytebuilders.dev/license-proxyserver/client/clientset/versioned"
+	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 	"go.bytebuilders.dev/license-verifier/info"
-
-	verifier "go.bytebuilders.dev/license-verifier"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -61,17 +62,17 @@ const (
 )
 
 type LicenseEnforcer struct {
-	opts        *verifier.Options
-	config      *rest.Config
-	k8sClient   kubernetes.Interface
-	licenseFile string
+	opts       *verifier.Options
+	config     *rest.Config
+	kc         kubernetes.Interface
+	getLicense func() ([]byte, error)
 }
 
 // NewLicenseEnforcer returns a newly created license enforcer
 func NewLicenseEnforcer(config *rest.Config, licenseFile string) *LicenseEnforcer {
 	return &LicenseEnforcer{
-		licenseFile: licenseFile,
-		config:      config,
+		getLicense: getLicense(config, licenseFile),
+		config:     config,
 		opts: &verifier.Options{
 			CACert:   []byte(info.LicenseCA),
 			Features: info.ProductName,
@@ -79,20 +80,46 @@ func NewLicenseEnforcer(config *rest.Config, licenseFile string) *LicenseEnforce
 	}
 }
 
+func getLicense(cfg *rest.Config, licenseFile string) func() ([]byte, error) {
+	return func() ([]byte, error) {
+		licenseBytes, err := ioutil.ReadFile(licenseFile)
+		if errors.Is(err, os.ErrNotExist) {
+			req := proxyserver.LicenseRequest{
+				TypeMeta: metav1.TypeMeta{},
+				Request: &proxyserver.LicenseRequestRequest{
+					Features: info.Features(),
+				},
+			}
+			pc, err := proxyclient.NewForConfig(cfg)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed create client for license-proxyserver")
+			}
+			resp, err := pc.ProxyserverV1alpha1().LicenseRequests().Create(context.TODO(), &req, metav1.CreateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to read license")
+			}
+			licenseBytes = []byte(resp.Response.License)
+		} else if err != nil {
+			return nil, errors.Wrap(err, "failed to read license")
+		}
+		return licenseBytes, nil
+	}
+}
+
 func (le *LicenseEnforcer) createClients() (err error) {
-	if le.k8sClient == nil {
-		le.k8sClient, err = kubernetes.NewForConfig(le.config)
+	if le.kc == nil {
+		le.kc, err = kubernetes.NewForConfig(le.config)
 	}
 	return err
 }
 
 func (le *LicenseEnforcer) readLicenseFromFile() (err error) {
-	le.opts.License, err = ioutil.ReadFile(le.licenseFile)
+	le.opts.License, err = le.getLicense()
 	return err
 }
 
 func (le *LicenseEnforcer) readClusterUID() (err error) {
-	le.opts.ClusterUID, err = clusterid.ClusterUID(le.k8sClient.CoreV1().Namespaces())
+	le.opts.ClusterUID, err = clusterid.ClusterUID(le.kc.CoreV1().Namespaces())
 	return err
 }
 
@@ -131,7 +158,7 @@ func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) er
 		return err
 	}
 	// Read the namespace of current pod
-	namespace := meta.Namespace()
+	namespace := meta.PodNamespace()
 
 	// Find the root owner of this pod
 	owner, _, err := dynamic.DetectWorkload(
@@ -153,7 +180,7 @@ func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) er
 		Namespace: namespace,
 	}
 	// Create an event against the root owner specifying that the license verification failed
-	_, _, err = core_util.CreateOrPatchEvent(context.TODO(), le.k8sClient, eventMeta, func(in *core.Event) *core.Event {
+	_, _, err = core_util.CreateOrPatchEvent(context.TODO(), le.kc, eventMeta, func(in *core.Event) *core.Event {
 		in.InvolvedObject = *ref
 		in.Type = core.EventTypeWarning
 		in.Source = core.EventSource{Component: EventSourceLicenseVerifier}
@@ -223,8 +250,8 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 	}
 
 	le := &LicenseEnforcer{
-		licenseFile: licenseFile,
-		config:      config,
+		getLicense: getLicense(config, licenseFile),
+		config:     config,
 		opts: &verifier.Options{
 			CACert:   []byte(info.LicenseCA),
 			Features: info.ProductName,
@@ -282,8 +309,8 @@ func CheckLicenseFile(config *rest.Config, licenseFile string) error {
 
 	klog.V(8).Infoln("Verifying license.......")
 	le := &LicenseEnforcer{
-		licenseFile: licenseFile,
-		config:      config,
+		getLicense: getLicense(config, licenseFile),
+		config:     config,
 		opts: &verifier.Options{
 			CACert:   []byte(info.LicenseCA),
 			Features: info.ProductName,

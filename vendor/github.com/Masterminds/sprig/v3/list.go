@@ -53,7 +53,7 @@ func prepend(list interface{}, v interface{}) []interface{} {
 }
 
 func mustPrepend(list interface{}, v interface{}) ([]interface{}, error) {
-	//return append([]interface{}{v}, list...)
+	// return append([]interface{}{v}, list...)
 
 	tp := reflect.TypeOf(list).Kind()
 	switch tp {

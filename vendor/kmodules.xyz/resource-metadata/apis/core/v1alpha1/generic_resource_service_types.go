@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/resource-metadata/apis/shared"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,6 +54,7 @@ type GenericResourceServiceFacilities struct {
 	TLS        GenericResourceServiceFacilitator `json:"tls,omitempty"`
 	Backup     GenericResourceServiceFacilitator `json:"backup,omitempty"`
 	Monitoring GenericResourceServiceFacilitator `json:"monitoring,omitempty"`
+	Exec       []ExecServiceFacilitator          `json:"exec,omitempty"`
 }
 
 type GenericResourceServiceFacilitator struct {
@@ -61,6 +63,23 @@ type GenericResourceServiceFacilitator struct {
 	Resource *kmapi.ResourceID `json:"resource,omitempty"`
 	// +optional
 	Refs []kmapi.ObjectReference `json:"refs,omitempty"`
+}
+
+type ExecServiceFacilitator struct {
+	Alias     string                `json:"alias"`
+	Resource  string                `json:"resource"`
+	Ref       kmapi.ObjectReference `json:"ref"`
+	Container string                `json:"container"`
+	Command   []string              `json:"command"`
+	// +optional
+	KubectlCommand string `json:"kubectlCommand,omitempty"`
+	// +optional
+	Help string `json:"help,omitempty"`
+}
+
+type Service struct {
+	Name                   string `json:"name"`
+	shared.ResourceLocator `json:",inline"`
 }
 
 type FacilityUsage string

@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var (
@@ -44,9 +46,10 @@ func Features() []string {
 }
 
 func ParseFeatures(features string) []string {
-	return strings.FieldsFunc(features, func(r rune) bool {
+	out := strings.FieldsFunc(features, func(r rune) bool {
 		return unicode.IsSpace(r) || r == ',' || r == ';'
 	})
+	return sets.NewString(out...).List()
 }
 
 func SkipLicenseVerification() bool {

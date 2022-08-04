@@ -14,6 +14,7 @@ import (
 	"time"
 
 	util "github.com/Masterminds/goutils"
+	"github.com/dustin/go-humanize"
 	"github.com/huandu/xstrings"
 	"github.com/shopspring/decimal"
 )
@@ -336,20 +337,20 @@ var genericMap = map[string]interface{}{
 	"mustChunk":   mustChunk,
 
 	// Crypto:
-	"bcrypt":            bcrypt,
-	"htpasswd":          htpasswd,
-	"genPrivateKey":     generatePrivateKey,
-	"derivePassword":    derivePassword,
-	"buildCustomCert":   buildCustomCertificate,
-	"genCA":             generateCertificateAuthority,
-	"genCAWithKey":      generateCertificateAuthorityWithPEMKey,
-	"genSelfSignedCert": generateSelfSignedCertificate,
+	"bcrypt":                   bcrypt,
+	"htpasswd":                 htpasswd,
+	"genPrivateKey":            generatePrivateKey,
+	"derivePassword":           derivePassword,
+	"buildCustomCert":          buildCustomCertificate,
+	"genCA":                    generateCertificateAuthority,
+	"genCAWithKey":             generateCertificateAuthorityWithPEMKey,
+	"genSelfSignedCert":        generateSelfSignedCertificate,
 	"genSelfSignedCertWithKey": generateSelfSignedCertificateWithPEMKey,
-	"genSignedCert":     generateSignedCertificate,
-	"genSignedCertWithKey": generateSignedCertificateWithPEMKey,
-	"encryptAES":        encryptAES,
-	"decryptAES":        decryptAES,
-	"randBytes":         randBytes,
+	"genSignedCert":            generateSignedCertificate,
+	"genSignedCertWithKey":     generateSignedCertificateWithPEMKey,
+	"encryptAES":               encryptAES,
+	"decryptAES":               decryptAES,
+	"randBytes":                randBytes,
 
 	// UUIDs:
 	"uuidv4": uuidv4,
@@ -379,4 +380,20 @@ var genericMap = map[string]interface{}{
 	// URLs:
 	"urlParse": urlParse,
 	"urlJoin":  urlJoin,
+
+	// json path:
+	"jp": jsonpathFn,
+
+	// humanize:
+	"toBytes":          toBytes,
+	"mustToBytes":      mustToBytes,
+	"toIBytes":         toIBytes,
+	"mustToIBytes":     mustToIBytes,
+	"ordinal":          humanize.Ordinal,
+	"fromBytes":        humanize.ParseBytes,
+	"toComma":          toComma,
+	"mustToComma":      mustToComma,
+	"ftoa":             humanize.Ftoa,
+	"formatNumber":     formatNumber,
+	"mustFormatNumber": mustFormatNumber,
 }
