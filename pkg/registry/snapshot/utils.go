@@ -22,7 +22,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,7 +52,7 @@ func (r *REST) GetSnapshotsFromBackned(repository *stash.Repository, snapshotIDs
 }
 
 func (r *REST) getSnapshotsFromBackend(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
-	tempDir, err := ioutil.TempDir("", "stash")
+	tempDir, err := os.MkdirTemp("", "stash")
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +159,7 @@ func (r *REST) forgetSnapshotsFromLocalBackend(repository *stash.Repository, sna
 }
 
 func (r *REST) forgetSnapshotsFromBackend(repository *stash.Repository, snapshotIDs []string) error {
-	tempDir, err := ioutil.TempDir("", "stash")
+	tempDir, err := os.MkdirTemp("", "stash")
 	if err != nil {
 		return err
 	}
