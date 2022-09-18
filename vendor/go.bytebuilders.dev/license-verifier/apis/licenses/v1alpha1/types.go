@@ -26,6 +26,7 @@ import (
 type License struct {
 	metav1.TypeMeta `json:",inline,omitempty"`
 
+	Data         []byte            `json:"-"`
 	Issuer       string            `json:"issuer,omitempty"` // byte.builders
 	ProductLine  string            `json:"productLine,omitempty"`
 	TierName     string            `json:"tierName,omitempty"`
@@ -46,11 +47,18 @@ type User struct {
 	Email string `json:"email"`
 }
 
+// +kubebuilder:validation:Enum=unknown;active;invalid;canceled
 type LicenseStatus string
 
 const (
 	LicenseUnknown  LicenseStatus = "unknown"
 	LicenseActive   LicenseStatus = "active"
-	LicenseExpired  LicenseStatus = "expired"
+	LicenseInvalid  LicenseStatus = "invalid"
 	LicenseCanceled LicenseStatus = "canceled"
 )
+
+type Contract struct {
+	ID              string      `json:"id"`
+	StartTimestamp  metav1.Time `json:"startTimestamp"`
+	ExpiryTimestamp metav1.Time `json:"expiryTimestamp"`
+}

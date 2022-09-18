@@ -61,7 +61,7 @@ spec:
                     node=\"kind-control-plane\"}  1 In the example pod, namespace,
                     host_ip, pod_ip, node are labels. pod(resource name) and namespace
                     are default labels. No configurations is needed for those. \n
-                    To generate others labels, config should be given in the following
+                    # To generate others labels, config should be given in the following
                     way \n labels: - key: host_ip valuePath: .status.hostIP - key:
                     pod_ip valuePath: .status.podIP - key: node valuePath: .spec.nodeName
                     \n Either Value or ValuePath must be specified for a Label. If
@@ -135,13 +135,13 @@ spec:
                           node=\"kind-control-plane\"}  1 In the example pod, namespace,
                           host_ip, pod_ip, node are labels. pod(resource name) and
                           namespace are default labels. No configurations is needed
-                          for those. \n To generate others labels, config should be
-                          given in the following way \n labels: - key: host_ip valuePath:
-                          .status.hostIP - key: pod_ip valuePath: .status.podIP -
-                          key: node valuePath: .spec.nodeName \n Either Value or ValuePath
-                          must be specified for a Label. If both is specified, ValuePath
-                          is ignored. Note that if a valuePath doesn't exist for a
-                          label key, the label will be ignored."
+                          for those. \n # To generate others labels, config should
+                          be given in the following way \n labels: - key: host_ip
+                          valuePath: .status.hostIP - key: pod_ip valuePath: .status.podIP
+                          - key: node valuePath: .spec.nodeName \n Either Value or
+                          ValuePath must be specified for a Label. If both is specified,
+                          ValuePath is ignored. Note that if a valuePath doesn't exist
+                          for a label key, the label will be ignored."
                         properties:
                           key:
                             description: Key defines the label key

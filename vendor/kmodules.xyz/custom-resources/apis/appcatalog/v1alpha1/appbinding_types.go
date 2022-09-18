@@ -247,11 +247,16 @@ type SecretTransform struct {
 // from the broker should be renamed and stored under a different key
 // in the Secret.
 // For example, given the following credentials entry:
-//     "USERNAME": "johndoe"
+//
+//	"USERNAME": "johndoe"
+//
 // and the following RenameKeyTransform:
-//     {"from": "USERNAME", "to": "DB_USER"}
+//
+//	{"from": "USERNAME", "to": "DB_USER"}
+//
 // the following entry will appear in the Secret:
-//     "DB_USER": "johndoe"
+//
+//	"DB_USER": "johndoe"
 type RenameKeyTransform struct {
 	// The name of the key to rename
 	From string `json:"from" protobuf:"bytes,1,opt,name=from"`
@@ -262,9 +267,13 @@ type RenameKeyTransform struct {
 // AddKeyTransform specifies that Service Catalog should add an
 // additional entry to the Secret associated with the ServiceBinding.
 // For example, given the following AddKeyTransform:
-//     {"key": "CONNECTION_POOL_SIZE", "stringValue": "10"}
+//
+//	{"key": "CONNECTION_POOL_SIZE", "stringValue": "10"}
+//
 // the following entry will appear in the Secret:
-//     "CONNECTION_POOL_SIZE": "10"
+//
+//	"CONNECTION_POOL_SIZE": "10"
+//
 // Note that this transform should only be used to add non-sensitive
 // (non-secret) values. To add sensitive information, the
 // AddKeysFromTransform should be used instead.
@@ -283,7 +292,9 @@ type AddKeyTransform struct {
 // AddKeysFromTransform specifies that Service Catalog should merge
 // an existing secret into the Secret associated with the ServiceBinding.
 // For example, given the following AddKeysFromTransform:
-//     {"secretRef": {"namespace": "foo", "name": "bar"}}
+//
+//	{"secretRef": {"namespace": "foo", "name": "bar"}}
+//
 // the entries of the Secret "bar" from Namespace "foo" will be merged into
 // the credentials Secret.
 type AddKeysFromTransform struct {

@@ -18,7 +18,6 @@ package verifier
 
 import (
 	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"strings"
 
@@ -37,23 +36,25 @@ type Options struct {
 	License    []byte `json:"license"`
 }
 
-func VerifyLicense(opts *Options) (v1alpha1.License, error) {
-	if opts == nil {
-		return BadLicense(fmt.Errorf("missing license"))
-	}
-	cert, err := parseCertificate(opts.License)
+type ParserOptions struct {
+	ClusterUID string
+	CACert     *x509.Certificate
+	License    []byte
+}
+
+type VerifyOptions struct {
+	ParserOptions
+	Features string
+}
+
+func ParseLicense(opts ParserOptions) (v1alpha1.License, error) {
+	cert, err := info.ParseCertificate(opts.License)
 	if err != nil {
 		return BadLicense(err)
 	}
 
-	// First, create the set of root certificates. For this example we only
-	// have one. It's also possible to omit this in order to use the
-	// default root set of the current operating system.
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(opts.CACert)
-	if !ok {
-		return BadLicense(errors.New("failed to parse root certificate"))
-	}
+	roots.AddCert(opts.CACert)
 
 	crtopts := x509.VerifyOptions{
 		DNSName: opts.ClusterUID,
@@ -65,12 +66,8 @@ func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 
 	// wildcard certificate
 	if strings.HasPrefix(cert.Subject.CommonName, "*.") {
-		caCert, err := parseCertificate(opts.CACert)
-		if err != nil {
-			return BadLicense(err)
-		}
-		if len(caCert.Subject.Organization) > 0 {
-			crtopts.DNSName = "*." + caCert.Subject.Organization[0]
+		if len(opts.CACert.Subject.Organization) > 0 {
+			crtopts.DNSName = "*." + opts.CACert.Subject.Organization[0]
 		}
 	}
 
@@ -79,6 +76,7 @@ func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 			APIVersion: v1alpha1.SchemeGroupVersion.String(),
 			Kind:       "License",
 		},
+		Data:      opts.License,
 		Issuer:    "byte.builders",
 		Clusters:  cert.DNSNames,
 		NotBefore: &metav1.Time{Time: cert.NotBefore},
@@ -161,13 +159,7 @@ func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 	// ref: https://github.com/appscode/gitea/blob/master/models/stripe_license.go#L117-L126
 	if _, err := cert.Verify(crtopts); err != nil {
 		e2 := errors.Wrap(err, "failed to verify certificate")
-		license.Status = v1alpha1.LicenseExpired
-		license.Reason = e2.Error()
-		return license, e2
-	}
-	if !sets.NewString(cert.Subject.Organization...).HasAny(info.ParseFeatures(opts.Features)...) {
-		e2 := fmt.Errorf("license was not issued for %s", opts.Features)
-		license.Status = v1alpha1.LicenseExpired
+		license.Status = v1alpha1.LicenseInvalid
 		license.Reason = e2.Error()
 		return license, e2
 	}
@@ -175,13 +167,35 @@ func VerifyLicense(opts *Options) (v1alpha1.License, error) {
 	return license, nil
 }
 
-func parseCertificate(data []byte) (*x509.Certificate, error) {
-	block, _ := pem.Decode(data)
-	if block == nil {
-		// This probably is a JWT token, should be check for that when ready
-		return nil, errors.New("failed to parse certificate PEM")
+func CheckLicense(opts VerifyOptions) (v1alpha1.License, error) {
+	license, err := ParseLicense(opts.ParserOptions)
+	if err != nil {
+		return license, err
 	}
-	return x509.ParseCertificate(block.Bytes)
+	if !sets.NewString(license.Features...).HasAny(info.ParseFeatures(opts.Features)...) {
+		e2 := fmt.Errorf("license was not issued for %s", opts.Features)
+		license.Status = v1alpha1.LicenseInvalid
+		license.Reason = e2.Error()
+		return license, e2
+	}
+	license.Status = v1alpha1.LicenseActive
+	return license, nil
+}
+
+func VerifyLicense(opts Options) (v1alpha1.License, error) {
+	caCert, err := info.ParseCertificate(opts.CACert)
+	if err != nil {
+		return BadLicense(err)
+	}
+
+	return CheckLicense(VerifyOptions{
+		ParserOptions: ParserOptions{
+			ClusterUID: opts.ClusterUID,
+			CACert:     caCert,
+			License:    opts.License,
+		},
+		Features: opts.Features,
+	})
 }
 
 func BadLicense(err error) (v1alpha1.License, error) {

@@ -136,6 +136,7 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               secretTransforms:
                 description: List of transformations that should be applied to the
                   credentials associated with the ServiceBinding before they are inserted
@@ -190,6 +191,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                       type: object
                     removeKey:
                       description: RemoveKey represents a transform that removes a
@@ -226,6 +228,7 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               type:
                 description: Type used to facilitate programmatic handling of application.
                 type: string

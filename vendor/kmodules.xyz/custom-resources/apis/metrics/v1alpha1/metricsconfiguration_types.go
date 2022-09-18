@@ -152,7 +152,7 @@ type Field struct {
 // In the example pod, namespace, host_ip, pod_ip, node are labels.
 // pod(resource name) and namespace are default labels. No configurations is needed for those.
 //
-// To generate others labels, config should be given in the following way
+// # To generate others labels, config should be given in the following way
 //
 // labels:
 //   - key: host_ip

@@ -53,6 +53,7 @@ type REST struct {
 
 var (
 	_ rest.Scoper                   = &REST{}
+	_ rest.Storage                  = &REST{}
 	_ rest.Getter                   = &REST{}
 	_ rest.Lister                   = &REST{}
 	_ rest.GracefulDeleter          = &REST{}
@@ -79,6 +80,8 @@ func (r *REST) NamespaceScoped() bool {
 func (r *REST) New() runtime.Object {
 	return &repositories.Snapshot{}
 }
+
+func (r *REST) Destroy() {}
 
 func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
 	return repov1alpha1.SchemeGroupVersion.WithKind(repov1alpha1.ResourceKindSnapshot)

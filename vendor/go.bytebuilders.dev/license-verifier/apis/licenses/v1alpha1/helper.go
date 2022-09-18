@@ -19,3 +19,44 @@ package v1alpha1
 func (l License) DisableAnalytics() bool {
 	return len(l.FeatureFlags) > 0 && l.FeatureFlags["DisableAnalytics"] == "true"
 }
+
+func (i *License) Less(j *License) bool {
+	if i == nil {
+		return true
+	} else if j == nil {
+		return false
+	}
+
+	iRank := rankTier(i.TierName)
+	jRank := rankTier(j.TierName)
+	if iRank != jRank {
+		return iRank < jRank
+	}
+
+	if i.NotBefore == nil {
+		return true
+	} else if j.NotBefore == nil {
+		return false
+	}
+	if !i.NotBefore.Equal(j.NotBefore) {
+		return i.NotBefore.Before(j.NotBefore)
+	}
+
+	if i.NotAfter == nil {
+		return true
+	} else if j.NotAfter == nil {
+		return false
+	}
+	return i.NotAfter.Before(j.NotAfter)
+}
+
+func rankTier(t string) int {
+	// prefer enterprise licenses in a min priority queue
+	if t == "enterprise" {
+		return 0
+	} else if t == "" {
+		return 2
+	} else {
+		return 1
+	}
+}

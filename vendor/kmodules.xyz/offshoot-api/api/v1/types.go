@@ -136,6 +136,17 @@ type PodSpec struct {
 	// +optional
 	SecurityContext *core.PodSecurityContext `json:"securityContext,omitempty" protobuf:"bytes,13,opt,name=securityContext"`
 
+	// Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request.
+	// Value must be non-negative integer. The value zero indicates stop immediately via
+	// the kill signal (no opportunity to shut down).
+	// If this value is nil, the default grace period will be used instead.
+	// The grace period is the duration in seconds after the processes running in the pod are sent
+	// a termination signal and the time when the processes are forcibly halted with a kill signal.
+	// Set this value longer than the expected cleanup time for your process.
+	// Defaults to 30 seconds.
+	// +optional
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty" protobuf:"varint,14,opt,name=terminationGracePeriodSeconds"`
+
 	// Set DNS policy for the pod.
 	// Defaults to "ClusterFirst".
 	// Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
@@ -143,13 +154,31 @@ type PodSpec struct {
 	// To have DNS options set along with hostNetwork, you have to specify DNS policy
 	// explicitly to 'ClusterFirstWithHostNet'.
 	// +optional
-	DNSPolicy core.DNSPolicy `json:"dnsPolicy,omitempty" protobuf:"bytes,14,opt,name=dnsPolicy,casttype=k8s.io/api/core/v1.DNSPolicy"`
+	DNSPolicy core.DNSPolicy `json:"dnsPolicy,omitempty" protobuf:"bytes,15,opt,name=dnsPolicy,casttype=k8s.io/api/core/v1.DNSPolicy"`
 
 	// Specifies the DNS parameters of a pod.
 	// Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
 	// +optional
-	DNSConfig *core.PodDNSConfig `json:"dnsConfig,omitempty" protobuf:"bytes,15,opt,name=dnsConfig"`
+	DNSConfig *core.PodDNSConfig `json:"dnsConfig,omitempty" protobuf:"bytes,16,opt,name=dnsConfig"`
+
+	// TopologySpreadConstraints describes how a group of pods ought to spread across topology
+	// domains. Scheduler will schedule pods in a way which abides by the constraints.
+	// All topologySpreadConstraints are ANDed.
+	// +optional
+	// +patchMergeKey=topologyKey
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=topologyKey
+	// +listMapKey=whenUnsatisfiable
+	TopologySpreadConstraints []core.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty" patchStrategy:"merge" patchMergeKey:"topologyKey" protobuf:"bytes,17,rep,name=topologySpreadConstraints"`
+
+	// List of volumes that can be mounted by containers belonging to the pod.
+	// More info: https://kubernetes.io/docs/concepts/storage/volumes
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge,retainKeys
+	Volumes []core.Volume `json:"volumes,omitempty" patchStrategy:"merge,retainKeys" patchMergeKey:"name" protobuf:"bytes,18,rep,name=volumes"`
 
 	// List of initialization containers belonging to the pod.
 	// Init containers are executed in order prior to containers being started. If any
@@ -166,7 +195,7 @@ type PodSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	InitContainers []core.Container `json:"initContainers,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,16,rep,name=initContainers"`
+	InitContainers []core.Container `json:"initContainers,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,19,rep,name=initContainers"`
 
 	////////////////////////////////////////////////////////
 	// Application (database) Container Specific Settings //
@@ -181,16 +210,16 @@ type PodSpec struct {
 	// Cannot be updated.
 	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
-	Args []string `json:"args,omitempty" protobuf:"bytes,17,rep,name=args"`
+	Args []string `json:"args,omitempty" protobuf:"bytes,20,rep,name=args"`
 
 	// List of environment variables to set in the container.
 	// Cannot be updated.
 	// +optional
-	Env []core.EnvVar `json:"env,omitempty" protobuf:"bytes,18,rep,name=env"`
+	Env []core.EnvVar `json:"env,omitempty" protobuf:"bytes,21,rep,name=env"`
 
 	// Compute Resources required by the sidecar container.
 	// +optional
-	Resources core.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,19,opt,name=resources"`
+	Resources core.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,22,opt,name=resources"`
 
 	// Periodic probe of container liveness.
 	// Container will be restarted if the probe fails.
@@ -199,7 +228,7 @@ type PodSpec struct {
 	// Cannot be updated.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
-	LivenessProbe *core.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,20,opt,name=livenessProbe"`
+	LivenessProbe *core.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,23,opt,name=livenessProbe"`
 
 	// Periodic probe of container service readiness.
 	// Container will be removed from service endpoints if the probe fails.
@@ -208,29 +237,25 @@ type PodSpec struct {
 	// To ignore defaulting, set the value to empty ReadynessProbe "{}".
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
-	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty" protobuf:"bytes,21,opt,name=readinessProbe"`
+	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty" protobuf:"bytes,24,opt,name=readinessProbe"`
 
 	// Actions that the management system should take in response to container lifecycle events.
 	// Cannot be updated.
 	// +optional
-	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty" protobuf:"bytes,22,opt,name=lifecycle"`
+	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty" protobuf:"bytes,25,opt,name=lifecycle"`
 
 	// Security options the pod should run with.
 	// More info: https://kubernetes.io/docs/concepts/policy/security-context/
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 	// +optional
-	ContainerSecurityContext *core.SecurityContext `json:"containerSecurityContext,omitempty" protobuf:"bytes,23,opt,name=containerSecurityContext"`
+	ContainerSecurityContext *core.SecurityContext `json:"containerSecurityContext,omitempty" protobuf:"bytes,26,opt,name=containerSecurityContext"`
 
-	// TopologySpreadConstraints describes how a group of pods ought to spread across topology
-	// domains. Scheduler will schedule pods in a way which abides by the constraints.
-	// All topologySpreadConstraints are ANDed.
+	// Pod volumes to mount into the container's filesystem.
+	// Cannot be updated.
 	// +optional
-	// +patchMergeKey=topologyKey
+	// +patchMergeKey=mountPath
 	// +patchStrategy=merge
-	// +listType=map
-	// +listMapKey=topologyKey
-	// +listMapKey=whenUnsatisfiable
-	TopologySpreadConstraints []core.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty" patchStrategy:"merge" patchMergeKey:"topologyKey" protobuf:"bytes,24,rep,name=topologySpreadConstraints"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,27,rep,name=volumeMounts"`
 }
 
 // ServiceTemplateSpec describes the data a service should have when created from a template

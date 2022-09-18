@@ -19,8 +19,6 @@ package v1
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/golang/protobuf/jsonpb"
 )
 
 // Time is a wrapper around time.Time which supports correct
@@ -161,14 +159,6 @@ func (t Time) ToUnstructured() interface{} {
 	buf := make([]byte, 0, len(time.RFC3339))
 	buf = t.UTC().AppendFormat(buf, time.RFC3339)
 	return string(buf)
-}
-
-func (t Time) MarshalJSONPB(_ *jsonpb.Marshaler) ([]byte, error) {
-	return t.MarshalJSON()
-}
-
-func (t *Time) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, jstr []byte) error {
-	return t.UnmarshalJSON(jstr)
 }
 
 // OpenAPISchemaType is used by the kube-openapi generator when constructing
