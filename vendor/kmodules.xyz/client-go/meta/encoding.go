@@ -148,7 +148,6 @@ func UnmarshalFromJSON(data []byte, gv schema.GroupVersion) (runtime.Object, err
 //
 // WARNING: `json` tags are not respected when struct converted to map[string]interface{}
 // WARNING: Embedded structs are not decoded properly: https://github.com/mitchellh/mapstructure/pull/80
-//
 func Decode(input interface{}, output interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		DecodeHook: StringToQuantityHookFunc(),

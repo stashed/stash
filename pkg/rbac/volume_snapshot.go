@@ -24,7 +24,7 @@ import (
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	crdv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -107,7 +107,7 @@ func (opt *RBACOptions) ensureVolumeSnapshotterJobClusterRole() error {
 				Verbs:     []string{"get", "list"},
 			},
 			{
-				APIGroups: []string{crdv1.GroupName},
+				APIGroups: []string{vsapi.GroupName},
 				Resources: []string{"volumesnapshots", "volumesnapshotcontents", "volumesnapshotclasses"},
 				Verbs:     []string{"create", "get", "list", "watch", "patch", "delete"},
 			},
@@ -206,7 +206,7 @@ func (opt *RBACOptions) ensureVolumeSnapshotRestorerJobClusterRole() error {
 				Verbs:     []string{"get"},
 			},
 			{
-				APIGroups: []string{crdv1.GroupName},
+				APIGroups: []string{vsapi.GroupName},
 				Resources: []string{"volumesnapshots"},
 				Verbs:     []string{"get"},
 			},
@@ -255,7 +255,7 @@ func (opt *RBACOptions) ensureStorageReaderClassClusterRole() error {
 				Verbs:     []string{"get"},
 			},
 			{
-				APIGroups: []string{crdv1.GroupName},
+				APIGroups: []string{vsapi.GroupName},
 				Resources: []string{"volumesnapshots"},
 				Verbs:     []string{"get"},
 			},

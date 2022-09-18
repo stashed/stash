@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"strconv"
@@ -68,7 +67,7 @@ func NewTunnel(opt TunnelOptions) *Tunnel {
 		Remote:    opt.Remote,
 		stopChan:  make(chan struct{}, 1),
 		readyChan: make(chan struct{}, 1),
-		Out:       ioutil.Discard,
+		Out:       io.Discard,
 	}
 }
 
