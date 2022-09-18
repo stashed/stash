@@ -207,20 +207,29 @@ type ObjectInfo struct {
 	Ref      ObjectReference `json:"ref" protobuf:"bytes,2,opt,name=ref"`
 }
 
-// +kubebuilder:validation:Enum=auth_via;backup_via;catalog;connect_via;exposed_by;monitored_by;offshoot;restore_into;scaled_by;view;cert_issuer;policy
+// +kubebuilder:validation:Enum=auth_via;backup_via;catalog;connect_via;exposed_by;monitored_by;offshoot;restore_into;scaled_by;view;cert_issuer;policy;recommended_for;ops
 type EdgeLabel string
 
 const (
-	EdgeAuthVia     EdgeLabel = "auth_via"
-	EdgeBackupVia   EdgeLabel = "backup_via"
-	EdgeCatalog     EdgeLabel = "catalog"
-	EdgeConnectVia  EdgeLabel = "connect_via"
-	EdgeExposedBy   EdgeLabel = "exposed_by"
-	EdgeMonitoredBy EdgeLabel = "monitored_by"
-	EdgeOffshoot    EdgeLabel = "offshoot"
-	EdgeRestoreInto EdgeLabel = "restore_into"
-	EdgeScaledBy    EdgeLabel = "scaled_by"
-	EdgeView        EdgeLabel = "view"
-	EdgeCertIssuer  EdgeLabel = "cert_issuer"
-	EdgePolicy      EdgeLabel = "policy"
+	EdgeAuthVia        EdgeLabel = "auth_via"
+	EdgeBackupVia      EdgeLabel = "backup_via"
+	EdgeCatalog        EdgeLabel = "catalog"
+	EdgeConnectVia     EdgeLabel = "connect_via"
+	EdgeExposedBy      EdgeLabel = "exposed_by"
+	EdgeMonitoredBy    EdgeLabel = "monitored_by"
+	EdgeOffshoot       EdgeLabel = "offshoot"
+	EdgeRestoreInto    EdgeLabel = "restore_into"
+	EdgeScaledBy       EdgeLabel = "scaled_by"
+	EdgeView           EdgeLabel = "view"
+	EdgeCertIssuer     EdgeLabel = "cert_issuer"
+	EdgePolicy         EdgeLabel = "policy"
+	EdgeOps            EdgeLabel = "ops"
+	EdgeRecommendedFor EdgeLabel = "recommended_for"
 )
+
+func (e EdgeLabel) Direct() bool {
+	return e == EdgeOffshoot ||
+		e == EdgeView ||
+		e == EdgeOps ||
+		e == EdgeRecommendedFor
+}

@@ -100,18 +100,17 @@ func NewNatsConfig(cfg *rest.Config, clusterID string, LicenseFile string) (*Nat
 	}
 	defer resp.Body.Close()
 
-	var buf bytes.Buffer
-	_, err = io.Copy(&buf, resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(resp.Status + ", " + buf.String())
+		return nil, errors.New(resp.Status + ", " + string(body))
 	}
 
 	var natscred NatsCredential
-	err = json.Unmarshal(buf.Bytes(), &natscred)
+	err = json.Unmarshal(body, &natscred)
 	if err != nil {
 		return nil, err
 	}

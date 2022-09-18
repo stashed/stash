@@ -239,7 +239,7 @@ func SetStacktracePredicate(ctx context.Context, pred StacktracePred) {
 // Log is intended to be called once at the end of your request handler, via defer
 func (rl *respLogger) Log() {
 	latency := time.Since(rl.startTime)
-	auditID := request.GetAuditIDTruncated(rl.req)
+	auditID := request.GetAuditIDTruncated(rl.req.Context())
 
 	verb := rl.req.Method
 	if requestInfo, ok := request.RequestInfoFrom(rl.req.Context()); ok {
@@ -285,10 +285,11 @@ func (rl *respLogger) Log() {
 	klog.V(rl.logLevel()).InfoSDepth(1, "HTTP", keysAndValues...)
 }
 
-// raise log level for successful requests and requests to "/openapi/v2" as this is not configured for dynamic admission controller webhooks
+// raise log level for successful requests and requests to "/openapi/{v2,v3}" as this is not configured for dynamic admission controller webhooks
 func (rl *respLogger) logLevel() klog.Level {
 	if (rl.status >= http.StatusOK && rl.status < http.StatusMultipleChoices) ||
 		rl.req.RequestURI == "/openapi/v2" ||
+		rl.req.RequestURI == "/openapi/v3" ||
 		((rl.status == http.StatusForbidden || rl.status == http.StatusNotFound) &&
 			rl.req.Method == http.MethodGet &&
 			(strings.Contains(rl.req.RequestURI, "mutator") || strings.Contains(rl.req.RequestURI, "validator"))) {

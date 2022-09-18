@@ -134,7 +134,7 @@ func (c completedConfig) New() (*StashServer, error) {
 	}
 
 	// Add license handler
-	license.NewLicenseEnforcer(c.ExtraConfig.ClientConfig, c.ExtraConfig.LicenseFile).Install(genericServer.Handler.NonGoRestfulMux)
+	license.MustLicenseEnforcer(c.ExtraConfig.ClientConfig, c.ExtraConfig.LicenseFile).Install(genericServer.Handler.NonGoRestfulMux)
 
 	var admissionHooks []hooks.AdmissionHook
 	if c.ExtraConfig.EnableValidatingWebhook {

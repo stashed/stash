@@ -43,7 +43,7 @@ type Condition struct {
 	Type string `json:"type" protobuf:"bytes,1,opt,name=type"`
 	// Status of the condition, one of True, False, Unknown.
 	// +required
-	Status core.ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status"`
+	Status core.ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=k8s.io/api/core/v1.ConditionStatus"`
 	// If set, this represents the .metadata.generation that the condition was set based upon.
 	// For instance, if .metadata.generation is currently 12, but the .status.condition[x].observedGeneration is 9, the condition is out of date
 	// with respect to the current state of the instance.
