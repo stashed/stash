@@ -1353,12 +1353,12 @@ k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1/go.mod h1:C/N6wCaBHeBHkHU
 k8s.io/utils v0.0.0-20200729134348-d5654de09c73/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 h1:H9TCJUUx+2VA0ZiD9lvtaX8fthFsMoD+Izn93E/hm8U=
 k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
-kmodules.xyz/client-go v0.25.2 h1:Uav3RB85b3Pz2dhWI3VQR4XYjSSklpw8EFb88HHpMjI=
-kmodules.xyz/client-go v0.25.2/go.mod h1:PQAVWlXoHmk/OXqIuUz3xEW5H04uidiLwVyGX0yYnBQ=
+kmodules.xyz/client-go v0.25.3 h1:k/Ua12o/SKqpNsHo9oMbdJWlUBJpfSnHgmewHt9ZINI=
+kmodules.xyz/client-go v0.25.3/go.mod h1:PQAVWlXoHmk/OXqIuUz3xEW5H04uidiLwVyGX0yYnBQ=
 kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a h1:wo6TxmquRJwXXX/HejI6NRyfx13UzuHGjndTumlutbc=
 kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a/go.mod h1:3C5i73Z7fcMVyu5TXtPuizGD8vWAbesXFVp1ESbIa1k=
-kmodules.xyz/csi-utils v0.25.0 h1:7G9n8hd8IfPX/B3JW+/y6pxo0Two/VS0xPK58WA7C9I=
-kmodules.xyz/csi-utils v0.25.0/go.mod h1:OapLAHRlPZL2cMy0CsyJ/9aMkR6tno11eP/qBFnUqC0=
+kmodules.xyz/csi-utils v0.25.1 h1:nawNvZHflavV7ARDZu7CH0KNUmx5hKtbWKp6ORGrtC8=
+kmodules.xyz/csi-utils v0.25.1/go.mod h1:GL/DCW8gkFiyzwYJ82uMRqQY+O2tWyskZsgzIAxyk80=
 kmodules.xyz/custom-resources v0.25.0 h1:5JQTEuiv6lC/+VVFNKqzfX4YtJCmN5E7mcNtGnHGVQM=
 kmodules.xyz/custom-resources v0.25.0/go.mod h1:ULwzvLmOqZJcPSXKI7iLclYL5eYRlKx8Nbex28Ht19E=
 kmodules.xyz/objectstore-api v0.25.0 h1:xT7+SXBqAMtVkfOdp4espHAfZ6MYUC4G1OgzTkURNnU=

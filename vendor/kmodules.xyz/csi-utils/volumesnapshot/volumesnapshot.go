@@ -29,7 +29,7 @@ func CreateOrPatchVolumeSnapshot(ctx context.Context, c cs.Interface, meta metav
 		c,
 		meta,
 		func(in *apiv1beta1.VolumeSnapshot) *apiv1beta1.VolumeSnapshot {
-			out := convert_v1_to_v1beta1(transform(convert_v1beta1_to_v1(in)))
+			out := convert_spec_v1_to_v1beta1(transform(convert_spec_v1beta1_to_v1(in)))
 			out.Status = in.Status
 			return out
 		},
@@ -45,7 +45,7 @@ func CreateVolumeSnapshot(ctx context.Context, c cs.Interface, in *apiv1.VolumeS
 	if discovery.ExistsGroupVersionKind(c.Discovery(), apiv1.SchemeGroupVersion.String(), kindVolumeSnapshot) {
 		return c.SnapshotV1().VolumeSnapshots(in.Namespace).Create(ctx, in, metav1.CreateOptions{})
 	}
-	result, err := c.SnapshotV1beta1().VolumeSnapshots(in.Namespace).Create(ctx, convert_v1_to_v1beta1(in), metav1.CreateOptions{})
+	result, err := c.SnapshotV1beta1().VolumeSnapshots(in.Namespace).Create(ctx, convert_spec_v1_to_v1beta1(in), metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func WaitUntilVolumeSnapshotReady(c cs.Interface, meta types.NamespacedName) err
 	})
 }
 
-func convert_v1beta1_to_v1(in *apiv1beta1.VolumeSnapshot) *apiv1.VolumeSnapshot {
+func convert_spec_v1beta1_to_v1(in *apiv1beta1.VolumeSnapshot) *apiv1.VolumeSnapshot {
 	return &apiv1.VolumeSnapshot{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       in.Kind,
@@ -124,7 +124,26 @@ func convert_v1beta1_to_v1(in *apiv1beta1.VolumeSnapshot) *apiv1.VolumeSnapshot 
 	}
 }
 
-func convert_v1_to_v1beta1(in *apiv1.VolumeSnapshot) *apiv1beta1.VolumeSnapshot {
+func convert_v1beta1_to_v1(in *apiv1beta1.VolumeSnapshot) *apiv1.VolumeSnapshot {
+	out := convert_spec_v1beta1_to_v1(in)
+	if in.Status != nil {
+		out.Status = &apiv1.VolumeSnapshotStatus{
+			BoundVolumeSnapshotContentName: in.Status.BoundVolumeSnapshotContentName,
+			CreationTime:                   in.Status.CreationTime,
+			ReadyToUse:                     in.Status.ReadyToUse,
+			RestoreSize:                    in.Status.RestoreSize,
+		}
+		if in.Status.Error != nil {
+			out.Status.Error = &apiv1.VolumeSnapshotError{
+				Time:    in.Status.Error.Time,
+				Message: in.Status.Error.Message,
+			}
+		}
+	}
+	return out
+}
+
+func convert_spec_v1_to_v1beta1(in *apiv1.VolumeSnapshot) *apiv1beta1.VolumeSnapshot {
 	return &apiv1beta1.VolumeSnapshot{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       in.Kind,
@@ -139,4 +158,23 @@ func convert_v1_to_v1beta1(in *apiv1.VolumeSnapshot) *apiv1beta1.VolumeSnapshot 
 			VolumeSnapshotClassName: in.Spec.VolumeSnapshotClassName,
 		},
 	}
+}
+
+func convert_v1_to_v1beta1(in *apiv1.VolumeSnapshot) *apiv1beta1.VolumeSnapshot {
+	out := convert_spec_v1_to_v1beta1(in)
+	if in.Status != nil {
+		out.Status = &apiv1beta1.VolumeSnapshotStatus{
+			BoundVolumeSnapshotContentName: in.Status.BoundVolumeSnapshotContentName,
+			CreationTime:                   in.Status.CreationTime,
+			ReadyToUse:                     in.Status.ReadyToUse,
+			RestoreSize:                    in.Status.RestoreSize,
+		}
+		if in.Status.Error != nil {
+			out.Status.Error = &apiv1beta1.VolumeSnapshotError{
+				Time:    in.Status.Error.Time,
+				Message: in.Status.Error.Message,
+			}
+		}
+	}
+	return out
 }

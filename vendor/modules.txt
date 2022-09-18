@@ -1548,7 +1548,7 @@ k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/strings/slices
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.25.2
+# kmodules.xyz/client-go v0.25.3
 ## explicit; go 1.18
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -1576,7 +1576,7 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/csi-utils v0.25.0
+# kmodules.xyz/csi-utils v0.25.1
 ## explicit; go 1.18
 kmodules.xyz/csi-utils/volumesnapshot
 kmodules.xyz/csi-utils/volumesnapshot/v1
