@@ -18,7 +18,7 @@ package meta
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +43,7 @@ func IPv6EnabledInCluster(kc kubernetes.Interface) (bool, error) {
 }
 
 func IPv6EnabledInKernel() (bool, error) {
-	content, err := ioutil.ReadFile("/sys/module/ipv6/parameters/disable")
+	content, err := os.ReadFile("/sys/module/ipv6/parameters/disable")
 	if err != nil {
 		return false, err
 	}

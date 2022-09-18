@@ -24,11 +24,13 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	vs_api "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	vscs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	vsu "kmodules.xyz/csi-utils/volumesnapshot"
 )
 
 // Some of the code of this file has been copied from restic/restic repository.
@@ -79,7 +81,7 @@ func always(d time.Time, nr int) int {
 }
 
 type VolumeSnapshot struct {
-	VolumeSnap vs_api.VolumeSnapshot
+	VolumeSnap vsapi.VolumeSnapshot
 }
 
 type VolumeSnapshots []VolumeSnapshot
@@ -100,7 +102,7 @@ func (vs VolumeSnapshots) Swap(i, j int) {
 // 1. sorts all the VolumeSnapshot according to CreationTimeStamp.
 // 2. then list that are to be kept and removed according to the policy.
 // 3. remove VolumeSnapshot that are not necessary according to RetentionPolicy
-func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots VolumeSnapshots, namespace string, vsClient vs_cs.Interface) error {
+func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots VolumeSnapshots, namespace string, vsClient vscs.Interface) error {
 	// sorts the VolumeSnapshots according to CreationTimeStamp
 	sort.Sort(VolumeSnapshots(volumeSnapshots))
 
@@ -144,7 +146,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 	}
 
 	for _, vs := range removed {
-		err := vsClient.SnapshotV1beta1().VolumeSnapshots(namespace).Delete(context.TODO(), vs.VolumeSnap.Name, v1.DeleteOptions{})
+		err := vsu.DeleteVolumeSnapshot(context.TODO(), vsClient, types.NamespacedName{Namespace: namespace, Name: vs.VolumeSnap.Name})
 		if err != nil {
 			if kerr.IsNotFound(err) {
 				return nil
@@ -157,8 +159,8 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 	return nil
 }
 
-func CleanupSnapshots(policy v1alpha1.RetentionPolicy, hostBackupStats []v1beta1.HostBackupStats, namespace string, vsClient vs_cs.Interface) error {
-	vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(namespace).List(context.TODO(), v1.ListOptions{})
+func CleanupSnapshots(policy v1alpha1.RetentionPolicy, hostBackupStats []v1beta1.HostBackupStats, namespace string, vsClient vscs.Interface) error {
+	vsList, err := vsu.ListVolumeSnapshot(context.TODO(), vsClient, namespace, v1.ListOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) || len(vsList.Items) == 0 {
 			return nil

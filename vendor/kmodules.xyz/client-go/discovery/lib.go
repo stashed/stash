@@ -96,10 +96,6 @@ func CheckAPIVersion(client discovery.DiscoveryInterface, constraint string) (bo
 }
 
 func IsPreferredAPIResource(client discovery.DiscoveryInterface, groupVersion, kind string) bool {
-	return ExistsGroupVersionKind(client, groupVersion, kind)
-}
-
-func ExistsGroupVersionKind(client discovery.DiscoveryInterface, groupVersion, kind string) bool {
 	if resourceList, err := client.ServerPreferredResources(); discovery.IsGroupDiscoveryFailedError(err) || err == nil {
 		for _, resources := range resourceList {
 			if resources.GroupVersion != groupVersion {
@@ -115,8 +111,24 @@ func ExistsGroupVersionKind(client discovery.DiscoveryInterface, groupVersion, k
 	return false
 }
 
+func ExistsGroupVersionKind(client discovery.DiscoveryInterface, groupVersion, kind string) bool {
+	if _, resourceList, err := client.ServerGroupsAndResources(); discovery.IsGroupDiscoveryFailedError(err) || err == nil {
+		for _, resources := range resourceList {
+			if resources.GroupVersion != groupVersion {
+				continue
+			}
+			for _, resource := range resources.APIResources {
+				if resource.Kind == kind {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func ExistsGroupKind(client discovery.DiscoveryInterface, group, kind string) bool {
-	if resourceList, err := client.ServerPreferredResources(); discovery.IsGroupDiscoveryFailedError(err) || err == nil {
+	if _, resourceList, err := client.ServerGroupsAndResources(); discovery.IsGroupDiscoveryFailedError(err) || err == nil {
 		for _, resources := range resourceList {
 			gv, err := schema.ParseGroupVersion(resources.GroupVersion)
 			if err != nil {
@@ -142,7 +154,7 @@ func ExistsGroupKinds(client discovery.DiscoveryInterface, gk schema.GroupKind, 
 		desired[other] = false
 	}
 
-	if resourceList, err := client.ServerPreferredResources(); discovery.IsGroupDiscoveryFailedError(err) || err == nil {
+	if _, resourceList, err := client.ServerGroupsAndResources(); discovery.IsGroupDiscoveryFailedError(err) || err == nil {
 		for _, resources := range resourceList {
 			gv, err := schema.ParseGroupVersion(resources.GroupVersion)
 			if err != nil {

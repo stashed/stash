@@ -25,7 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	crdv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	vsfake "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/fake"
 	type_util "gomodules.xyz/pointer"
 	"gomodules.xyz/x/strings"
@@ -131,12 +131,29 @@ func TestCleanupSnapshots(t *testing.T) {
 				return
 			}
 			vsClient := vsfake.NewSimpleClientset(volumeSnasphots...)
+			vsClient.Fake.Resources = []*metav1.APIResourceList{
+				{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "APIResourceList",
+						APIVersion: "v1",
+					},
+					GroupVersion: "snapshot.storage.k8s.io/v1",
+					APIResources: []metav1.APIResource{
+						{
+							Name:         "volumesnapshots",
+							SingularName: "volumesnapshot",
+							Namespaced:   true,
+							Kind:         "VolumeSnapshot",
+						},
+					},
+				},
+			}
 			err = CleanupSnapshots(test.policy, test.hostBackupStats, testNamespace, vsClient)
 			if err != nil {
 				t.Errorf("Failed to cleanup VolumeSnapshots. Reason: %v", err)
 				return
 			}
-			vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(testNamespace).List(context.TODO(), metav1.ListOptions{})
+			vsList, err := vsClient.SnapshotV1().VolumeSnapshots(testNamespace).List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				t.Errorf("Failed to list remaining VolumeSnapshots. Reason: %v", err)
 				return
@@ -177,14 +194,14 @@ func getVolumeSnapshots(snapMetas []snapInfo) ([]runtime.Object, error) {
 	return snapshots, nil
 }
 
-func newSnapshot(snapMeta snapInfo) (*crdv1.VolumeSnapshot, error) {
+func newSnapshot(snapMeta snapInfo) (*vsapi.VolumeSnapshot, error) {
 	creationTimestamp, err := time.Parse(time.RFC3339, snapMeta.creationTime)
 	if err != nil {
 		return nil, err
 	}
 
 	snapshotContentName := fmt.Sprintf("snapshot-content-%s", snapMeta.name)
-	return &crdv1.VolumeSnapshot{
+	return &vsapi.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              snapMeta.name,
 			Namespace:         testNamespace,
@@ -193,14 +210,14 @@ func newSnapshot(snapMeta snapInfo) (*crdv1.VolumeSnapshot, error) {
 			SelfLink:          "/apis/snapshot.storage.k8s.io/v1alpha1/namespaces/" + testNamespace + "/volumesnapshots/" + snapMeta.name,
 			CreationTimestamp: metav1.Time{Time: creationTimestamp},
 		},
-		Spec: crdv1.VolumeSnapshotSpec{
+		Spec: vsapi.VolumeSnapshotSpec{
 			VolumeSnapshotClassName: type_util.StringP("standard"),
-			Source: crdv1.VolumeSnapshotSource{
+			Source: vsapi.VolumeSnapshotSource{
 				PersistentVolumeClaimName: &snapMeta.pvcName,
 				VolumeSnapshotContentName: &snapshotContentName,
 			},
 		},
-		Status: &crdv1.VolumeSnapshotStatus{
+		Status: &vsapi.VolumeSnapshotStatus{
 			ReadyToUse: type_util.TrueP(),
 			Error:      nil,
 		},

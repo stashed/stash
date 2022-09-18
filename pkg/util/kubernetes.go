@@ -26,7 +26,6 @@ import (
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	v1beta1_api "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	snapshot_cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -306,15 +305,6 @@ func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) e
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Spec.Replicas == obj.Status.ReadyReplicas, nil
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilVolumeSnapshotReady(c snapshot_cs.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(apis.RetryInterval, 2*time.Hour, func() (bool, error) {
-		if obj, err := c.SnapshotV1beta1().VolumeSnapshots(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return obj.Status != nil && obj.Status.ReadyToUse != nil && *obj.Status.ReadyToUse, nil
 		}
 		return false, nil
 	})

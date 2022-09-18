@@ -29,20 +29,21 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
-	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/pkg/volumesnapshot"
 
-	vs "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	vscs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
+	vsu "kmodules.xyz/csi-utils/volumesnapshot"
 	prober "kmodules.xyz/prober/probe"
 )
 
@@ -53,7 +54,7 @@ type VSoption struct {
 	config         *rest.Config
 	kubeClient     kubernetes.Interface
 	stashClient    cs.Interface
-	snapshotClient vs_cs.Interface
+	snapshotClient vscs.Interface
 	metrics        metrics.MetricsOptions
 
 	// Invoker
@@ -87,7 +88,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			opt.config = config
 			opt.kubeClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
-			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
+			opt.snapshotClient = vscs.NewForConfigOrDie(config)
 
 			// get backup session
 			backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(context.TODO(), opt.backupsession, metav1.GetOptions{})
@@ -174,7 +175,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
 		parts := strings.Split(bsMeta.Name, "-")
 		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, inv.GetObjectMeta().Namespace, pvcName, parts[len(parts)-1])
-		snapshot, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Create(context.TODO(), &volumeSnapshot, metav1.CreateOptions{})
+		snapshot, err := vsu.CreateVolumeSnapshot(context.TODO(), opt.snapshotClient, &volumeSnapshot)
 		if err != nil {
 			return nil, err
 		}
@@ -189,7 +190,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 	}
 	for i, pvcName := range pvcNames {
 		// wait until this VolumeSnapshot is ready to use
-		err = util.WaitUntilVolumeSnapshotReady(opt.snapshotClient, vsMeta[i])
+		err = vsu.WaitUntilVolumeSnapshotReady(opt.snapshotClient, types.NamespacedName{Namespace: vsMeta[i].Namespace, Name: vsMeta[i].Name})
 		if err != nil {
 			backupOutput.BackupTargetStatus.Stats = append(backupOutput.BackupTargetStatus.Stats, api_v1beta1.HostBackupStats{
 				Hostname: pvcName,
@@ -276,15 +277,15 @@ func (opt *VSoption) getTargetPVCNames(targetRef api_v1beta1.TargetRef, replicas
 	return pvcList, nil
 }
 
-func (opt *VSoption) getVolumeSnapshotDefinition(backupTarget *api_v1beta1.BackupTarget, namespace string, pvcName string, timestamp string) (volumeSnapshot vs.VolumeSnapshot) {
-	return vs.VolumeSnapshot{
+func (opt *VSoption) getVolumeSnapshotDefinition(backupTarget *api_v1beta1.BackupTarget, namespace string, pvcName string, timestamp string) vsapi.VolumeSnapshot {
+	return vsapi.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", pvcName, timestamp),
 			Namespace: namespace,
 		},
-		Spec: vs.VolumeSnapshotSpec{
+		Spec: vsapi.VolumeSnapshotSpec{
 			VolumeSnapshotClassName: &backupTarget.VolumeSnapshotClassName,
-			Source: vs.VolumeSnapshotSource{
+			Source: vsapi.VolumeSnapshotSource{
 				PersistentVolumeClaimName: &pvcName,
 			},
 		},
