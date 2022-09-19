@@ -22,20 +22,36 @@ import (
 
 	v1 "kmodules.xyz/client-go/batch/v1"
 	"kmodules.xyz/client-go/batch/v1beta1"
-	"kmodules.xyz/client-go/discovery"
+	du "kmodules.xyz/client-go/discovery"
 
+	"gomodules.xyz/sync"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	kutil "kmodules.xyz/client-go"
 )
 
 const kindCronJob = "CronJob"
 
+var (
+	once  sync.Once
+	useV1 bool
+)
+
+func detectVersion(c discovery.DiscoveryInterface) {
+	once.Do(func() error {
+		ok, err := du.HasGVK(c, batchv1.SchemeGroupVersion.String(), kindCronJob)
+		useV1 = ok
+		return err
+	})
+}
+
 func CreateOrPatchCronJob(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batchv1.CronJob) *batchv1.CronJob, opts metav1.PatchOptions) (*batchv1.CronJob, kutil.VerbType, error) {
-	if discovery.ExistsGroupVersionKind(c.Discovery(), batchv1.SchemeGroupVersion.String(), kindCronJob) {
+	detectVersion(c.Discovery())
+	if useV1 {
 		return v1.CreateOrPatchCronJob(ctx, c, meta, transform, opts)
 	}
 
@@ -57,7 +73,8 @@ func CreateOrPatchCronJob(ctx context.Context, c kubernetes.Interface, meta meta
 }
 
 func PatchCronJob(ctx context.Context, c kubernetes.Interface, cur *batchv1.CronJob, transform func(*batchv1.CronJob) *batchv1.CronJob, opts metav1.PatchOptions) (*batchv1.CronJob, kutil.VerbType, error) {
-	if discovery.ExistsGroupVersionKind(c.Discovery(), batchv1.SchemeGroupVersion.String(), kindCronJob) {
+	detectVersion(c.Discovery())
+	if useV1 {
 		return v1.PatchCronJob(ctx, c, cur, transform, opts)
 	}
 
@@ -77,7 +94,8 @@ func PatchCronJob(ctx context.Context, c kubernetes.Interface, cur *batchv1.Cron
 }
 
 func CreateCronJob(ctx context.Context, c kubernetes.Interface, in *batchv1.CronJob) (*batchv1.CronJob, error) {
-	if discovery.ExistsGroupVersionKind(c.Discovery(), batchv1.SchemeGroupVersion.String(), kindCronJob) {
+	detectVersion(c.Discovery())
+	if useV1 {
 		return c.BatchV1().CronJobs(in.Namespace).Create(ctx, in, metav1.CreateOptions{})
 	}
 	result, err := c.BatchV1beta1().CronJobs(in.Namespace).Create(ctx, convert_spec_v1_to_v1beta1(in), metav1.CreateOptions{})
@@ -88,7 +106,8 @@ func CreateCronJob(ctx context.Context, c kubernetes.Interface, in *batchv1.Cron
 }
 
 func GetCronJob(ctx context.Context, c kubernetes.Interface, meta types.NamespacedName) (*batchv1.CronJob, error) {
-	if discovery.ExistsGroupVersionKind(c.Discovery(), batchv1.SchemeGroupVersion.String(), kindCronJob) {
+	detectVersion(c.Discovery())
+	if useV1 {
 		return c.BatchV1().CronJobs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	}
 	result, err := c.BatchV1beta1().CronJobs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
@@ -99,7 +118,8 @@ func GetCronJob(ctx context.Context, c kubernetes.Interface, meta types.Namespac
 }
 
 func ListCronJob(ctx context.Context, c kubernetes.Interface, ns string, opts metav1.ListOptions) (*batchv1.CronJobList, error) {
-	if discovery.ExistsGroupVersionKind(c.Discovery(), batchv1.SchemeGroupVersion.String(), kindCronJob) {
+	detectVersion(c.Discovery())
+	if useV1 {
 		return c.BatchV1().CronJobs(ns).List(ctx, opts)
 	}
 	result, err := c.BatchV1beta1().CronJobs(ns).List(ctx, opts)
@@ -118,7 +138,8 @@ func ListCronJob(ctx context.Context, c kubernetes.Interface, ns string, opts me
 }
 
 func DeleteCronJob(ctx context.Context, c kubernetes.Interface, meta types.NamespacedName) error {
-	if discovery.ExistsGroupVersionKind(c.Discovery(), batchv1.SchemeGroupVersion.String(), kindCronJob) {
+	detectVersion(c.Discovery())
+	if useV1 {
 		return c.BatchV1().CronJobs(meta.Namespace).Delete(ctx, meta.Name, metav1.DeleteOptions{})
 	}
 	return c.BatchV1beta1().CronJobs(meta.Namespace).Delete(ctx, meta.Name, metav1.DeleteOptions{})
