@@ -47,7 +47,7 @@ var (
 
 func detectVersion(c discovery.DiscoveryInterface) {
 	once.Do(func() error {
-		versions, err := du.ListAPIVersions(c, apiv1.SchemeGroupVersion.String(), kindVolumeSnapshot)
+		versions, err := du.ListAPIVersions(c, apiv1.GroupName, kindVolumeSnapshot)
 		if err != nil {
 			return err
 		} else if len(versions) == 0 {

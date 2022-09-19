@@ -1580,7 +1580,7 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/csi-utils v0.25.3
+# kmodules.xyz/csi-utils v0.25.4
 ## explicit; go 1.18
 kmodules.xyz/csi-utils/volumesnapshot
 kmodules.xyz/csi-utils/volumesnapshot/v1
