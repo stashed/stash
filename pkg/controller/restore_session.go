@@ -38,7 +38,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/pointer"
-	batchv1 "k8s.io/api/batch/v1"
+	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -550,7 +550,7 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 		context.TODO(),
 		c.kubeClient,
 		meta,
-		func(in *batchv1.Job) *batchv1.Job {
+		func(in *batch.Job) *batch.Job {
 			// set RestoreSession as owner of this Job
 			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
@@ -682,7 +682,7 @@ func (c *StashController) ensureVolumeRestorerJob(inv invoker.RestoreInvoker, in
 		context.TODO(),
 		c.kubeClient,
 		jobMeta,
-		func(in *batchv1.Job) *batchv1.Job {
+		func(in *batch.Job) *batch.Job {
 			// set restore invoker as owner of this Job
 			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
 

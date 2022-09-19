@@ -38,7 +38,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/pointer"
-	batchv1 "k8s.io/api/batch/v1"
+	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -460,7 +460,7 @@ func (c *StashController) ensureBackupJob(inv invoker.BackupInvoker, targetInfo 
 		context.TODO(),
 		c.kubeClient,
 		jobMeta,
-		func(in *batchv1.Job) *batchv1.Job {
+		func(in *batch.Job) *batch.Job {
 			// set BackupSession as owner of this Job so that it get cleaned automatically
 			// when the BackupSession gets deleted according to backupHistoryLimit
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
@@ -538,7 +538,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(inv invoker.BackupInvoker, 
 		context.TODO(),
 		c.kubeClient,
 		jobMeta,
-		func(in *batchv1.Job) *batchv1.Job {
+		func(in *batch.Job) *batch.Job {
 			// set BackupSession as owner of this Job so that it get cleaned automatically
 			// when the BackupSession gets deleted according to backupHistoryLimit
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)

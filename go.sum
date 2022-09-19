@@ -1353,8 +1353,8 @@ k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1/go.mod h1:C/N6wCaBHeBHkHU
 k8s.io/utils v0.0.0-20200729134348-d5654de09c73/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 h1:H9TCJUUx+2VA0ZiD9lvtaX8fthFsMoD+Izn93E/hm8U=
 k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
-kmodules.xyz/client-go v0.25.3 h1:k/Ua12o/SKqpNsHo9oMbdJWlUBJpfSnHgmewHt9ZINI=
-kmodules.xyz/client-go v0.25.3/go.mod h1:PQAVWlXoHmk/OXqIuUz3xEW5H04uidiLwVyGX0yYnBQ=
+kmodules.xyz/client-go v0.25.4-0.20220919001439-1aa8c64d960f h1:vBDDAIDR63gDIlkn5T5bhFBtkQMgyIX75dmt2b6B2I8=
+kmodules.xyz/client-go v0.25.4-0.20220919001439-1aa8c64d960f/go.mod h1:PQAVWlXoHmk/OXqIuUz3xEW5H04uidiLwVyGX0yYnBQ=
 kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a h1:wo6TxmquRJwXXX/HejI6NRyfx13UzuHGjndTumlutbc=
 kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a/go.mod h1:3C5i73Z7fcMVyu5TXtPuizGD8vWAbesXFVp1ESbIa1k=
 kmodules.xyz/csi-utils v0.25.1 h1:nawNvZHflavV7ARDZu7CH0KNUmx5hKtbWKp6ORGrtC8=

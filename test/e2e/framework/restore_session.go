@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/x/arrays"
 	"gomodules.xyz/x/crypto/rand"
-	batchv1 "k8s.io/api/batch/v1"
+	batch "k8s.io/api/batch/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -96,12 +96,12 @@ func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta, in
 		}, WaitTimeOut, PullInterval)
 }
 
-func (f *Framework) GetRestoreJobs() ([]batchv1.Job, error) {
+func (f *Framework) GetRestoreJobs() ([]batch.Job, error) {
 	selector := labels.SelectorFromSet(map[string]string{
 		meta_util.ComponentLabelKey: v1beta1.StashRestoreComponent,
 		meta_util.ManagedByLabelKey: apis.StashKey,
 	})
-	var restoreJobs []batchv1.Job
+	var restoreJobs []batch.Job
 	jobs, err := f.KubeClient.BatchV1().Jobs(f.namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: selector.String()})
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (f *Framework) GetRestoreJobs() ([]batchv1.Job, error) {
 	return restoreJobs, nil
 }
 
-func JobsTargetMatch(job batchv1.Job, targetRef v1beta1.TargetRef) bool {
+func JobsTargetMatch(job batch.Job, targetRef v1beta1.TargetRef) bool {
 	containers := append(job.Spec.Template.Spec.InitContainers, job.Spec.Template.Spec.Containers...)
 	for _, c := range containers {
 		targetKindMatched, _ := arrays.Contains(c.Args, fmt.Sprintf("--target-kind=%s", targetRef.Kind))
