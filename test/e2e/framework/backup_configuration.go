@@ -28,11 +28,12 @@ import (
 
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/x/crypto/rand"
-	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batch "k8s.io/api/batch/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	batch_util "kmodules.xyz/client-go/batch"
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
@@ -80,14 +81,14 @@ func (fi *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfigur
 	return nil
 }
 
-func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batchv1beta1.CronJob, error) {
-	return f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
+func (f *Framework) GetCronJob(meta metav1.ObjectMeta) (*batch.CronJob, error) {
+	return batch_util.GetCronJob(context.TODO(), f.KubeClient, types.NamespacedName{Namespace: meta.Namespace, Name: getBackupCronJobName(meta)})
 }
 
 func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
+			cronJob, err := batch_util.GetCronJob(context.TODO(), f.KubeClient, types.NamespacedName{Namespace: meta.Namespace, Name: getBackupCronJobName(meta)})
 			if err != nil {
 				return false
 			}
@@ -101,7 +102,7 @@ func (f *Framework) EventuallyCronJobSuspended(meta metav1.ObjectMeta) GomegaAsy
 func (f *Framework) EventuallyCronJobResumed(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			cronJob, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(context.TODO(), getBackupCronJobName(meta), metav1.GetOptions{})
+			cronJob, err := batch_util.GetCronJob(context.TODO(), f.KubeClient, types.NamespacedName{Namespace: meta.Namespace, Name: getBackupCronJobName(meta)})
 			if err != nil {
 				return false
 			}
@@ -126,7 +127,7 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 	)
 }
 
-func (f *Framework) GetBackupJob(backupSessionName string) (*batchv1.Job, error) {
+func (f *Framework) GetBackupJob(backupSessionName string) (*batch.Job, error) {
 	return f.KubeClient.BatchV1().Jobs(f.namespace).Get(context.TODO(), getBackupJobName(backupSessionName, strconv.Itoa(0)), metav1.GetOptions{})
 }
 

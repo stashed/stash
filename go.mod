@@ -33,7 +33,7 @@ require (
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kube-aggregator v0.25.1
 	k8s.io/kubernetes v0.0.0-00010101000000-000000000000
-	kmodules.xyz/client-go v0.25.3
+	kmodules.xyz/client-go v0.25.4-0.20220919001439-1aa8c64d960f
 	kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a
 	kmodules.xyz/csi-utils v0.25.1
 	kmodules.xyz/custom-resources v0.25.0
