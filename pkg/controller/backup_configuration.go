@@ -105,7 +105,10 @@ func (c *StashController) validateBackupConfiguration(bc *api_v1beta1.BackupConf
 			return err
 		}
 	}
-	return c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace)
+	if err := c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace); err != nil {
+		return err
+	}
+	return validateTimeOut(bc.Spec.TimeOut)
 }
 
 func (c *StashController) initBackupConfigurationWatcher() {
@@ -655,4 +658,9 @@ func verifyCrossNamespacePermission(inv metav1.ObjectMeta, target api_v1beta1.Ta
 		return fmt.Errorf("cross-namespace target reference is not allowed for %q", target.Kind)
 	}
 	return nil
+}
+
+func validateTimeOut(timeOut string) error {
+	_, err := time.ParseDuration(timeOut)
+	return err
 }

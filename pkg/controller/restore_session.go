@@ -103,7 +103,10 @@ func (c *StashController) validateRestoreSession(rs *api_v1beta1.RestoreSession)
 			return err
 		}
 	}
-	return c.validateAgainstUsagePolicy(rs.Spec.Repository, rs.Namespace)
+	if err := c.validateAgainstUsagePolicy(rs.Spec.Repository, rs.Namespace); err != nil {
+		return err
+	}
+	return validateTimeOut(rs.Spec.TimeOut)
 }
 
 func (c *StashController) NewRestoreSessionMutator() hooks.AdmissionHook {
