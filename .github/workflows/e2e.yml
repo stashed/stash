@@ -60,7 +60,7 @@ jobs:
       - id: set-matrix
         name: Generate test matrix
         run: |
-          k8s=(v1.18.20 v1.20.15 v1.22.9 v1.24.0)
+          k8s=(v1.18.20 v1.20.15 v1.22.15 v1.24.6 v1.25.2)
 
           IFS=' '
           read -ra COMMENT <<< "${{ github.event.comment.body }}"
@@ -101,7 +101,7 @@ jobs:
         id: kind
         uses: engineerd/setup-kind@v0.5.0
         with:
-          version: v0.14.0
+          version: v0.16.0
           config: hack/kubernetes/kind.yaml
           image: kindest/node:${{ matrix.k8s }}
 
