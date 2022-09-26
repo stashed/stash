@@ -18,6 +18,7 @@ package rbac
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -37,7 +38,7 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func (opt *RBACOptions) EnsureRestoreInitContainerRBAC() error {
+func (opt *Options) EnsureRestoreInitContainerRBAC() error {
 	// ensure ClusterRole for restore init container
 	err := opt.ensureRestoreInitContainerClusterRole()
 	if err != nil {
@@ -53,12 +54,12 @@ func (opt *RBACOptions) EnsureRestoreInitContainerRBAC() error {
 	return opt.ensureCrossNamespaceRBAC()
 }
 
-func (opt *RBACOptions) ensureRestoreInitContainerClusterRole() error {
+func (opt *Options) ensureRestoreInitContainerClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashRestoreInitContainerClusterRole,
-		Labels: opt.OffshootLabels,
+		Labels: opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
@@ -101,14 +102,14 @@ func (opt *RBACOptions) ensureRestoreInitContainerClusterRole() error {
 	return err
 }
 
-func (opt *RBACOptions) ensureRestoreInitContainerRoleBinding() error {
+func (opt *Options) ensureRestoreInitContainerRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Namespace: opt.Invoker.Namespace,
-		Name:      getRestoreInitContainerRoleBindingName(opt.Owner.Kind, opt.Owner.Name),
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.invOpts.Namespace,
+		Name:      getRestoreInitContainerRoleBindingName(opt.owner.Kind, opt.owner.Name),
+		Labels:    opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.owner)
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
@@ -122,8 +123,8 @@ func (opt *RBACOptions) ensureRestoreInitContainerRoleBinding() error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in
@@ -135,16 +136,20 @@ func getRestoreInitContainerRoleBindingName(kind, name string) string {
 	return meta_util.ValidNameWithPrefixNSuffix(apis.StashRestoreInitContainerClusterRole, strings.ToLower(kind), name)
 }
 
-func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
+func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, logger klog.Logger, w *wapi.Workload) error {
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
 		context.TODO(),
 		getRestoreInitContainerRoleBindingName(w.Kind, w.Name),
 		metav1.DeleteOptions{})
-	if err != nil && !kerr.IsNotFound(err) {
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
-	if err == nil {
-		klog.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getRestoreInitContainerRoleBindingName(w.Kind, w.Name))
-	}
+	logger.Info(fmt.Sprintf("RoleBinding %s/%s has been deleted",
+		w.Namespace,
+		getRestoreInitContainerRoleBindingName(w.Kind, w.Name),
+	))
 	return nil
 }

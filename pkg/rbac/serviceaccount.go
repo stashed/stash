@@ -24,19 +24,19 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 )
 
-func (opt *RBACOptions) ensureServiceAccount() error {
+func (opt *Options) ensureServiceAccount() error {
 	saMeta := metav1.ObjectMeta{
-		Name:        opt.ServiceAccount.Name,
-		Namespace:   opt.ServiceAccount.Namespace,
-		Labels:      opt.OffshootLabels,
-		Annotations: opt.ServiceAccount.Annotations,
+		Name:        opt.serviceAccount.Name,
+		Namespace:   opt.serviceAccount.Namespace,
+		Labels:      opt.offshootLabels,
+		Annotations: opt.serviceAccount.Annotations,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(
 		context.TODO(),
-		opt.KubeClient,
+		opt.kubeClient,
 		saMeta,
 		func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
+			core_util.EnsureOwnerReference(&in.ObjectMeta, opt.owner)
 			return in
 		},
 		metav1.PatchOptions{},

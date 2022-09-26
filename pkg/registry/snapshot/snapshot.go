@@ -25,6 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/util"
 
+	core "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -106,12 +107,25 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
-		} else {
-			return nil, apierrors.NewInternalError(err)
 		}
+		return nil, apierrors.NewInternalError(err)
 	}
 
-	snapshots, err := r.GetSnapshotsFromBackned(repo, []string{snapshotId}, false)
+	secret, err := r.kubeClient.CoreV1().Secrets(repo.Namespace).Get(context.TODO(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil, apierrors.NewNotFound(core.Resource("secret"), repo.Spec.Backend.StorageSecretName)
+		}
+		return nil, apierrors.NewInternalError(err)
+	}
+	opt := Options{
+		Repository:  repo,
+		Secret:      secret,
+		SnapshotIDs: []string{snapshotId},
+		InCluster:   false,
+	}
+
+	snapshots, err := r.GetSnapshotsFromBackned(opt)
 	if err != nil {
 		return nil, apierrors.NewInternalError(err)
 	}
@@ -161,7 +175,20 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 		Items: make([]repositories.Snapshot, 0),
 	}
 	for _, repo := range selectedRepos {
-		snapshots, err := r.GetSnapshotsFromBackned(&repo, nil, false)
+		secret, err := r.kubeClient.CoreV1().Secrets(repo.Namespace).Get(context.TODO(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				return nil, apierrors.NewNotFound(core.Resource("secret"), repo.Spec.Backend.StorageSecretName)
+			}
+			return nil, apierrors.NewInternalError(err)
+		}
+		opt := Options{
+			Repository:  &repo,
+			Secret:      secret,
+			SnapshotIDs: nil,
+			InCluster:   false,
+		}
+		snapshots, err := r.GetSnapshotsFromBackned(opt)
 		if err != nil {
 			return nil, apierrors.NewInternalError(err)
 		}
@@ -202,20 +229,34 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil, false, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
-		} else {
-			return nil, false, apierrors.NewInternalError(err)
 		}
+		return nil, false, apierrors.NewInternalError(err)
+	}
+
+	secret, err := r.kubeClient.CoreV1().Secrets(repo.Namespace).Get(context.TODO(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil, false, apierrors.NewNotFound(core.Resource("secret"), repo.Spec.Backend.StorageSecretName)
+		}
+		return nil, false, apierrors.NewInternalError(err)
+	}
+	opt := Options{
+		Repository:  repo,
+		Secret:      secret,
+		SnapshotIDs: []string{snapshotId},
+		InCluster:   false,
 	}
 
 	// first, check if the snapshot exist
-	snapshots, err := r.GetSnapshotsFromBackned(repo, []string{snapshotId}, false)
+	snapshots, err := r.GetSnapshotsFromBackned(opt)
 	if err != nil {
 		return nil, false, apierrors.NewInternalError(err)
-	} else if len(snapshots) == 0 {
+	}
+	if len(snapshots) == 0 {
 		return nil, false, apierrors.NewNotFound(repositories.Resource(repov1alpha1.ResourceSingularSnapshot), name)
 	}
 	// delete snapshot
-	if err = r.ForgetSnapshotsFromBackend(repo, []string{snapshotId}, false); err != nil {
+	if err = r.ForgetSnapshotsFromBackend(opt); err != nil {
 		return nil, false, apierrors.NewInternalError(err)
 	}
 	return nil, true, nil

@@ -23,6 +23,7 @@ import (
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
 	stash_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1"
 	stash_listers_v1beta1 "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
+	"stash.appscode.dev/apimachinery/pkg/docker"
 
 	auditlib "go.bytebuilders.dev/audit/lib"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -31,7 +32,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	apps_listers "k8s.io/client-go/listers/apps/v1"
 	batch_listers "k8s.io/client-go/listers/batch/v1"
-	core_listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -81,16 +81,6 @@ type StashController struct {
 	ssQueue    *queue.Worker
 	ssInformer cache.SharedIndexInformer
 	ssLister   apps_listers.StatefulSetLister
-
-	// ReplicationController
-	rcQueue    *queue.Worker
-	rcInformer cache.SharedIndexInformer
-	rcLister   core_listers.ReplicationControllerLister
-
-	// ReplicaSet
-	rsQueue    *queue.Worker
-	rsInformer cache.SharedIndexInformer
-	rsLister   apps_listers.ReplicaSetLister
 
 	// Job
 	jobQueue    *queue.Worker
@@ -174,8 +164,6 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	c.dpQueue.Run(stopCh)
 	c.dsQueue.Run(stopCh)
 	c.ssQueue.Run(stopCh)
-	c.rcQueue.Run(stopCh)
-	c.rsQueue.Run(stopCh)
 
 	// start DeploymentConfig queue only if the cluster has DeploymentConfiguration resource (for openshift)
 	if c.dcInformer != nil {
@@ -194,4 +182,12 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 
 	<-stopCh
 	klog.Infoln("Stopping Stash controller")
+}
+
+func (c *StashController) getDockerImage() docker.Docker {
+	return docker.Docker{
+		Registry: c.DockerRegistry,
+		Image:    c.StashImage,
+		Tag:      c.StashImageTag,
+	}
 }

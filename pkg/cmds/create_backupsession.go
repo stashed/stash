@@ -18,8 +18,6 @@ package cmds
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"stash.appscode.dev/apimachinery/apis"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -97,40 +95,22 @@ func (opt *options) createBackupSession() error {
 		return err
 	}
 
-	bsMeta := metav1.ObjectMeta{
-		// Name format: <invoker name>-<timestamp in unix format>
-		Name:            meta.NameWithSuffix(opt.invokerName, fmt.Sprintf("%d", time.Now().Unix())),
-		Namespace:       opt.namespace,
-		OwnerReferences: []metav1.OwnerReference{},
+	retryLeft := int32(0)
+	retryConfig := inv.GetRetryConfig()
+	if retryConfig != nil {
+		retryLeft = retryConfig.MaxRetry
 	}
 
-	// create BackupSession
+	session := inv.NewSession()
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(
 		context.TODO(),
 		opt.stashClient.StashV1beta1(),
-		bsMeta,
+		session.ObjectMeta,
 		func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
-			// Set BackupConfiguration  as BackupSession Owner
 			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
-			in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
-				APIGroup: api_v1beta1.SchemeGroupVersion.Group,
-				Kind:     opt.invokerKind,
-				Name:     opt.invokerName,
-			}
-
-			in.Labels = inv.GetLabels()
-			// Add invoker name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
-			in.Labels[apis.LabelInvokerName] = opt.invokerName
-			in.Labels[apis.LabelInvokerType] = opt.invokerKind
-
-			// BackupConfiguration has single target. Add target info as label so that BackupSession watcher of sidecar
-			// can avoid processing the BackupSessions that are not responsible for its backup.
-			if opt.invokerKind == api_v1beta1.ResourceKindBackupConfiguration {
-				targets := inv.GetTargetInfo()
-				in.Labels[apis.LabelTargetKind] = targets[0].Target.Ref.Kind
-				in.Labels[apis.LabelTargetName] = targets[0].Target.Ref.Name
-				in.Labels[apis.LabelTargetNamespace] = targets[0].Target.Ref.Namespace
-			}
+			in.Labels = session.Labels
+			in.Spec = session.Spec
+			in.Spec.RetryLeft = retryLeft
 			return in
 		},
 		metav1.PatchOptions{},

@@ -150,8 +150,6 @@ func (c completedConfig) New() (*StashServer, error) {
 			ctrl.NewDeploymentWebhook(),
 			ctrl.NewDaemonSetWebhook(),
 			ctrl.NewStatefulSetWebhook(),
-			ctrl.NewReplicationControllerWebhook(),
-			ctrl.NewReplicaSetWebhook(),
 			ctrl.NewRestoreSessionMutator(),
 		)
 		if c.ExtraConfig.OcClient != nil {

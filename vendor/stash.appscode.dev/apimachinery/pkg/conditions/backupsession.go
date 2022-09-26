@@ -387,7 +387,7 @@ func SetBackupHistoryCleanedConditionToTrue(session *invoker.BackupSessionHandle
 	})
 }
 
-func SetBackupDeadlineExceededConditionToTrue(session *invoker.BackupSessionHandler, timeOut string) error {
+func SetBackupDeadlineExceededConditionToTrue(session *invoker.BackupSessionHandler, timeOut metav1.Duration) error {
 	return session.UpdateStatus(&v1beta1.BackupSessionStatus{
 		Conditions: []kmapi.Condition{
 			{

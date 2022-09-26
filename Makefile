@@ -291,7 +291,7 @@ unit-tests: $(BUILD_DIRS) bin/.container-$(DOTFILE_IMAGE)-TEST
 #
 # NB: -t is used to catch ctrl-c interrupt from keyboard and -t will be problematic for CI.
 
-GINKGO_ARGS ?= "--flakeAttempts=2"
+GINKGO_ARGS ?= "--flake-attempts=2 --timeout=4h"
 TEST_ARGS   ?=
 
 .PHONY: e2e-tests

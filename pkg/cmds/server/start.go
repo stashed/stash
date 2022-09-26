@@ -106,8 +106,6 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 		"/apis/admission.stash.appscode.com/v1alpha1/deploymentmutators",
 		"/apis/admission.stash.appscode.com/v1alpha1/daemonsetmutators",
 		"/apis/admission.stash.appscode.com/v1alpha1/statefulsetmutators",
-		"/apis/admission.stash.appscode.com/v1alpha1/replicationcontrollermutators",
-		"/apis/admission.stash.appscode.com/v1alpha1/replicasetmutators",
 		"/apis/admission.stash.appscode.com/v1alpha1/deploymentconfigmutators",
 		"/apis/admission.stash.appscode.com/v1beta1/restoresessionvalidators",
 		"/apis/admission.stash.appscode.com/v1beta1/restoresessionmutators",

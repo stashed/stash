@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
-	store "kmodules.xyz/objectstore-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 )
 
@@ -176,33 +175,6 @@ func UpsertPodSecurityContext(currentSC, newSC *core.PodSecurityContext) *core.P
 	return finalSC
 }
 
-func MergeLocalVolume(volumes []core.Volume, backend *store.Backend, volName string) []core.Volume {
-	// check if the local volume already exist
-	oldPos := -1
-	for i, vol := range volumes {
-		if vol.Name == volName {
-			oldPos = i
-			break
-		}
-	}
-
-	if backend != nil && backend.Local != nil {
-		// backend is local backend. we have to mount the local volume inside sidecar
-		vol, _ := backend.Local.ToVolumeAndMount(volName)
-		if oldPos != -1 {
-			volumes[oldPos] = vol
-		} else {
-			volumes = core_util.UpsertVolume(volumes, vol)
-		}
-	} else {
-		// backend is not local backend. we have to remove stash-local volume if we had mounted before
-		if oldPos != -1 {
-			volumes = append(volumes[:oldPos], volumes[oldPos+1:]...)
-		}
-	}
-	return volumes
-}
-
 func EnsureVolumeDeleted(volumes []core.Volume, name string) []core.Volume {
 	for i, v := range volumes {
 		if v.Name == name {
@@ -258,7 +230,7 @@ func DeleteAllConfigMapLocks(k8sClient kubernetes.Interface, namespace, name, ki
 func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
 	})
@@ -267,27 +239,8 @@ func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := kubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return obj.Status.DesiredNumberScheduled == obj.Status.NumberReady, nil
+			return obj.Status.DesiredNumberScheduled == obj.Status.NumberReady && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
 		}
-		return false, nil
-	})
-}
-
-func WaitUntilReplicaSetReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.AppsV1().ReplicaSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
-		}
-		return false, nil
-	})
-}
-
-func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
-		}
-
 		return false, nil
 	})
 }
@@ -295,7 +248,7 @@ func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := kubeClient.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
 	})
@@ -304,7 +257,7 @@ func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.Obje
 func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
-			return obj.Spec.Replicas == obj.Status.ReadyReplicas, nil
+			return obj.Spec.Replicas == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
 	})

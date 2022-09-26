@@ -53,7 +53,7 @@ type DriverHandler interface {
 }
 
 type TimeOutGetter interface {
-	GetTimeOut() string
+	GetTimeOut() *metav1.Duration
 }
 
 type Eventer interface {
@@ -71,4 +71,8 @@ type ObjectFormatter interface {
 
 type Summarizer interface {
 	GetSummary(target v1beta1.TargetRef, session kmapi.ObjectReference) *v1beta1.Summary
+}
+
+type RetryHandler interface {
+	GetRetryConfig() *v1beta1.RetryConfig
 }

@@ -261,7 +261,7 @@ func SetGlobalPostRestoreHookSucceededConditionToTrueWithMsg(invoker invoker.Res
 	})
 }
 
-func SetRestoreDeadlineExceededConditionToTrue(invoker invoker.RestoreInvoker, timeOut string) error {
+func SetRestoreDeadlineExceededConditionToTrue(invoker invoker.RestoreInvoker, timeOut metav1.Duration) error {
 	return invoker.SetCondition(nil, kmapi.Condition{
 		Type:               v1beta1.DeadlineExceeded,
 		Status:             core.ConditionTrue,

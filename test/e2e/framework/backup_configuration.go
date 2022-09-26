@@ -132,7 +132,7 @@ func (f *Framework) GetBackupJob(backupSessionName string) (*batch.Job, error) {
 }
 
 func getBackupCronJobName(objMeta metav1.ObjectMeta) string {
-	return meta_util.ValidCronJobNameWithPrefix(apis.PrefixStashTrigger, strings.ReplaceAll(objMeta.Name, ".", "-"))
+	return meta_util.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, "", strings.ReplaceAll(objMeta.Name, ".", "-"))
 }
 
 func getBackupJobName(backupSessionName string, index string) string {
@@ -149,12 +149,6 @@ func (f *Framework) EventuallyBackupInvokerPhase(invoker invoker.BackupInvoker) 
 					return ""
 				}
 				return bc.Status.Phase
-			case v1beta1.ResourceKindBackupBatch:
-				bb, err := f.StashClient.StashV1beta1().BackupBatches(invoker.GetObjectMeta().Namespace).Get(context.TODO(), invoker.GetObjectMeta().Name, metav1.GetOptions{})
-				if err != nil {
-					return ""
-				}
-				return bb.Status.Phase
 			default:
 				return ""
 			}

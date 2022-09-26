@@ -18,7 +18,10 @@ package invoker
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
@@ -28,12 +31,14 @@ import (
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/reference"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
+	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type BackupConfigurationInvoker struct {
@@ -154,7 +159,7 @@ func (inv *BackupConfigurationInvoker) GetDriver() v1beta1.Snapshotter {
 	return driver
 }
 
-func (inv *BackupConfigurationInvoker) GetTimeOut() string {
+func (inv *BackupConfigurationInvoker) GetTimeOut() *metav1.Duration {
 	return inv.backupConfig.Spec.TimeOut
 }
 
@@ -217,11 +222,11 @@ func (inv *BackupConfigurationInvoker) GetHash() string {
 }
 
 func (inv *BackupConfigurationInvoker) GetObjectJSON() (string, error) {
-	jsonObj, err := meta.MarshalToJson(inv.backupConfig, v1beta1.SchemeGroupVersion)
-	if err != nil {
-		return "", err
-	}
-	return string(jsonObj), nil
+	obj := inv.backupConfig.DeepCopy()
+	obj.ObjectMeta = removeMetaDecorators(obj.ObjectMeta)
+	// remove status from the object
+	obj.Status = v1beta1.BackupConfigurationStatus{}
+	return marshalToJSON(obj)
 }
 
 func (inv *BackupConfigurationInvoker) GetRetentionPolicy() v1alpha1.RetentionPolicy {
@@ -232,6 +237,20 @@ func (inv *BackupConfigurationInvoker) GetPhase() v1beta1.BackupInvokerPhase {
 	return inv.backupConfig.Status.Phase
 }
 
+func (inv *BackupConfigurationInvoker) UpdateObservedGeneration() error {
+	_, err := v1beta1_util.UpdateBackupConfigurationStatus(
+		context.TODO(),
+		inv.stashClient.StashV1beta1(),
+		inv.backupConfig.ObjectMeta,
+		func(in *v1beta1.BackupConfigurationStatus) (types.UID, *v1beta1.BackupConfigurationStatus) {
+			in.ObservedGeneration = inv.backupConfig.Generation
+			return inv.backupConfig.UID, in
+		},
+		metav1.UpdateOptions{},
+	)
+	return runtimeClient.IgnoreNotFound(err)
+}
+
 func (inv *BackupConfigurationInvoker) GetSummary(target v1beta1.TargetRef, session kmapi.ObjectReference) *v1beta1.Summary {
 	summary := getTargetBackupSummary(inv.stashClient, target, session)
 	summary.Invoker = core.TypedLocalObjectReference{
@@ -240,4 +259,70 @@ func (inv *BackupConfigurationInvoker) GetSummary(target v1beta1.TargetRef, sess
 		Name:     inv.backupConfig.Name,
 	}
 	return summary
+}
+
+func removeMetaDecorators(old metav1.ObjectMeta) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:            old.Name,
+		Namespace:       old.Namespace,
+		UID:             old.UID,
+		Generation:      old.Generation,
+		Labels:          old.Labels,
+		Annotations:     old.Annotations,
+		OwnerReferences: old.OwnerReferences,
+	}
+}
+
+func marshalToJSON(obj runtime.Object) (string, error) {
+	jsonObj, err := meta.MarshalToJson(obj, v1beta1.SchemeGroupVersion)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonObj), nil
+}
+
+func (inv *BackupConfigurationInvoker) GetRetryConfig() *v1beta1.RetryConfig {
+	return inv.backupConfig.Spec.RetryConfig
+}
+
+func (inv *BackupConfigurationInvoker) NewSession() *v1beta1.BackupSession {
+	retryLimit := int32(0)
+	if inv.backupConfig.Spec.RetryConfig != nil {
+		retryLimit = inv.backupConfig.Spec.RetryConfig.MaxRetry
+	}
+
+	session := &v1beta1.BackupSession{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            meta.NameWithSuffix(inv.backupConfig.Name, fmt.Sprintf("%d", time.Now().Unix())),
+			Namespace:       inv.backupConfig.Namespace,
+			OwnerReferences: []metav1.OwnerReference{},
+			Labels:          inv.getSessionLabels(),
+		},
+		Spec: v1beta1.BackupSessionSpec{
+			Invoker: v1beta1.BackupInvokerRef{
+				APIGroup: v1beta1.SchemeGroupVersion.Group,
+				Kind:     v1beta1.ResourceKindBackupConfiguration,
+				Name:     inv.backupConfig.Name,
+			},
+			RetryLeft: retryLimit,
+		},
+	}
+
+	return session
+}
+
+func (inv *BackupConfigurationInvoker) getSessionLabels() map[string]string {
+	sl := inv.GetLabels()
+
+	// Add invoker info
+	sl[apis.LabelInvokerType] = v1beta1.ResourceKindBackupConfiguration
+	sl[apis.LabelInvokerName] = inv.backupConfig.Name
+
+	// Add target info
+	target := inv.backupConfig.Spec.Target.Ref
+	sl[apis.LabelTargetKind] = target.Kind
+	sl[apis.LabelTargetName] = target.Name
+	sl[apis.LabelTargetNamespace] = target.Namespace
+
+	return sl
 }

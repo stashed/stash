@@ -38,10 +38,6 @@ func (matcher *sidecarMatcher) Match(actual interface{}) (success bool, err erro
 	switch obj := actual.(type) {
 	case *core.Pod:
 		return matcher.find(obj.Spec.Containers)
-	case *core.ReplicationController:
-		return matcher.find(obj.Spec.Template.Spec.Containers)
-	case *apps.ReplicaSet:
-		return matcher.find(obj.Spec.Template.Spec.Containers)
 	case *apps.Deployment:
 		return matcher.find(obj.Spec.Template.Spec.Containers)
 	case *apps.DaemonSet:

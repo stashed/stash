@@ -250,15 +250,19 @@ func (opt *Options) updateHostRestoreStatus(restoreOutput *restic.RestoreOutput,
 }
 
 func (opt *Options) isRestoredForThisHost(inv invoker.RestoreInvoker, targetInfo invoker.RestoreTargetInfo, host string) bool {
-	// if overall invoker Phase is "Succeeded" then restore has been complete for this host
-	if inv.GetStatus().Phase == api_v1beta1.RestoreSucceeded {
+	phase := inv.GetStatus().Phase
+	if phase == api_v1beta1.RestoreSucceeded ||
+		phase == api_v1beta1.RestoreFailed ||
+		phase == api_v1beta1.RestorePhaseUnknown ||
+		kmapi.IsConditionFalse(inv.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded) {
 		return true
 	}
 	for _, member := range inv.GetStatus().TargetStatus {
 		if invoker.TargetMatched(member.Ref, targetInfo.Target.Ref) {
-			// if restore invoker has entry for this host in status field and it is succeeded, then restore has been completed for this host
 			for _, hostStat := range member.Stats {
-				if hostStat.Hostname == host && hostStat.Phase == api_v1beta1.HostRestoreSucceeded {
+				if hostStat.Hostname == host &&
+					(hostStat.Phase == api_v1beta1.HostRestoreSucceeded ||
+						hostStat.Phase == api_v1beta1.HostRestoreFailed) {
 					return true
 				}
 			}

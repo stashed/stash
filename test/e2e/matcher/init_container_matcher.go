@@ -38,10 +38,6 @@ func (matcher *initContainerMatcher) Match(actual interface{}) (success bool, er
 	switch obj := actual.(type) {
 	case *core.Pod:
 		return matcher.find(obj.Spec.InitContainers)
-	case *core.ReplicationController:
-		return matcher.find(obj.Spec.Template.Spec.InitContainers)
-	case *apps.ReplicaSet:
-		return matcher.find(obj.Spec.Template.Spec.InitContainers)
 	case *apps.Deployment:
 		return matcher.find(obj.Spec.Template.Spec.InitContainers)
 	case *apps.DaemonSet:

@@ -39,7 +39,7 @@ func getSidecarRoleBindingName(name string, kind string) string {
 	return meta_util.ValidNameWithPrefixNSuffix(apis.StashSidecarClusterRole, strings.ToLower(kind), name)
 }
 
-func (opt *RBACOptions) EnsureSideCarRBAC() error {
+func (opt *Options) EnsureSideCarRBAC() error {
 	err := opt.ensureSidecarClusterRole()
 	if err != nil {
 		return err
@@ -53,9 +53,9 @@ func (opt *RBACOptions) EnsureSideCarRBAC() error {
 	return opt.ensureCrossNamespaceRBAC()
 }
 
-func (opt *RBACOptions) ensureSidecarClusterRole() error {
+func (opt *Options) ensureSidecarClusterRole() error {
 	meta := metav1.ObjectMeta{Name: apis.StashSidecarClusterRole}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -74,7 +74,7 @@ func (opt *RBACOptions) ensureSidecarClusterRole() error {
 			},
 			{
 				APIGroups: []string{apps.GroupName},
-				Resources: []string{"deployments", "statefulsets", "daemonsets", "replicasets"},
+				Resources: []string{"deployments", "statefulsets", "daemonsets"},
 				Verbs:     []string{"get", "list", "patch"},
 			},
 			{
@@ -83,19 +83,8 @@ func (opt *RBACOptions) ensureSidecarClusterRole() error {
 					"deployments/finalizers",
 					"statefulsets/finalizers",
 					"daemonsets/finalizers",
-					"replicasets/finalizers",
 				},
 				Verbs: []string{"update"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"replicationcontrollers"},
-				Verbs:     []string{"get", "list", "patch"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"replicationcontrollers/finalizers"},
-				Verbs:     []string{"update"},
 			},
 			{
 				APIGroups: []string{core.GroupName},
@@ -153,14 +142,14 @@ func (opt *RBACOptions) ensureSidecarClusterRole() error {
 	return err
 }
 
-func (opt *RBACOptions) ensureSidecarRoleBinding() error {
+func (opt *Options) ensureSidecarRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Namespace: opt.Invoker.Namespace,
-		Name:      getSidecarRoleBindingName(opt.Owner.Name, opt.Owner.Kind),
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.invOpts.Namespace,
+		Name:      getSidecarRoleBindingName(opt.owner.Name, opt.owner.Kind),
+		Labels:    opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.owner)
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
@@ -174,8 +163,8 @@ func (opt *RBACOptions) ensureSidecarRoleBinding() error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in

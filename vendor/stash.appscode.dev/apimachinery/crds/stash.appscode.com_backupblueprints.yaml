@@ -2411,6 +2411,22 @@ spec:
                 - name
                 - prune
                 type: object
+              retryConfig:
+                description: RetryConfig specify a configuration for retry a backup
+                  if it fails. By default, Stash does not retry any failed backup.
+                properties:
+                  delay:
+                    description: 'The amount of time to wait before next retry. If
+                      you don''t specify this field, Stash will retry immediately.
+                      Format: 30s, 2m, 1h etc.'
+                    type: string
+                  maxRetry:
+                    default: 1
+                    description: 'MaxRetry specifies the maximum number of attempts
+                      Stash should retry. Default value: 1'
+                    format: int32
+                    type: integer
+                type: object
               runtimeSettings:
                 description: RuntimeSettings allow to specify Resources, NodeSelector,
                   Affinity, Toleration, ReadinessProbe etc.

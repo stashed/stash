@@ -27,7 +27,7 @@ import (
 	invoker2 "stash.appscode.dev/apimachinery/pkg/invoker"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -91,14 +91,6 @@ func (fi *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v
 		fi.EventuallyStatefulSet(objMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for StatefulSet to be ready with sidecar")
 		err = fi.WaitUntilStatefulSetReadyWithSidecar(objMeta)
-	case apis.KindReplicaSet:
-		fi.EventuallyReplicaSet(objMeta).Should(HaveSidecar(apis.StashContainer))
-		By("Waiting for ReplicaSet to be ready with sidecar")
-		err = fi.WaitUntilRSReadyWithSidecar(objMeta)
-	case apis.KindReplicationController:
-		fi.EventuallyReplicationController(objMeta).Should(HaveSidecar(apis.StashContainer))
-		By("Waiting for ReplicationController to be ready with sidecar")
-		err = fi.WaitUntilRCReadyWithSidecar(objMeta)
 	}
 	return backupConfig, err
 }
@@ -153,16 +145,6 @@ func (fi *Invocation) WaitForTargetToBeReadyWithSidecar(kind string, objMeta met
 		fi.EventuallyStatefulSet(objMeta).Should(HaveSidecar(apis.StashContainer))
 		By("Waiting for StatefulSet to be ready with sidecar")
 		return fi.WaitUntilStatefulSetReadyWithSidecar(objMeta)
-	case apis.KindReplicaSet:
-		By("Verifying that sidecar has been injected")
-		fi.EventuallyReplicaSet(objMeta).Should(HaveSidecar(apis.StashContainer))
-		By("Waiting for ReplicaSet to be ready with sidecar")
-		return fi.WaitUntilRSReadyWithSidecar(objMeta)
-	case apis.KindReplicationController:
-		By("Verifying that sidecar has been injected")
-		fi.EventuallyReplicationController(objMeta).Should(HaveSidecar(apis.StashContainer))
-		By("Waiting for ReplicationController to be ready with sidecar")
-		return fi.WaitUntilRCReadyWithSidecar(objMeta)
 	}
 	return nil
 }
@@ -206,10 +188,6 @@ func (fi *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.R
 		fi.EventuallyDaemonSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
 	case apis.KindStatefulSet:
 		fi.EventuallyStatefulSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
-	case apis.KindReplicaSet:
-		fi.EventuallyReplicaSet(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
-	case apis.KindReplicationController:
-		fi.EventuallyReplicationController(objMeta).Should(HaveInitContainer(apis.StashInitContainer))
 	}
 
 	By("Waiting for restore process to complete")
@@ -270,12 +248,6 @@ func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	case apis.KindStatefulSet:
 		targetRef.Kind = apis.KindStatefulSet
 		targetRef.APIVersion = apps.SchemeGroupVersion.String()
-	case apis.KindReplicationController:
-		targetRef.Kind = apis.KindReplicationController
-		targetRef.APIVersion = core.SchemeGroupVersion.String()
-	case apis.KindReplicaSet:
-		targetRef.Kind = apis.KindReplicaSet
-		targetRef.APIVersion = apps.SchemeGroupVersion.String()
 	case apis.KindPersistentVolumeClaim:
 		targetRef.Kind = apis.KindPersistentVolumeClaim
 		targetRef.APIVersion = core.SchemeGroupVersion.String()
@@ -286,8 +258,27 @@ func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	return targetRef
 }
 
+func (fi *Invocation) VerifySidecarInjected(workloadMeta metav1.ObjectMeta, kind string) error {
+	By("Verifying that sidecar has been injected")
+	switch kind {
+	case apis.KindDeployment:
+		fi.EventuallyDeployment(workloadMeta).Should(HaveSidecar(apis.StashContainer))
+		By("Waiting for Deployment to be ready with sidecar")
+		return fi.WaitUntilDeploymentReadyWithSidecar(workloadMeta)
+	case apis.KindDaemonSet:
+		fi.EventuallyDaemonSet(workloadMeta).Should(HaveSidecar(apis.StashContainer))
+		By("Waiting for DaemonSet to be ready with sidecar")
+		return fi.WaitUntilDaemonSetReadyWithSidecar(workloadMeta)
+	case apis.KindStatefulSet:
+		fi.EventuallyStatefulSet(workloadMeta).Should(HaveSidecar(apis.StashContainer))
+		By("Waiting for StatefulSet to be ready with sidecar")
+		return fi.WaitUntilStatefulSetReadyWithSidecar(workloadMeta)
+	}
+	return nil
+}
+
 func (fi *Invocation) PrintDebugInfoOnFailure() {
-	if CurrentGinkgoTestDescription().Failed {
+	if CurrentSpecReport().Failed() {
 		fi.PrintDebugHelpers()
 		TestFailed = true
 	}

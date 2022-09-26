@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -69,7 +68,7 @@ func (out *BackupOutput) WriteOutput(fileName string) error {
 		newFile = true
 	}
 
-	if err := ioutil.WriteFile(fileName, jsonOutput, FileModeRWXAll); err != nil { // this does not make the file writable to other users
+	if err := os.WriteFile(fileName, jsonOutput, FileModeRWXAll); err != nil { // this does not make the file writable to other users
 		return err
 	}
 	// change the file permission to make it writable to other users
@@ -93,7 +92,7 @@ func (out *RestoreOutput) WriteOutput(fileName string) error {
 		newFile = true
 	}
 
-	if err := ioutil.WriteFile(fileName, jsonOutput, FileModeRWXAll); err != nil { // this does not make the file writable to other users
+	if err := os.WriteFile(fileName, jsonOutput, FileModeRWXAll); err != nil { // this does not make the file writable to other users
 		return err
 	}
 	// change the file permission to make it writable to other users
@@ -104,7 +103,7 @@ func (out *RestoreOutput) WriteOutput(fileName string) error {
 }
 
 func ReadBackupOutput(filename string) (*BackupOutput, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +118,7 @@ func ReadBackupOutput(filename string) (*BackupOutput, error) {
 }
 
 func ReadRestoreOutput(filename string) (*RestoreOutput, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

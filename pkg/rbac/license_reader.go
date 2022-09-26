@@ -30,14 +30,14 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
-func (opt *RBACOptions) ensureLicenseReaderClusterRoleBinding() error {
+func (opt *Options) ensureLicenseReaderClusterRoleBinding() error {
 	meta := metav1.ObjectMeta{
-		Name:   meta_util.NameWithSuffix(apis.LicenseReader, fmt.Sprintf("%s-%s", opt.ServiceAccount.Namespace, opt.ServiceAccount.Name)),
-		Labels: opt.OffshootLabels,
+		Name:   meta_util.NameWithSuffix(apis.LicenseReader, fmt.Sprintf("%s-%s", opt.serviceAccount.Namespace, opt.serviceAccount.Name)),
+		Labels: opt.offshootLabels,
 	}
-	owner := opt.Owner
+	owner := opt.owner
 	owner.Controller = pointer.BoolP(false)
-	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
+	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.RoleRef = rbac.RoleRef{
@@ -48,8 +48,8 @@ func (opt *RBACOptions) ensureLicenseReaderClusterRoleBinding() error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in

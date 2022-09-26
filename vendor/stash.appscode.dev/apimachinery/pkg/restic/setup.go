@@ -19,7 +19,6 @@ package restic
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -338,7 +337,7 @@ func (w *ResticWrapper) writeSecretKeyToFile(key, name string) (string, error) {
 	tmpDir := w.GetEnv(TMPDIR)
 	filePath := filepath.Join(tmpDir, name)
 
-	if err := ioutil.WriteFile(filePath, v, 0o755); err != nil {
+	if err := os.WriteFile(filePath, v, 0o755); err != nil {
 		return "", err
 	}
 	return filePath, nil

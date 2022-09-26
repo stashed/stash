@@ -69,6 +69,12 @@ spec:
                 - kind
                 - name
                 type: object
+              retryLeft:
+                description: RetryLeft specifies number of retry attempts left for
+                  the session. If this set to non-zero, Stash will create a new BackupSession
+                  if the current one fails.
+                format: int32
+                type: integer
             type: object
           status:
             properties:
@@ -120,6 +126,12 @@ spec:
                   - type
                   type: object
                 type: array
+              nextRetry:
+                description: NextRetry specifies the time when Stash should retry
+                  the current failed backup. This field will exist only if the `retryConfig`
+                  has been set in the respective backup invoker.
+                format: date-time
+                type: string
               phase:
                 description: Phase indicates the overall phase of the backup process
                   for this BackupSession. Phase will be "Succeeded" only if phase
@@ -133,6 +145,11 @@ spec:
                 - Failed
                 - Unknown
                 type: string
+              retried:
+                description: Retried specifies whether this session was retried or
+                  not. This field will exist only if the `retryConfig` has been set
+                  in the respective backup invoker.
+                type: boolean
               sessionDeadline:
                 description: SessionDeadline specifies the deadline of backup. BackupSession
                   will be considered Failed if backup does not complete within this

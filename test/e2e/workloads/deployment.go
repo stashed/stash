@@ -24,7 +24,7 @@ import (
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apps_util "kmodules.xyz/client-go/apps/v1"
@@ -221,6 +221,67 @@ var _ = Describe("Workload Test", func() {
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")
 				Expect(restoredData).Should(BeSameAs(sampleData))
+			})
+		})
+
+		Context("Container inject/removal check", func() {
+			It("should remove sidecar/init-container when the respective invoker is removed", func() {
+				// Deploy a Deployment
+				deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Generate Sample Data
+				_, err = f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Setup a Minio Repository
+				repo, err := f.SetupMinioRepository()
+				Expect(err).NotTo(HaveOccurred())
+
+				// Setup workload Backup
+				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Take an Instant Backup of the Sample Data
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+					Name: backupConfig.Name,
+					Kind: v1beta1.ResourceKindBackupConfiguration,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that BackupSession has succeeded")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+				// Simulate disaster scenario. Delete the data from source PVC
+				By("Deleting sample data from source Deployment")
+				err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Restore the backed up data
+				By("Restoring the backed up data in the original Deployment")
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that RestoreSession succeeded")
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
+
+				By("Deleting RestoreSession")
+				err = f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Delete(context.TODO(), restoreSession.Name, metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that stash init-container has been removed")
+				f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveInitContainer(apis.StashInitContainer))
+
+				By("Deleting BackupConfiguration")
+				err = f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Delete(context.TODO(), backupConfig.Name, metav1.DeleteOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that stash sidecar has been removed")
+				f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(apis.StashContainer))
 			})
 		})
 	})

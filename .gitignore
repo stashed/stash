@@ -25,7 +25,9 @@ _testmain.go
 /.idea
 /dist
 **/junit.xml
+**/report.json
 **/.env
+**/.env.prod
 /.vscode
 /coverage.txt
 
