@@ -63,6 +63,17 @@ var _ = Describe("Snapshot Tests", func() {
 	var (
 		deployWorkloads = func(securityContext *core.SecurityContext) []testResources {
 			var resources []testResources
+			//// Deploy a DaemonSet
+			//dmn, err := f.DeployDaemonSet(framework.SourceDaemonSet, framework.SourceVolume, func(dmn *apps.DaemonSet) {
+			//	dmn.Spec.Template.Spec.Containers[0].SecurityContext = securityContext
+			//})
+			//Expect(err).NotTo(HaveOccurred())
+			//
+			//// Generate Sample Data
+			//_, err = f.GenerateSampleData(dmn.ObjectMeta, apis.KindDaemonSet)
+			//Expect(err).NotTo(HaveOccurred())
+			//resources = append(resources, testResources{workloadMeta: dmn.ObjectMeta, workloadKind: apis.KindDaemonSet, workload: dmn})
+
 			// Deploy a Deployment
 			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume, func(dp *apps.Deployment) {
 				dp.Spec.Template.Spec.Containers[0].SecurityContext = securityContext
@@ -74,27 +85,16 @@ var _ = Describe("Snapshot Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 			resources = append(resources, testResources{workloadMeta: deployment.ObjectMeta, workloadKind: apis.KindDeployment, workload: deployment})
 
-			//// Deploy a StatefulSet
-			//ss, err := f.DeployStatefulSet(framework.SourceStatefulSet, int32(3), framework.SourceVolume, func(ss *apps.StatefulSet) {
-			//	ss.Spec.Template.Spec.Containers[0].SecurityContext = securityContext
-			//})
-			//Expect(err).NotTo(HaveOccurred())
-			//
-			//// Generate Sample Data
-			//_, err = f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
-			//Expect(err).NotTo(HaveOccurred())
-			//resources = append(resources, testResources{workloadMeta: ss.ObjectMeta, workloadKind: apis.KindStatefulSet, workload: ss})
-
-			// Deploy a DaemonSet
-			dmn, err := f.DeployDaemonSet(framework.SourceDaemonSet, framework.SourceVolume, func(dmn *apps.DaemonSet) {
-				dmn.Spec.Template.Spec.Containers[0].SecurityContext = securityContext
+			// Deploy a StatefulSet
+			ss, err := f.DeployStatefulSet(framework.SourceStatefulSet, int32(2), framework.SourceVolume, func(ss *apps.StatefulSet) {
+				ss.Spec.Template.Spec.Containers[0].SecurityContext = securityContext
 			})
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
-			_, err = f.GenerateSampleData(dmn.ObjectMeta, apis.KindDaemonSet)
+			_, err = f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
 			Expect(err).NotTo(HaveOccurred())
-			resources = append(resources, testResources{workloadMeta: dmn.ObjectMeta, workloadKind: apis.KindDaemonSet, workload: dmn})
+			resources = append(resources, testResources{workloadMeta: ss.ObjectMeta, workloadKind: apis.KindStatefulSet, workload: ss})
 
 			return resources
 		}
