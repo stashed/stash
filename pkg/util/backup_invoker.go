@@ -80,34 +80,6 @@ func FindBackupInvokers(bcLister v1beta1_listers.BackupConfigurationLister, tref
 	return invokers, nil
 }
 
-func InvokerEqual(old, new unstructured.Unstructured) (bool, error) {
-	if old.Object == nil && new.Object == nil {
-		return true, nil
-	}
-	if (old.Object == nil && new.Object != nil) ||
-		(old.Object != nil && new.Object == nil) {
-		return false, nil
-	}
-	if old.GetKind() != new.GetKind() {
-		return false, nil
-	}
-
-	switch old.GetKind() {
-	case v1beta1_api.ResourceKindBackupConfiguration:
-		var oldBC, newBC v1beta1_api.BackupConfiguration
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(old.Object, &oldBC)
-		if err != nil {
-			return false, err
-		}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(new.Object, &newBC)
-		if err != nil {
-			return false, err
-		}
-		return BackupConfigurationEqual(&oldBC, &newBC), nil
-	}
-	return false, fmt.Errorf("unknown backup invoker kind: %v", old.GetKind())
-}
-
 func FindBackupConfiguration(lister v1beta1_listers.BackupConfigurationLister, tref v1beta1_api.TargetRef) ([]unstructured.Unstructured, error) {
 	// list all BackupConfigurations from the lister
 	backupConfigurations, err := lister.BackupConfigurations(metav1.NamespaceAll).List(labels.Everything())
@@ -117,11 +89,13 @@ func FindBackupConfiguration(lister v1beta1_listers.BackupConfigurationLister, t
 	result := make([]unstructured.Unstructured, 0)
 	// keep only those BackupConfiguration that has this workload as target
 	for _, bc := range backupConfigurations {
-		if bc.DeletionTimestamp == nil && IsBackupTarget(bc.Spec.Target, tref, bc.Namespace) && bc.Spec.Driver == v1beta1_api.ResticSnapshotter {
+		if bc.DeletionTimestamp == nil &&
+			IsBackupTarget(bc.Spec.Target, tref, bc.Namespace) &&
+			bc.Spec.Driver == v1beta1_api.ResticSnapshotter {
 			bc.GetObjectKind().SetGroupVersionKind(v1beta1_api.SchemeGroupVersion.WithKind(v1beta1_api.ResourceKindBackupConfiguration))
 			u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(bc)
 			if err != nil {
-				return nil, nil
+				return nil, err
 			}
 			result = append(result, unstructured.Unstructured{Object: u})
 		}
@@ -153,4 +127,44 @@ func BackupConfigurationEqual(old, new *v1beta1_api.BackupConfiguration) bool {
 	result := reflect.DeepEqual(oldSpec, newSpec)
 	oldSpec.Paused = oldVal
 	return result
+}
+
+func InvokerEqual(old, new unstructured.Unstructured) (bool, error) {
+	if old.Object == nil && new.Object == nil {
+		return true, nil
+	}
+	if (old.Object == nil && new.Object != nil) ||
+		(old.Object != nil && new.Object == nil) {
+		return false, nil
+	}
+	if old.GetKind() != new.GetKind() {
+		return false, nil
+	}
+
+	switch old.GetKind() {
+	case v1beta1_api.ResourceKindBackupConfiguration:
+		var oldBC, newBC v1beta1_api.BackupConfiguration
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(old.Object, &oldBC)
+		if err != nil {
+			return false, err
+		}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(new.Object, &newBC)
+		if err != nil {
+			return false, err
+		}
+		return BackupConfigurationEqual(&oldBC, &newBC), nil
+
+	case v1beta1_api.ResourceKindRestoreSession:
+		var oldRS, newRS v1beta1_api.RestoreSession
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(old.Object, &oldRS)
+		if err != nil {
+			return false, err
+		}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(new.Object, &newRS)
+		if err != nil {
+			return false, err
+		}
+		return RestoreSessionEqual(&oldRS, &newRS), nil
+	}
+	return false, fmt.Errorf("unknown invoker kind: %v", old.GetKind())
 }

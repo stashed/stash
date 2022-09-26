@@ -161,8 +161,6 @@ func (c *Config) New() (*StashController, error) {
 	ctrl.initDeploymentWatcher()
 	ctrl.initDaemonSetWatcher()
 	ctrl.initStatefulSetWatcher()
-	ctrl.initRCWatcher()
-	ctrl.initReplicaSetWatcher()
 	ctrl.initDeploymentConfigWatcher()
 
 	ctrl.initJobWatcher()

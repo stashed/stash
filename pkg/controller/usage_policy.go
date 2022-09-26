@@ -24,7 +24,6 @@ import (
 	v1alpha1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
-	"gomodules.xyz/x/arrays"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -77,8 +76,7 @@ func (c *StashController) upsertRepositoryReferences(inv repoReferenceHandler) e
 	}
 
 	// Don't insert anything if the reference already exists
-	found, _ := arrays.Contains(repository.Status.References, reference)
-	if found {
+	if found, _ := checkReference(repository.Status.References, reference); found {
 		return nil
 	}
 
@@ -114,7 +112,7 @@ func (c *StashController) deleteRepositoryReferences(inv repoReferenceHandler) e
 	}
 
 	// Delete the reference if it exists
-	found, indx := arrays.Contains(repository.Status.References, reference)
+	found, indx := checkReference(repository.Status.References, reference)
 	if !found {
 		return nil
 	}
@@ -132,6 +130,19 @@ func (c *StashController) deleteRepositoryReferences(inv repoReferenceHandler) e
 		},
 		metav1.UpdateOptions{},
 	)
+	if err != nil && !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
 
-	return err
+func checkReference(references []kmapi.TypedObjectReference, ref kmapi.TypedObjectReference) (bool, int) {
+	for i := range references {
+		if ref.Kind == references[i].Kind &&
+			ref.Namespace == references[i].Namespace &&
+			ref.Name == references[i].Name {
+			return true, i
+		}
+	}
+	return false, -1
 }

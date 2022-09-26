@@ -24,7 +24,7 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/cert"
 	"gomodules.xyz/pointer"

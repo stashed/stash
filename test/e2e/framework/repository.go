@@ -26,7 +26,7 @@ import (
 	v1alpha1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"stash.appscode.dev/stash/pkg/util"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/stow"
 	"gomodules.xyz/x/crypto/rand"
@@ -62,7 +62,7 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*v1alpha1.Repository
 	nodeName := f.GetNodeName(kmr.Meta)
 	workload := v1alpha1.LocalTypedReference{Name: kmr.Meta.Name, Kind: kmr.Kind}
 	switch kmr.Kind {
-	case apis.KindDeployment, apis.KindReplicationController, apis.KindReplicaSet, apis.KindDaemonSet:
+	case apis.KindDeployment, apis.KindDaemonSet:
 		repoNames = append(repoNames, workload.GetRepositoryCRDName("", nodeName))
 	case apis.KindStatefulSet:
 		for i := 0; i < kmr.Replicas; i++ {

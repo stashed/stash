@@ -18,6 +18,7 @@ package rbac
 
 import (
 	"context"
+	"fmt"
 
 	"stash.appscode.dev/stash/pkg/util"
 
@@ -30,7 +31,7 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func (opt *RBACOptions) EnsureRBACResourcesDeleted() error {
+func (opt *Options) EnsureRBACResourcesDeleted() error {
 	err := opt.ensureClusterRoleBindingDeleted()
 	if err != nil {
 		return err
@@ -39,16 +40,16 @@ func (opt *RBACOptions) EnsureRBACResourcesDeleted() error {
 	return opt.ensureCrossNamespaceRBACResourcesDeleted()
 }
 
-func (opt *RBACOptions) ensureClusterRoleBindingDeleted() error {
+func (opt *Options) ensureClusterRoleBindingDeleted() error {
 	// List all the ClusterRoleBinding with the provided labels
-	resources, err := opt.KubeClient.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(opt.OffshootLabels).String()})
+	resources, err := opt.kubeClient.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(opt.offshootLabels).String()})
 	if err != nil {
 		return err
 	}
 	// Delete the ClusterRoleBindings that are controlled by the provided owner
 	for i := range resources.Items {
-		if owned, _ := core_util.IsOwnedBy(&resources.Items[i], &opt.Invoker); owned {
-			err = opt.KubeClient.RbacV1().ClusterRoleBindings().Delete(context.TODO(), resources.Items[i].Name, metav1.DeleteOptions{})
+		if owned, _ := core_util.IsOwnedBy(&resources.Items[i], &opt.invOpts); owned {
+			err = opt.kubeClient.RbacV1().ClusterRoleBindings().Delete(context.TODO(), resources.Items[i].Name, metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}
@@ -57,30 +58,30 @@ func (opt *RBACOptions) ensureClusterRoleBindingDeleted() error {
 	return nil
 }
 
-func (opt *RBACOptions) ensureCrossNamespaceRBACResourcesDeleted() error {
-	if opt.CrossNamespaceResources == nil {
+func (opt *Options) ensureCrossNamespaceRBACResourcesDeleted() error {
+	if opt.crossNamespaceResources == nil {
 		return nil
 	}
 
-	rolebindings, err := opt.KubeClient.RbacV1().RoleBindings(opt.CrossNamespaceResources.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(opt.OffshootLabels).String()})
+	rolebindings, err := opt.kubeClient.RbacV1().RoleBindings(opt.crossNamespaceResources.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(opt.offshootLabels).String()})
 	if err != nil {
 		return err
 	}
 
 	for i := range rolebindings.Items {
-		err = opt.KubeClient.RbacV1().RoleBindings(opt.CrossNamespaceResources.Namespace).Delete(context.TODO(), rolebindings.Items[i].Name, metav1.DeleteOptions{})
+		err = opt.kubeClient.RbacV1().RoleBindings(opt.crossNamespaceResources.Namespace).Delete(context.TODO(), rolebindings.Items[i].Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
 	}
 
-	roles, err := opt.KubeClient.RbacV1().Roles(opt.CrossNamespaceResources.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(opt.OffshootLabels).String()})
+	roles, err := opt.kubeClient.RbacV1().Roles(opt.crossNamespaceResources.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(opt.offshootLabels).String()})
 	if err != nil {
 		return err
 	}
 
 	for i := range roles.Items {
-		err = opt.KubeClient.RbacV1().Roles(opt.CrossNamespaceResources.Namespace).Delete(context.TODO(), roles.Items[i].Name, metav1.DeleteOptions{})
+		err = opt.kubeClient.RbacV1().Roles(opt.crossNamespaceResources.Namespace).Delete(context.TODO(), roles.Items[i].Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
@@ -89,25 +90,28 @@ func (opt *RBACOptions) ensureCrossNamespaceRBACResourcesDeleted() error {
 	return nil
 }
 
-func ensureSidecarRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
-	klog.Infof("Deleting RoleBinding %s/%s.", w.Namespace, getSidecarRoleBindingName(w.Name, w.Kind))
-
+func ensureSidecarRoleBindingDeleted(kubeClient kubernetes.Interface, logger klog.Logger, w *wapi.Workload) error {
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
 		context.TODO(),
 		getSidecarRoleBindingName(w.Name, w.Kind),
 		metav1.DeleteOptions{})
-
-	if kerr.IsNotFound(err) {
-		return nil
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil
+		}
+		return err
 	}
-
-	return err
+	logger.Info(fmt.Sprintf("RoleBinding %s/%s has been deleted",
+		w.Namespace,
+		getSidecarRoleBindingName(w.Name, w.Kind),
+	))
+	return nil
 }
 
-func EnsureUnnecessaryWorkloadRBACDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
+func EnsureUnnecessaryWorkloadRBACDeleted(kubeClient kubernetes.Interface, logger klog.Logger, w *wapi.Workload) error {
 	// delete backup sidecar RoleBinding if workload does not have stash sidecar
 	if !util.HasStashSidecar(w.Spec.Template.Spec.Containers) {
-		err := ensureSidecarRoleBindingDeleted(kubeClient, w)
+		err := ensureSidecarRoleBindingDeleted(kubeClient, logger, w)
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
@@ -115,7 +119,7 @@ func EnsureUnnecessaryWorkloadRBACDeleted(kubeClient kubernetes.Interface, w *wa
 
 	// delete restore init-container RoleBinding if workload does not have sash init-container
 	if !util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers) {
-		err := ensureRestoreInitContainerRoleBindingDeleted(kubeClient, w)
+		err := ensureRestoreInitContainerRoleBindingDeleted(kubeClient, logger, w)
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}

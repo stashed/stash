@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the kubedb v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=ui.stash.appscode.com
+// +kubebuilder:object:generate=true
+// +groupName=ui.stash.appscode.com
 package v1alpha1
 
 import (

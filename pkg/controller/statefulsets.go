@@ -17,8 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"context"
-
 	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
@@ -26,12 +24,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
-	apps_util "kmodules.xyz/client-go/apps/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
@@ -53,32 +49,30 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
-				// apply stash backup/restore logic on this workload
-				modified, err := c.applyStashLogic(w, apis.CallerWebhook)
-				if err != nil {
-					return w, err
+				r := workloadReconciler{
+					ctrl:     c,
+					workload: w,
+					logger: klog.NewKlogr().WithValues(
+						apis.ObjectKind, apis.KindStatefulSet,
+						apis.ObjectName, w.Name,
+						apis.ObjectNamespace, w.Namespace,
+					),
 				}
-				if modified {
-					err := setRollingUpdate(w)
-					if err != nil {
-						return w, err
-					}
-				}
+				err := r.reconcile(apis.CallerWebhook)
 				return w, err
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
-				// apply stash backup/restore logic on this workload
-				modified, err := c.applyStashLogic(w, apis.CallerWebhook)
-				if err != nil {
-					return w, err
+				r := workloadReconciler{
+					ctrl:     c,
+					workload: w,
+					logger: klog.NewKlogr().WithValues(
+						apis.ObjectKind, apis.KindStatefulSet,
+						apis.ObjectName, w.Name,
+						apis.ObjectNamespace, w.Namespace,
+					),
 				}
-				if modified {
-					err := setRollingUpdate(w)
-					if err != nil {
-						return w, err
-					}
-				}
+				err := r.reconcile(apis.CallerWebhook)
 				return w, err
 			},
 		},
@@ -87,7 +81,7 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initStatefulSetWatcher() {
 	c.ssInformer = c.kubeInformerFactory.Apps().V1().StatefulSets().Informer()
-	c.ssQueue = queue.New("StatefulSet", c.MaxNumRequeues, c.NumThreads, c.runStatefulSetInjector)
+	c.ssQueue = queue.New("StatefulSet", c.MaxNumRequeues, c.NumThreads, c.processStatefulSetEvent)
 	c.ssInformer.AddEventHandler(queue.DefaultEventHandler(c.ssQueue.GetQueue(), core.NamespaceAll))
 	c.ssLister = c.kubeInformerFactory.Apps().V1().StatefulSets().Lister()
 }
@@ -95,17 +89,21 @@ func (c *StashController) initStatefulSetWatcher() {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) runStatefulSetInjector(key string) error {
+func (c *StashController) processStatefulSetEvent(key string) error {
 	obj, exists, err := c.ssInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.ErrorS(err, "Failed to fetch object from indexer",
+			apis.ObjectKind, apis.KindStatefulSet,
+			apis.ObjectKey, key,
+		)
 		return err
 	}
 
 	if !exists {
-		// Below we will warm up our cache with a StatefulSet, so that we will see a delete for one d
-		klog.Warningf("StatefulSet %s does not exist anymore\n", key)
-
+		klog.V(4).InfoS("Object doesn't exist anymore",
+			apis.ObjectKind, apis.KindStatefulSet,
+			apis.ObjectKey, key,
+		)
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
 			return err
@@ -117,56 +115,40 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		}
 
 	} else {
-		klog.Infof("Sync/Add/Update for StatefulSet %s", key)
-
 		ss := obj.(*appsv1.StatefulSet).DeepCopy()
 		ss.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindStatefulSet))
+
+		logger := klog.NewKlogr().WithValues(
+			apis.ObjectKind, apis.KindStatefulSet,
+			apis.ObjectName, ss.Name,
+			apis.ObjectNamespace, ss.Namespace,
+		)
+		logger.V(4).Info("Received Sync/Add/Update event")
 
 		// convert StatefulSet into a common object (Workload type) so that
 		// we don't need to re-write stash logic for StatefulSet separately
 		w, err := wcs.ConvertToWorkload(ss.DeepCopy())
 		if err != nil {
-			klog.Errorf("failed to convert StatefulSet %s/%s to workload type. Reason: %v", ss.Namespace, ss.Name, err)
+			logger.Error(err, "Failed to convert into generic workload type")
 			return err
 		}
 
-		// apply stash backup/restore logic on this workload
-		modified, err := c.applyStashLogic(w, apis.CallerController)
-		if err != nil {
-			klog.Errorf("failed to apply stash logic on StatefulSet %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
-			return err
+		r := workloadReconciler{
+			ctrl:     c,
+			logger:   logger,
+			workload: w,
 		}
-		if modified {
-			// set update strategy RollingUpdate so that pods automatically restart after patch
-			err := setRollingUpdate(w)
-			if err != nil {
-				return err
-			}
-
-			// workload has been modified. patch the workload so that respective pods start with the updated spec
-			_, _, err = apps_util.PatchStatefulSetObject(context.TODO(), c.kubeClient, ss, w.Object.(*appsv1.StatefulSet), metav1.PatchOptions{})
-			if err != nil {
-				klog.Errorf("failed to update statefulset %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
-				return err
-			}
-
-			// wait until newly patched StatefulSet pods are ready
-			err = util.WaitUntilStatefulSetReady(c.kubeClient, ss.ObjectMeta)
-			if err != nil {
-				return err
-			}
+		if err := r.reconcile(apis.CallerController); err != nil {
+			r.logger.Error(err, "Failed to reconcile workload")
+			return err
 		}
 
 		// if the workload does not have any stash sidecar/init-container then
 		// delete respective ConfigMapLock and RBAC stuffs if exist
-		err = c.ensureUnnecessaryConfigMapLockDeleted(w)
-		if err != nil {
+		if err := c.ensureUnnecessaryConfigMapLockDeleted(w); err != nil {
 			return err
 		}
-		err = stash_rbac.EnsureUnnecessaryWorkloadRBACDeleted(c.kubeClient, w)
-		if err != nil {
-			return err
-		}
+		return stash_rbac.EnsureUnnecessaryWorkloadRBACDeleted(c.kubeClient, logger, w)
 	}
 	return nil
 }

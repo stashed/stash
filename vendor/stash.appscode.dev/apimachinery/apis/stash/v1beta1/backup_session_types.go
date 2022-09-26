@@ -50,6 +50,11 @@ type BackupSessionSpec struct {
 	// Invoker refers to the BackupConfiguration or BackupBatch being used to invoke this backup session
 	// +optional
 	Invoker BackupInvokerRef `json:"invoker,omitempty"`
+
+	// RetryLeft specifies number of retry attempts left for the session.
+	// If this set to non-zero, Stash will create a new BackupSession if the current one fails.
+	// +optional
+	RetryLeft int32 `json:"retryLeft,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Skipped;Running;Succeeded;Failed;Unknown
@@ -99,7 +104,17 @@ type BackupSessionStatus struct {
 	// SessionDeadline specifies the deadline of backup. BackupSession will be
 	// considered Failed if backup does not complete within this deadline
 	// +optional
-	SessionDeadline metav1.Time `json:"sessionDeadline,omitempty"`
+	SessionDeadline *metav1.Time `json:"sessionDeadline,omitempty"`
+
+	// Retried specifies whether this session was retried or not.
+	// This field will exist only if the `retryConfig` has been set in the respective backup invoker.
+	// +optional
+	Retried *bool `json:"retried,omitempty"`
+
+	// NextRetry specifies the time when Stash should retry the current failed backup.
+	// This field will exist only if the `retryConfig` has been set in the respective backup invoker.
+	// +optional
+	NextRetry *metav1.Time `json:"nextRetry,omitempty"`
 }
 
 type BackupTargetStatus struct {

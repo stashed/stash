@@ -25,6 +25,7 @@ import (
 
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
@@ -47,6 +48,7 @@ func NewCmdForget() *cobra.Command {
 			}
 
 			stashClient := cs.NewForConfigOrDie(config)
+			kubeClient := kubernetes.NewForConfigOrDie(config)
 
 			if repo.Name == "" {
 				return fmt.Errorf("repository name not found")
@@ -56,8 +58,20 @@ func NewCmdForget() *cobra.Command {
 				return err
 			}
 
+			secret, err := kubeClient.CoreV1().Secrets(repo.Namespace).Get(context.TODO(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			opt := snapshot.Options{
+				Repository:  repo,
+				Secret:      secret,
+				SnapshotIDs: args,
+				InCluster:   true,
+			}
+
 			r := snapshot.NewREST(config)
-			return r.ForgetSnapshotsFromBackend(repo, args, true)
+			return r.ForgetSnapshotsFromBackend(opt)
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")

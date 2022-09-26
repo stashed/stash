@@ -57,18 +57,29 @@ func (c *StashController) initJobWatcher() {
 func (c *StashController) runJobInjector(key string) error {
 	obj, exists, err := c.jobInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.ErrorS(err, "Failed to fetch object from indexer",
+			apis.ObjectKind, apis.KindJob,
+			apis.ObjectKey, key,
+		)
 		return err
 	}
 	if !exists {
-		klog.Warningf("Job %s does not exist anymore\n", key)
+		klog.InfoS("Object doesn't exist anymore",
+			apis.ObjectKind, apis.KindJob,
+			apis.ObjectKey, key,
+		)
 		return nil
 	} else {
 		job := obj.(*batch.Job)
-		klog.Infof("Sync/Add/Update for Job %s", job.GetName())
+		logger := klog.NewKlogr().WithValues(
+			apis.ObjectKind, apis.KindDaemonSet,
+			apis.ObjectName, job.Name,
+			apis.ObjectNamespace, job.Namespace,
+		)
+		logger.V(4).Info("Received Sync/Add/Update event")
 
 		if job.Status.Succeeded > 0 {
-			klog.Infof("Deleting succeeded job %s", job.GetName())
+			logger.Info("Deleting succeeded job")
 
 			deletePolicy := metav1.DeletePropagationBackground
 			err := c.kubeClient.BatchV1().Jobs(job.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{
@@ -78,8 +89,7 @@ func (c *StashController) runJobInjector(key string) error {
 			if err != nil && !kerr.IsNotFound(err) {
 				return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
 			}
-
-			klog.Infof("Deleted stash job: %s", job.GetName())
+			logger.Info("Successfully delete job")
 		}
 	}
 	return nil

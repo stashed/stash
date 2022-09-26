@@ -36,9 +36,9 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
-func (opt *RBACOptions) EnsureVolumeSnapshotterJobRBAC() error {
-	if opt.ServiceAccount.Name == "" {
-		opt.ServiceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name, opt.Suffix)
+func (opt *Options) EnsureVolumeSnapshotterJobRBAC() error {
+	if opt.serviceAccount.Name == "" {
+		opt.serviceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name, opt.suffix)
 		err := opt.ensureServiceAccount()
 		if err != nil {
 			return err
@@ -59,12 +59,12 @@ func (opt *RBACOptions) EnsureVolumeSnapshotterJobRBAC() error {
 	return nil
 }
 
-func (opt *RBACOptions) ensureVolumeSnapshotterJobClusterRole() error {
+func (opt *Options) ensureVolumeSnapshotterJobClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashVolumeSnapshotterClusterRole,
-		Labels: opt.OffshootLabels,
+		Labels: opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
@@ -98,12 +98,7 @@ func (opt *RBACOptions) ensureVolumeSnapshotterJobClusterRole() error {
 			},
 			{
 				APIGroups: []string{apps.GroupName},
-				Resources: []string{"daemonsets", "replicasets"},
-				Verbs:     []string{"get", "list"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"replicationcontrollers"},
+				Resources: []string{"daemonsets"},
 				Verbs:     []string{"get", "list"},
 			},
 			{
@@ -117,14 +112,14 @@ func (opt *RBACOptions) ensureVolumeSnapshotterJobClusterRole() error {
 	return err
 }
 
-func (opt *RBACOptions) ensureVolumeSnapshotterJobRoleBinding() error {
+func (opt *Options) ensureVolumeSnapshotterJobRoleBinding() error {
 	meta := metav1.ObjectMeta{
 		Name:      opt.getRoleBindingName(),
-		Namespace: opt.Invoker.Namespace,
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.invOpts.Namespace,
+		Labels:    opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -134,8 +129,8 @@ func (opt *RBACOptions) ensureVolumeSnapshotterJobRoleBinding() error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in
@@ -143,9 +138,9 @@ func (opt *RBACOptions) ensureVolumeSnapshotterJobRoleBinding() error {
 	return err
 }
 
-func (opt *RBACOptions) EnsureVolumeSnapshotRestorerJobRBAC() error {
-	if opt.ServiceAccount.Name == "" {
-		opt.ServiceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name, opt.Suffix)
+func (opt *Options) EnsureVolumeSnapshotRestorerJobRBAC() error {
+	if opt.serviceAccount.Name == "" {
+		opt.serviceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name, opt.suffix)
 		err := opt.ensureServiceAccount()
 		if err != nil {
 			return err
@@ -178,12 +173,12 @@ func (opt *RBACOptions) EnsureVolumeSnapshotRestorerJobRBAC() error {
 	return nil
 }
 
-func (opt *RBACOptions) ensureVolumeSnapshotRestorerJobClusterRole() error {
+func (opt *Options) ensureVolumeSnapshotRestorerJobClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashVolumeSnapshotRestorerClusterRole,
-		Labels: opt.OffshootLabels,
+		Labels: opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
@@ -216,14 +211,14 @@ func (opt *RBACOptions) ensureVolumeSnapshotRestorerJobClusterRole() error {
 	return err
 }
 
-func (opt *RBACOptions) ensureVolumeSnapshotRestorerJobRoleBinding() error {
+func (opt *Options) ensureVolumeSnapshotRestorerJobRoleBinding() error {
 	meta := metav1.ObjectMeta{
 		Name:      opt.getRoleBindingName(),
-		Namespace: opt.Invoker.Namespace,
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.invOpts.Namespace,
+		Labels:    opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -233,8 +228,8 @@ func (opt *RBACOptions) ensureVolumeSnapshotRestorerJobRoleBinding() error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in
@@ -242,12 +237,12 @@ func (opt *RBACOptions) ensureVolumeSnapshotRestorerJobRoleBinding() error {
 	return err
 }
 
-func (opt *RBACOptions) ensureStorageReaderClassClusterRole() error {
+func (opt *Options) ensureStorageReaderClassClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashStorageClassReaderClusterRole,
-		Labels: opt.OffshootLabels,
+		Labels: opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{storage_api_v1.GroupName},
@@ -265,14 +260,14 @@ func (opt *RBACOptions) ensureStorageReaderClassClusterRole() error {
 	return err
 }
 
-func (opt *RBACOptions) ensureStorageClassReaderClusterRoleBinding() error {
+func (opt *Options) ensureStorageClassReaderClusterRoleBinding() error {
 	meta := metav1.ObjectMeta{
 		Name:      meta_util.ValidCronJobNameWithSuffix(opt.getRoleBindingName(), apis.StashStorageClassReaderClusterRole),
-		Namespace: opt.Invoker.Namespace,
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.invOpts.Namespace,
+		Labels:    opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
+	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -282,8 +277,8 @@ func (opt *RBACOptions) ensureStorageClassReaderClusterRoleBinding() error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in

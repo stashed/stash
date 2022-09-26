@@ -439,6 +439,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreSessionStatus":            schema_apimachinery_apis_stash_v1beta1_RestoreSessionStatus(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreTarget":                   schema_apimachinery_apis_stash_v1beta1_RestoreTarget(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreTargetSpec":               schema_apimachinery_apis_stash_v1beta1_RestoreTargetSpec(ref),
+		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.RetryConfig":                     schema_apimachinery_apis_stash_v1beta1_RetryConfig(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.Rule":                            schema_apimachinery_apis_stash_v1beta1_Rule(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.SnapshotStats":                   schema_apimachinery_apis_stash_v1beta1_SnapshotStats(ref),
 		"stash.appscode.dev/apimachinery/apis/stash/v1beta1.Summary":                         schema_apimachinery_apis_stash_v1beta1_Summary(ref),
@@ -19990,8 +19991,13 @@ func schema_apimachinery_apis_stash_v1beta1_BackupBatchSpec(ref common.Reference
 					"timeOut": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TimeOut specifies the maximum duration of backup. BackupBatch will be considered Failed if backup does not complete within this time limit. By default, Stash don't set any timeout for backup.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"retryConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RetryConfig specify a configuration for retry a backup if it fails. By default, Stash does not retry any failed backup.",
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.RetryConfig"),
 						},
 					},
 				},
@@ -19999,7 +20005,7 @@ func schema_apimachinery_apis_stash_v1beta1_BackupBatchSpec(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupConfigurationTemplateSpec", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupHooks"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupConfigurationTemplateSpec", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RetryConfig"},
 	}
 }
 
@@ -20243,8 +20249,13 @@ func schema_apimachinery_apis_stash_v1beta1_BackupBlueprintSpec(ref common.Refer
 					"timeOut": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TimeOut specifies the maximum duration of backup. BackupSession will be considered Failed if backup does not complete within this time limit. By default, Stash don't set any timeout for backup.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"retryConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RetryConfig specify a configuration for retry a backup if it fails. By default, Stash does not retry any failed backup.",
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.RetryConfig"),
 						},
 					},
 				},
@@ -20252,7 +20263,7 @@ func schema_apimachinery_apis_stash_v1beta1_BackupBlueprintSpec(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.UsagePolicy", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.UsagePolicy", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RetryConfig", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
 	}
 }
 
@@ -20439,8 +20450,13 @@ func schema_apimachinery_apis_stash_v1beta1_BackupConfigurationSpec(ref common.R
 					"timeOut": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TimeOut specifies the maximum duration of backup. BackupSession will be considered Failed if backup does not complete within this time limit. By default, Stash don't set any timeout for backup.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"retryConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RetryConfig specify a configuration for retry a backup if it fails. By default, Stash does not retry any failed backup.",
+							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.RetryConfig"),
 						},
 					},
 				},
@@ -20448,7 +20464,7 @@ func schema_apimachinery_apis_stash_v1beta1_BackupConfigurationSpec(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RetryConfig", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
 	}
 }
 
@@ -20717,6 +20733,13 @@ func schema_apimachinery_apis_stash_v1beta1_BackupSessionSpec(ref common.Referen
 							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.BackupInvokerRef"),
 						},
 					},
+					"retryLeft": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RetryLeft specifies number of retry attempts left for the session. If this set to non-zero, Stash will create a new BackupSession if the current one fails.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
 				},
 			},
 		},
@@ -20776,7 +20799,19 @@ func schema_apimachinery_apis_stash_v1beta1_BackupSessionStatus(ref common.Refer
 					"sessionDeadline": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SessionDeadline specifies the deadline of backup. BackupSession will be considered Failed if backup does not complete within this deadline",
-							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"retried": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Retried specifies whether this session was retried or not. This field will exist only if the `retryConfig` has been set in the respective backup invoker.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"nextRetry": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NextRetry specifies the time when Stash should retry the current failed backup. This field will exist only if the `retryConfig` has been set in the respective backup invoker.",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
@@ -21714,15 +21749,14 @@ func schema_apimachinery_apis_stash_v1beta1_RestoreBatchSpec(ref common.Referenc
 					"timeOut": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TimeOut specifies the maximum duration of restore. RestoreBatch will be considered Failed if restore does not complete within this time limit. By default, Stash don't set any timeout for restore.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.ObjectReference", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreTargetSpec"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.ObjectReference", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreTargetSpec"},
 	}
 }
 
@@ -21777,7 +21811,6 @@ func schema_apimachinery_apis_stash_v1beta1_RestoreBatchStatus(ref common.Refere
 					"sessionDeadline": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SessionDeadline specifies the deadline of restore process. RestoreBatch will be considered Failed if restore does not complete within this deadline",
-							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
@@ -22049,15 +22082,14 @@ func schema_apimachinery_apis_stash_v1beta1_RestoreSessionSpec(ref common.Refere
 					"timeOut": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TimeOut specifies the maximum duration of restore. RestoreSession will be considered Failed if restore does not complete within this time limit. By default, Stash don't set any timeout for restore.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreTarget", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.Rule", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreTarget", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.Rule", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
 	}
 }
 
@@ -22119,7 +22151,6 @@ func schema_apimachinery_apis_stash_v1beta1_RestoreSessionStatus(ref common.Refe
 					"sessionDeadline": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SessionDeadline specifies the deadline of restore process. RestoreSession will be considered Failed if restore does not complete within this deadline",
-							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
@@ -22273,6 +22304,33 @@ func schema_apimachinery_apis_stash_v1beta1_RestoreTargetSpec(ref common.Referen
 		},
 		Dependencies: []string{
 			"kmodules.xyz/offshoot-api/api/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreHooks", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.RestoreTarget", "stash.appscode.dev/apimachinery/apis/stash/v1beta1.TaskRef"},
+	}
+}
+
+func schema_apimachinery_apis_stash_v1beta1_RetryConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"maxRetry": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MaxRetry specifies the maximum number of attempts Stash should retry. Default value: 1",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"delay": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The amount of time to wait before next retry. If you don't specify this field, Stash will retry immediately. Format: 30s, 2m, 1h etc.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 

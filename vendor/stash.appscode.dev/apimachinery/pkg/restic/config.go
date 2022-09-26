@@ -18,7 +18,6 @@ package restic
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -163,7 +162,7 @@ func (w *ResticWrapper) DumpEnv(path string, dumpedFile string) error {
 		}
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(path, dumpedFile), []byte(envs), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(path, dumpedFile), []byte(envs), 0o600); err != nil {
 		return err
 	}
 	return nil

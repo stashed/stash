@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *StashController) getBackupSessionCronJobPSPNames() []string {
+func (c *StashController) getBackupSchedulerPSPNames() []string {
 	// BackupSession cron does not need any custom PSP. So, default minimum privileged
 	return c.CronJobPSPNames
 }

@@ -32,25 +32,7 @@ import (
 )
 
 const (
-	EventReasonInvalidRestic                 = "InvalidRestic"
-	EventReasonInvalidRecovery               = "InvalidRecovery"
-	EventReasonInvalidCronExpression         = "InvalidCronExpression"
-	EventReasonSuccessfulCronExpressionReset = "SuccessfulCronExpressionReset"
-	EventReasonSuccessfulBackup              = "SuccessfulBackup"
-	EventReasonFailedToBackup                = "FailedBackup"
-	EventReasonSuccessfulRecovery            = "SuccessfulRecovery"
-	EventReasonFailedToRecover               = "FailedRecovery"
-	EventReasonSuccessfulCheck               = "SuccessfulCheck"
-	EventReasonFailedToCheck                 = "FailedCheck"
-	EventReasonFailedToRetention             = "FailedRetention"
-	EventReasonFailedToUpdate                = "FailedUpdateBackup"
-	EventReasonFailedCronJob                 = "FailedCronJob"
-	EventReasonFailedToDelete                = "FailedDelete"
-	EventReasonJobCreated                    = "RecoveryJobCreated"
-	EventReasonJobFailedToCreate             = "RecoveryJobFailedToCreate"
-	EventReasonCheckJobCreated               = "CheckJobCreated"
-	EventReasonFailedSetup                   = "SetupFailed"
-	EventReasonAdmissionWebhookNotActivated  = "AdmissionWebhookNotActivated"
+	EventReasonAdmissionWebhookNotActivated = "AdmissionWebhookNotActivated"
 
 	// ====================== Event Sources ===================================
 	EventSourceBackupConfigurationController = "BackupConfiguration Controller"
@@ -64,23 +46,13 @@ const (
 
 	// ======================= Event Reasons ========================
 	// BackupConfiguration Events
-	EventReasonCronJobCreationFailed   = "CronJob Creation Failed"
-	EventReasonBackupJobCreationFailed = "Backup Job Creation Failed"
+	EventReasonCronJobCreationFailed = "CronJob Creation Failed"
 	// BackupSession Events
-	EventReasonBackupSessionFailed    = "BackupSession Failed"
-	EventReasonBackupSessionSkipped   = "BackupSession Skipped"
-	EventReasonBackupSessionRunning   = "BackupSession Running"
-	EventReasonBackupSessionSucceeded = "BackupSession Succeeded"
-	EventReasonHostBackupSucceded     = "Host Backup Succeeded"
-	EventReasonHostBackupFailed       = "Host Backup Failed"
+	EventReasonHostBackupSucceded = "Host Backup Succeeded"
+	EventReasonHostBackupFailed   = "Host Backup Failed"
 	// Restore Events
-	EventReasonRestoreRunning           = "Restore Running"
-	EventReasonRestoreFailed            = "Restore Failed"
-	EventReasonRestoreSucceeded         = "Restore Succeeded"
-	EventReasonRestorePhaseUnknown      = "RestoreSession Phase Unknown"
-	EventReasonRestoreJobCreationFailed = "Restore Job Creation Failed"
-	EventReasonHostRestoreSucceeded     = "Host Restore Succeeded"
-	EventReasonHostRestoreFailed        = "Host Restore Failed"
+	EventReasonHostRestoreSucceeded = "Host Restore Succeeded"
+	EventReasonHostRestoreFailed    = "Host Restore Failed"
 
 	// Sidecar Events
 	EventReasonSidecarInjectionFailed               = "Sidecar Injection Failed"
@@ -92,10 +64,8 @@ const (
 	// Init-container Events
 	EventReasonInitContainerInjectionFailed    = "Init-Container Injection Failed"
 	EventReasonInitContainerInjectionSucceeded = "Init-Container Injection Succeeded"
-	EventReasonInitContainerDeletionFailed     = "Init-Container Deletion Failed"
 	EventReasonInitContainerDeletionSucceeded  = "Init-Container Deletion Succeeded"
 
-	EventReasonBackupSkipped                      = "Backup Skipped"
 	EventReasonWorkloadControllerTriggeringFailed = "Failed To Trigger Workload Controller"
 )
 
@@ -141,7 +111,7 @@ func CreateEventWithLog(client kubernetes.Interface, component string, obj runti
 	event, err := CreateEvent(client, component, obj, eventType, reason, message)
 	if err != nil {
 		klog.Errorln("Failed to write event, reason: ", err)
-	} else {
-		klog.Infoln("Event created: ", event.Name)
+		return
 	}
+	klog.Infoln("Event created: ", event.Name)
 }

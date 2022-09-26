@@ -31,9 +31,9 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
-func (opt *RBACOptions) EnsureCronJobRBAC(cronJobName string) error {
-	if opt.ServiceAccount.Name == "" {
-		opt.ServiceAccount.Name = cronJobName
+func (opt *Options) EnsureCronJobRBAC(cronJobName string) error {
+	if opt.serviceAccount.Name == "" {
+		opt.serviceAccount.Name = cronJobName
 		err := opt.ensureServiceAccount()
 		if err != nil {
 			return err
@@ -47,65 +47,70 @@ func (opt *RBACOptions) EnsureCronJobRBAC(cronJobName string) error {
 	return opt.ensureCronJobRoleBinding(cronJobName)
 }
 
-func (opt *RBACOptions) ensureCronJobClusterRole() error {
+func (opt *Options) ensureCronJobClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashCronJobClusterRole,
-		Labels: opt.OffshootLabels,
+		Labels: opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		in.Rules = []rbac.PolicyRule{
-			{
-				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
-				Resources: []string{"*"},
-				Verbs:     []string{"*"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"events"},
-				Verbs:     []string{"create"},
-			},
-			{
-				APIGroups:     []string{policy.GroupName},
-				Resources:     []string{"podsecuritypolicies"},
-				Verbs:         []string{"use"},
-				ResourceNames: opt.PodSecurityPolicyNames,
-			},
-			{
-				APIGroups: []string{apps.GroupName},
-				Resources: []string{"deployments", "statefulsets", "replicasets", "daemonsets"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"replicationcontrollers", "persistentvolumeclaims"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{"apps.openshift.io"},
-				Resources: []string{"deploymentconfigs"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{"appcatalog.appscode.com"},
-				Resources: []string{"*"},
-				Verbs:     []string{"get"},
-			},
-		}
+	rules := []rbac.PolicyRule{
+		{
+			APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
+		},
+		{
+			APIGroups: []string{core.GroupName},
+			Resources: []string{"events"},
+			Verbs:     []string{"create"},
+		},
+		{
+			APIGroups: []string{apps.GroupName},
+			Resources: []string{"deployments", "statefulsets", "daemonsets"},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups: []string{core.GroupName},
+			Resources: []string{"persistentvolumeclaims"},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups: []string{"apps.openshift.io"},
+			Resources: []string{"deploymentconfigs"},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups: []string{"appcatalog.appscode.com"},
+			Resources: []string{"*"},
+			Verbs:     []string{"get"},
+		},
+	}
+
+	if len(opt.pspNames) > 0 {
+		rules = append(rules, rbac.PolicyRule{
+			APIGroups:     []string{policy.GroupName},
+			Resources:     []string{"podsecuritypolicies"},
+			Verbs:         []string{"use"},
+			ResourceNames: opt.pspNames,
+		})
+	}
+
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+		in.Rules = rules
 		return in
 	}, metav1.PatchOptions{})
 	return err
 }
 
-func (opt *RBACOptions) ensureCronJobRoleBinding(cronJobName string) error {
+func (opt *Options) ensureCronJobRoleBinding(cronJobName string) error {
 	meta := metav1.ObjectMeta{
 		Name:      cronJobName,
-		Namespace: opt.Invoker.Namespace,
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.invOpts.Namespace,
+		Labels:    opt.offshootLabels,
 	}
 
 	// ensure role binding
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -115,8 +120,8 @@ func (opt *RBACOptions) ensureCronJobRoleBinding(cronJobName string) error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in

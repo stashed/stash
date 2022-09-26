@@ -27,37 +27,39 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash"
 	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
-	v1beta1_util "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/apimachinery/pkg/conditions"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/executor"
+	"stash.appscode.dev/stash/pkg/rbac"
+	"stash.appscode.dev/stash/pkg/scheduler"
 	"stash.appscode.dev/stash/pkg/util"
 
-	"gomodules.xyz/pointer"
-	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
-	batch_util "kmodules.xyz/client-go/batch"
 	core_util "kmodules.xyz/client-go/core/v1"
-	meta2 "kmodules.xyz/client-go/meta"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
-	ofst_util "kmodules.xyz/offshoot-api/util"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
-	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
 const requeueTimeInterval = 5 * time.Second
+
+type backupInvokerReconciler struct {
+	ctrl    *StashController
+	logger  klog.Logger
+	invoker invoker.BackupInvoker
+	key     string
+}
 
 func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
 	return webhook.NewGenericWebhook(
@@ -85,7 +87,7 @@ func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
 				oldBc := oldObj.(*api_v1beta1.BackupConfiguration)
 
 				if oldBc.Status.Phase == api_v1beta1.BackupInvokerReady && isTargetUpdated(*oldBc, *newBc) {
-					return nil, fmt.Errorf("Updating target is forbidden when BackupConfiguration is in READY state")
+					return nil, fmt.Errorf("updating target is forbidden when BackupConfiguration is in READY state")
 				}
 
 				return nil, c.validateBackupConfiguration(newBc)
@@ -105,10 +107,7 @@ func (c *StashController) validateBackupConfiguration(bc *api_v1beta1.BackupConf
 			return err
 		}
 	}
-	if err := c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace); err != nil {
-		return err
-	}
-	return validateTimeOut(bc.Spec.TimeOut)
+	return c.validateAgainstUsagePolicy(bc.Spec.Repository, bc.Namespace)
 }
 
 func (c *StashController) initBackupConfigurationWatcher() {
@@ -134,457 +133,312 @@ func (c *StashController) initBackupConfigurationWatcher() {
 func (c *StashController) runBackupConfigurationProcessor(key string) error {
 	obj, exists, err := c.bcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.ErrorS(err, "Failed to fetch object from indexer",
+			apis.ObjectKind, api_v1beta1.ResourceKindBackupConfiguration,
+			apis.ObjectKey, key,
+		)
 		return err
 	}
 	if !exists {
-		klog.Warningf("BackupConfiguration %s does not exit anymore\n", key)
+		klog.V(4).InfoS("Object does not exit anymore",
+			apis.ObjectKind, api_v1beta1.ResourceKindBackupConfiguration,
+			apis.ObjectKey, key,
+		)
 		return nil
 	}
+	backupConfig := obj.(*api_v1beta1.BackupConfiguration)
 
-	backupConfiguration := obj.(*api_v1beta1.BackupConfiguration)
-	klog.Infof("Sync/Add/Update for BackupConfiguration %s", backupConfiguration.GetName())
-	// process syc/add/update event
-	inv := invoker.NewBackupConfigurationInvoker(c.stashClient, backupConfiguration)
-	err = c.applyBackupInvokerReconciliationLogic(inv, key)
-	if err != nil {
-		return err
+	logger := klog.NewKlogr().WithValues(
+		apis.ObjectKind, api_v1beta1.ResourceKindBackupConfiguration,
+		apis.ObjectName, backupConfig.Name,
+		apis.ObjectNamespace, backupConfig.Namespace,
+	)
+	logger.V(4).Info("Received Sync/Add/Update event")
+
+	r := backupInvokerReconciler{
+		ctrl:    c,
+		logger:  logger,
+		invoker: invoker.NewBackupConfigurationInvoker(c.stashClient, backupConfig),
+		key:     key,
 	}
 
-	// We have successfully completed respective stuffs for the current state of this resource.
-	// Hence, let's set observed generation as same as the current generation.
-	_, err = v1beta1_util.UpdateBackupConfigurationStatus(
-		context.TODO(),
-		c.stashClient.StashV1beta1(),
-		backupConfiguration.ObjectMeta,
-		func(in *api_v1beta1.BackupConfigurationStatus) (types.UID, *api_v1beta1.BackupConfigurationStatus) {
-			in.ObservedGeneration = backupConfiguration.Generation
-			return backupConfiguration.UID, in
-		},
-		metav1.UpdateOptions{},
-	)
-	return err
+	if err := r.reconcile(); err != nil {
+		r.logger.Error(err, "Failed to reconcile")
+		return nil
+	}
+	return r.invoker.UpdateObservedGeneration()
 }
 
-func (c *StashController) applyBackupInvokerReconciliationLogic(inv invoker.BackupInvoker, key string) error {
+func (r *backupInvokerReconciler) reconcile() error {
 	// check if backup invoker is being deleted. if it is being deleted then delete respective resources.
-	invMeta := inv.GetObjectMeta()
-	invokerRef, err := inv.GetObjectRef()
+	invMeta := r.invoker.GetObjectMeta()
+	invokerRef, err := r.invoker.GetObjectRef()
 	if err != nil {
 		return err
 	}
 	if invMeta.DeletionTimestamp != nil {
 		if core_util.HasFinalizer(invMeta, api_v1beta1.StashKey) {
-			err := c.cleanupBackupInvokerOffshoots(inv, invokerRef)
-			if err != nil {
+			if err := r.cleanupBackupInvokerOffshoots(invokerRef); err != nil {
 				return err
 			}
-
-			// Remove finalizer
-			return inv.RemoveFinalizer()
+			return r.invoker.RemoveFinalizer()
 		}
 		return nil
 	}
 
-	if err := inv.AddFinalizer(); err != nil {
+	if err := r.invoker.AddFinalizer(); err != nil {
 		return err
 	}
 
-	shouldRequeue, err := c.validateDriverRequirements(inv)
+	shouldRequeue, err := r.validateDriverRequirements()
 	if err != nil {
 		return err
 	}
 	if shouldRequeue {
-		return c.requeueBackupInvoker(inv, key)
+		return r.requeue()
 	}
 
 	someTargetMissing := false
-	for _, targetInfo := range inv.GetTargetInfo() {
+	for _, targetInfo := range r.invoker.GetTargetInfo() {
 		if targetInfo.Target != nil {
 			tref := targetInfo.Target.Ref
-			targetExist, err := util.IsTargetExist(c.clientConfig, tref)
+			targetExist, err := util.IsTargetExist(r.ctrl.clientConfig, tref)
 			if err != nil {
-				klog.Errorf("Failed to check whether Kind: %s Namespace: %s Name: %s exist or not. Reason: %v.",
-					tref.Kind,
-					tref.Namespace,
-					tref.Name,
-					err.Error(),
+				r.logger.Error(err, "Failed to check target existence",
+					apis.KeyTargetKind, tref.Kind,
+					apis.KeyTargetName, tref.Name,
+					apis.KeyTargetNamespace, tref.Namespace,
 				)
 				// Set the "BackupTargetFound" condition to "Unknown"
-				cerr := conditions.SetBackupTargetFoundConditionToUnknown(inv, tref, err)
-				return errors.NewAggregate([]error{err, cerr})
+				return conditions.SetBackupTargetFoundConditionToUnknown(r.invoker, tref, err)
 			}
 			if !targetExist {
 				// Target does not exist. Log the information.
 				someTargetMissing = true
-				klog.Infof("Backup target %s %s/%s does not exist.",
-					tref.Kind,
-					tref.Namespace,
-					tref.Name)
-				err = conditions.SetBackupTargetFoundConditionToFalse(inv, tref)
-				if err != nil {
+				r.logger.Info("Backup target does not exist.",
+					apis.KeyTargetKind, tref.Kind,
+					apis.KeyTargetName, tref.Name,
+					apis.KeyTargetNamespace, tref.Namespace,
+				)
+				if err := conditions.SetBackupTargetFoundConditionToFalse(r.invoker, tref); err != nil {
 					return err
 				}
 				// Process next target.
 				continue
 			}
 			// Backup target exist. So, set "BackupTargetFound" condition to "True"
-			err = conditions.SetBackupTargetFoundConditionToTrue(inv, tref)
-			if err != nil {
+			if err := conditions.SetBackupTargetFoundConditionToTrue(r.invoker, tref); err != nil {
 				return err
 			}
-			// For sidecar model, ensure the stash sidecar
-			if inv.GetDriver() == api_v1beta1.ResticSnapshotter && util.BackupModel(tref.Kind, targetInfo.Task.Name) == apis.ModelSidecar {
-				err := c.EnsureV1beta1Sidecar(tref)
+
+			// For sidecar model, send event to the respective workload queue. The workload controller will ensure the stash sidecar.
+			if r.invoker.GetDriver() == api_v1beta1.ResticSnapshotter && util.BackupModel(tref.Kind, targetInfo.Task.Name) == apis.ModelSidecar {
+				err := r.ctrl.sendEventToWorkloadQueue(
+					tref.Kind,
+					tref.Namespace,
+					tref.Name,
+				)
 				if err != nil {
-					return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
+					return r.ctrl.handleWorkloadControllerTriggerFailure(r.logger, invokerRef, tref, err)
 				}
 			}
 		}
 	}
+
 	// If some backup targets are missing, then retry after some time.
 	if someTargetMissing {
-		klog.Infof("Some targets are missing for backup invoker: %s %s/%s.\nRequeueing after 5 seconds......",
-			inv.GetTypeMeta().Kind,
-			invMeta.Namespace,
-			invMeta.Name,
-		)
-		return c.requeueBackupInvoker(inv, key)
+		r.logger.Info("One or more targets are missing")
+		return r.requeue()
 	}
-	// create a CronJob that will create BackupSession on each schedule
-	err = c.EnsureBackupTriggeringCronJob(inv)
-	if err != nil {
-		// Failed to ensure the backup triggering CronJob. So, set "CronJobCreated" condition to "False"
-		cerr := conditions.SetCronJobCreatedConditionToFalse(inv, err)
-		return c.handleCronJobCreationFailure(invokerRef, errors.NewAggregate([]error{err, cerr}))
-	}
-
-	// Successfully ensured the backup triggering CronJob. So, set "CronJobCreated" condition to "True"
-	return conditions.SetCronJobCreatedConditionToTrue(inv)
+	return r.ensurePeriodicScheduler(invokerRef, nil)
 }
 
-// EnsureV1beta1SidecarDeleted send an event to workload respective controller
-// the workload controller will take care of removing respective sidecar
-func (c *StashController) EnsureV1beta1SidecarDeleted(targetRef api_v1beta1.TargetRef) error {
-	return c.sendEventToWorkloadQueue(
-		targetRef.Kind,
-		targetRef.Namespace,
-		targetRef.Name,
+func (r *backupInvokerReconciler) ensurePeriodicScheduler(invokerRef *core.ObjectReference, index *int) error {
+	rbacOptions, err := r.ctrl.getRBACOptions(
+		r.invoker,
+		r.invoker,
+		r.invoker.GetRuntimeSettings(),
+		index,
 	)
-}
-
-// EnsureV1beta1Sidecar send an event to workload respective controller
-// the workload controller will take care of injecting backup sidecar
-func (c *StashController) EnsureV1beta1Sidecar(targetRef api_v1beta1.TargetRef) error {
-	return c.sendEventToWorkloadQueue(
-		targetRef.Kind,
-		targetRef.Namespace,
-		targetRef.Name,
-	)
-}
-
-func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resourceName string) error {
-	switch kind {
-	case workload_api.KindDeployment:
-		if resource, err := c.dpLister.Deployments(namespace).Get(resourceName); err == nil {
-			key, err := cache.MetaNamespaceKeyFunc(resource)
-			if err == nil {
-				c.dpQueue.GetQueue().Add(key)
-			}
-			return err
-		}
-	case workload_api.KindDaemonSet:
-		if resource, err := c.dsLister.DaemonSets(namespace).Get(resourceName); err == nil {
-			key, err := cache.MetaNamespaceKeyFunc(resource)
-			if err == nil {
-				c.dsQueue.GetQueue().Add(key)
-			}
-			return err
-		}
-	case workload_api.KindStatefulSet:
-		if resource, err := c.ssLister.StatefulSets(namespace).Get(resourceName); err == nil {
-			key, err := cache.MetaNamespaceKeyFunc(resource)
-			if err == nil {
-				c.ssQueue.GetQueue().Add(key)
-			}
-		}
-	case workload_api.KindReplicationController:
-		if resource, err := c.rcLister.ReplicationControllers(namespace).Get(resourceName); err == nil {
-			key, err := cache.MetaNamespaceKeyFunc(resource)
-			if err == nil {
-				c.rcQueue.GetQueue().Add(key)
-			}
-			return err
-		}
-	case workload_api.KindReplicaSet:
-		if resource, err := c.rsLister.ReplicaSets(namespace).Get(resourceName); err == nil {
-			key, err := cache.MetaNamespaceKeyFunc(resource)
-			if err == nil {
-				c.rsQueue.GetQueue().Add(key)
-			}
-			return err
-		}
-	case workload_api.KindDeploymentConfig:
-		if c.ocClient != nil && c.dcLister != nil {
-			if resource, err := c.dcLister.DeploymentConfigs(namespace).Get(resourceName); err == nil {
-				key, err := cache.MetaNamespaceKeyFunc(resource)
-				if err == nil {
-					c.dcQueue.GetQueue().Add(key)
-				}
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// EnsureBackupTriggeringCronJob creates a Kubernetes CronJob for the respective backup invoker
-// the CornJob will create a BackupSession object in each schedule
-// respective BackupSession controller will watch this BackupSession object and take backup instantly
-func (c *StashController) EnsureBackupTriggeringCronJob(inv invoker.BackupInvoker) error {
-	invMeta := inv.GetObjectMeta()
-	runtimeSettings := inv.GetRuntimeSettings()
-	ownerRef := inv.GetOwnerRef()
-
-	image := docker.Docker{
-		Registry: c.DockerRegistry,
-		Image:    c.StashImage,
-		Tag:      c.StashImageTag,
-	}
-
-	meta := metav1.ObjectMeta{
-		Name:      getBackupCronJobName(inv),
-		Namespace: invMeta.Namespace,
-		Labels:    inv.GetLabels(),
-	}
-
-	rbacOptions, err := c.getBackupRBACOptions(inv, nil)
-	if err != nil {
-		return err
-	}
-	rbacOptions.PodSecurityPolicyNames = c.getBackupSessionCronJobPSPNames()
-
-	if runtimeSettings.Pod != nil && runtimeSettings.Pod.ServiceAccountName != "" {
-		rbacOptions.ServiceAccount.Name = runtimeSettings.Pod.ServiceAccountName
-	}
-
-	err = rbacOptions.EnsureCronJobRBAC(meta.Name)
 	if err != nil {
 		return err
 	}
 
-	// if the Stash is using a private registry, then ensure the image pull secrets
-	var imagePullSecrets []core.LocalObjectReference
-	if c.ImagePullSecrets != nil {
-		imagePullSecrets, err = c.ensureImagePullSecrets(invMeta, ownerRef)
+	s := &scheduler.PeriodicScheduler{
+		KubeClient: r.ctrl.kubeClient,
+		Image: docker.Docker{
+			Registry: r.ctrl.DockerRegistry,
+			Image:    r.ctrl.StashImage,
+			Tag:      r.ctrl.StashImageTag,
+		},
+		Invoker:     r.invoker,
+		RBACOptions: rbacOptions,
+	}
+	s.RBACOptions.SetPSPNames(r.ctrl.getBackupSchedulerPSPNames())
+
+	if r.ctrl.ImagePullSecrets != nil {
+		s.ImagePullSecrets, err = r.ctrl.ensureImagePullSecrets(r.invoker.GetObjectMeta(), r.invoker.GetOwnerRef())
 		if err != nil {
 			return err
 		}
 	}
-	_, _, err = batch_util.CreateOrPatchCronJob(
-		context.TODO(),
-		c.kubeClient,
-		meta,
-		func(in *batch.CronJob) *batch.CronJob {
-			// set backup invoker object as cron-job owner
-			core_util.EnsureOwnerReference(&in.ObjectMeta, ownerRef)
 
-			in.Spec.Schedule = inv.GetSchedule()
-			in.Spec.Suspend = pointer.BoolP(inv.IsPaused()) // this ensure that the CronJob is suspended when the backup invoker is paused.
-			in.Spec.JobTemplate.Labels = meta_util.OverwriteKeys(in.Spec.JobTemplate.Labels, inv.GetLabels())
-			// ensure that job gets deleted on completion
-			in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
-			// pass offshoot labels to the CronJob's pod
-			in.Spec.JobTemplate.Spec.Template.Labels = meta_util.OverwriteKeys(in.Spec.JobTemplate.Spec.Template.Labels, inv.GetLabels())
-
-			container := core.Container{
-				Name:            apis.StashCronJobContainer,
-				ImagePullPolicy: core.PullIfNotPresent,
-				Image:           image.ToContainerImage(),
-				Args: []string{
-					"create-backupsession",
-					fmt.Sprintf("--invoker-name=%s", ownerRef.Name),
-					fmt.Sprintf("--invoker-kind=%s", ownerRef.Kind),
-				},
-			}
-			// only apply the container level runtime settings that make sense for the CronJob
-			if runtimeSettings.Container != nil {
-				container.Resources = runtimeSettings.Container.Resources
-				container.Env = runtimeSettings.Container.Env
-				container.EnvFrom = runtimeSettings.Container.EnvFrom
-				container.SecurityContext = runtimeSettings.Container.SecurityContext
-			}
-
-			in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-				in.Spec.JobTemplate.Spec.Template.Spec.Containers, container)
-			in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = rbacOptions.ServiceAccount.Name
-			in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
-
-			// apply the pod level runtime settings to the CronJob
-			if runtimeSettings.Pod != nil {
-				in.Spec.JobTemplate.Spec.Template.Spec = ofst_util.ApplyPodRuntimeSettings(in.Spec.JobTemplate.Spec.Template.Spec, *runtimeSettings.Pod)
-			}
-
-			return in
-		},
-		metav1.PatchOptions{},
-	)
-
-	return err
+	if err := s.Ensure(); err != nil {
+		cerr := conditions.SetCronJobCreatedConditionToFalse(r.invoker, err)
+		return r.handleCronJobCreationFailure(invokerRef, errors.NewAggregate([]error{err, cerr}))
+	}
+	return conditions.SetCronJobCreatedConditionToTrue(r.invoker)
 }
 
-// EnsureBackupTriggeringCronJobDeleted ensure that the CronJob of the respective backup invoker has it as owner.
-// Kuebernetes garbage collector will take care of removing the CronJob
-func (c *StashController) EnsureBackupTriggeringCronJobDeleted(inv invoker.BackupInvoker) error {
-	invMeta := inv.GetObjectMeta()
-	cur, err := batch_util.GetCronJob(context.TODO(), c.kubeClient, types.NamespacedName{Namespace: invMeta.Namespace, Name: getBackupCronJobName(inv)})
+func (c *StashController) getRBACOptions(
+	inv invoker.MetadataHandler,
+	repo invoker.RepositoryGetter,
+	runtimeSettings ofst.RuntimeSettings,
+	index *int,
+) (*rbac.Options, error) {
+	repository, err := c.repoLister.Repositories(repo.GetRepoRef().Namespace).Get(repo.GetRepoRef().Name)
+	if err != nil && !kerr.IsNotFound(err) {
+		return nil, err
+	}
+
+	rbacOptions, err := rbac.NewRBACOptions(
+		c.kubeClient,
+		inv,
+		repository,
+		index,
+	)
 	if err != nil {
-		if kerr.IsNotFound(err) {
-			return nil
-		}
-		return err
+		return nil, err
 	}
-	_, _, err = batch_util.PatchCronJob(
-		context.TODO(),
-		c.kubeClient,
-		cur,
-		func(in *batch.CronJob) *batch.CronJob {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, inv.GetOwnerRef())
-			return in
-		},
-		metav1.PatchOptions{},
-	)
-	return err
+	rbacOptions.SetOptionsFromRuntimeSettings(runtimeSettings)
+
+	return rbacOptions, nil
 }
 
-func getBackupCronJobName(inv invoker.BackupInvoker) string {
-	invMeta := inv.GetObjectMeta()
-	if getTargetNamespace(inv) != invMeta.Namespace {
-		return meta2.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, invMeta.Namespace, strings.ReplaceAll(invMeta.Name, ".", "-"))
-	}
-	return meta2.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, "", strings.ReplaceAll(invMeta.Name, ".", "-"))
-}
-
-func getTargetNamespace(inv invoker.BackupInvoker) string {
-	for _, t := range inv.GetTargetInfo() {
-		if t.Target != nil && t.Target.Ref.Namespace != "" {
-			return t.Target.Ref.Namespace
-		}
-	}
-	return inv.GetObjectMeta().Namespace
-}
-
-func (c *StashController) handleCronJobCreationFailure(ref *core.ObjectReference, err error) error {
-	if ref == nil {
+func (r *backupInvokerReconciler) handleCronJobCreationFailure(invRef *core.ObjectReference, err error) error {
+	if invRef == nil {
 		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write cronjob creation failure event. Reason: provided ObjectReference is nil")})
 	}
 
 	var eventSource string
-	switch ref.Kind {
+	switch invRef.Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:
 		eventSource = eventer.EventSourceBackupConfigurationController
 	default:
-		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write cronjob creation failure event. Reason: Stash does not create cron job for %s", ref.Kind)})
+		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write cronjob creation failure event. Reason: Stash does not create cron job for %s", invRef.Kind)})
 	}
-	// write log
-	klog.Warningf("failed to create CronJob for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+	r.logger.Error(err, "Failed to create backup triggering CronJob")
 
 	// write event to Backup invoker
 	_, err2 := eventer.CreateEvent(
-		c.kubeClient,
+		r.ctrl.kubeClient,
 		eventSource,
-		ref,
+		invRef,
 		core.EventTypeWarning,
 		eventer.EventReasonCronJobCreationFailed,
-		fmt.Sprintf("failed to ensure CronJob for %s  %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err))
+		fmt.Sprintf("failed to ensure CronJob for %s  %s/%s. Reason: %v", invRef.Kind, invRef.Namespace, invRef.Name, err))
 	return errors.NewAggregate([]error{err, err2})
 }
 
-func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.ObjectReference, err error) error {
-	if ref == nil {
+func (c *StashController) handleWorkloadControllerTriggerFailure(logger klog.Logger, invRef *core.ObjectReference, tref api_v1beta1.TargetRef, err error) error {
+	if invRef == nil {
 		return errors.NewAggregate([]error{err, fmt.Errorf("failed to write workload controller triggering failure event. Reason: provided ObjectReference is nil")})
 	}
 	var eventSource string
-	switch ref.Kind {
+	switch invRef.Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:
 		eventSource = eventer.EventSourceBackupConfigurationController
 	case api_v1beta1.ResourceKindRestoreSession:
 		eventSource = eventer.EventSourceRestoreSessionController
 	}
 
-	klog.Warningf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+	logger.Error(err, "Failed to trigger workload controller",
+		apis.KeyTargetKind, tref.Kind,
+		apis.KeyTargetName, tref.Name,
+		apis.KeyTargetNamespace, tref.Namespace,
+	)
 
 	// write event to backup invoker/RestoreSession
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
 		eventSource,
-		ref,
+		invRef,
 		core.EventTypeWarning,
 		eventer.EventReasonWorkloadControllerTriggeringFailed,
-		fmt.Sprintf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+		fmt.Sprintf("failed to trigger workload controller for target %s %s/%s. Reason: %v", tref.Kind, tref.Namespace, tref.Name, err),
 	)
 	return errors.NewAggregate([]error{err, err2})
 }
 
-func (c *StashController) requeueBackupInvoker(inv invoker.BackupInvoker, key string) error {
-	switch inv.GetTypeMeta().Kind {
+func (r *backupInvokerReconciler) requeue() error {
+	r.logger.Info("Requeueing after 5 seconds......")
+	switch r.invoker.GetTypeMeta().Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:
-		c.bcQueue.GetQueue().AddAfter(key, requeueTimeInterval)
+		r.ctrl.bcQueue.GetQueue().AddAfter(r.key, requeueTimeInterval)
 	default:
 		return fmt.Errorf("unable to requeue. Reason: Backup invoker %s  %s is not supported",
-			inv.GetTypeMeta().APIVersion,
-			inv.GetTypeMeta().Kind,
+			r.invoker.GetTypeMeta().APIVersion,
+			r.invoker.GetTypeMeta().Kind,
 		)
 	}
 	return nil
 }
 
-func (c *StashController) cleanupBackupInvokerOffshoots(inv invoker.BackupInvoker, invokerRef *core.ObjectReference) error {
-	for _, targetInfo := range inv.GetTargetInfo() {
-		if targetInfo.Target != nil {
-			err := c.EnsureV1beta1SidecarDeleted(targetInfo.Target.Ref)
+func (r *backupInvokerReconciler) cleanupBackupInvokerOffshoots(invokerRef *core.ObjectReference) error {
+	for _, targetInfo := range r.invoker.GetTargetInfo() {
+		if targetInfo.Target != nil && backupExecutorType(r.invoker, targetInfo) == executor.TypeSidecar {
+			err := r.ctrl.sendEventToWorkloadQueue(
+				targetInfo.Target.Ref.Kind,
+				targetInfo.Target.Ref.Namespace,
+				targetInfo.Target.Ref.Name,
+			)
 			if err != nil {
-				return c.handleWorkloadControllerTriggerFailure(invokerRef, err)
+				return r.ctrl.handleWorkloadControllerTriggerFailure(r.logger, invokerRef, targetInfo.Target.Ref, err)
 			}
 		}
 	}
 
-	if err := c.EnsureBackupTriggeringCronJobDeleted(inv); err != nil {
+	if err := r.cleanupScheduler(); err != nil {
 		return err
 	}
+	return r.ctrl.deleteRepositoryReferences(r.invoker)
+}
 
-	rbacOptions, err := c.getBackupRBACOptions(inv, nil)
+func (r *backupInvokerReconciler) cleanupScheduler() error {
+	rbacOptions, err := r.ctrl.getRBACOptions(r.invoker, r.invoker, r.invoker.GetRuntimeSettings(), nil)
 	if err != nil {
 		return err
 	}
-
-	if err := rbacOptions.EnsureRBACResourcesDeleted(); err != nil {
-		return err
+	s := &scheduler.PeriodicScheduler{
+		Invoker:     r.invoker,
+		KubeClient:  r.ctrl.kubeClient,
+		RBACOptions: rbacOptions,
 	}
-
-	return c.deleteRepositoryReferences(inv)
+	return s.Cleanup()
 }
 
-func (c *StashController) validateDriverRequirements(inv invoker.BackupInvoker) (bool, error) {
-	if inv.GetDriver() == api_v1beta1.ResticSnapshotter {
-		return c.checkForResticSnapshotterRequirements(inv, inv)
-	} else if inv.GetDriver() == api_v1beta1.VolumeSnapshotter {
-		return false, c.checkVolumeSnapshotterRequirements(inv)
+func (r *backupInvokerReconciler) validateDriverRequirements() (bool, error) {
+	if r.invoker.GetDriver() == api_v1beta1.ResticSnapshotter {
+		return r.ctrl.checkForResticSnapshotterRequirements(r.logger, r.invoker, r.invoker)
+	}
+
+	if r.invoker.GetDriver() == api_v1beta1.VolumeSnapshotter {
+		return false, r.ctrl.checkVolumeSnapshotterRequirements(r.invoker)
 	}
 	return false, nil
 }
 
-func (c *StashController) checkForResticSnapshotterRequirements(inv interface{}, r repoReferenceHandler) (bool, error) {
+func (c *StashController) checkForResticSnapshotterRequirements(logger klog.Logger, inv interface{}, r repoReferenceHandler) (bool, error) {
 	repository, err := c.checkForRepositoryExistence(inv, r)
 	if err != nil {
 		return false, err
 	}
 
 	if repository == nil {
-		klog.Infof("Repository %s/%s does not exist.\nRequeueing after 5 seconds......",
-			r.GetRepoRef().Namespace,
-			r.GetRepoRef().Name)
+		logger.Info("Repository does not exist",
+			apis.KeyRepositoryName, r.GetRepoRef().Name,
+			apis.KeyRepositoryNamespace, r.GetRepoRef().Namespace,
+		)
 		return true, nil
 	}
 
@@ -593,11 +447,11 @@ func (c *StashController) checkForResticSnapshotterRequirements(inv interface{},
 		return false, err
 	}
 	if secret == nil {
-		klog.Infof("Backend Secret %s/%s does not exist for Repository %s/%s.\nRequeueing after 5 seconds......",
-			repository.Namespace,
-			repository.Spec.Backend.StorageSecretName,
-			repository.Namespace,
-			repository.Name,
+		klog.InfoS("Secret does not exist",
+			"secret_name", repository.Spec.Backend.StorageSecretName,
+			"secret_namespace", repository.Namespace,
+			apis.KeyRepositoryName, repository.Name,
+			apis.KeyRepositoryNamespace, repository.Namespace,
 		)
 		return true, nil
 	}
@@ -627,8 +481,7 @@ func (c *StashController) checkForRepositoryExistence(inv interface{}, r repoRef
 		return nil, conditions.SetRepositoryFoundConditionToFalse(inv)
 	}
 
-	err = conditions.SetRepositoryFoundConditionToTrue(inv)
-	if err != nil {
+	if err := conditions.SetRepositoryFoundConditionToTrue(inv); err != nil {
 		return repository, err
 	}
 
@@ -658,9 +511,4 @@ func verifyCrossNamespacePermission(inv metav1.ObjectMeta, target api_v1beta1.Ta
 		return fmt.Errorf("cross-namespace target reference is not allowed for %q", target.Kind)
 	}
 	return nil
-}
-
-func validateTimeOut(timeOut string) error {
-	_, err := time.ParseDuration(timeOut)
-	return err
 }

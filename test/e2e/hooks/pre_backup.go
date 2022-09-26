@@ -23,8 +23,10 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
+	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	. "github.com/onsi/ginkgo"
+	_ "github.com/go-sql-driver/mysql"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -681,6 +683,133 @@ var _ = Describe("PreBackup Hook", func() {
 
 					By("Verifying that target backup were not executed")
 					Expect(f.TargetBackupExecuted(completedBS.Status.Targets)).Should(BeFalse())
+				})
+			})
+		})
+
+		Context("Job Model", func() {
+			Context("PVC", func() {
+				Context("Success Cases", func() {
+					It("should backup the file created in preBackup Hook", func() {
+						// Create new PVC
+						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+						Expect(err).NotTo(HaveOccurred())
+
+						// Deploy a Pod
+						pod, err := f.DeployPod(pvc.Name)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Generate Sample Data
+						sampleData, err := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup PVC Backup
+						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PreBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"touch", fmt.Sprintf("%s/pre-hook.txt", apis.StashDefaultMountPath)},
+									},
+									ContainerName: apis.PreTaskHook,
+								},
+							}
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+							Name: backupConfig.Name,
+							Kind: v1beta1.ResourceKindBackupConfiguration,
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has succeeded")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+						By("Reading data after executing preBackup hook")
+						newData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(newData).ShouldNot(BeSameAs(sampleData))
+
+						// Simulate disaster scenario. Delete the data from source PVC
+						By("Deleting sample data from source Pod")
+						err = f.CleanupSampleDataFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Restore the backed up data
+						By("Restoring the backed up data")
+						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that RestoreSession succeeded")
+						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(context.TODO(), restoreSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSucceeded))
+
+						// Get restored data
+						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
+
+						// Verify that restored data is same as the original data
+						By("Verifying restored data is same as the data after executing preBackup hook")
+						Expect(restoredData).Should(BeSameAs(newData))
+					})
+				})
+
+				Context("Failure Cases", func() {
+					It("should not take backup when the preBackup hook failed", func() {
+						// Create new PVC
+						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+						Expect(err).NotTo(HaveOccurred())
+
+						// Deploy a Pod
+						pod, err := f.DeployPod(pvc.Name)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Generate Sample Data
+						_, err = f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup PVC Backup
+						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
+							// try to write a file in an invalid directory so that the hook fail.
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PreBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"touch", "/invalid/directory/pre-hook.txt"},
+									},
+									ContainerName: apis.PreTaskHook,
+								},
+							}
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.BackupInvokerRef{
+							Name: backupConfig.Name,
+							Kind: v1beta1.ResourceKindBackupConfiguration,
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has failed")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+
+						By("Verifying that target backup were not executed")
+						Expect(f.TargetBackupExecuted(completedBS.Status.Targets)).Should(BeFalse())
+					})
 				})
 			})
 		})

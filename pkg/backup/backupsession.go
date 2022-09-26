@@ -64,7 +64,7 @@ type BackupSessionController struct {
 	MaxNumRequeues       int
 	NumThreads           int
 	ResyncPeriod         time.Duration
-	// BackupConfiguration/BackupBatch
+	// BackupConfiguration
 	InvokerKind string
 	InvokerName string
 	Namespace   string
@@ -87,10 +87,10 @@ func (c *BackupSessionController) RunBackup(targetInfo invoker.BackupTargetInfo,
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	// for Deployment, ReplicaSet and ReplicationController run BackupSession watcher only in leader pod.
+	// for Deployment and DeploymentConfig run BackupSession watcher only in leader pod.
 	// for others workload i.e. DaemonSet and StatefulSet run BackupSession watcher in all pods.
 	switch targetInfo.Target.Ref.Kind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindDeploymentConfig:
+	case apis.KindDeployment, apis.KindDeploymentConfig:
 		if err := c.electLeaderPod(targetInfo, invokerRef, stopCh); err != nil {
 			return err
 		}
@@ -209,12 +209,12 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 		return nil
 	}
 
-	// For Deployment, ReplicaSet and ReplicationController only leader pod is running this controller so no problem with restic repo lock.
+	// For Deployment only leader pod is running this controller so no problem with restic repo lock.
 	// For StatefulSet and DaemonSet all pods are running this controller and all will try to backup simultaneously. But, restic repository can be
 	// locked by only one pod. So, we need a leader election to determine who will take backup first. Once backup is complete, the leader pod will
 	// step down from leadership so that another replica can acquire leadership and start taking backup.
 	switch targetInfo.Target.Ref.Kind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindDeploymentConfig:
+	case apis.KindDeployment, apis.KindDeploymentConfig:
 		return c.backupHost(inv, targetInfo, backupSession)
 	default:
 		return c.electBackupLeader(backupSession, inv, targetInfo)
@@ -478,10 +478,10 @@ func (c *BackupSessionController) handleBackupCompletion(inv invoker.BackupInvok
 }
 
 func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1beta1.BackupSession, backupTarget *api_v1beta1.BackupTarget) bool {
-	// if overall backupSession phase is "Succeeded" or "Failed" or "Skipped" then it has been processed already
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
-		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped {
+		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped ||
+		kmapi.IsConditionFalse(backupSession.Status.Conditions, api_v1beta1.GlobalPreBackupHookSucceeded) {
 		return true
 	}
 

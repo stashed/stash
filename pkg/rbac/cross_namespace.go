@@ -30,8 +30,8 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
-func (opt *RBACOptions) ensureCrossNamespaceRBAC() error {
-	if opt.CrossNamespaceResources == nil {
+func (opt *Options) ensureCrossNamespaceRBAC() error {
+	if opt.crossNamespaceResources == nil {
 		return nil
 	}
 
@@ -43,25 +43,25 @@ func (opt *RBACOptions) ensureCrossNamespaceRBAC() error {
 	return opt.ensureCrossNamespaceRoleBinding()
 }
 
-func (opt *RBACOptions) ensureCrossNamespaceRole() error {
+func (opt *Options) ensureCrossNamespaceRole() error {
 	meta := metav1.ObjectMeta{
 		Name:      opt.getCrossNamespaceRoleName(),
-		Namespace: opt.CrossNamespaceResources.Namespace,
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.crossNamespaceResources.Namespace,
+		Labels:    opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.Role) *rbac.Role {
+	_, _, err := rbac_util.CreateOrPatchRole(context.TODO(), opt.kubeClient, meta, func(in *rbac.Role) *rbac.Role {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups:     []string{api_v1alpha1.SchemeGroupVersion.Group},
 				Resources:     []string{"repositories", "repositories/status"},
 				Verbs:         []string{"get", "list", "patch", "update"},
-				ResourceNames: []string{opt.CrossNamespaceResources.Repository},
+				ResourceNames: []string{opt.crossNamespaceResources.Repository},
 			},
 			{
 				APIGroups:     []string{core.SchemeGroupVersion.Group},
 				Resources:     []string{"secrets", "pods", "endpoints"},
 				Verbs:         []string{"get"},
-				ResourceNames: []string{opt.CrossNamespaceResources.Secret},
+				ResourceNames: []string{opt.crossNamespaceResources.Secret},
 			},
 		}
 		return in
@@ -69,14 +69,14 @@ func (opt *RBACOptions) ensureCrossNamespaceRole() error {
 	return err
 }
 
-func (opt *RBACOptions) ensureCrossNamespaceRoleBinding() error {
+func (opt *Options) ensureCrossNamespaceRoleBinding() error {
 	meta := metav1.ObjectMeta{
 		Name:      opt.getCrossNamespaceRoleName(),
-		Namespace: opt.CrossNamespaceResources.Namespace,
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.crossNamespaceResources.Namespace,
+		Labels:    opt.offshootLabels,
 	}
 
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     apis.KindRole,
@@ -85,8 +85,8 @@ func (opt *RBACOptions) ensureCrossNamespaceRoleBinding() error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in
@@ -94,14 +94,14 @@ func (opt *RBACOptions) ensureCrossNamespaceRoleBinding() error {
 	return err
 }
 
-func (opt *RBACOptions) getRoleBindingName() string {
-	return meta_util.ValidNameWithPrefixNSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name, opt.Suffix)
+func (opt *Options) getRoleBindingName() string {
+	return meta_util.ValidNameWithPrefixNSuffix(strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name, opt.suffix)
 }
 
-func (opt *RBACOptions) getCrossNamespaceRoleName() string {
+func (opt *Options) getCrossNamespaceRoleName() string {
 	return meta_util.ValidNameWithPrefixNSuffix(
-		opt.Invoker.Namespace,
-		strings.Join([]string{strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name}, "-"),
-		opt.Suffix,
+		opt.invOpts.Namespace,
+		strings.Join([]string{strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name}, "-"),
+		opt.suffix,
 	)
 }

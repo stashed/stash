@@ -57,7 +57,7 @@ type VSoption struct {
 	snapshotClient vscs.Interface
 	metrics        metrics.MetricsOptions
 
-	// Invoker
+	// invOpts
 	invokerKind string
 	invokerName string
 
@@ -96,7 +96,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 				return err
 			}
 
-			// get backup Invoker
+			// get backup invOpts
 			inv, err := invoker.NewBackupInvoker(opt.stashClient, backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace)
 			if err != nil {
 				return err
@@ -249,20 +249,6 @@ func (opt *VSoption) getTargetPVCNames(targetRef api_v1beta1.TargetRef, replicas
 		}
 		pvcList = getPVCs(daemon.Spec.Template.Spec.Volumes)
 
-	case apis.KindReplicationController:
-		rc, err := opt.kubeClient.CoreV1().ReplicationControllers(opt.namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		pvcList = getPVCs(rc.Spec.Template.Spec.Volumes)
-
-	case apis.KindReplicaSet:
-		rs, err := opt.kubeClient.AppsV1().ReplicaSets(opt.namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		pvcList = getPVCs(rs.Spec.Template.Spec.Volumes)
-
 	case apis.KindStatefulSet:
 		ss, err := opt.kubeClient.AppsV1().StatefulSets(opt.namespace).Get(context.TODO(), targetRef.Name, metav1.GetOptions{})
 		if err != nil {
@@ -277,7 +263,7 @@ func (opt *VSoption) getTargetPVCNames(targetRef api_v1beta1.TargetRef, replicas
 	return pvcList, nil
 }
 
-func (opt *VSoption) getVolumeSnapshotDefinition(backupTarget *api_v1beta1.BackupTarget, namespace string, pvcName string, timestamp string) vsapi.VolumeSnapshot {
+func (opt *VSoption) getVolumeSnapshotDefinition(backupTarget *api_v1beta1.BackupTarget, namespace string, pvcName string, timestamp string) (volumeSnapshot vsapi.VolumeSnapshot) {
 	return vsapi.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", pvcName, timestamp),

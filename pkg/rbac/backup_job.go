@@ -34,9 +34,9 @@ import (
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
-func (opt *RBACOptions) EnsureBackupJobRBAC() error {
-	if opt.ServiceAccount.Name == "" {
-		opt.ServiceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.Invoker.Kind), opt.Invoker.Name, opt.Suffix)
+func (opt *Options) EnsureBackupJobRBAC() error {
+	if opt.serviceAccount.Name == "" {
+		opt.serviceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name, opt.suffix)
 		err := opt.ensureServiceAccount()
 		if err != nil {
 			return err
@@ -62,63 +62,69 @@ func (opt *RBACOptions) EnsureBackupJobRBAC() error {
 	return opt.ensureLicenseReaderClusterRoleBinding()
 }
 
-func (opt *RBACOptions) ensureBackupJobClusterRole() error {
+func (opt *Options) ensureBackupJobClusterRole() error {
 	meta := metav1.ObjectMeta{
 		Name:   apis.StashBackupJobClusterRole,
-		Labels: opt.OffshootLabels,
+		Labels: opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		in.Rules = []rbac.PolicyRule{
-			{
-				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
-				Resources: []string{"*"},
-				Verbs:     []string{"*"},
-			},
-			{
-				APIGroups: []string{api_v1alpha1.SchemeGroupVersion.Group},
-				Resources: []string{"*"},
-				Verbs:     []string{"*"},
-			},
-			{
-				APIGroups: []string{appCatalog.SchemeGroupVersion.Group},
-				Resources: []string{appCatalog.ResourceApps},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{core.SchemeGroupVersion.Group},
-				Resources: []string{"secrets", "endpoints", "pods"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{core.SchemeGroupVersion.Group},
-				Resources: []string{"pods/exec"},
-				Verbs:     []string{"get", "create"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"events"},
-				Verbs:     []string{"create"},
-			},
-			{
-				APIGroups:     []string{policy.GroupName},
-				Resources:     []string{"podsecuritypolicies"},
-				Verbs:         []string{"use"},
-				ResourceNames: opt.PodSecurityPolicyNames,
-			},
-		}
+
+	rules := []rbac.PolicyRule{
+		{
+			APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
+		},
+		{
+			APIGroups: []string{api_v1alpha1.SchemeGroupVersion.Group},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
+		},
+		{
+			APIGroups: []string{appCatalog.SchemeGroupVersion.Group},
+			Resources: []string{appCatalog.ResourceApps},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups: []string{core.SchemeGroupVersion.Group},
+			Resources: []string{"secrets", "endpoints", "pods"},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups: []string{core.SchemeGroupVersion.Group},
+			Resources: []string{"pods/exec"},
+			Verbs:     []string{"get", "create"},
+		},
+		{
+			APIGroups: []string{core.GroupName},
+			Resources: []string{"events"},
+			Verbs:     []string{"create"},
+		},
+	}
+
+	if len(opt.pspNames) > 0 {
+		rules = append(rules, rbac.PolicyRule{
+			APIGroups:     []string{policy.GroupName},
+			Resources:     []string{"podsecuritypolicies"},
+			Verbs:         []string{"use"},
+			ResourceNames: opt.pspNames,
+		})
+	}
+
+	_, _, err := rbac_util.CreateOrPatchClusterRole(context.TODO(), opt.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+		in.Rules = rules
 		return in
 	}, metav1.PatchOptions{})
 	return err
 }
 
-func (opt *RBACOptions) ensureBackupJobRoleBinding() error {
+func (opt *Options) ensureBackupJobRoleBinding() error {
 	meta := metav1.ObjectMeta{
 		Name:      opt.getRoleBindingName(),
-		Namespace: opt.Invoker.Namespace,
-		Labels:    opt.OffshootLabels,
+		Namespace: opt.invOpts.Namespace,
+		Labels:    opt.offshootLabels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.Owner)
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(context.TODO(), opt.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, opt.owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -128,8 +134,8 @@ func (opt *RBACOptions) ensureBackupJobRoleBinding() error {
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      rbac.ServiceAccountKind,
-				Name:      opt.ServiceAccount.Name,
-				Namespace: opt.ServiceAccount.Namespace,
+				Name:      opt.serviceAccount.Name,
+				Namespace: opt.serviceAccount.Namespace,
 			},
 		}
 		return in

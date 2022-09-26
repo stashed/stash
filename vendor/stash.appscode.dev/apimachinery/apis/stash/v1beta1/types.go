@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -150,3 +151,14 @@ const (
 	Parallel   ExecutionOrder = "Parallel"
 	Sequential ExecutionOrder = "Sequential"
 )
+
+type RetryConfig struct {
+	// MaxRetry specifies the maximum number of attempts Stash should retry. Default value: 1
+	// +kubebuilder:default=1
+	MaxRetry int32 `json:"maxRetry,omitempty"`
+
+	// The amount of time to wait before next retry. If you don't specify this field, Stash will retry immediately.
+	// Format: 30s, 2m, 1h etc.
+	// +optional
+	Delay metav1.Duration `json:"delay,omitempty"`
+}

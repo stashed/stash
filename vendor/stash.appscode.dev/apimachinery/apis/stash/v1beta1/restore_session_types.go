@@ -65,7 +65,7 @@ type RestoreSessionSpec struct {
 	// TimeOut specifies the maximum duration of restore. RestoreSession will be considered Failed
 	// if restore does not complete within this time limit. By default, Stash don't set any timeout for restore.
 	// +optional
-	TimeOut string `json:"timeOut,omitempty"`
+	TimeOut *metav1.Duration `json:"timeOut,omitempty"`
 }
 
 type RestoreTargetSpec struct {
@@ -166,7 +166,7 @@ type RestoreSessionStatus struct {
 	// SessionDeadline specifies the deadline of restore process. RestoreSession will be
 	// considered Failed if restore does not complete within this deadline
 	// +optional
-	SessionDeadline metav1.Time `json:"sessionDeadline,omitempty"`
+	SessionDeadline *metav1.Time `json:"sessionDeadline,omitempty"`
 }
 
 type HostRestoreStats struct {

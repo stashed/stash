@@ -24,7 +24,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

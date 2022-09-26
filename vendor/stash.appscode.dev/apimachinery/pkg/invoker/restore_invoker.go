@@ -69,7 +69,7 @@ type RestoreStatusHandler interface {
 type RestoreInvokerStatus struct {
 	Phase           v1beta1.RestorePhase
 	SessionDuration string
-	SessionDeadline metav1.Time
+	SessionDeadline *metav1.Time
 	Conditions      []kmapi.Condition
 	TargetStatus    []v1beta1.RestoreMemberStatus
 }

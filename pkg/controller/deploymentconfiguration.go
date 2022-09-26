@@ -17,15 +17,12 @@ limitations under the License.
 package controller
 
 import (
-	"context"
-
 	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -33,7 +30,6 @@ import (
 	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/tools/queue"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
-	ocapps_util "kmodules.xyz/openshift/client/clientset/versioned/typed/apps/v1/util"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/workload"
@@ -54,14 +50,30 @@ func (c *StashController) NewDeploymentConfigWebhook() hooks.AdmissionHook {
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
-				// apply stash backup/restore logic on this workload
-				_, err := c.applyStashLogic(w, apis.CallerWebhook)
+				r := workloadReconciler{
+					ctrl:     c,
+					workload: w,
+					logger: klog.NewKlogr().WithValues(
+						apis.ObjectKind, apis.KindDeploymentConfig,
+						apis.ObjectName, w.Name,
+						apis.ObjectNamespace, w.Namespace,
+					),
+				}
+				err := r.reconcile(apis.CallerWebhook)
 				return w, err
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
-				// apply stash backup/restore logic on this workload
-				_, err := c.applyStashLogic(w, apis.CallerWebhook)
+				r := workloadReconciler{
+					ctrl:     c,
+					workload: w,
+					logger: klog.NewKlogr().WithValues(
+						apis.ObjectKind, apis.KindDeploymentConfig,
+						apis.ObjectName, w.Name,
+						apis.ObjectNamespace, w.Namespace,
+					),
+				}
+				err := r.reconcile(apis.CallerWebhook)
 				return w, err
 			},
 		},
@@ -74,7 +86,7 @@ func (c *StashController) initDeploymentConfigWatcher() {
 		return
 	}
 	c.dcInformer = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Informer()
-	c.dcQueue = queue.New(apis.KindDeploymentConfig, c.MaxNumRequeues, c.NumThreads, c.runDeploymentConfigProcessor)
+	c.dcQueue = queue.New(apis.KindDeploymentConfig, c.MaxNumRequeues, c.NumThreads, c.processDeploymentConfigEvent)
 	c.dcInformer.AddEventHandler(queue.DefaultEventHandler(c.dcQueue.GetQueue(), core.NamespaceAll))
 	c.dcLister = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Lister()
 }
@@ -82,16 +94,21 @@ func (c *StashController) initDeploymentConfigWatcher() {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) runDeploymentConfigProcessor(key string) error {
+func (c *StashController) processDeploymentConfigEvent(key string) error {
 	obj, exists, err := c.dcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.ErrorS(err, "Failed to fetch object from indexer",
+			apis.ObjectKind, apis.KindDeploymentConfig,
+			apis.ObjectKey, key,
+		)
 		return err
 	}
 
 	if !exists {
-		// Below we will warm up our cache with a DeploymentConfig, so that we will see a delete for one deployment
-		klog.Warningf("DeploymentConfig %s does not exist anymore\n", key)
+		klog.V(4).InfoS("Object doesn't exist anymore",
+			apis.ObjectKind, apis.KindDeploymentConfig,
+			apis.ObjectKey, key,
+		)
 
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -103,54 +120,40 @@ func (c *StashController) runDeploymentConfigProcessor(key string) error {
 			return err
 		}
 	} else {
-		klog.Infof("Sync/Add/Update for DeploymentConfig %s", key)
-
 		dc := obj.(*ocapps.DeploymentConfig).DeepCopy()
 		dc.GetObjectKind().SetGroupVersionKind(ocapps.GroupVersion.WithKind(apis.KindDeploymentConfig))
+
+		logger := klog.NewKlogr().WithValues(
+			apis.ObjectKind, apis.KindDeploymentConfig,
+			apis.ObjectName, dc.Name,
+			apis.ObjectNamespace, dc.Namespace,
+		)
+		logger.V(4).Info("Received Sync/Add/Update event")
 
 		// convert DeploymentConfig into a common object (Workload type) so that
 		// we don't need to re-write stash logic for DeploymentConfig separately
 		w, err := wcs.ConvertToWorkload(dc.DeepCopy())
 		if err != nil {
-			klog.Errorf("failed to convert DeploymentConfig %s/%s to workload type. Reason: %v", dc.Namespace, dc.Name, err)
+			logger.Error(err, "Failed to convert into generic workload type")
 			return err
 		}
 
-		// apply stash backup/restore logic on this workload
-		modified, err := c.applyStashLogic(w, apis.CallerController)
-		if err != nil {
-			klog.Errorf("failed to apply stash logic on DeploymentConfig %s/%s. Reason: %v", dc.Namespace, dc.Name, err)
-			return err
+		r := workloadReconciler{
+			ctrl:     c,
+			logger:   logger,
+			workload: w,
 		}
-
-		if modified {
-			// workload has been modified. Patch the workload so that respective pods start with the updated spec
-			_, _, err := ocapps_util.PatchDeploymentConfigObject(context.TODO(), c.ocClient, dc, w.Object.(*ocapps.DeploymentConfig), metav1.PatchOptions{})
-			if err != nil {
-				klog.Errorf("failed to update DeploymentConfig %s/%s. Reason: %v", dc.Namespace, dc.Name, err)
-				return err
-			}
-
-			// TODO: Should we force restart all pods while restore?
-			// otherwise one pod will restore while others are writing/reading?
-
-			// wait until newly patched deploymentconfigs pods are ready
-			err = util.WaitUntilDeploymentConfigReady(c.ocClient, dc.ObjectMeta)
-			if err != nil {
-				return err
-			}
+		if err := r.reconcile(apis.CallerController); err != nil {
+			r.logger.Error(err, "Failed to reconcile workload")
+			return err
 		}
 
 		// if the workload does not have any stash sidecar/init-container then
 		// delete respective ConfigMapLock and RBAC stuffs if exist
-		err = c.ensureUnnecessaryConfigMapLockDeleted(w)
-		if err != nil {
+		if err := c.ensureUnnecessaryConfigMapLockDeleted(w); err != nil {
 			return err
 		}
-		err = stash_rbac.EnsureUnnecessaryWorkloadRBACDeleted(c.kubeClient, w)
-		if err != nil {
-			return err
-		}
+		return stash_rbac.EnsureUnnecessaryWorkloadRBACDeleted(c.kubeClient, logger, w)
 	}
 	return nil
 }

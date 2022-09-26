@@ -26,7 +26,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	invoker2 "stash.appscode.dev/apimachinery/pkg/invoker"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

@@ -33,8 +33,8 @@ import (
 	_ "stash.appscode.dev/stash/test/e2e/volumes"
 	_ "stash.appscode.dev/stash/test/e2e/workloads"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/flags"
 	"gomodules.xyz/logs"
@@ -42,6 +42,7 @@ import (
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	catalogscheme "kmodules.xyz/custom-resources/client/clientset/versioned/scheme"
 )
 
 const (
@@ -54,13 +55,19 @@ func TestE2e(t *testing.T) {
 	logs.InitLogs()
 	RegisterFailHandler(Fail)
 	SetDefaultEventuallyTimeout(TIMEOUT)
-	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "e2e Suite", []Reporter{junitReporter})
+
+	reporterConfig := types.NewDefaultReporterConfig()
+	reporterConfig.JUnitReport = "junit.xml"
+	reporterConfig.JSONReport = "report.json"
+	reporterConfig.Verbose = true
+	RunSpecs(t, "e2e Suite", Label("stash"), reporterConfig)
 }
 
 var _ = BeforeSuite(func() {
 	utilruntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))
 	utilruntime.Must(scheme.AddToScheme(legacyscheme.Scheme))
+	utilruntime.Must(catalogscheme.AddToScheme(clientsetscheme.Scheme))
+	utilruntime.Must(catalogscheme.AddToScheme(legacyscheme.Scheme))
 	flags.LoggerOptions.Verbosity = "5"
 
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)

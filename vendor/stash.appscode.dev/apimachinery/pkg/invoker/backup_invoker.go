@@ -33,6 +33,7 @@ import (
 type BackupInvoker interface {
 	MetadataHandler
 	ConditionHandler
+	SessionHandler
 	BackupExecutionOrderHandler
 	BackupTargetHandler
 	RepositoryGetter
@@ -41,6 +42,11 @@ type BackupInvoker interface {
 	ObjectFormatter
 	BackupInvokerStatusHandler
 	Summarizer
+	RetryHandler
+}
+
+type SessionHandler interface {
+	NewSession() *v1beta1.BackupSession
 }
 
 type BackupExecutionOrderHandler interface {
@@ -60,6 +66,7 @@ type BackupTargetHandler interface {
 
 type BackupInvokerStatusHandler interface {
 	GetPhase() v1beta1.BackupInvokerPhase
+	UpdateObservedGeneration() error
 }
 
 type BackupTargetInfo struct {

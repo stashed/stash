@@ -80,12 +80,6 @@ func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta, in
 					return false
 				}
 				restorePhase = rs.Status.Phase
-			} else {
-				rb, err := f.StashClient.StashV1beta1().RestoreBatches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
-				if err != nil {
-					return false
-				}
-				restorePhase = rb.Status.Phase
 			}
 			if restorePhase == v1beta1.RestoreSucceeded ||
 				restorePhase == v1beta1.RestoreFailed ||
@@ -165,12 +159,6 @@ func (f *Framework) EventuallyRestoreInvokerPhase(invoker invoker.RestoreInvoker
 					return ""
 				}
 				return rs.Status.Phase
-			case v1beta1.ResourceKindRestoreBatch:
-				rb, err := f.StashClient.StashV1beta1().RestoreBatches(invoker.GetObjectMeta().Namespace).Get(context.TODO(), invoker.GetObjectMeta().Name, metav1.GetOptions{})
-				if err != nil {
-					return ""
-				}
-				return rb.Status.Phase
 			default:
 				return ""
 			}

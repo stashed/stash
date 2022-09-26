@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
@@ -28,6 +27,7 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -41,6 +41,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
@@ -142,8 +143,6 @@ func BackupModel(kind, taskName string) string {
 
 func isWorkload(kind string) bool {
 	return kind == apis.KindDeployment ||
-		kind == apis.KindReplicaSet ||
-		kind == apis.KindReplicationController ||
 		kind == apis.KindStatefulSet ||
 		kind == apis.KindDaemonSet ||
 		kind == apis.KindDeploymentConfig
@@ -174,10 +173,7 @@ func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string,
 }
 
 func FixBackendPrefix(backend *store.Backend, autoPrefix string) *store.Backend {
-	if backend.Local != nil {
-		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, autoPrefix)
-		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, "/")
-	} else if backend.S3 != nil {
+	if backend.S3 != nil {
 		backend.S3.Prefix = strings.TrimSuffix(backend.S3.Prefix, autoPrefix)
 		backend.S3.Prefix = strings.TrimSuffix(backend.S3.Prefix, "/")
 		backend.S3.Prefix = strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket)
@@ -200,9 +196,7 @@ func FixBackendPrefix(backend *store.Backend, autoPrefix string) *store.Backend 
 
 // TODO: move to store
 func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
-	if backend.Local != nil {
-		return "", filepath.Join(backend.Local.MountPath, strings.TrimPrefix(backend.Local.SubPath, "/")), nil
-	} else if backend.S3 != nil {
+	if backend.S3 != nil {
 		return backend.S3.Bucket, strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket+"/"), nil
 	} else if backend.GCS != nil {
 		return backend.GCS.Bucket, backend.GCS.Prefix, nil
@@ -401,28 +395,6 @@ func UpsertInterimVolume(kc kubernetes.Interface, podSpec core.PodSpec, interimV
 	return AttachPVC(podSpec, volumes, volumeMounts), nil
 }
 
-// xref: https://kubernetes.io/docs/reference/kubectl/overview/#resource-types
-func ResourceKindShortForm(kind string) string {
-	switch kind {
-	case apis.KindDeployment:
-		return "deploy"
-	case apis.KindReplicationController:
-		return "rc"
-	case apis.KindDaemonSet:
-		return "ds"
-	case apis.KindStatefulSet:
-		return "sts"
-	case apis.KindPersistentVolumeClaim:
-		return "pvc"
-	case apis.KindPod:
-		return "po"
-	case apis.KindAppBinding:
-		return "app"
-	default:
-		return strings.ToLower(kind)
-	}
-}
-
 func HookExecutorContainer(name string, shiblings []core.Container, invokerKind, invokerName string, target api_v1beta1.TargetRef) core.Container {
 	hookExecutor := core.Container{
 		Name:  name,
@@ -462,4 +434,15 @@ func HookExecutorContainer(name string, shiblings []core.Container, invokerKind,
 	hookExecutor.VolumeMounts = core_util.UpsertVolumeMount(hookExecutor.VolumeMounts, mounts...)
 
 	return hookExecutor
+}
+
+func OwnerWorkload(w *wapi.Workload) (*metav1.OwnerReference, error) {
+	switch w.Kind {
+	case apis.KindDeployment, apis.KindStatefulSet, apis.KindDaemonSet:
+		return metav1.NewControllerRef(w, appsv1.SchemeGroupVersion.WithKind(w.Kind)), nil
+	case apis.KindDeploymentConfig:
+		return metav1.NewControllerRef(w, ocapps.GroupVersion.WithKind(w.Kind)), nil
+	default:
+		return nil, fmt.Errorf("failed to set workload as owner. Reason: unknown workload kind")
+	}
 }

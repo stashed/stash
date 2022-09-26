@@ -227,3 +227,24 @@ const (
 	StashVolumeSnapshotRestorerClusterRole = "stash-vs-restorer-job"
 	StashStorageClassReaderClusterRole     = "stash-sc-reader"
 )
+
+// =================== Keys for structure logging =====================
+const (
+	ObjectKey       = "key"
+	ObjectKind      = "kind"
+	ObjectName      = "name"
+	ObjectNamespace = "namespace"
+
+	KeyTargetKind      = "target_kind"
+	KeyTargetName      = "target_name"
+	KeyTargetNamespace = "target_namespace"
+
+	KeyInvokerKind      = "invoker_kind"
+	KeyInvokerName      = "invoker_name"
+	KeyInvokerNamespace = "invoker_namespace"
+
+	KeyRepositoryName      = "repo_name"
+	KeyRepositoryNamespace = "repo_namespace"
+
+	KeyReason = "reason"
+)

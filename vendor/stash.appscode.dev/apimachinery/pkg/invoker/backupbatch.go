@@ -18,7 +18,10 @@ package invoker
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
@@ -35,6 +38,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
+	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type BackupBatchInvoker struct {
@@ -183,7 +187,7 @@ func (inv *BackupBatchInvoker) GetDriver() v1beta1.Snapshotter {
 	return driver
 }
 
-func (inv *BackupBatchInvoker) GetTimeOut() string {
+func (inv *BackupBatchInvoker) GetTimeOut() *metav1.Duration {
 	return inv.backupBatch.Spec.TimeOut
 }
 
@@ -246,11 +250,11 @@ func (inv *BackupBatchInvoker) GetHash() string {
 }
 
 func (inv *BackupBatchInvoker) GetObjectJSON() (string, error) {
-	jsonObj, err := meta.MarshalToJson(inv.backupBatch, v1beta1.SchemeGroupVersion)
-	if err != nil {
-		return "", err
-	}
-	return string(jsonObj), nil
+	obj := inv.backupBatch.DeepCopy()
+	obj.ObjectMeta = removeMetaDecorators(obj.ObjectMeta)
+	// remove status from the object
+	obj.Status = v1beta1.BackupBatchStatus{}
+	return marshalToJSON(obj)
 }
 
 func (inv *BackupBatchInvoker) GetRuntimeObject() runtime.Object {
@@ -265,6 +269,20 @@ func (inv *BackupBatchInvoker) GetPhase() v1beta1.BackupInvokerPhase {
 	return inv.backupBatch.Status.Phase
 }
 
+func (inv *BackupBatchInvoker) UpdateObservedGeneration() error {
+	_, err := v1beta1_util.UpdateBackupBatchStatus(
+		context.TODO(),
+		inv.stashClient.StashV1beta1(),
+		inv.backupBatch.ObjectMeta,
+		func(in *v1beta1.BackupBatchStatus) (types.UID, *v1beta1.BackupBatchStatus) {
+			in.ObservedGeneration = inv.backupBatch.Generation
+			return inv.backupBatch.UID, in
+		},
+		metav1.UpdateOptions{},
+	)
+	return runtimeClient.IgnoreNotFound(err)
+}
+
 func (inv *BackupBatchInvoker) GetSummary(target v1beta1.TargetRef, session kmapi.ObjectReference) *v1beta1.Summary {
 	summary := getTargetBackupSummary(inv.stashClient, target, session)
 	summary.Invoker = core.TypedLocalObjectReference{
@@ -273,4 +291,50 @@ func (inv *BackupBatchInvoker) GetSummary(target v1beta1.TargetRef, session kmap
 		Name:     inv.backupBatch.Name,
 	}
 	return summary
+}
+
+func (inv *BackupBatchInvoker) GetRetryConfig() *v1beta1.RetryConfig {
+	return inv.backupBatch.Spec.RetryConfig
+}
+
+func (inv *BackupBatchInvoker) NewSession() *v1beta1.BackupSession {
+	retryLimit := int32(0)
+	if inv.backupBatch.Spec.RetryConfig != nil {
+		retryLimit = inv.backupBatch.Spec.RetryConfig.MaxRetry
+	}
+
+	session := &v1beta1.BackupSession{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            meta.NameWithSuffix(inv.backupBatch.Name, fmt.Sprintf("%d", time.Now().Unix())),
+			Namespace:       inv.backupBatch.Namespace,
+			OwnerReferences: []metav1.OwnerReference{},
+			Labels:          inv.getSessionLabels(),
+		},
+		Spec: v1beta1.BackupSessionSpec{
+			Invoker: v1beta1.BackupInvokerRef{
+				APIGroup: v1beta1.SchemeGroupVersion.Group,
+				Kind:     v1beta1.ResourceKindBackupBatch,
+				Name:     inv.backupBatch.Name,
+			},
+			RetryLeft: retryLimit,
+		},
+	}
+
+	return session
+}
+
+func (inv *BackupBatchInvoker) getSessionLabels() map[string]string {
+	sl := inv.GetLabels()
+
+	// Add invoker info
+	sl[apis.LabelInvokerType] = v1beta1.ResourceKindBackupBatch
+	sl[apis.LabelInvokerName] = inv.backupBatch.Name
+
+	// Add target info. For batch backup, we will be adding the first member info.
+	target := inv.backupBatch.Spec.Members[0].Target.Ref
+	sl[apis.LabelTargetKind] = target.Kind
+	sl[apis.LabelTargetName] = target.Name
+	sl[apis.LabelTargetNamespace] = target.Namespace
+
+	return sl
 }

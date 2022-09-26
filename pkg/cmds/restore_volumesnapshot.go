@@ -27,11 +27,11 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/apimachinery/pkg/restic"
-	"stash.appscode.dev/stash/pkg/resolve"
+	"stash.appscode.dev/stash/pkg/resolver"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	vs_cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
+	vscs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	"github.com/spf13/cobra"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
@@ -71,7 +71,7 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 			opt.config = config
 			opt.kubeClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
-			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
+			opt.snapshotClient = vscs.NewForConfigOrDie(config)
 
 			inv, err := invoker.NewRestoreInvoker(opt.kubeClient, opt.stashClient, opt.invokerKind, opt.invokerName, opt.namespace)
 			if err != nil {
@@ -138,7 +138,11 @@ func (opt *VSoption) restoreVolumeSnapshot(targetInfo invoker.RestoreTargetInfo)
 
 	// resolve the volumeClaimTemplates and prepare PVC definiton
 	for ordinal := int32(0); ordinal < replicas; ordinal++ {
-		pvcs, err := resolve.GetPVCFromVolumeClaimTemplates(ordinal, targetInfo.Target.VolumeClaimTemplates)
+		r := resolver.VolumeTemplateOptions{
+			Ordinal:         int(ordinal),
+			VolumeTemplates: targetInfo.Target.VolumeClaimTemplates,
+		}
+		pvcs, err := r.Resolve()
 		if err != nil {
 			return nil, err
 		}

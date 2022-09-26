@@ -17,8 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"context"
-
 	"stash.appscode.dev/apimachinery/apis"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
@@ -26,12 +24,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
-	apps_util "kmodules.xyz/client-go/apps/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
@@ -53,14 +49,30 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
-				// apply stash backup/restore logic on this workload
-				_, err := c.applyStashLogic(w, apis.CallerWebhook)
+				r := workloadReconciler{
+					ctrl:     c,
+					workload: w,
+					logger: klog.NewKlogr().WithValues(
+						apis.ObjectKind, apis.KindDeployment,
+						apis.ObjectName, w.Name,
+						apis.ObjectNamespace, w.Namespace,
+					),
+				}
+				err := r.reconcile(apis.CallerWebhook)
 				return w, err
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
-				// apply stash backup/restore logic on this workload
-				_, err := c.applyStashLogic(w, apis.CallerWebhook)
+				r := workloadReconciler{
+					ctrl:     c,
+					workload: w,
+					logger: klog.NewKlogr().WithValues(
+						apis.ObjectKind, apis.KindDeployment,
+						apis.ObjectName, w.Name,
+						apis.ObjectNamespace, w.Namespace,
+					),
+				}
+				err := r.reconcile(apis.CallerWebhook)
 				return w, err
 			},
 		},
@@ -69,24 +81,26 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initDeploymentWatcher() {
 	c.dpInformer = c.kubeInformerFactory.Apps().V1().Deployments().Informer()
-	c.dpQueue = queue.New("Deployment", c.MaxNumRequeues, c.NumThreads, c.runDeploymentInjector)
+	c.dpQueue = queue.New("Deployment", c.MaxNumRequeues, c.NumThreads, c.processDeploymentEvent)
 	c.dpInformer.AddEventHandler(queue.DefaultEventHandler(c.dpQueue.GetQueue(), core.NamespaceAll))
 	c.dpLister = c.kubeInformerFactory.Apps().V1().Deployments().Lister()
 }
 
-// syncToStdout is the business logic of the controller. In this controller it simply prints
-// information about the deployment to stdout. In case an error happened, it has to simply return the error.
-// The retry logic should not be part of the business logic.
-func (c *StashController) runDeploymentInjector(key string) error {
+func (c *StashController) processDeploymentEvent(key string) error {
 	obj, exists, err := c.dpInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		klog.ErrorS(err, "Failed to fetch object from indexer",
+			apis.ObjectKind, apis.KindDeployment,
+			apis.ObjectKey, key,
+		)
 		return err
 	}
 
 	if !exists {
-		// Below we will warm up our cache with a Deployment, so that we will see a delete for one deployment
-		klog.Warningf("Deployment %s does not exist anymore\n", key)
+		klog.V(4).InfoS("Object doesn't exist anymore",
+			apis.ObjectKind, apis.KindDeployment,
+			apis.ObjectKey, key,
+		)
 
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -98,54 +112,39 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return err
 		}
 	} else {
-		klog.Infof("Sync/Add/Update for Deployment %s", key)
-
 		dp := obj.(*appsv1.Deployment).DeepCopy()
 		dp.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDeployment))
 
-		// convert Deployment into a common object (Workload type) so that
-		// we don't need to re-write stash logic for Deployment separately
+		logger := klog.NewKlogr().WithValues(
+			apis.ObjectKind, apis.KindDeployment,
+			apis.ObjectName, dp.Name,
+			apis.ObjectNamespace, dp.Namespace,
+		)
+		logger.V(4).Info("Received Sync/Add/Update event")
+
+		// convert Deployment into a generic Workload type
 		w, err := wcs.ConvertToWorkload(dp.DeepCopy())
 		if err != nil {
-			klog.Errorf("failed to convert Deployment %s/%s to workload type. Reason: %v", dp.Namespace, dp.Name, err)
+			logger.Error(err, "Failed to convert into generic workload type")
 			return err
 		}
 
-		// apply stash backup/restore logic on this workload
-		modified, err := c.applyStashLogic(w, apis.CallerController)
-		if err != nil {
-			klog.Errorf("failed to apply stash logic on Deployment %s/%s. Reason: %v", dp.Namespace, dp.Name, err)
-			return err
+		r := workloadReconciler{
+			ctrl:     c,
+			logger:   logger,
+			workload: w,
 		}
-
-		if modified {
-			// workload has been modified. Patch the workload so that respective pods start with the updated spec
-			_, _, err := apps_util.PatchDeploymentObject(context.TODO(), c.kubeClient, dp, w.Object.(*appsv1.Deployment), metav1.PatchOptions{})
-			if err != nil {
-				klog.Errorf("failed to update Deployment %s/%s. Reason: %v", dp.Namespace, dp.Name, err)
-				return err
-			}
-
-			// TODO: Should we force restart all pods while restore?
-			// otherwise one pod will restore while others are writing/reading?
-
-			// wait until newly patched deployment pods are ready
-			err = util.WaitUntilDeploymentReady(c.kubeClient, dp.ObjectMeta)
-			if err != nil {
-				return err
-			}
+		if err := r.reconcile(apis.CallerController); err != nil {
+			r.logger.Error(err, "Failed to reconcile workload")
+			return err
 		}
 
 		// if the workload does not have any stash sidecar/init-container then
 		// delete respective ConfigMapLock and RBAC stuffs if exist
-		err = c.ensureUnnecessaryConfigMapLockDeleted(w)
-		if err != nil {
+		if err := c.ensureUnnecessaryConfigMapLockDeleted(w); err != nil {
 			return err
 		}
-		err = stash_rbac.EnsureUnnecessaryWorkloadRBACDeleted(c.kubeClient, w)
-		if err != nil {
-			return err
-		}
+		return stash_rbac.EnsureUnnecessaryWorkloadRBACDeleted(c.kubeClient, logger, w)
 	}
 	return nil
 }
