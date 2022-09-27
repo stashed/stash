@@ -25,12 +25,10 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
-	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/util"
 
 	core "k8s.io/api/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
-	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -69,12 +67,7 @@ func (r *TaskOptions) setVariables() error {
 	r.setImageVariables()
 	r.setLicenseVariables()
 	r.setMetricsVariables()
-
-	addon, err := api_util.ExtractAddonInfo(r.CatalogClient, r.task, r.targetRef)
-	if err != nil {
-		return err
-	}
-	r.setVariablesFromTaskParams(addon)
+	r.setVariablesFromTaskParams()
 
 	return nil
 }
@@ -298,23 +291,11 @@ func (r *TaskOptions) setMetricsVariables() {
 	r.Variables = meta_util.OverwriteKeys(r.Variables, vars)
 }
 
-func (r *TaskOptions) setVariablesFromTaskParams(addon *appcat.StashTaskSpec) {
-	if addon == nil {
-		return
-	}
+func (r *TaskOptions) setVariablesFromTaskParams() {
 	vars := make(map[string]string)
-
-	if r.Backup != nil && addon.BackupTask.Name != "" {
-		for _, param := range addon.BackupTask.Params {
-			vars[param.Name] = param.Value
-		}
+	for _, param := range r.task.Params {
+		vars[param.Name] = param.Value
 	}
-	if r.Restore != nil && addon.RestoreTask.Name != "" {
-		for _, param := range addon.BackupTask.Params {
-			vars[param.Name] = param.Value
-		}
-	}
-
 	r.Variables = meta_util.OverwriteKeys(r.Variables, vars)
 }
 
