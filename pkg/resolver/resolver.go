@@ -24,10 +24,12 @@ import (
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
+	api_util "stash.appscode.dev/apimachinery/pkg/util"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
+	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
@@ -67,7 +69,12 @@ type driverOptions struct {
 }
 
 func (r *TaskOptions) Resolve() (core.PodSpec, error) {
-	r.setLocalOptions()
+	r.setInvokerOptions()
+
+	err := r.setAddonInfo()
+	if err != nil {
+		return core.PodSpec{}, err
+	}
 
 	invRef, err := r.invoker.GetObjectRef()
 	if err != nil {
@@ -102,7 +109,7 @@ func (r *TaskOptions) Resolve() (core.PodSpec, error) {
 	return podSpec, nil
 }
 
-func (r *TaskOptions) setLocalOptions() {
+func (r *TaskOptions) setInvokerOptions() {
 	if r.Backup != nil {
 		r.invoker = r.Backup.Invoker
 		r.targetRef = r.Backup.TargetInfo.Target.Ref
@@ -124,6 +131,33 @@ func (r *TaskOptions) setLocalOptions() {
 		}
 		r.runtimeSettings = r.Restore.TargetInfo.RuntimeSettings
 		r.tempDir = r.Restore.TargetInfo.TempDir
+	}
+}
+
+func (r *TaskOptions) setAddonInfo() error {
+	addon, err := api_util.ExtractAddonInfo(r.CatalogClient, r.task, r.targetRef)
+	if err != nil {
+		return err
+	}
+
+	if r.Backup != nil {
+		r.task.Name = addon.BackupTask.Name
+		r.setTaskParams(addon.BackupTask.Params)
+	}
+	if r.Restore != nil {
+		r.task.Name = addon.RestoreTask.Name
+		r.setTaskParams(addon.RestoreTask.Params)
+	}
+	return nil
+}
+
+func (r *TaskOptions) setTaskParams(params []appcatalog.Param) {
+	r.task.Params = make([]v1beta1.Param, 0)
+	for i := range params {
+		r.task.Params = append(r.task.Params, v1beta1.Param{
+			Name:  params[i].Name,
+			Value: params[i].Value,
+		})
 	}
 }
 
