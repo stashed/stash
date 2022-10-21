@@ -243,6 +243,14 @@ var _ = Describe("Runtime Settings", func() {
 							SecurityContext: &core.PodSecurityContext{
 								FSGroup: pointer.Int64P(framework.TestFSGroup),
 							},
+							Tolerations: []core.Toleration{
+								{
+									Effect:   core.TaintEffectNoSchedule,
+									Key:      "some-toleration-key",
+									Operator: core.TolerationOpEqual,
+									Value:    "some-value",
+								},
+							},
 						},
 					}
 				})
@@ -269,6 +277,7 @@ var _ = Describe("Runtime Settings", func() {
 				job, err := f.GetBackupJob(backupSession.Name)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(framework.HasFSGroup(job.Spec.Template.Spec.SecurityContext)).Should(BeTrue())
+				Expect(len(job.Spec.Template.Spec.Tolerations)).ShouldNot(BeZero())
 
 				// Create restored Pvc
 				restoredPVC, err := f.CreateNewPVC(fmt.Sprintf("%s-%s", framework.RestoredVolume, f.App()))
@@ -286,6 +295,14 @@ var _ = Describe("Runtime Settings", func() {
 							SecurityContext: &core.PodSecurityContext{
 								FSGroup: pointer.Int64P(framework.TestFSGroup),
 							},
+							Tolerations: []core.Toleration{
+								{
+									Effect:   core.TaintEffectNoSchedule,
+									Key:      "some-toleration-key",
+									Operator: core.TolerationOpEqual,
+									Value:    "some-value",
+								},
+							},
 						},
 					}
 				})
@@ -302,6 +319,7 @@ var _ = Describe("Runtime Settings", func() {
 				for i := range jobs {
 					if framework.JobsTargetMatch(jobs[i], restoreSession.Spec.Target.Ref) {
 						Expect(framework.HasFSGroup(jobs[i].Spec.Template.Spec.SecurityContext)).Should(BeTrue())
+						Expect(len(job.Spec.Template.Spec.Tolerations)).ShouldNot(BeZero())
 					}
 				}
 

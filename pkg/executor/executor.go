@@ -28,6 +28,8 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	metautil "kmodules.xyz/client-go/meta"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
+	ofst_util "kmodules.xyz/offshoot-api/util"
 )
 
 type Executor interface {
@@ -54,10 +56,11 @@ type jobOptions struct {
 	podAnnotations     map[string]string
 	imagePullSecrets   []core.LocalObjectReference
 	serviceAccountName string
+	runtimeSettings    ofst.RuntimeSettings
 	backOffLimit       int32
 }
 
-func (opt jobOptions) ensure() (runtime.Object, kutil.VerbType, error) {
+func (opt *jobOptions) ensure() (runtime.Object, kutil.VerbType, error) {
 	return batch_util.CreateOrPatchJob(
 		context.TODO(),
 		opt.kubeClient,
@@ -77,19 +80,15 @@ func (opt jobOptions) ensure() (runtime.Object, kutil.VerbType, error) {
 	)
 }
 
-func (opt jobOptions) upsertPodSpec(cur core.PodSpec) core.PodSpec {
+func (opt *jobOptions) upsertPodSpec(cur core.PodSpec) core.PodSpec {
 	cur.Volumes = core_util.UpsertVolume(cur.Volumes, opt.podSpec.Volumes...)
-	cur.Containers = core_util.UpsertContainers(cur.Containers, opt.podSpec.Containers)
 	cur.InitContainers = core_util.UpsertContainers(cur.InitContainers, opt.podSpec.InitContainers)
-	cur.ServiceAccountName = opt.serviceAccountName
-	cur.SecurityContext = opt.podSpec.SecurityContext
-	cur.ImagePullSecrets = opt.podSpec.ImagePullSecrets
-	cur.RestartPolicy = opt.podSpec.RestartPolicy
-	if opt.podSpec.NodeName != "" {
-		cur.NodeName = opt.podSpec.NodeName
+	cur.Containers = core_util.UpsertContainers(cur.Containers, opt.podSpec.Containers)
+	if opt.podSpec.RestartPolicy != "" {
+		cur.RestartPolicy = opt.podSpec.RestartPolicy
 	}
-	if opt.podSpec.NodeSelector != nil {
-		cur.NodeSelector = opt.podSpec.NodeSelector
+	if opt.runtimeSettings.Pod != nil {
+		cur = ofst_util.ApplyPodRuntimeSettings(cur, *opt.runtimeSettings.Pod)
 	}
 	return cur
 }

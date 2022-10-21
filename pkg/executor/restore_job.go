@@ -203,7 +203,7 @@ func (e *RestoreJob) ensureJob(jobMeta metav1.ObjectMeta, podSpec core.PodSpec) 
 	targetInfo := e.Invoker.GetTargetInfo()[e.Index]
 	runtimeSettings := targetInfo.RuntimeSettings
 
-	job := jobOptions{
+	job := &jobOptions{
 		kubeClient:         e.KubeClient,
 		meta:               jobMeta,
 		owner:              e.Invoker.GetOwnerRef(),
@@ -211,6 +211,7 @@ func (e *RestoreJob) ensureJob(jobMeta metav1.ObjectMeta, podSpec core.PodSpec) 
 		podLabels:          e.Invoker.GetLabels(),
 		serviceAccountName: e.RBACOptions.GetServiceAccountName(),
 		imagePullSecrets:   e.ImagePullSecrets,
+		runtimeSettings:    runtimeSettings,
 		backOffLimit:       0,
 	}
 	if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {

@@ -72,8 +72,7 @@ func (e *BackupJob) Ensure() (runtime.Object, kutil.VerbType, error) {
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-
-	job := jobOptions{
+	job := &jobOptions{
 		kubeClient:         e.KubeClient,
 		meta:               jobMeta,
 		owner:              ownerBackupSession,
@@ -81,6 +80,7 @@ func (e *BackupJob) Ensure() (runtime.Object, kutil.VerbType, error) {
 		podLabels:          e.Invoker.GetLabels(),
 		serviceAccountName: e.RBACOptions.GetServiceAccountName(),
 		imagePullSecrets:   e.ImagePullSecrets,
+		runtimeSettings:    runtimeSettings,
 		backOffLimit:       0,
 	}
 	if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
