@@ -72,6 +72,7 @@ func (e *CSISnapshooter) Ensure() (runtime.Object, kutil.VerbType, error) {
 		podSpec:            jobTemplate.Spec,
 		podLabels:          e.Invoker.GetLabels(),
 		serviceAccountName: e.RBACOptions.GetServiceAccountName(),
+		runtimeSettings:    runtimeSettings,
 		backOffLimit:       0,
 	}
 	if runtimeSettings.Pod != nil && runtimeSettings.Pod.PodAnnotations != nil {
