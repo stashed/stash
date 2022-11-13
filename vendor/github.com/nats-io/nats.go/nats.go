@@ -48,7 +48,7 @@ import (
 
 // Default Constants
 const (
-	Version                   = "1.17.0"
+	Version                   = "1.20.0"
 	DefaultURL                = "nats://127.0.0.1:4222"
 	DefaultPort               = 4222
 	DefaultMaxReconnect       = 60
@@ -449,8 +449,9 @@ type Options struct {
 	// away if it can't connect to a server in the initial set. The
 	// MaxReconnect and ReconnectWait options are used for this process,
 	// similarly to when an established connection is disconnected.
-	// If a ReconnectHandler is set, it will be invoked when the connection
-	// is established, and if a ClosedHandler is set, it will be invoked if
+	// If a ReconnectHandler is set, it will be invoked on the first
+	// successful reconnect attempt (if the initial connect fails),
+	// and if a ClosedHandler is set, it will be invoked if
 	// it fails to connect (after exhausting the MaxReconnect attempts).
 	RetryOnFailedConnect bool
 
@@ -3450,6 +3451,7 @@ const (
 	noResponders       = "503"
 	noMessagesSts      = "404"
 	reqTimeoutSts      = "408"
+	jetStream409Sts    = "409"
 	controlMsg         = "100"
 	statusLen          = 3 // e.g. 20x, 40x, 50x
 )

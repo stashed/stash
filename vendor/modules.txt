@@ -327,7 +327,7 @@ github.com/monochromegane/go-gitignore
 github.com/munnerz/goautoneg
 # github.com/nats-io/jwt/v2 v2.3.0
 ## explicit; go 1.16
-# github.com/nats-io/nats.go v1.17.0
+# github.com/nats-io/nats.go v1.20.0
 ## explicit; go 1.16
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
@@ -424,24 +424,24 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
-# go.bytebuilders.dev/audit v0.0.24
+# go.bytebuilders.dev/audit v0.0.25-0.20221113080116-cd43022b1527
 ## explicit; go 1.18
 go.bytebuilders.dev/audit/api/v1
 go.bytebuilders.dev/audit/lib
-# go.bytebuilders.dev/license-proxyserver v0.0.2-0.20220917052300-e49b09065bec
+# go.bytebuilders.dev/license-proxyserver v0.0.2-0.20221113070558-69a84f79c7ee
 ## explicit; go 1.18
 go.bytebuilders.dev/license-proxyserver/apis/proxyserver
 go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1
 go.bytebuilders.dev/license-proxyserver/client/clientset/versioned
 go.bytebuilders.dev/license-proxyserver/client/clientset/versioned/scheme
 go.bytebuilders.dev/license-proxyserver/client/clientset/versioned/typed/proxyserver/v1alpha1
-# go.bytebuilders.dev/license-verifier v0.12.0
+# go.bytebuilders.dev/license-verifier v0.12.1-0.20221113073530-4335c23800f0
 ## explicit; go 1.18
 go.bytebuilders.dev/license-verifier
 go.bytebuilders.dev/license-verifier/apis/licenses
 go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1
 go.bytebuilders.dev/license-verifier/info
-# go.bytebuilders.dev/license-verifier/kubernetes v0.12.0
+# go.bytebuilders.dev/license-verifier/kubernetes v0.12.1-0.20221113073530-4335c23800f0
 ## explicit; go 1.18
 go.bytebuilders.dev/license-verifier/kubernetes
 # go.etcd.io/etcd/api/v3 v3.5.4
@@ -1534,7 +1534,7 @@ k8s.io/utils/trace
 # kmodules.xyz/apiversion v0.2.0
 ## explicit; go 1.14
 kmodules.xyz/apiversion
-# kmodules.xyz/client-go v0.25.6
+# kmodules.xyz/client-go v0.25.10
 ## explicit; go 1.18
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -1647,7 +1647,7 @@ sigs.k8s.io/apiserver-network-proxy/konnectivity-client/proto/client
 # sigs.k8s.io/cli-utils v0.33.0
 ## explicit; go 1.17
 sigs.k8s.io/cli-utils/pkg/kstatus/status
-# sigs.k8s.io/controller-runtime v0.13.0 => github.com/kmodules/controller-runtime v0.13.1-0.20220917045846-a0df7cc5e5ee
+# sigs.k8s.io/controller-runtime v0.13.1 => github.com/kmodules/controller-runtime v0.13.1-0.20220917045846-a0df7cc5e5ee
 ## explicit; go 1.17
 sigs.k8s.io/controller-runtime/pkg/cache
 sigs.k8s.io/controller-runtime/pkg/cache/internal

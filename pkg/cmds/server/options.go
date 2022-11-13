@@ -118,7 +118,7 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	cfg.BackupJobPSPNames = s.BackupJobPSPNames
 	cfg.RestoreJobPSPNames = s.RestoreJobPSPNames
 
-	if cfg.LicenseFile != "" {
+	if cfg.LicenseProvided() {
 		l := license.MustLicenseEnforcer(cfg.ClientConfig, cfg.LicenseFile).LoadLicense()
 		if l.Status != licenseapi.LicenseActive {
 			return fmt.Errorf("license status %s, reason: %s", l.Status, l.Reason)
