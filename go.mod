@@ -11,9 +11,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.24
-	go.bytebuilders.dev/license-verifier v0.12.0
-	go.bytebuilders.dev/license-verifier/kubernetes v0.12.0
+	go.bytebuilders.dev/audit v0.0.25-0.20221113080116-cd43022b1527
+	go.bytebuilders.dev/license-verifier v0.12.1-0.20221113073530-4335c23800f0
+	go.bytebuilders.dev/license-verifier/kubernetes v0.12.1-0.20221113073530-4335c23800f0
 	golang.org/x/text v0.3.7
 	gomodules.xyz/blobfs v0.1.10
 	gomodules.xyz/cert v1.5.0
@@ -34,7 +34,7 @@ require (
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kube-aggregator v0.25.1
 	k8s.io/kubernetes v0.0.0-00010101000000-000000000000
-	kmodules.xyz/client-go v0.25.6
+	kmodules.xyz/client-go v0.25.10
 	kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a
 	kmodules.xyz/csi-utils v0.25.4
 	kmodules.xyz/custom-resources v0.25.0
@@ -119,7 +119,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nats-io/jwt/v2 v2.3.0 // indirect
-	github.com/nats-io/nats.go v1.17.0 // indirect
+	github.com/nats-io/nats.go v1.20.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/ncw/swift v1.0.49 // indirect
@@ -136,7 +136,7 @@ require (
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
-	go.bytebuilders.dev/license-proxyserver v0.0.2-0.20220917052300-e49b09065bec // indirect
+	go.bytebuilders.dev/license-proxyserver v0.0.2-0.20221113070558-69a84f79c7ee // indirect
 	go.etcd.io/etcd/api/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.4 // indirect
@@ -191,7 +191,7 @@ require (
 	kmodules.xyz/resource-metrics v0.25.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.32 // indirect
 	sigs.k8s.io/cli-utils v0.33.0 // indirect
-	sigs.k8s.io/controller-runtime v0.13.0 // indirect
+	sigs.k8s.io/controller-runtime v0.13.1 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect

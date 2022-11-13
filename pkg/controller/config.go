@@ -27,6 +27,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	auditlib "go.bytebuilders.dev/audit/lib"
+	proxyserver "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	licenseapi "go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/informers"
@@ -80,6 +81,18 @@ func NewConfig(clientConfig *rest.Config) *Config {
 	}
 }
 
+func (c Config) LicenseProvided() bool {
+	if c.LicenseFile != "" {
+		return true
+	}
+
+	ok, _ := discovery.HasGVK(
+		c.KubeClient.Discovery(),
+		proxyserver.SchemeGroupVersion.String(),
+		proxyserver.ResourceKindLicenseRequest)
+	return ok
+}
+
 func (c *Config) New() (*StashController, error) {
 	if err := discovery.IsDefaultSupportedVersion(c.KubeClient); err != nil {
 		return nil, err
@@ -95,7 +108,7 @@ func (c *Config) New() (*StashController, error) {
 	// audit event publisher
 	// WARNING: https://stackoverflow.com/a/46275411/244009
 	var auditor *auditlib.EventPublisher
-	if c.LicenseFile != "" && !c.License.DisableAnalytics() {
+	if c.LicenseProvided() && !c.License.DisableAnalytics() {
 		cmeta, err := clusterid.ClusterMetadata(c.KubeClient.CoreV1().Namespaces())
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract cluster metadata, reason: %v", err)
