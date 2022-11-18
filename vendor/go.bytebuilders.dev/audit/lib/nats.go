@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -61,7 +62,7 @@ func NewNatsConfig(cfg *rest.Config, clusterID string, LicenseFile string) (*Nat
 	var licenseBytes []byte
 	var err error
 
-	licenseBytes, err = os.ReadFile(LicenseFile)
+	licenseBytes, err = ioutil.ReadFile(LicenseFile)
 	if errors.Is(err, os.ErrNotExist) {
 		req := proxyserver.LicenseRequest{
 			TypeMeta: metav1.TypeMeta{},
@@ -138,7 +139,7 @@ func NewConnection(natscred NatsCredential) (nc *nats.Conn, err error) {
 	}
 
 	credFile := "/tmp/nats.creds"
-	if err = os.WriteFile(credFile, natscred.Credential, 0o600); err != nil {
+	if err = ioutil.WriteFile(credFile, natscred.Credential, 0o600); err != nil {
 		return nil, err
 	}
 

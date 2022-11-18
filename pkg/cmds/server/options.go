@@ -22,7 +22,6 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
-	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/stash/pkg/controller"
 
@@ -62,8 +61,8 @@ type ExtraOptions struct {
 
 func NewExtraOptions() *ExtraOptions {
 	return &ExtraOptions{
-		DockerRegistry: docker.ACRegistry,
-		StashImage:     docker.ImageStash,
+		DockerRegistry: "appscode",
+		StashImage:     "stash",
 		StashImageTag:  "",
 		MaxNumRequeues: 5,
 		NumThreads:     2,

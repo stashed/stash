@@ -50,7 +50,6 @@ func abbrevboth(left, right int, s string) string {
 	r, _ := util.AbbreviateFull(s, left, right)
 	return r
 }
-
 func initials(s string) string {
 	// Wrap this just to eliminate the var args, which templates don't do well.
 	return util.Initials(s)

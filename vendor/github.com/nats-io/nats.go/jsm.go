@@ -93,39 +93,35 @@ type JetStreamManager interface {
 
 	// AccountInfo retrieves info about the JetStream usage from an account.
 	AccountInfo(opts ...JSOpt) (*AccountInfo, error)
-
-	// StreamNameBySubject returns a stream matching given subject.
-	StreamNameBySubject(string, ...JSOpt) (string, error)
 }
 
 // StreamConfig will determine the properties for a stream.
 // There are sensible defaults for most. If no subjects are
 // given the name will be used as the only subject.
 type StreamConfig struct {
-	Name                 string          `json:"name"`
-	Description          string          `json:"description,omitempty"`
-	Subjects             []string        `json:"subjects,omitempty"`
-	Retention            RetentionPolicy `json:"retention"`
-	MaxConsumers         int             `json:"max_consumers"`
-	MaxMsgs              int64           `json:"max_msgs"`
-	MaxBytes             int64           `json:"max_bytes"`
-	Discard              DiscardPolicy   `json:"discard"`
-	DiscardNewPerSubject bool            `json:"discard_new_per_subject,omitempty"`
-	MaxAge               time.Duration   `json:"max_age"`
-	MaxMsgsPerSubject    int64           `json:"max_msgs_per_subject"`
-	MaxMsgSize           int32           `json:"max_msg_size,omitempty"`
-	Storage              StorageType     `json:"storage"`
-	Replicas             int             `json:"num_replicas"`
-	NoAck                bool            `json:"no_ack,omitempty"`
-	Template             string          `json:"template_owner,omitempty"`
-	Duplicates           time.Duration   `json:"duplicate_window,omitempty"`
-	Placement            *Placement      `json:"placement,omitempty"`
-	Mirror               *StreamSource   `json:"mirror,omitempty"`
-	Sources              []*StreamSource `json:"sources,omitempty"`
-	Sealed               bool            `json:"sealed,omitempty"`
-	DenyDelete           bool            `json:"deny_delete,omitempty"`
-	DenyPurge            bool            `json:"deny_purge,omitempty"`
-	AllowRollup          bool            `json:"allow_rollup_hdrs,omitempty"`
+	Name              string          `json:"name"`
+	Description       string          `json:"description,omitempty"`
+	Subjects          []string        `json:"subjects,omitempty"`
+	Retention         RetentionPolicy `json:"retention"`
+	MaxConsumers      int             `json:"max_consumers"`
+	MaxMsgs           int64           `json:"max_msgs"`
+	MaxBytes          int64           `json:"max_bytes"`
+	Discard           DiscardPolicy   `json:"discard"`
+	MaxAge            time.Duration   `json:"max_age"`
+	MaxMsgsPerSubject int64           `json:"max_msgs_per_subject"`
+	MaxMsgSize        int32           `json:"max_msg_size,omitempty"`
+	Storage           StorageType     `json:"storage"`
+	Replicas          int             `json:"num_replicas"`
+	NoAck             bool            `json:"no_ack,omitempty"`
+	Template          string          `json:"template_owner,omitempty"`
+	Duplicates        time.Duration   `json:"duplicate_window,omitempty"`
+	Placement         *Placement      `json:"placement,omitempty"`
+	Mirror            *StreamSource   `json:"mirror,omitempty"`
+	Sources           []*StreamSource `json:"sources,omitempty"`
+	Sealed            bool            `json:"sealed,omitempty"`
+	DenyDelete        bool            `json:"deny_delete,omitempty"`
+	DenyPurge         bool            `json:"deny_purge,omitempty"`
+	AllowRollup       bool            `json:"allow_rollup_hdrs,omitempty"`
 
 	// Allow republish of the message after being sequenced and stored.
 	RePublish *RePublish `json:"republish,omitempty"`
@@ -157,44 +153,13 @@ type StreamSource struct {
 	OptStartTime  *time.Time      `json:"opt_start_time,omitempty"`
 	FilterSubject string          `json:"filter_subject,omitempty"`
 	External      *ExternalStream `json:"external,omitempty"`
-	Domain        string          `json:"-"`
 }
 
 // ExternalStream allows you to qualify access to a stream source in another
 // account.
 type ExternalStream struct {
 	APIPrefix     string `json:"api"`
-	DeliverPrefix string `json:"deliver,omitempty"`
-}
-
-// Helper for copying when we do not want to change user's version.
-func (ss *StreamSource) copy() *StreamSource {
-	nss := *ss
-	// Check pointers
-	if ss.OptStartTime != nil {
-		t := *ss.OptStartTime
-		nss.OptStartTime = &t
-	}
-	if ss.External != nil {
-		ext := *ss.External
-		nss.External = &ext
-	}
-	return &nss
-}
-
-// If we have a Domain, convert to the appropriate ext.APIPrefix.
-// This will change the stream source, so should be a copy passed in.
-func (ss *StreamSource) convertDomain() error {
-	if ss.Domain == _EMPTY_ {
-		return nil
-	}
-	if ss.External != nil {
-		// These should be mutually exclusive.
-		// TODO(dlc) - Make generic?
-		return errors.New("nats: domain and external are both set")
-	}
-	ss.External = &ExternalStream{APIPrefix: fmt.Sprintf(jsExtDomainT, ss.Domain)}
-	return nil
+	DeliverPrefix string `json:"deliver"`
 }
 
 // apiResponse is a standard response from the JetStream JSON API
@@ -221,7 +186,7 @@ type AccountInfo struct {
 	Tier
 	Domain string          `json:"domain"`
 	API    APIStats        `json:"api"`
-	Tiers  map[string]Tier `json:"tiers"`
+	Tiers  map[string]Tier `json:"tier"`
 }
 
 type Tier struct {
@@ -723,31 +688,7 @@ func (js *js) AddStream(cfg *StreamConfig, opts ...JSOpt) (*StreamInfo, error) {
 		defer cancel()
 	}
 
-	// In case we need to change anything, copy so we do not change the caller's version.
-	ncfg := *cfg
-
-	// If we have a mirror and an external domain, convert to ext.APIPrefix.
-	if cfg.Mirror != nil && cfg.Mirror.Domain != _EMPTY_ {
-		// Copy so we do not change the caller's version.
-		ncfg.Mirror = ncfg.Mirror.copy()
-		if err := ncfg.Mirror.convertDomain(); err != nil {
-			return nil, err
-		}
-	}
-	// Check sources for the same.
-	if len(ncfg.Sources) > 0 {
-		ncfg.Sources = append([]*StreamSource(nil), ncfg.Sources...)
-		for i, ss := range ncfg.Sources {
-			if ss.Domain != _EMPTY_ {
-				ncfg.Sources[i] = ss.copy()
-				if err := ncfg.Sources[i].convertDomain(); err != nil {
-					return nil, err
-				}
-			}
-		}
-	}
-
-	req, err := json.Marshal(&ncfg)
+	req, err := json.Marshal(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -867,20 +808,12 @@ func (js *js) StreamInfo(stream string, opts ...JSOpt) (*StreamInfo, error) {
 
 // StreamInfo shows config and current state for this stream.
 type StreamInfo struct {
-	Config     StreamConfig        `json:"config"`
-	Created    time.Time           `json:"created"`
-	State      StreamState         `json:"state"`
-	Cluster    *ClusterInfo        `json:"cluster,omitempty"`
-	Mirror     *StreamSourceInfo   `json:"mirror,omitempty"`
-	Sources    []*StreamSourceInfo `json:"sources,omitempty"`
-	Alternates []*StreamAlternate  `json:"alternates,omitempty"`
-}
-
-// StreamAlternate is an alternate stream represented by a mirror.
-type StreamAlternate struct {
-	Name    string `json:"name"`
-	Domain  string `json:"domain,omitempty"`
-	Cluster string `json:"cluster"`
+	Config  StreamConfig        `json:"config"`
+	Created time.Time           `json:"created"`
+	State   StreamState         `json:"state"`
+	Cluster *ClusterInfo        `json:"cluster,omitempty"`
+	Mirror  *StreamSourceInfo   `json:"mirror,omitempty"`
+	Sources []*StreamSourceInfo `json:"sources,omitempty"`
 }
 
 // StreamSourceInfo shows information about an upstream stream source.
@@ -1057,13 +990,17 @@ func (js *js) getMsg(name string, mreq *apiMsgGetRequest, opts ...JSOpt) (*RawSt
 	}
 
 	var apiSubj string
-	if o.directGet && mreq.LastFor != _EMPTY_ {
+
+	doDirectGetLastBySubject := o.directGet && mreq.LastFor != _EMPTY_
+
+	if doDirectGetLastBySubject {
 		apiSubj = apiDirectMsgGetLastBySubjectT
 		dsSubj := js.apiSubj(fmt.Sprintf(apiSubj, name, mreq.LastFor))
 		r, err := js.apiRequestWithContext(o.ctx, dsSubj, nil)
 		if err != nil {
 			return nil, err
 		}
+
 		return convertDirectGetMsgResponseToMsg(name, r)
 	}
 
@@ -1524,40 +1461,6 @@ func (jsc *js) StreamNames(opts ...JSOpt) <-chan string {
 	}()
 
 	return ch
-}
-
-// StreamNameBySubject returns a stream name that matches the subject.
-func (jsc *js) StreamNameBySubject(subj string, opts ...JSOpt) (string, error) {
-	o, cancel, err := getJSContextOpts(jsc.opts, opts...)
-	if err != nil {
-		return "", err
-	}
-	if cancel != nil {
-		defer cancel()
-	}
-
-	var slr streamNamesResponse
-	req := &streamRequest{subj}
-	j, err := json.Marshal(req)
-	if err != nil {
-		return _EMPTY_, err
-	}
-
-	resp, err := jsc.apiRequestWithContext(o.ctx, jsc.apiSubj(apiStreams), j)
-	if err != nil {
-		if err == ErrNoResponders {
-			err = ErrJetStreamNotEnabled
-		}
-		return _EMPTY_, err
-	}
-	if err := json.Unmarshal(resp.Data, &slr); err != nil {
-		return _EMPTY_, err
-	}
-
-	if slr.Error != nil || len(slr.Streams) != 1 {
-		return _EMPTY_, ErrNoMatchingStream
-	}
-	return slr.Streams[0], nil
 }
 
 func getJSContextOpts(defs *jsOpts, opts ...JSOpt) (*jsOpts, context.CancelFunc, error) {

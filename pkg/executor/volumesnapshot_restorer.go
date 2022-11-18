@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"stash.appscode.dev/apimachinery/apis"
-	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/stash/pkg/rbac"
@@ -35,6 +34,7 @@ import (
 	kutil "kmodules.xyz/client-go"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	"kmodules.xyz/client-go/tools/docker"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
 

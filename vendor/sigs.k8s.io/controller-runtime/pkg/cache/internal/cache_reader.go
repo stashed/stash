@@ -113,60 +113,17 @@ func (c *CacheReader) List(_ context.Context, out client.ObjectList, opts ...cli
 	listOpts.ApplyOptions(opts)
 
 	switch {
-	// listOpts.FieldSelector.Empty() == true means select all
-	case listOpts.FieldSelector != nil && !listOpts.FieldSelector.Empty():
+	case listOpts.FieldSelector != nil:
 		// TODO(directxman12): support more complicated field selectors by
 		// combining multiple indices, GetIndexers, etc
-		requiresExact := requiresExactMatch(listOpts.FieldSelector)
+		field, val, requiresExact := requiresExactMatch(listOpts.FieldSelector)
 		if !requiresExact {
 			return fmt.Errorf("non-exact field matches are not supported by the cache")
 		}
-
-		reqs := listOpts.FieldSelector.Requirements()
-		// len(reqs) == 0 means, select nothing
-		if len(reqs) > 0 {
-			req := reqs[0]
-			// list all objects by the field selector.  If this is namespaced and we have one, ask for the
-			// namespaced index key.  Otherwise, ask for the non-namespaced variant by using the fake "all namespaces"
-			// namespace.
-			list, err := c.indexer.ByIndex(FieldIndexName(req.Field), KeyToNamespacedKey(listOpts.Namespace, req.Value))
-			if err != nil {
-				return err
-			}
-			if len(reqs) > 1 {
-				objmap := make(map[client.ObjectKey]interface{}, len(list))
-				for i := range list {
-					obj := list[i].(client.Object)
-					objmap[client.ObjectKey{Namespace: obj.GetNamespace(), Name: obj.GetName()}] = obj
-				}
-				for _, req := range reqs[1:] {
-					list, err := c.indexer.ByIndex(FieldIndexName(req.Field), KeyToNamespacedKey(listOpts.Namespace, req.Value))
-					if err != nil {
-						return err
-					}
-
-					numap := make(map[client.ObjectKey]interface{}, len(list))
-					for i := range list {
-						obj := list[i].(client.Object)
-						key := client.ObjectKey{Namespace: obj.GetNamespace(), Name: obj.GetName()}
-						if o, exists := objmap[key]; exists {
-							if o.(client.Object).GetGeneration() == obj.GetGeneration() {
-								numap[key] = obj
-							} else {
-								return fmt.Errorf("multiple generation found in indices for %+v %s/%s", obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace(), obj.GetName())
-							}
-						}
-					}
-					objmap = numap
-				}
-				objs = make([]interface{}, 0, len(objmap))
-				for _, obj := range objmap {
-					objs = append(objs, obj)
-				}
-			} else {
-				objs = list
-			}
-		}
+		// list all objects by the field selector.  If this is namespaced and we have one, ask for the
+		// namespaced index key.  Otherwise, ask for the non-namespaced variant by using the fake "all namespaces"
+		// namespace.
+		objs, err = c.indexer.ByIndex(FieldIndexName(field), KeyToNamespacedKey(listOpts.Namespace, val))
 	case listOpts.Namespace != "":
 		objs, err = c.indexer.ByIndex(cache.NamespaceIndex, listOpts.Namespace)
 	default:
@@ -230,14 +187,16 @@ func objectKeyToStoreKey(k client.ObjectKey) string {
 }
 
 // requiresExactMatch checks if the given field selector is of the form `k=v` or `k==v`.
-func requiresExactMatch(sel fields.Selector) (required bool) {
+func requiresExactMatch(sel fields.Selector) (field, val string, required bool) {
 	reqs := sel.Requirements()
-	for _, req := range reqs {
-		if req.Operator != selection.Equals && req.Operator != selection.DoubleEquals {
-			return false
-		}
+	if len(reqs) != 1 {
+		return "", "", false
 	}
-	return true
+	req := reqs[0]
+	if req.Operator != selection.Equals && req.Operator != selection.DoubleEquals {
+		return "", "", false
+	}
+	return req.Field, req.Value, true
 }
 
 // FieldIndexName constructs the name of the index over the given field,

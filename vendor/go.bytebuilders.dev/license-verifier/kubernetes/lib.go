@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -99,7 +99,7 @@ func MustLicenseEnforcer(config *rest.Config, licenseFile string) *LicenseEnforc
 
 func getLicense(cfg *rest.Config, licenseFile string) func() ([]byte, error) {
 	return func() ([]byte, error) {
-		licenseBytes, err := os.ReadFile(licenseFile)
+		licenseBytes, err := ioutil.ReadFile(licenseFile)
 		if errors.Is(err, os.ErrNotExist) {
 			req := proxyserver.LicenseRequest{
 				TypeMeta: metav1.TypeMeta{},
@@ -297,6 +297,9 @@ func verifyLicensePeriodically(le *LicenseEnforcer, licenseFile string, stopCh <
 		return false, nil
 	}
 
+	if _, err := os.Stat(licenseFile); os.IsNotExist(err) {
+		return errors.New("license file is missing")
+	}
 	return wait.PollImmediateUntil(licenseCheckInterval, fn, stopCh)
 }
 
@@ -379,7 +382,7 @@ func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, features [
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

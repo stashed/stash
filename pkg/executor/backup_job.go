@@ -24,7 +24,6 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
-	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolver"
@@ -36,6 +35,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	kutil "kmodules.xyz/client-go"
 	metautil "kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/tools/docker"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 )
 

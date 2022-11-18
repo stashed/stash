@@ -23,7 +23,6 @@ import (
 	stashinformers "stash.appscode.dev/apimachinery/client/informers/externalversions"
 	stash_listers "stash.appscode.dev/apimachinery/client/listers/stash/v1alpha1"
 	stash_listers_v1beta1 "stash.appscode.dev/apimachinery/client/listers/stash/v1beta1"
-	"stash.appscode.dev/apimachinery/pkg/docker"
 
 	auditlib "go.bytebuilders.dev/audit/lib"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -38,6 +37,7 @@ import (
 	"k8s.io/klog/v2"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1"
 	"kmodules.xyz/client-go/discovery"
+	"kmodules.xyz/client-go/tools/docker"
 	"kmodules.xyz/client-go/tools/queue"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"

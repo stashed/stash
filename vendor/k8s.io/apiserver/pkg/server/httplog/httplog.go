@@ -282,20 +282,7 @@ func (rl *respLogger) Log() {
 		}
 	}
 
-	klog.V(rl.logLevel()).InfoSDepth(1, "HTTP", keysAndValues...)
-}
-
-// raise log level for successful requests and requests to "/openapi/{v2,v3}" as this is not configured for dynamic admission controller webhooks
-func (rl *respLogger) logLevel() klog.Level {
-	if (rl.status >= http.StatusOK && rl.status < http.StatusMultipleChoices) ||
-		rl.req.RequestURI == "/openapi/v2" ||
-		rl.req.RequestURI == "/openapi/v3" ||
-		((rl.status == http.StatusForbidden || rl.status == http.StatusNotFound) &&
-			rl.req.Method == http.MethodGet &&
-			(strings.Contains(rl.req.RequestURI, "mutator") || strings.Contains(rl.req.RequestURI, "validator"))) {
-		return 8
-	}
-	return withLoggingLevel
+	klog.V(withLoggingLevel).InfoSDepth(1, "HTTP", keysAndValues...)
 }
 
 // Header implements http.ResponseWriter.

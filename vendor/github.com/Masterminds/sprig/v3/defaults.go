@@ -24,6 +24,7 @@ func init() {
 //
 // For everything else, including pointers, a nil value is unset.
 func dfault(d interface{}, given ...interface{}) interface{} {
+
 	if empty(given) || empty(given[0]) {
 		return d
 	}
@@ -133,8 +134,11 @@ func mustToPrettyJson(v interface{}) (string, error) {
 
 // toRawJson encodes an item into a JSON string with no escaping of HTML characters.
 func toRawJson(v interface{}) string {
-	output, _ := mustToRawJson(v)
-	return output
+	output, err := mustToRawJson(v)
+	if err != nil {
+		panic(err)
+	}
+	return string(output)
 }
 
 // mustToRawJson encodes an item into a JSON string with no escaping of HTML characters.

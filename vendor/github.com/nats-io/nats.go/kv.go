@@ -35,10 +35,6 @@ type KeyValueManager interface {
 	CreateKeyValue(cfg *KeyValueConfig) (KeyValue, error)
 	// DeleteKeyValue will delete this KeyValue store (JetStream stream).
 	DeleteKeyValue(bucket string) error
-	// KeyValueStoreNames is used to retrieve a list of key value store names
-	KeyValueStoreNames() <-chan string
-	// KeyValueStores is used to retrieve a list of key value store statuses
-	KeyValueStores() <-chan KeyValueStatus
 }
 
 // Notice: Experimental Preview
@@ -94,9 +90,6 @@ type KeyValueStatus interface {
 
 	// BackingStore indicates what technology is used for storage of the bucket
 	BackingStore() string
-
-	// Bytes returns the size in bytes of the bucket
-	Bytes() uint64
 }
 
 // KeyWatcher is what is returned when doing a watch.
@@ -233,8 +226,6 @@ type KeyValueConfig struct {
 	Replicas     int
 	Placement    *Placement
 	RePublish    *RePublish
-	Mirror       *StreamSource
-	Sources      []*StreamSource
 }
 
 // Used to watch all keys.
@@ -300,12 +291,10 @@ var (
 )
 
 const (
-	kvBucketNamePre         = "KV_"
-	kvBucketNameTmpl        = "KV_%s"
-	kvSubjectsTmpl          = "$KV.%s.>"
-	kvSubjectsPreTmpl       = "$KV.%s."
-	kvSubjectsPreDomainTmpl = "%s.$KV.%s."
-	kvNoPending             = "0"
+	kvBucketNameTmpl  = "KV_%s"
+	kvSubjectsTmpl    = "$KV.%s.>"
+	kvSubjectsPreTmpl = "$KV.%s."
+	kvNoPending       = "0"
 )
 
 // Regex for valid keys and buckets.
@@ -336,7 +325,16 @@ func (js *js) KeyValue(bucket string) (KeyValue, error) {
 		return nil, ErrBadBucket
 	}
 
-	return mapStreamToKVS(js, si), nil
+	kv := &kvs{
+		name:   bucket,
+		stream: stream,
+		pre:    fmt.Sprintf(kvSubjectsPreTmpl, bucket),
+		js:     js,
+		// Determine if we need to use the JS prefix in front of Put and Delete operations
+		useJSPfx:  js.opts.pre != defaultAPIPrefix,
+		useDirect: si.Config.AllowDirect,
+	}
+	return kv, nil
 }
 
 // CreateKeyValue will create a KeyValue store with the following configuration.
@@ -390,6 +388,7 @@ func (js *js) CreateKeyValue(cfg *KeyValueConfig) (KeyValue, error) {
 	scfg := &StreamConfig{
 		Name:              fmt.Sprintf(kvBucketNameTmpl, cfg.Bucket),
 		Description:       cfg.Description,
+		Subjects:          []string{fmt.Sprintf(kvSubjectsTmpl, cfg.Bucket)},
 		MaxMsgsPerSubject: history,
 		MaxBytes:          maxBytes,
 		MaxAge:            cfg.TTL,
@@ -404,26 +403,6 @@ func (js *js) CreateKeyValue(cfg *KeyValueConfig) (KeyValue, error) {
 		MaxConsumers:      -1,
 		AllowDirect:       true,
 		RePublish:         cfg.RePublish,
-	}
-	if cfg.Mirror != nil {
-		// Copy in case we need to make changes so we do not change caller's version.
-		m := cfg.Mirror.copy()
-		if !strings.HasPrefix(m.Name, kvBucketNamePre) {
-			m.Name = fmt.Sprintf(kvBucketNameTmpl, m.Name)
-		}
-		scfg.Mirror = m
-		scfg.MirrorDirect = true
-	} else if len(cfg.Sources) > 0 {
-		// For now we do not allow direct subjects for sources. If that is desired a user could use stream API directly.
-		for _, ss := range cfg.Sources {
-			if !strings.HasPrefix(ss.Name, kvBucketNamePre) {
-				ss = ss.copy()
-				ss.Name = fmt.Sprintf(kvBucketNameTmpl, ss.Name)
-			}
-			scfg.Sources = append(scfg.Sources, ss)
-		}
-	} else {
-		scfg.Subjects = []string{fmt.Sprintf(kvSubjectsTmpl, cfg.Bucket)}
 	}
 
 	// If we are at server version 2.7.2 or above use DiscardNew. We can not use DiscardNew for 2.7.1 or below.
@@ -452,7 +431,17 @@ func (js *js) CreateKeyValue(cfg *KeyValueConfig) (KeyValue, error) {
 			return nil, err
 		}
 	}
-	return mapStreamToKVS(js, si), nil
+
+	kv := &kvs{
+		name:   cfg.Bucket,
+		stream: scfg.Name,
+		pre:    fmt.Sprintf(kvSubjectsPreTmpl, cfg.Bucket),
+		js:     js,
+		// Determine if we need to use the JS prefix in front of Put and Delete operations
+		useJSPfx:  js.opts.pre != defaultAPIPrefix,
+		useDirect: si.Config.AllowDirect,
+	}
+	return kv, nil
 }
 
 // DeleteKeyValue will delete this KeyValue store (JetStream stream).
@@ -468,7 +457,6 @@ type kvs struct {
 	name   string
 	stream string
 	pre    string
-	putPre string
 	js     *js
 	// If true, it means that APIPrefix/Domain was set in the context
 	// and we need to add something to some of our high level protocols
@@ -544,9 +532,9 @@ func (kv *kvs) get(key string, revision uint64) (KeyValueEntry, error) {
 	var _opts [1]JSOpt
 	opts := _opts[:0]
 	if kv.useDirect {
-		opts = append(opts, DirectGet())
+		_opts[0] = DirectGet()
+		opts = _opts[:1]
 	}
-
 	if revision == kvLatestRevision {
 		m, err = kv.js.GetLastMsg(kv.stream, b.String(), opts...)
 	} else {
@@ -597,11 +585,7 @@ func (kv *kvs) Put(key string, value []byte) (revision uint64, err error) {
 	if kv.useJSPfx {
 		b.WriteString(kv.js.opts.pre)
 	}
-	if kv.putPre != _EMPTY_ {
-		b.WriteString(kv.putPre)
-	} else {
-		b.WriteString(kv.pre)
-	}
+	b.WriteString(kv.pre)
 	b.WriteString(key)
 
 	pa, err := kv.js.Publish(b.String(), value)
@@ -665,11 +649,7 @@ func (kv *kvs) Delete(key string, opts ...DeleteOpt) error {
 	if kv.useJSPfx {
 		b.WriteString(kv.js.opts.pre)
 	}
-	if kv.putPre != _EMPTY_ {
-		b.WriteString(kv.putPre)
-	} else {
-		b.WriteString(kv.pre)
-	}
+	b.WriteString(kv.pre)
 	b.WriteString(key)
 
 	// DEL op marker. For watch functionality.
@@ -926,7 +906,7 @@ func (kv *kvs) Watch(keys string, opts ...WatchOpt) (KeyWatcher, error) {
 	}
 
 	// Used ordered consumer to deliver results.
-	subOpts := []SubOpt{BindStream(kv.stream), OrderedConsumer()}
+	subOpts := []SubOpt{OrderedConsumer()}
 	if !o.includeHistory {
 		subOpts = append(subOpts, DeliverLastPerSubject())
 	}
@@ -991,9 +971,6 @@ func (s *KeyValueBucketStatus) BackingStore() string { return "JetStream" }
 // StreamInfo is the stream info retrieved to create the status
 func (s *KeyValueBucketStatus) StreamInfo() *StreamInfo { return s.nfo }
 
-// Bytes is the size of the stream
-func (s *KeyValueBucketStatus) Bytes() uint64 { return s.nfo.State.Bytes }
-
 // Status retrieves the status and configuration of a bucket
 func (kv *kvs) Status() (KeyValueStatus, error) {
 	nfo, err := kv.js.StreamInfo(kv.stream)
@@ -1002,72 +979,4 @@ func (kv *kvs) Status() (KeyValueStatus, error) {
 	}
 
 	return &KeyValueBucketStatus{nfo: nfo, bucket: kv.name}, nil
-}
-
-// KeyValueStoreNames is used to retrieve a list of key value store names
-func (js *js) KeyValueStoreNames() <-chan string {
-	ch := make(chan string)
-	l := &streamLister{js: js}
-	l.js.opts.streamListSubject = fmt.Sprintf(kvSubjectsTmpl, "*")
-	go func() {
-		defer close(ch)
-		for l.Next() {
-			for _, info := range l.Page() {
-				if !strings.HasPrefix(info.Config.Name, kvBucketNamePre) {
-					continue
-				}
-				ch <- info.Config.Name
-			}
-		}
-	}()
-
-	return ch
-}
-
-// KeyValueStores is used to retrieve a list of key value store statuses
-func (js *js) KeyValueStores() <-chan KeyValueStatus {
-	ch := make(chan KeyValueStatus)
-	l := &streamLister{js: js}
-	l.js.opts.streamListSubject = fmt.Sprintf(kvSubjectsTmpl, "*")
-	go func() {
-		defer close(ch)
-		for l.Next() {
-			for _, info := range l.Page() {
-				if !strings.HasPrefix(info.Config.Name, kvBucketNamePre) {
-					continue
-				}
-				ch <- &KeyValueBucketStatus{nfo: info, bucket: strings.TrimPrefix(info.Config.Name, kvBucketNamePre)}
-			}
-		}
-	}()
-	return ch
-}
-
-func mapStreamToKVS(js *js, info *StreamInfo) *kvs {
-	bucket := strings.TrimPrefix(info.Config.Name, kvBucketNamePre)
-
-	kv := &kvs{
-		name:   bucket,
-		stream: info.Config.Name,
-		pre:    fmt.Sprintf(kvSubjectsPreTmpl, bucket),
-		js:     js,
-		// Determine if we need to use the JS prefix in front of Put and Delete operations
-		useJSPfx:  js.opts.pre != defaultAPIPrefix,
-		useDirect: info.Config.AllowDirect,
-	}
-
-	// If we are mirroring, we will have mirror direct on, so just use the mirror name
-	// and override use
-	if m := info.Config.Mirror; m != nil {
-		bucket := strings.TrimPrefix(m.Name, kvBucketNamePre)
-		if m.External != nil && m.External.APIPrefix != _EMPTY_ {
-			kv.useJSPfx = false
-			kv.pre = fmt.Sprintf(kvSubjectsPreTmpl, bucket)
-			kv.putPre = fmt.Sprintf(kvSubjectsPreDomainTmpl, m.External.APIPrefix, bucket)
-		} else {
-			kv.putPre = fmt.Sprintf(kvSubjectsPreTmpl, bucket)
-		}
-	}
-
-	return kv
 }

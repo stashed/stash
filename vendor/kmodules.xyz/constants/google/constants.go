@@ -1,7 +1,6 @@
 package google
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 )
@@ -20,7 +19,7 @@ func ServiceAccountFromEnv() string {
 	if data := os.Getenv(GOOGLE_SERVICE_ACCOUNT_JSON_KEY); len(data) > 0 {
 		return data
 	}
-	if data, err := ioutil.ReadFile(os.Getenv(GOOGLE_APPLICATION_CREDENTIALS)); err == nil {
+	if data, err := os.ReadFile(os.Getenv(GOOGLE_APPLICATION_CREDENTIALS)); err == nil {
 		return string(data)
 	}
 	log.Println("GOOGLE_SERVICE_ACCOUNT_JSON_KEY and GOOGLE_APPLICATION_CREDENTIALS are empty")

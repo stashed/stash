@@ -24,7 +24,6 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
-	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
 	"stash.appscode.dev/stash/pkg/rbac"
@@ -41,6 +40,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	"kmodules.xyz/client-go/tools/docker"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )

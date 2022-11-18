@@ -138,20 +138,13 @@ func durationRound(duration interface{}) string {
 	return "0s"
 }
 
-func toDate(fmt string, str interface{}) time.Time {
-	output, _ := mustToDate(fmt, str)
-	return output
+func toDate(fmt, str string) time.Time {
+	t, _ := time.ParseInLocation(fmt, str, time.Local)
+	return t
 }
 
-func mustToDate(fmt string, str interface{}) (time.Time, error) {
-	if str == nil {
-		return time.Time{}, nil
-	}
-	s, ok := str.(string)
-	if !ok || s == "" {
-		return time.Time{}, nil
-	}
-	return time.ParseInLocation(fmt, s, time.Local)
+func mustToDate(fmt, str string) (time.Time, error) {
+	return time.ParseInLocation(fmt, str, time.Local)
 }
 
 func unixEpoch(date time.Time) string {
