@@ -12,6 +12,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/audit v0.0.25-0.20221113080116-cd43022b1527
+	go.bytebuilders.dev/license-proxyserver v0.0.2-0.20221113070558-69a84f79c7ee
 	go.bytebuilders.dev/license-verifier v0.12.1-0.20221113073530-4335c23800f0
 	go.bytebuilders.dev/license-verifier/kubernetes v0.12.1-0.20221113073530-4335c23800f0
 	golang.org/x/text v0.3.7
@@ -136,7 +137,6 @@ require (
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
-	go.bytebuilders.dev/license-proxyserver v0.0.2-0.20221113070558-69a84f79c7ee // indirect
 	go.etcd.io/etcd/api/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.4 // indirect
