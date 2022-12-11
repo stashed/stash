@@ -18,7 +18,6 @@ package osm
 
 import (
 	"context"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -124,7 +123,7 @@ func WriteOSMConfig(kc kubernetes.Interface, namespace string, spec api.Backend,
 	if certDataFound {
 		// assume that CA cert file is mounted at SecretMountPath directory
 		f2 := filepath.Join(dir, CaCertFileName)
-		err = ioutil.WriteFile(f2, []byte(cacertData), 0o644)
+		err = os.WriteFile(f2, []byte(cacertData), 0o644)
 		if err != nil {
 			return err
 		}
@@ -140,7 +139,7 @@ func WriteOSMConfig(kc kubernetes.Interface, namespace string, spec api.Backend,
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filename, osmBytes, 0o644)
+	return os.WriteFile(filename, osmBytes, 0o644)
 }
 
 func CheckBucketAccess(client kubernetes.Interface, spec api.Backend, namespace string) error {

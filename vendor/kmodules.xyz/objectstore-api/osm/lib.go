@@ -19,7 +19,6 @@ package osm
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -59,7 +58,7 @@ func LoadConfig(configPath string) (*OSMConfig, error) {
 	}
 
 	config := &OSMConfig{}
-	bytes, err := ioutil.ReadFile(configPath)
+	bytes, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +79,7 @@ func (config *OSMConfig) Save(configPath string) error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(configPath, data, 0o600); err != nil {
+	if err := os.WriteFile(configPath, data, 0o600); err != nil {
 		return err
 	}
 	return nil

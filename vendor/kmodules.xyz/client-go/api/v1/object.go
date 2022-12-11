@@ -207,11 +207,12 @@ type ObjectInfo struct {
 	Ref      ObjectReference `json:"ref" protobuf:"bytes,2,opt,name=ref"`
 }
 
-// +kubebuilder:validation:Enum=auth_via;backup_via;catalog;connect_via;exposed_by;monitored_by;offshoot;restore_into;scaled_by;view;cert_issuer;policy;recommended_for;ops
+// +kubebuilder:validation:Enum=id;config;backup_via;catalog;connect_via;exposed_by;monitored_by;offshoot;restore_into;scaled_by;view;cert_issuer;policy;recommended_for;ops
 type EdgeLabel string
 
 const (
-	EdgeAuthVia        EdgeLabel = "auth_via"
+	EdgeId             EdgeLabel = "id"
+	EdgeConfig         EdgeLabel = "config"
 	EdgeBackupVia      EdgeLabel = "backup_via"
 	EdgeCatalog        EdgeLabel = "catalog"
 	EdgeConnectVia     EdgeLabel = "connect_via"

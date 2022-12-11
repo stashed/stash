@@ -98,7 +98,7 @@ func (w *ResticWrapper) deleteSnapshots(snapshotIDs []string) ([]byte, error) {
 
 func (w *ResticWrapper) repositoryExist() bool {
 	klog.Infoln("Checking whether the backend repository exist or not....")
-	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
+	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--no-lock"})
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 	if _, err := w.run(Command{Name: ResticCMD, Args: args}); err == nil {
@@ -314,7 +314,7 @@ func (w *ResticWrapper) dump(dumpOptions DumpOptions) ([]byte, error) {
 
 func (w *ResticWrapper) check() ([]byte, error) {
 	klog.Infoln("Checking integrity of repository")
-	args := w.appendCacheDirFlag([]interface{}{"check"})
+	args := w.appendCacheDirFlag([]interface{}{"check", "--no-lock"})
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
 
@@ -328,7 +328,7 @@ func (w *ResticWrapper) stats(snapshotID string) ([]byte, error) {
 		args = append(args, snapshotID)
 	}
 	args = w.appendMaxConnectionsFlag(args)
-	args = append(args, "--quiet", "--json", "--mode", "raw-data")
+	args = append(args, "--quiet", "--json", "--mode", "raw-data", "--no-lock")
 	args = w.appendCaCertFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})

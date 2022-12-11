@@ -47,6 +47,22 @@ spec:
           spec:
             description: AppBindingSpec is the spec for app
             properties:
+              appRef:
+                description: Reference to underlying application
+                properties:
+                  apiGroup:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                  namespace:
+                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                    type: string
+                required:
+                - name
+                type: object
               clientConfig:
                 description: ClientConfig defines how to communicate with the app.
                   Required
