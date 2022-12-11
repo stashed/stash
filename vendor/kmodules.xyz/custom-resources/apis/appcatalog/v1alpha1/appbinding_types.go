@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	kmapi "kmodules.xyz/client-go/api/v1"
+
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,31 +44,35 @@ const (
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type AppBinding struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Spec              AppBindingSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              AppBindingSpec `json:"spec,omitempty"`
 }
 
 // AppBindingSpec is the spec for app
 type AppBindingSpec struct {
 	// Type used to facilitate programmatic handling of application.
 	// +optional
-	Type AppType `json:"type,omitempty" protobuf:"bytes,1,opt,name=type,casttype=AppType"`
+	Type AppType `json:"type,omitempty"`
+
+	// Reference to underlying application
+	// +optional
+	AppRef *kmapi.TypedObjectReference `json:"appRef,omitempty"`
 
 	// Version used to facilitate programmatic handling of application.
 	// +optional
-	Version string `json:"version,omitempty" protobuf:"bytes,2,opt,name=version"`
+	Version string `json:"version,omitempty"`
 
 	// ClientConfig defines how to communicate with the app.
 	// Required
-	ClientConfig ClientConfig `json:"clientConfig" protobuf:"bytes,3,opt,name=clientConfig"`
+	ClientConfig ClientConfig `json:"clientConfig"`
 
 	// Secret is the name of the secret to create in the AppBinding's
 	// namespace that will hold the credentials associated with the AppBinding.
-	Secret *core.LocalObjectReference `json:"secret,omitempty" protobuf:"bytes,4,opt,name=secret"`
+	Secret *core.LocalObjectReference `json:"secret,omitempty"`
 
 	// List of transformations that should be applied to the credentials
 	// associated with the ServiceBinding before they are inserted into the Secret.
-	SecretTransforms []SecretTransform `json:"secretTransforms,omitempty" protobuf:"bytes,5,rep,name=secretTransforms"`
+	SecretTransforms []SecretTransform `json:"secretTransforms,omitempty"`
 
 	// Parameters is a set of the parameters to be used to connect to the
 	// app. The inline YAML/JSON payload to be translated into equivalent
@@ -80,11 +86,11 @@ type AppBindingSpec struct {
 	// +optional
 	// +kubebuilder:validation:EmbeddedResource
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Parameters *runtime.RawExtension `json:"parameters,omitempty" protobuf:"bytes,6,opt,name=parameters"`
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
 
 	// TLSSecret is the name of the secret that will hold
 	// the client certificate and private key associated with the AppBinding.
-	TLSSecret *core.LocalObjectReference `json:"tlsSecret,omitempty" protobuf:"bytes,7,opt,name=tlsSecret"`
+	TLSSecret *core.LocalObjectReference `json:"tlsSecret,omitempty"`
 }
 
 type AppType string
@@ -115,7 +121,7 @@ type ClientConfig struct {
 	// allowed, either.
 	//
 	// +optional
-	URL *string `json:"url,omitempty" protobuf:"bytes,1,opt,name=url"`
+	URL *string `json:"url,omitempty"`
 
 	// `service` is a reference to the service for this app. Either
 	// `service` or `url` must be specified.
@@ -123,21 +129,21 @@ type ClientConfig struct {
 	// If the webhook is running within the cluster, then you should use `service`.
 	//
 	// +optional
-	Service *ServiceReference `json:"service,omitempty" protobuf:"bytes,2,opt,name=service"`
+	Service *ServiceReference `json:"service,omitempty"`
 
 	// InsecureSkipTLSVerify disables TLS certificate verification when communicating with this app.
 	// This is strongly discouraged.  You should use the CABundle instead.
-	InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty" protobuf:"varint,3,opt,name=insecureSkipTLSVerify"`
+	InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty"`
 
 	// CABundle is a PEM encoded CA bundle which will be used to validate the serving certificate of this app.
 	// +optional
-	CABundle []byte `json:"caBundle,omitempty" protobuf:"bytes,4,opt,name=caBundle"`
+	CABundle []byte `json:"caBundle,omitempty"`
 
 	// ServerName is used to verify the hostname on the returned
 	// certificates unless InsecureSkipVerify is given. It is also included
 	// in the client's handshake to support virtual hosting unless it is
 	// an IP address.
-	ServerName string `json:"serverName,omitempty" protobuf:"bytes,5,opt,name=serverName"`
+	ServerName string `json:"serverName,omitempty"`
 }
 
 // ServiceReference holds a reference to Service.legacy.k8s.io
@@ -145,28 +151,28 @@ type ServiceReference struct {
 	// Specifies which scheme to use, for example: http, https
 	// If specified, then it will applied as prefix in this format: scheme://
 	// If not specified, then nothing will be prefixed
-	Scheme string `json:"scheme" protobuf:"bytes,1,opt,name=scheme"`
+	Scheme string `json:"scheme"`
 
 	// `namespace` is the namespace of the service.
 	// +optional
-	Namespace string `json:"namespace,omitempty" protobuf:"bytes,2,opt,name=namespace"`
+	Namespace string `json:"namespace,omitempty"`
 
 	// `name` is the name of the service.
 	// Required
-	Name string `json:"name" protobuf:"bytes,3,opt,name=name"`
+	Name string `json:"name"`
 
 	// The port that will be exposed by this app.
-	Port int32 `json:"port" protobuf:"varint,4,opt,name=port"`
+	Port int32 `json:"port"`
 
 	// `path` is an optional URL path which will be sent in any request to
 	// this service.
 	// +optional
-	Path string `json:"path,omitempty" protobuf:"bytes,5,opt,name=path"`
+	Path string `json:"path,omitempty"`
 
 	// `query` is optional encoded query string, without '?' which will be
 	// sent in any request to this service.
 	// +optional
-	Query string `json:"query,omitempty" protobuf:"bytes,6,opt,name=query"`
+	Query string `json:"query,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -174,19 +180,19 @@ type ServiceReference struct {
 // AppBindingList is a list of Apps
 type AppBindingList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 	// Items is a list of AppBinding CRD objects
-	Items []AppBinding `json:"items,omitempty" protobuf:"bytes,2,rep,name=items"`
+	Items []AppBinding `json:"items,omitempty"`
 }
 
 type AppReference struct {
 	// `namespace` is the namespace of the app.
 	// Required
-	Namespace string `json:"namespace" protobuf:"bytes,1,opt,name=namespace"`
+	Namespace string `json:"namespace"`
 
 	// `name` is the name of the app.
 	// Required
-	Name string `json:"name" protobuf:"bytes,2,opt,name=name"`
+	Name string `json:"name"`
 
 	// Parameters is a set of the parameters to be used to override default
 	// parameters. The inline YAML/JSON payload to be translated into equivalent
@@ -198,7 +204,7 @@ type AppReference struct {
 	// +optional
 	// +kubebuilder:validation:EmbeddedResource
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Parameters *runtime.RawExtension `json:"parameters,omitempty" protobuf:"bytes,3,opt,name=parameters"`
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
 }
 
 type AppBindingMeta interface {
@@ -210,9 +216,9 @@ type AppBindingMeta interface {
 // referenced object.
 type ObjectReference struct {
 	// Namespace of the referent.
-	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
+	Namespace string `json:"namespace,omitempty"`
 	// Name of the referent.
-	Name string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
+	Name string `json:"name,omitempty"`
 }
 
 // ref: https://github.com/kubernetes-sigs/service-catalog/blob/37b874716ad709a175e426f5f5638322a600849f/pkg/apis/servicecatalog/v1beta1/types.go#L1397
@@ -233,14 +239,14 @@ type ObjectReference struct {
 // Only one of the SecretTransform's members may be specified.
 type SecretTransform struct {
 	// RenameKey represents a transform that renames a credentials Secret entry's key
-	RenameKey *RenameKeyTransform `json:"renameKey,omitempty" protobuf:"bytes,1,opt,name=renameKey"`
+	RenameKey *RenameKeyTransform `json:"renameKey,omitempty"`
 	// AddKey represents a transform that adds an additional key to the credentials Secret
-	AddKey *AddKeyTransform `json:"addKey,omitempty" protobuf:"bytes,2,opt,name=addKey"`
+	AddKey *AddKeyTransform `json:"addKey,omitempty"`
 	// AddKeysFrom represents a transform that merges all the entries of an existing Secret
 	// into the credentials Secret
-	AddKeysFrom *AddKeysFromTransform `json:"addKeysFrom,omitempty" protobuf:"bytes,3,opt,name=addKeysFrom"`
+	AddKeysFrom *AddKeysFromTransform `json:"addKeysFrom,omitempty"`
 	// RemoveKey represents a transform that removes a credentials Secret entry
-	RemoveKey *RemoveKeyTransform `json:"removeKey,omitempty" protobuf:"bytes,4,opt,name=removeKey"`
+	RemoveKey *RemoveKeyTransform `json:"removeKey,omitempty"`
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
@@ -259,9 +265,9 @@ type SecretTransform struct {
 //	"DB_USER": "johndoe"
 type RenameKeyTransform struct {
 	// The name of the key to rename
-	From string `json:"from" protobuf:"bytes,1,opt,name=from"`
+	From string `json:"from"`
 	// The new name for the key
-	To string `json:"to" protobuf:"bytes,2,opt,name=to"`
+	To string `json:"to"`
 }
 
 // AddKeyTransform specifies that Service Catalog should add an
@@ -279,14 +285,14 @@ type RenameKeyTransform struct {
 // AddKeysFromTransform should be used instead.
 type AddKeyTransform struct {
 	// The name of the key to add
-	Key string `json:"key" protobuf:"bytes,1,opt,name=key"`
+	Key string `json:"key"`
 	// The binary value (possibly non-string) to add to the Secret under the specified key. If both
 	// value and stringValue are specified, then value is ignored and stringValue is stored.
 	// +optional
-	Value []byte `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
+	Value []byte `json:"value,omitempty"`
 	// The string (non-binary) value to add to the Secret under the specified key.
 	// +optional
-	StringValue *string `json:"stringValue,omitempty" protobuf:"bytes,3,opt,name=stringValue"`
+	StringValue *string `json:"stringValue,omitempty"`
 }
 
 // AddKeysFromTransform specifies that Service Catalog should merge
@@ -299,12 +305,12 @@ type AddKeyTransform struct {
 // the credentials Secret.
 type AddKeysFromTransform struct {
 	// The reference to the Secret that should be merged into the credentials Secret.
-	SecretRef *core.LocalObjectReference `json:"secretRef,omitempty" protobuf:"bytes,1,opt,name=secretRef"`
+	SecretRef *core.LocalObjectReference `json:"secretRef,omitempty"`
 }
 
 // RemoveKeyTransform specifies that one of the credentials keys returned
 // from the broker should not be included in the credentials Secret.
 type RemoveKeyTransform struct {
 	// The key to remove from the Secret
-	Key string `json:"key" protobuf:"bytes,1,opt,name=key"`
+	Key string `json:"key"`
 }

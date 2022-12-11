@@ -25,32 +25,32 @@ import (
 
 type StashAddon struct {
 	metav1.TypeMeta `json:",inline,omitempty"`
-	Stash           StashAddonSpec `json:"stash,omitempty" protobuf:"bytes,1,opt,name=stash"`
+	Stash           StashAddonSpec `json:"stash,omitempty"`
 }
 
 // StashAddonSpec is the spec for app
 type StashAddonSpec struct {
-	Addon StashTaskSpec `json:"addon,omitempty" protobuf:"bytes,1,opt,name=addon"`
+	Addon StashTaskSpec `json:"addon,omitempty"`
 }
 
 // StashTaskSpec is the spec for app
 type StashTaskSpec struct {
 	// Backup task definition
-	BackupTask TaskRef `json:"backupTask" protobuf:"bytes,1,opt,name=backupTask"`
+	BackupTask TaskRef `json:"backupTask"`
 
 	// Restore task definition
-	RestoreTask TaskRef `json:"restoreTask" protobuf:"bytes,2,opt,name=restoreTask"`
+	RestoreTask TaskRef `json:"restoreTask"`
 }
 
 type TaskRef struct {
-	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	Name string `json:"name"`
 	// Params specifies a list of parameter to pass to the Task. Stash will use this parameters to resolve the task.
 	// +optional
-	Params []Param `json:"params,omitempty" protobuf:"bytes,2,rep,name=params"`
+	Params []Param `json:"params,omitempty"`
 }
 
 // Param declares a value to use for the Param called Name.
 type Param struct {
-	Name  string `json:"name" protobuf:"bytes,1,opt,name=name"`
-	Value string `json:"value" protobuf:"bytes,2,opt,name=value"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
