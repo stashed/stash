@@ -101,6 +101,9 @@ var (
 	// ErrConsumerDeleted is returned when attempting to send pull request to a consumer which does not exist
 	ErrConsumerDeleted JetStreamError = &jsError{message: "consumer deleted"}
 
+	// ErrConsumerLeadershipChanged is returned when pending requests are no longer valid after leadership has changed
+	ErrConsumerLeadershipChanged JetStreamError = &jsError{message: "Leadership Changed"}
+
 	// DEPRECATED: ErrInvalidDurableName is no longer returned and will be removed in future releases.
 	// Use ErrInvalidConsumerName instead.
 	ErrInvalidDurableName = errors.New("nats: invalid durable name")
@@ -123,6 +126,8 @@ const (
 	JSErrCodeMessageNotFound ErrorCode = 10037
 
 	JSErrCodeBadRequest ErrorCode = 10003
+
+	JSErrCodeStreamWrongLastSequence ErrorCode = 10071
 )
 
 // APIError is included in all API responses if there was an error.

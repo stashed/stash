@@ -186,11 +186,5 @@ func (c *Config) New() (*StashController, error) {
 	ctrl.initBackupSessionWatcher()
 	ctrl.initRestoreSessionWatcher()
 
-	if auditor != nil {
-		if err := auditor.SetupSiteInfoPublisher(ctrl.clientConfig, ctrl.kubeClient, ctrl.kubeInformerFactory); err != nil {
-			return nil, err
-		}
-	}
-
 	return ctrl, nil
 }

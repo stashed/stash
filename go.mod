@@ -9,10 +9,10 @@ require (
 	github.com/onsi/ginkgo/v2 v2.1.6
 	github.com/onsi/gomega v1.20.1
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.25
-	go.bytebuilders.dev/license-proxyserver v0.0.2-0.20221113070558-69a84f79c7ee
+	go.bytebuilders.dev/audit v0.0.26
+	go.bytebuilders.dev/license-proxyserver v0.0.2
 	go.bytebuilders.dev/license-verifier v0.12.1
 	go.bytebuilders.dev/license-verifier/kubernetes v0.12.1
 	golang.org/x/text v0.5.0
@@ -35,7 +35,7 @@ require (
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kube-aggregator v0.25.1
 	k8s.io/kubernetes v0.0.0-00010101000000-000000000000
-	kmodules.xyz/client-go v0.25.12
+	kmodules.xyz/client-go v0.25.14
 	kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a
 	kmodules.xyz/csi-utils v0.25.4
 	kmodules.xyz/custom-resources v0.25.1
@@ -103,7 +103,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -120,7 +120,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nats-io/jwt/v2 v2.3.0 // indirect
-	github.com/nats-io/nats.go v1.20.0 // indirect
+	github.com/nats-io/nats.go v1.22.1 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/ncw/swift v1.0.49 // indirect
@@ -159,8 +159,8 @@ require (
 	gocloud.dev v0.22.0 // indirect
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/net v0.4.1-0.20221210045730-e1ec361d0b39 // indirect
-	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
+	golang.org/x/oauth2 v0.1.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/term v0.3.0 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
