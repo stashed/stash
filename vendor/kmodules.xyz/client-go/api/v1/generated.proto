@@ -141,6 +141,20 @@ message HealthCheckSpec {
   optional bool disableWriteCheck = 2;
 }
 
+message ImageInfo {
+  optional string image = 1;
+
+  repeated Lineage lineages = 2;
+
+  optional PullSecrets pullSecrets = 3;
+}
+
+message Lineage {
+  repeated ObjectInfo chain = 1;
+
+  repeated string containers = 2;
+}
+
 message ObjectID {
   optional string group = 1;
 
@@ -167,6 +181,12 @@ message ObjectReference {
   // Name of the referent.
   // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
   optional string name = 2;
+}
+
+message PullSecrets {
+  optional string namespace = 1;
+
+  repeated k8s.io.api.core.v1.LocalObjectReference refs = 2;
 }
 
 // ReadonlyHealthCheckSpec defines attributes of the health check using only read-only checks

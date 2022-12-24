@@ -118,17 +118,6 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	cfg.BackupJobPSPNames = s.BackupJobPSPNames
 	cfg.RestoreJobPSPNames = s.RestoreJobPSPNames
 
-	if cfg.LicenseProvided() {
-		l := license.MustLicenseEnforcer(cfg.ClientConfig, cfg.LicenseFile).LoadLicense()
-		if l.Status != licenseapi.LicenseActive {
-			return fmt.Errorf("license status %s, reason: %s", l.Status, l.Reason)
-		}
-		if !sets.NewString(l.Features...).HasAny(info.Features()...) {
-			return fmt.Errorf("not a valid license for this product")
-		}
-		cfg.License = l
-	}
-
 	if cfg.KubeClient, err = kubernetes.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
 	}
@@ -147,6 +136,17 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 		if cfg.OcClient, err = oc_cs.NewForConfig(cfg.ClientConfig); err != nil {
 			return err
 		}
+	}
+
+	if cfg.LicenseProvided() {
+		l := license.MustLicenseEnforcer(cfg.ClientConfig, cfg.LicenseFile).LoadLicense()
+		if l.Status != licenseapi.LicenseActive {
+			return fmt.Errorf("license status %s, reason: %s", l.Status, l.Reason)
+		}
+		if !sets.NewString(l.Features...).HasAny(info.Features()...) {
+			return fmt.Errorf("not a valid license for this product")
+		}
+		cfg.License = l
 	}
 
 	metrics.SetPushgatewayURL(s.PushgatewayURL)

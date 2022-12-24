@@ -25,9 +25,7 @@ import (
 	"time"
 )
 
-// Notice: Experimental Preview
-//
-// This functionality is EXPERIMENTAL and may be changed in later releases.
+// KeyValueManager is used to manage KeyValue stores.
 type KeyValueManager interface {
 	// KeyValue will lookup and bind to an existing KeyValue store.
 	KeyValue(bucket string) (KeyValue, error)
@@ -41,9 +39,7 @@ type KeyValueManager interface {
 	KeyValueStores() <-chan KeyValueStatus
 }
 
-// Notice: Experimental Preview
-//
-// This functionality is EXPERIMENTAL and may be changed in later releases.
+// KeyValue contains methods to operate on a KeyValue store.
 type KeyValue interface {
 	// Get returns the latest value for the key.
 	Get(key string) (entry KeyValueEntry, err error)
@@ -297,6 +293,10 @@ var (
 	ErrKeyDeleted             = errors.New("nats: key was deleted")
 	ErrHistoryToLarge         = errors.New("nats: history limited to a max of 64")
 	ErrNoKeysFound            = errors.New("nats: no keys found")
+)
+
+var (
+	ErrKeyExists JetStreamError = &jsError{apiErr: &APIError{ErrorCode: JSErrCodeStreamWrongLastSequence, Code: 400}, message: "key exists"}
 )
 
 const (
@@ -627,6 +627,13 @@ func (kv *kvs) Create(key string, value []byte) (revision uint64, err error) {
 	// so we need to double check.
 	if e, err := kv.get(key, kvLatestRevision); err == ErrKeyDeleted {
 		return kv.Update(key, value, e.Revision())
+	}
+
+	// Check if the expected last subject sequence is not zero which implies
+	// the key already exists.
+	if errors.Is(err, ErrKeyExists) {
+		jserr := ErrKeyExists.(*jsError)
+		return 0, fmt.Errorf("%w: %s", err, jserr.message)
 	}
 
 	return 0, err
