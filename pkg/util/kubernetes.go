@@ -84,7 +84,7 @@ func UpsertTmpVolume(volumes []core.Volume, settings v1beta1_api.EmptyDirSetting
 	}
 
 	for i, v := range volumes {
-		if v.Name ==  nv.Name {
+		if v.Name == nv.Name {
 			volumes[i].EmptyDir.Medium = settings.Medium
 			volumes[i].EmptyDir.SizeLimit = settings.SizeLimit
 			return volumes
