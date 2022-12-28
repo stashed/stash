@@ -42,7 +42,7 @@ func NewCmdRestore() *cobra.Command {
 		KubeconfigPath: "",
 		Namespace:      meta.PodNamespace(),
 		SetupOpt: restic.SetupOptions{
-			ScratchDir:  "/tmp",
+			ScratchDir:  restic.DefaultScratchDir,
 			EnableCache: true,
 		},
 		RestoreModel: restore.RestoreModelInitContainer,

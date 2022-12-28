@@ -31,7 +31,7 @@ import (
 
 const (
 	DefaultOutputFileName = "output.json"
-	DefaultScratchDir     = "/tmp"
+	DefaultScratchDir     = "/stash-tmp"
 	DefaultHost           = "host-0"
 )
 
