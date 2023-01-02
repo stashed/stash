@@ -67,7 +67,7 @@ func NewExtraOptions() *ExtraOptions {
 		StashImageTag:  "",
 		MaxNumRequeues: 5,
 		NumThreads:     2,
-		ScratchDir:     "/tmp",
+		ScratchDir:     "/stash-tmp",
 		QPS:            100,
 		Burst:          100,
 		ResyncPeriod:   10 * time.Minute,

@@ -101,7 +101,7 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--scratch-dir=/tmp",
+				"--scratch-dir=/stash-tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--namespace=${NAMESPACE:=default}",
@@ -135,7 +135,7 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--scratch-dir=/tmp",
+				"--scratch-dir=/stash-tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--hostname=${HOSTNAME:=}",
@@ -185,7 +185,7 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--scratch-dir=/tmp",
+				"--scratch-dir=/stash-tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--hostname=${HOSTNAME:=}",
@@ -225,7 +225,7 @@ func pvcBackupTask() *api_v1beta1.Task {
 					Params: []api_v1beta1.Param{
 						{
 							Name:  "outputDir",
-							Value: "/tmp/output",
+							Value: "/stash-tmp/output",
 						},
 						{
 							Name:  "targetVolume",
@@ -238,7 +238,7 @@ func pvcBackupTask() *api_v1beta1.Task {
 					Params: []api_v1beta1.Param{
 						{
 							Name:  "outputDir",
-							Value: "/tmp/output",
+							Value: "/stash-tmp/output",
 						},
 					},
 				},
@@ -269,7 +269,7 @@ func pvcRestoreTask() *api_v1beta1.Task {
 					Params: []api_v1beta1.Param{
 						{
 							Name:  "outputDir",
-							Value: "/tmp/output",
+							Value: "/stash-tmp/output",
 						},
 						{
 							Name:  "targetVolume",
@@ -282,7 +282,7 @@ func pvcRestoreTask() *api_v1beta1.Task {
 					Params: []api_v1beta1.Param{
 						{
 							Name:  "outputDir",
-							Value: "/tmp/output",
+							Value: "/stash-tmp/output",
 						},
 					},
 				},
