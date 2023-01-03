@@ -24,6 +24,7 @@ import (
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 	"stash.appscode.dev/stash/pkg/controller"
 
 	"github.com/spf13/pflag"
@@ -67,7 +68,7 @@ func NewExtraOptions() *ExtraOptions {
 		StashImageTag:  "",
 		MaxNumRequeues: 5,
 		NumThreads:     2,
-		ScratchDir:     "/tmp",
+		ScratchDir:     restic.DefaultScratchDir,
 		QPS:            100,
 		Burst:          100,
 		ResyncPeriod:   10 * time.Minute,

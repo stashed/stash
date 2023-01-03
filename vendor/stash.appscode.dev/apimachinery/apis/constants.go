@@ -157,8 +157,8 @@ const (
 	StashCronJobContainer = "stash-trigger"
 	LocalVolumeName       = "stash-local"
 	ScratchDirVolumeName  = "stash-scratchdir"
-	TmpDirVolumeName      = "tmp-dir"
-	TmpDirMountPath       = "/tmp"
+	TmpDirVolumeName      = "stash-tmp-dir"
+	TmpDirMountPath       = "/stash-tmp"
 	PodinfoVolumeName     = "stash-podinfo"
 
 	RecoveryJobPrefix   = "stash-recovery-"

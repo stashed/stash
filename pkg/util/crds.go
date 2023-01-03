@@ -26,6 +26,7 @@ import (
 	util_v1beta1 "stash.appscode.dev/apimachinery/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/apimachinery/pkg/docker"
 	"stash.appscode.dev/apimachinery/pkg/metrics"
+	"stash.appscode.dev/apimachinery/pkg/restic"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,7 +102,6 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--scratch-dir=/tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--namespace=${NAMESPACE:=default}",
@@ -115,6 +115,7 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--target-namespace=${TARGET_NAMESPACE:=}",
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",
+				fmt.Sprintf("--scratch-dir=%s", restic.DefaultScratchDir),
 				fmt.Sprintf("--metrics-pushgateway-url=%s", metrics.GetPushgatewayURL()),
 			},
 		},
@@ -135,7 +136,6 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--scratch-dir=/tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--hostname=${HOSTNAME:=}",
@@ -160,6 +160,7 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--retention-prune=${RETENTION_PRUNE:=false}",
 				"--retention-dry-run=${RETENTION_DRY_RUN:=false}",
 				"--output-dir=${outputDir:=}",
+				fmt.Sprintf("--scratch-dir=%s", restic.DefaultScratchDir),
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
@@ -185,7 +186,6 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--endpoint=${REPOSITORY_ENDPOINT:=}",
 				"--region=${REPOSITORY_REGION:=}",
 				"--path=${REPOSITORY_PREFIX:=}",
-				"--scratch-dir=/tmp",
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--hostname=${HOSTNAME:=}",
@@ -202,6 +202,7 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--target-kind=${TARGET_KIND:=}",
 				"--target-name=${TARGET_NAME:=}",
 				"--target-namespace=${TARGET_NAMESPACE:=}",
+				fmt.Sprintf("--scratch-dir=%s", restic.DefaultScratchDir),
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
@@ -225,7 +226,7 @@ func pvcBackupTask() *api_v1beta1.Task {
 					Params: []api_v1beta1.Param{
 						{
 							Name:  "outputDir",
-							Value: "/tmp/output",
+							Value: fmt.Sprintf("%s/output", restic.DefaultScratchDir),
 						},
 						{
 							Name:  "targetVolume",
@@ -238,7 +239,7 @@ func pvcBackupTask() *api_v1beta1.Task {
 					Params: []api_v1beta1.Param{
 						{
 							Name:  "outputDir",
-							Value: "/tmp/output",
+							Value: fmt.Sprintf("%s/output", restic.DefaultScratchDir),
 						},
 					},
 				},
@@ -269,7 +270,7 @@ func pvcRestoreTask() *api_v1beta1.Task {
 					Params: []api_v1beta1.Param{
 						{
 							Name:  "outputDir",
-							Value: "/tmp/output",
+							Value: fmt.Sprintf("%s/output", restic.DefaultScratchDir),
 						},
 						{
 							Name:  "targetVolume",
@@ -282,7 +283,7 @@ func pvcRestoreTask() *api_v1beta1.Task {
 					Params: []api_v1beta1.Param{
 						{
 							Name:  "outputDir",
-							Value: "/tmp/output",
+							Value: fmt.Sprintf("%s/output", restic.DefaultScratchDir),
 						},
 					},
 				},

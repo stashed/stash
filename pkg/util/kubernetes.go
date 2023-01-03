@@ -73,7 +73,7 @@ func GetString(m map[string]string, key string) string {
 }
 
 func UpsertTmpVolume(volumes []core.Volume, settings v1beta1_api.EmptyDirSettings) []core.Volume {
-	return core_util.UpsertVolume(volumes, core.Volume{
+	nv := core.Volume{
 		Name: apis.TmpDirVolumeName,
 		VolumeSource: core.VolumeSource{
 			EmptyDir: &core.EmptyDirVolumeSource{
@@ -81,7 +81,17 @@ func UpsertTmpVolume(volumes []core.Volume, settings v1beta1_api.EmptyDirSetting
 				SizeLimit: settings.SizeLimit,
 			},
 		},
-	})
+	}
+
+	for i, v := range volumes {
+		if v.Name == nv.Name {
+			volumes[i].EmptyDir.Medium = settings.Medium
+			volumes[i].EmptyDir.SizeLimit = settings.SizeLimit
+			return volumes
+		}
+	}
+
+	return append(volumes, nv)
 }
 
 func UpsertTmpVolumeMount(volumeMounts []core.VolumeMount) []core.VolumeMount {
