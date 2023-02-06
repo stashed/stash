@@ -42,6 +42,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/meta"
 	vsu "kmodules.xyz/csi-utils/volumesnapshot"
 	prober "kmodules.xyz/prober/probe"
@@ -149,6 +150,12 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 		return nil, fmt.Errorf("no target has been specified for Backup invoker %s", targetInfo.Target.Ref.Name)
 	}
 
+	backupOutput := &restic.BackupOutput{
+		BackupTargetStatus: api_v1beta1.BackupTargetStatus{
+			Ref: targetInfo.Target.Ref,
+		},
+	}
+
 	// If preBackup hook is specified, then execute those hooks first
 	if targetInfo.Hooks != nil && targetInfo.Hooks.PreBackup != nil {
 		klog.Infoln("Executing preBackup hooks........")
@@ -160,7 +167,14 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 		if err != nil {
 			return nil, err
 		}
-		klog.Infoln("preBackup hooks has been executed successfully")
+
+		backupOutput.BackupTargetStatus.Conditions = append(backupOutput.BackupTargetStatus.Conditions, kmapi.Condition{
+			Type:               api_v1beta1.PreBackupHookExecutionSucceeded,
+			Status:             corev1.ConditionTrue,
+			Reason:             api_v1beta1.SuccessfullyExecutedPreBackupHook,
+			Message:            "Successfully executed preBackup hook.",
+			LastTransitionTime: metav1.Now(),
+		})
 	}
 
 	pvcNames, err := opt.getTargetPVCNames(targetInfo.Target.Ref, targetInfo.Target.Replicas)
@@ -183,11 +197,6 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 	}
 
 	// now wait for all the VolumeSnapshots are completed (ready to to use)
-	backupOutput := &restic.BackupOutput{
-		BackupTargetStatus: api_v1beta1.BackupTargetStatus{
-			Ref: targetInfo.Target.Ref,
-		},
-	}
 	for i, pvcName := range pvcNames {
 		// wait until this VolumeSnapshot is ready to use
 		err = vsu.WaitUntilVolumeSnapshotReady(opt.snapshotClient, types.NamespacedName{Namespace: vsMeta[i].Namespace, Name: vsMeta[i].Name})
@@ -225,7 +234,13 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 			return nil, fmt.Errorf(err.Error() + "Warning: The actual backup process may be succeeded." +
 				"Hence, the backup snapshots might be present in the backend even if the overall BackupSession phase is 'Failed'")
 		}
-		klog.Infoln("postBackup hooks has been executed successfully")
+		backupOutput.BackupTargetStatus.Conditions = append(backupOutput.BackupTargetStatus.Conditions, kmapi.Condition{
+			Type:               api_v1beta1.PostBackupHookExecutionSucceeded,
+			Status:             corev1.ConditionTrue,
+			Reason:             api_v1beta1.SuccessfullyExecutedPostBackupHook,
+			Message:            "Successfully executed postBackup hook",
+			LastTransitionTime: metav1.Now(),
+		})
 	}
 
 	return backupOutput, nil

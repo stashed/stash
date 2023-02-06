@@ -97,6 +97,7 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 
 func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput) error {
 	klog.Infof("Updating post backup status.......")
+
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
 	}
@@ -134,8 +135,9 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	err = session.UpdateStatus(&v1beta1.BackupSessionStatus{
 		Targets: []v1beta1.BackupTargetStatus{
 			{
-				Ref:   targetInfo.Target.Ref,
-				Stats: backupOutput.BackupTargetStatus.Stats,
+				Ref:        targetInfo.Target.Ref,
+				Stats:      backupOutput.BackupTargetStatus.Stats,
+				Conditions: backupOutput.BackupTargetStatus.Conditions,
 			},
 		},
 	})
