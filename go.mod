@@ -15,7 +15,7 @@ require (
 	go.bytebuilders.dev/license-proxyserver v0.0.2
 	go.bytebuilders.dev/license-verifier v0.12.1
 	go.bytebuilders.dev/license-verifier/kubernetes v0.12.1
-	golang.org/x/text v0.5.0
+	golang.org/x/text v0.7.0
 	gomodules.xyz/blobfs v0.1.10
 	gomodules.xyz/cert v1.5.0
 	gomodules.xyz/encoding v0.0.7
@@ -44,7 +44,7 @@ require (
 	kmodules.xyz/openshift v0.25.0
 	kmodules.xyz/prober v0.25.0
 	kmodules.xyz/webhook-runtime v0.25.0
-	stash.appscode.dev/apimachinery v0.25.0
+	stash.appscode.dev/apimachinery v0.26.0
 )
 
 require (
@@ -158,11 +158,11 @@ require (
 	go.uber.org/zap v1.21.0 // indirect
 	gocloud.dev v0.22.0 // indirect
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
-	golang.org/x/net v0.4.1-0.20221210045730-e1ec361d0b39 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.1.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/term v0.3.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
