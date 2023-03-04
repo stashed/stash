@@ -12,7 +12,7 @@ require (
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/audit v0.0.26
-	go.bytebuilders.dev/license-proxyserver v0.0.2
+	go.bytebuilders.dev/license-proxyserver v0.0.3
 	go.bytebuilders.dev/license-verifier v0.12.1
 	go.bytebuilders.dev/license-verifier/kubernetes v0.12.1
 	golang.org/x/text v0.7.0
@@ -157,7 +157,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	gocloud.dev v0.22.0 // indirect
-	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
+	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.1.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
