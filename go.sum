@@ -709,8 +709,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 go.bytebuilders.dev/audit v0.0.26 h1:YwYWHSEq0QGs0Vk81FqouvGsyG+GYRzB/1Ywt6r68S4=
 go.bytebuilders.dev/audit v0.0.26/go.mod h1:itgg6k3gNmSjR8fY8Sk1cP9TD5O2KNIc4x4MCA7EmD0=
-go.bytebuilders.dev/license-proxyserver v0.0.2 h1:f4A3AVex9+lGqjuUqJx81ccphFPoIbCHrnGe6eVKPcA=
-go.bytebuilders.dev/license-proxyserver v0.0.2/go.mod h1:iMJbPzDf2R2EJOZwRi7ziEr5DBMfT9Cm75/XfPb/QnU=
+go.bytebuilders.dev/license-proxyserver v0.0.3 h1:vAFMBWfrlmFKNspjBm2KfPXnxYnC17xLwZiHmVzUmzs=
+go.bytebuilders.dev/license-proxyserver v0.0.3/go.mod h1:iMJbPzDf2R2EJOZwRi7ziEr5DBMfT9Cm75/XfPb/QnU=
 go.bytebuilders.dev/license-verifier v0.12.1 h1:2bQJ8naHTv0a04/x+luoabCGQ37VuaccA7Yz5fVPHaU=
 go.bytebuilders.dev/license-verifier v0.12.1/go.mod h1:47HPt3RVp9gsujYpOeXi28IsTV5lilZ+EOpuhz/DIJM=
 go.bytebuilders.dev/license-verifier/kubernetes v0.12.1 h1:Xr2AiglEgVhFZ2JzhPMCGWniEx037eT6UKEFS3DsdiA=
@@ -786,8 +786,8 @@ golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c/go.mod h1:jdWPYTVW3xRLrWP
 golang.org/x/crypto v0.0.0-20210314154223-e6e6c4f2bb5b/go.mod h1:T9bdIzuCu7OtxOm1hfPfRQxPLYneinmdGuTeoZ9dtd4=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
-golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 h1:Y/gsMcFOcR+6S6f3YeMKl5g+dZMEWqcz5Czj/GWYbkM=
-golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
+golang.org/x/crypto v0.6.0 h1:qfktjS5LUO+fFKeJXZ+ikTRijMmljikvG68fpMMruSc=
+golang.org/x/crypto v0.6.0/go.mod h1:OFC/31mSvZgRz0V1QTNCzfAI1aIRzbiufJtkMIlEp58=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522/go.mod h1:ZjyILWgesfNpC6sMxTJOJm9Kp84zZh5NQWvqDGG3Qr8=
