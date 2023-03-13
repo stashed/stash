@@ -149,12 +149,7 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 	klog.Infoln("Backing up stdin data")
 
 	// first add StdinPipeCommands, then add restic command
-	var commands []Command
-	if len(options.StdinPipeCommands) != 0 {
-		for i := range options.StdinPipeCommands {
-			commands = append(commands, options.StdinPipeCommands[i])
-		}
-	}
+	commands := options.StdinPipeCommands
 
 	args := []interface{}{"backup", "--stdin", "--quiet", "--json"}
 	if options.StdinFileName != "" {
@@ -177,6 +172,19 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 func (w *ResticWrapper) cleanup(retentionPolicy v1alpha1.RetentionPolicy, host string) ([]byte, error) {
 	klog.Infoln("Cleaning old snapshots according to retention policy")
 
+	out, err := w.tryCleanup(retentionPolicy, host)
+	if err == nil || !strings.Contains(err.Error(), "unlock") {
+		return out, err
+	}
+	// repo is locked, so unlock first
+	klog.Warningln("repo found locked, so unlocking before pruning, err:", err.Error())
+	if o2, e2 := w.unlock(); e2 != nil {
+		return o2, e2
+	}
+	return w.tryCleanup(retentionPolicy, host)
+}
+
+func (w *ResticWrapper) tryCleanup(retentionPolicy v1alpha1.RetentionPolicy, host string) ([]byte, error) {
 	args := []interface{}{"forget", "--quiet", "--json"}
 
 	if host != "" {
@@ -304,11 +312,7 @@ func (w *ResticWrapper) dump(dumpOptions DumpOptions) ([]byte, error) {
 	commands := []Command{
 		{Name: ResticCMD, Args: args},
 	}
-	if len(dumpOptions.StdoutPipeCommands) != 0 {
-		for i := range dumpOptions.StdoutPipeCommands {
-			commands = append(commands, dumpOptions.StdoutPipeCommands[i])
-		}
-	}
+	commands = append(commands, dumpOptions.StdoutPipeCommands...)
 	return w.run(commands...)
 }
 
