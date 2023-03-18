@@ -148,6 +148,12 @@ func ExtractResourceID(mapper meta.RESTMapper, in ResourceID) (*ResourceID, erro
 	if in.Group == "core" {
 		in.Group = ""
 	}
+	if in.Version != "" &&
+		in.Kind != "" &&
+		in.Name != "" &&
+		in.Scope != "" {
+		return &in, nil
+	}
 
 	kindFound := in.Kind != ""
 	resFOund := in.Name != ""
