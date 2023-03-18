@@ -109,6 +109,10 @@ func (w *ResticWrapper) repositoryExist() bool {
 
 func (w *ResticWrapper) initRepository() error {
 	klog.Infoln("Initializing new restic repository in the backend....")
+	if err := w.createLocalDir(); err != nil {
+		return err
+	}
+
 	args := w.appendCacheDirFlag([]interface{}{"init"})
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
@@ -167,6 +171,13 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 
 	commands = append(commands, Command{Name: ResticCMD, Args: args})
 	return w.run(commands...)
+}
+
+func (w *ResticWrapper) createLocalDir() error {
+	if w.config.Provider == storage.ProviderLocal {
+		return os.MkdirAll(w.config.Bucket, 0o755)
+	}
+	return nil
 }
 
 func (w *ResticWrapper) cleanup(retentionPolicy v1alpha1.RetentionPolicy, host string) ([]byte, error) {

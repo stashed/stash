@@ -410,3 +410,19 @@ func RemoveToleration(tolerations []core.Toleration, key string) []core.Tolerati
 	}
 	return tolerations
 }
+
+func UpsertImagePullSecrets(refs []core.LocalObjectReference, upsert ...core.LocalObjectReference) []core.LocalObjectReference {
+	for i := range upsert {
+		var found bool
+		for j := range refs {
+			if refs[j].Name == upsert[i].Name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			refs = append(refs, upsert[i])
+		}
+	}
+	return refs
+}

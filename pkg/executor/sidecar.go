@@ -85,7 +85,7 @@ func (e *Sidecar) Ensure() (runtime.Object, kutil.VerbType, error) {
 		}
 	}
 
-	e.Workload.Spec.Template.Spec.ImagePullSecrets = e.ImagePullSecrets
+	e.Workload.Spec.Template.Spec.ImagePullSecrets = core_util.UpsertImagePullSecrets(e.Workload.Spec.Template.Spec.ImagePullSecrets, e.ImagePullSecrets...)
 
 	if e.Workload.Spec.Template.Annotations == nil {
 		e.Workload.Spec.Template.Annotations = map[string]string{}
