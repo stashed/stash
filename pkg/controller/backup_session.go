@@ -792,7 +792,7 @@ func (r *backupSessionReconciler) isAlreadyInFinalPhase() bool {
 	phase := r.session.GetStatus().Phase
 	return phase == api_v1beta1.BackupSessionSucceeded ||
 		phase == api_v1beta1.BackupSessionFailed ||
-		phase == api_v1beta1.BackupSkipped
+		phase == api_v1beta1.BackupSessionSkipped
 }
 
 func (r *backupSessionReconciler) isSessionCompleted() bool {
