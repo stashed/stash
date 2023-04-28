@@ -36,6 +36,6 @@ COPY --from=0 /restic /bin/restic
 COPY bin/{ARG_OS}_{ARG_ARCH}/{ARG_BIN} /{ARG_BIN}
 COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-USER nobody
+USER 65534
 
 ENTRYPOINT ["/{ARG_BIN}"]
