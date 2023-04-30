@@ -133,7 +133,7 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions, targetRef api_v1beta1.Targ
 		dumpOptions.SourceHost = dumpOptions.Host
 	}
 
-	if _, err := w.dump(dumpOptions); err != nil {
+	if _, err := w.DumpOnce(dumpOptions); err != nil {
 		return nil, err
 	}
 
@@ -150,7 +150,7 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions, targetRef api_v1beta1.Targ
 	return restoreOutput, nil
 }
 
-// ParallelDump run dump for multiple hosts concurrently using go routine.
+// ParallelDump run DumpOnce for multiple hosts concurrently using go routine.
 // You can control maximum number of parallel restore process using maxConcurrency parameter.
 func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, targetRef api_v1beta1.TargetRef, maxConcurrency int) (*RestoreOutput, error) {
 	// WaitGroup to wait until all go routine finish
@@ -196,7 +196,7 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, targetRef api_v1
 			}
 
 			// run restore
-			_, err := nw.dump(opt)
+			_, err := nw.DumpOnce(opt)
 			if err != nil {
 				mu.Lock()
 				restoreErrs = append(restoreErrs, err)
