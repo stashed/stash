@@ -292,7 +292,8 @@ func (w *ResticWrapper) restore(params restoreParams) ([]byte, error) {
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
 
-func (w *ResticWrapper) dump(dumpOptions DumpOptions) ([]byte, error) {
+// Redis cluster directly calls the DumpOnce method
+func (w *ResticWrapper) DumpOnce(dumpOptions DumpOptions) ([]byte, error) {
 	klog.Infoln("Dumping backed up data")
 
 	args := []interface{}{"dump", "--quiet"}
