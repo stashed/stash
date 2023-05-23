@@ -150,7 +150,7 @@ func (s *PeriodicScheduler) generateName() string {
 	if s.getTargetNamespace() != invMeta.Namespace {
 		return meta_util.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, invMeta.Namespace, strings.ReplaceAll(invMeta.Name, ".", "-"))
 	}
-	return meta_util.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, "", strings.ReplaceAll(invMeta.Name, ".", "-"))
+	return meta_util.ValidCronJobNameWithSuffix(apis.PrefixStashTrigger, strings.ReplaceAll(invMeta.Name, ".", "-"))
 }
 
 func (s *PeriodicScheduler) getTargetNamespace() string {
