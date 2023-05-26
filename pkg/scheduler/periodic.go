@@ -37,6 +37,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	ofst_util "kmodules.xyz/offshoot-api/util"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PeriodicScheduler struct {
@@ -48,6 +49,11 @@ type PeriodicScheduler struct {
 }
 
 func (s *PeriodicScheduler) Ensure() error {
+	// Remove the outdated resources that were created with an incorrect name format.
+	if err := s.cleanupOutdatedResources(); err != nil {
+		return fmt.Errorf("failed to cleanup outdated resouces: %w", err)
+	}
+
 	invMeta := s.Invoker.GetObjectMeta()
 	runtimeSettings := s.Invoker.GetRuntimeSettings()
 	ownerRef := s.Invoker.GetOwnerRef()
@@ -116,6 +122,30 @@ func (s *PeriodicScheduler) Ensure() error {
 	return err
 }
 
+func (s *PeriodicScheduler) cleanupOutdatedResources() error {
+	invMeta := s.Invoker.GetObjectMeta()
+	if err := batchutil.DeleteCronJob(
+		context.TODO(),
+		s.KubeClient,
+		types.NamespacedName{
+			Name:      s.generateOldName(),
+			Namespace: invMeta.Namespace,
+		},
+	); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+
+	if err := s.KubeClient.RbacV1().RoleBindings(invMeta.Namespace).Delete(context.TODO(), s.generateOldName(), metav1.DeleteOptions{}); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+
+	if err := s.KubeClient.CoreV1().ServiceAccounts(invMeta.Namespace).Delete(context.TODO(), s.generateOldName(), metav1.DeleteOptions{}); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+
+	return nil
+}
+
 func (s *PeriodicScheduler) Cleanup() error {
 	invMeta := s.Invoker.GetObjectMeta()
 	cur, err := batchutil.GetCronJob(context.TODO(), s.KubeClient, types.NamespacedName{Namespace: invMeta.Namespace, Name: s.generateName()})
@@ -151,6 +181,14 @@ func (s *PeriodicScheduler) generateName() string {
 		return meta_util.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, invMeta.Namespace, strings.ReplaceAll(invMeta.Name, ".", "-"))
 	}
 	return meta_util.ValidCronJobNameWithSuffix(apis.PrefixStashTrigger, strings.ReplaceAll(invMeta.Name, ".", "-"))
+}
+
+func (s *PeriodicScheduler) generateOldName() string {
+	invMeta := s.Invoker.GetObjectMeta()
+	if s.getTargetNamespace() != invMeta.Namespace {
+		return meta_util.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, invMeta.Namespace, strings.ReplaceAll(invMeta.Name, ".", "-"))
+	}
+	return meta_util.ValidCronJobNameWithPrefixNSuffix(apis.PrefixStashTrigger, "", strings.ReplaceAll(invMeta.Name, ".", "-"))
 }
 
 func (s *PeriodicScheduler) getTargetNamespace() string {
