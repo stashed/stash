@@ -31,6 +31,7 @@ import (
 
 	"go.bytebuilders.dev/license-verifier/apis/licenses"
 
+	"github.com/PuerkitoBio/purell"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -46,8 +47,9 @@ var (
 	ProductName string // This has been renamed to Features
 	ProductUID  string
 
-	prodAddress          = "https://byte.builders"
-	qaAddress            = "https://appscode.ninja"
+	prodDomain = "byte.builders"
+	qaDomain   = "appscode.ninja"
+
 	registrationAPIPath  = "api/v1/register"
 	LicenseIssuerAPIPath = "api/v1/license/issue"
 )
@@ -68,25 +70,82 @@ func SkipLicenseVerification() bool {
 	return !v
 }
 
-func RegistrationAPIEndpoint() string {
-	u := APIServerAddress()
-	u.Path = path.Join(u.Path, registrationAPIPath)
-	return u.String()
-}
-
-func LicenseIssuerAPIEndpoint() string {
-	u := APIServerAddress()
-	u.Path = path.Join(u.Path, LicenseIssuerAPIPath)
-	return u.String()
-}
-
-func APIServerAddress() *url.URL {
-	if SkipLicenseVerification() {
-		u, _ := url.Parse(qaAddress)
-		return u
+func MustRegistrationAPIEndpoint() string {
+	r, err := RegistrationAPIEndpoint()
+	if err != nil {
+		panic(err)
 	}
-	u, _ := url.Parse(prodAddress)
+	return r
+}
+
+func RegistrationAPIEndpoint(override ...string) (string, error) {
+	u, err := APIServerAddress(override...)
+	if err != nil {
+		return "", err
+	}
+	u.Path = path.Join(u.Path, registrationAPIPath)
+	return u.String(), nil
+}
+
+func MustLicenseIssuerAPIEndpoint() string {
+	r, err := LicenseIssuerAPIEndpoint()
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func LicenseIssuerAPIEndpoint(override ...string) (string, error) {
+	u, err := APIServerAddress(override...)
+	if err != nil {
+		return "", err
+	}
+	u.Path = path.Join(u.Path, LicenseIssuerAPIPath)
+	return u.String(), nil
+}
+
+func MustAPIServerAddress() *url.URL {
+	u, err := APIServerAddress()
+	if err != nil {
+		panic(err)
+	}
 	return u
+}
+
+func APIServerAddress(override ...string) (*url.URL, error) {
+	if len(override) > 0 && override[0] != "" {
+		nu, err := purell.NormalizeURLString(override[0],
+			purell.FlagsUsuallySafeGreedy|purell.FlagRemoveDuplicateSlashes)
+		if err != nil {
+			return nil, err
+		}
+		return url.Parse(nu)
+	}
+
+	if SkipLicenseVerification() {
+		return url.Parse("https://api." + qaDomain)
+	}
+	return url.Parse("https://api." + prodDomain)
+}
+
+func HostedEndpoint(u string) (bool, error) {
+	nu, err := purell.NormalizeURLString(u,
+		purell.FlagsUsuallySafeGreedy|purell.FlagRemoveDuplicateSlashes)
+	if err != nil {
+		return false, err
+	}
+	u2, err := url.Parse(nu)
+	if err != nil {
+		return false, err
+	}
+	return HostedDomain(u2.Hostname()), nil
+}
+
+func HostedDomain(d string) bool {
+	return d == prodDomain ||
+		d == qaDomain ||
+		strings.HasSuffix(d, "."+prodDomain) ||
+		strings.HasSuffix(d, "."+qaDomain)
 }
 
 func LoadLicenseCA() ([]byte, error) {

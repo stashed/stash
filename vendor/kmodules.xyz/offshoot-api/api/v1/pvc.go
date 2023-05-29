@@ -386,3 +386,11 @@ func (in *EphemeralVolumeSource) ToAPIObject() *core.EphemeralVolumeSource {
 		VolumeClaimTemplate: in.VolumeClaimTemplate.ToAPIObject(),
 	}
 }
+
+func ConvertVolumes(in []Volume) []core.Volume {
+	out := make([]core.Volume, 0, len(in))
+	for _, v := range in {
+		out = append(out, *v.ToAPIObject())
+	}
+	return out
+}
