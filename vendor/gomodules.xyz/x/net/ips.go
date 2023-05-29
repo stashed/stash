@@ -3,7 +3,7 @@ package net
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"regexp"
@@ -181,7 +181,7 @@ func detectIPs(routable bool) ([]string, []string, error) {
 	if len(externalIPs) == 0 && routable {
 		if resp, err := http.Get("https://ipinfo.io/ip"); err == nil {
 			defer resp.Body.Close()
-			if bytes, err := ioutil.ReadAll(resp.Body); err == nil {
+			if bytes, err := io.ReadAll(resp.Body); err == nil {
 				ip := net.ParseIP(strings.TrimSpace(string(bytes)))
 				if ip != nil {
 					ip = ip.To4()

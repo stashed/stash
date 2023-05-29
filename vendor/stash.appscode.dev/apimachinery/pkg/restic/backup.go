@@ -90,20 +90,20 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, targetR
 			}()
 
 			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
-			// otherwise they might enter in a racing condition.
+			// otherwise they might enter in racing condition.
 			nw := w.Copy()
 
 			hostStats, err := nw.runBackup(opt)
+			hostStats.Duration = time.Since(startTime).String()
 			if err != nil {
-				// acquire lock to make sure no other go routine is writing to backupErr
+				hostStats.Phase = api_v1beta1.HostBackupFailed
+				hostStats.Error = err.Error()
 				mu.Lock()
 				backupErrs = append(backupErrs, err)
 				mu.Unlock()
-				return
+			} else {
+				hostStats.Phase = api_v1beta1.HostBackupSucceeded
 			}
-			hostStats.Duration = time.Since(startTime).String()
-			hostStats.Phase = api_v1beta1.HostBackupSucceeded
-
 			// add hostStats to backupOutput. use lock to avoid racing condition.
 			mu.Lock()
 			backupOutput.upsertHostBackupStats(hostStats)
@@ -114,10 +114,7 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, targetR
 	// wait for all the go routines to complete
 	wg.Wait()
 
-	if backupErrs != nil {
-		return nil, errors.NewAggregate(backupErrs)
-	}
-	return backupOutput, nil
+	return backupOutput, errors.NewAggregate(backupErrs)
 }
 
 func (w *ResticWrapper) runBackup(backupOption BackupOptions) (api_v1beta1.HostBackupStats, error) {

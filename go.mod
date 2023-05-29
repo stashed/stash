@@ -9,13 +9,13 @@ require (
 	github.com/onsi/ginkgo/v2 v2.1.6
 	github.com/onsi/gomega v1.20.1
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/audit v0.0.26
 	go.bytebuilders.dev/license-proxyserver v0.0.3
 	go.bytebuilders.dev/license-verifier v0.12.1
 	go.bytebuilders.dev/license-verifier/kubernetes v0.12.1
-	golang.org/x/text v0.7.0
+	golang.org/x/text v0.9.0
 	gomodules.xyz/blobfs v0.1.10
 	gomodules.xyz/cert v1.5.0
 	gomodules.xyz/encoding v0.0.7
@@ -26,7 +26,7 @@ require (
 	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/runtime v0.3.0
 	gomodules.xyz/stow v0.2.4
-	gomodules.xyz/x v0.0.14
+	gomodules.xyz/x v0.0.15
 	k8s.io/api v0.25.1
 	k8s.io/apiextensions-apiserver v0.25.1
 	k8s.io/apimachinery v0.25.3
@@ -35,17 +35,17 @@ require (
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kube-aggregator v0.25.1
 	k8s.io/kubernetes v0.0.0-00010101000000-000000000000
-	kmodules.xyz/client-go v0.25.19
+	kmodules.xyz/client-go v0.25.23
 	kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a
 	kmodules.xyz/csi-utils v0.25.4
 	kmodules.xyz/custom-resources v0.25.1
 	kmodules.xyz/objectstore-api v0.25.1-0.20221104003322-f0289b5b6ca2
-	kmodules.xyz/offshoot-api v0.25.0
+	kmodules.xyz/offshoot-api v0.25.3
 	kmodules.xyz/openshift v0.25.0
 	kmodules.xyz/prober v0.25.0
 	kmodules.xyz/webhook-runtime v0.25.0
 	sigs.k8s.io/controller-runtime v0.13.1
-	stash.appscode.dev/apimachinery v0.29.0
+	stash.appscode.dev/apimachinery v0.29.1-0.20230529131221-1e979c48da10
 )
 
 require (
@@ -60,7 +60,7 @@ require (
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.1.1 // indirect
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -83,7 +83,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -107,7 +107,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -161,19 +161,19 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	gocloud.dev v0.22.0 // indirect
-	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
-	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	gomodules.xyz/jsonpath v0.0.2 // indirect
 	gomodules.xyz/mergo v0.3.13 // indirect
-	gomodules.xyz/password-generator v0.2.7 // indirect
+	gomodules.xyz/password-generator v0.2.9 // indirect
 	gomodules.xyz/sets v0.2.1 // indirect
 	gomodules.xyz/sync v0.1.0 // indirect
 	gomodules.xyz/wait v0.2.0 // indirect

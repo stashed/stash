@@ -18,6 +18,37 @@ package v1
 
 import (
 	jsoniter "github.com/json-iterator/go"
+	rbac "k8s.io/api/rbac/v1"
 )
 
 var json = jsoniter.ConfigFastest
+
+func UpsertSubjects(subjects []rbac.Subject, upsert ...rbac.Subject) []rbac.Subject {
+	for i := range upsert {
+		var found bool
+		for j := range subjects {
+			if subjects[j] == upsert[i] {
+				found = true
+				break
+			}
+		}
+		if !found {
+			subjects = append(subjects, upsert[i])
+		}
+	}
+	return subjects
+}
+
+func RemoveSubjects(subjects []rbac.Subject, rm ...rbac.Subject) []rbac.Subject {
+	var out []rbac.Subject
+	for _, x := range rm {
+		out = subjects[:0]
+		for _, y := range subjects {
+			if y != x {
+				out = append(out, y)
+			}
+		}
+		subjects = out
+	}
+	return out
+}

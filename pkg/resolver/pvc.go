@@ -35,7 +35,7 @@ func (opt VolumeTemplateOptions) Resolve() ([]core.PersistentVolumeClaim, error)
 	for i := range opt.VolumeTemplates {
 		inputs := make(map[string]string)
 		inputs[apis.KeyPodOrdinal] = strconv.Itoa(opt.Ordinal)
-		claim := opt.VolumeTemplates[i].DeepCopy().ToCorePVC()
+		claim := opt.VolumeTemplates[i].DeepCopy().ToAPIObject()
 		err := resolveWithInputs(claim, inputs)
 		if err != nil {
 			return nil, err

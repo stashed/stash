@@ -252,7 +252,7 @@ spec:
                         properties:
                           duration:
                             description: Duration indicates total time taken to complete
-                              backup for this hosts
+                              backup for this host
                             type: string
                           error:
                             description: Error indicates string value of error in

@@ -195,27 +195,27 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, targetRef api_v1
 				opt.SourceHost = opt.Host
 			}
 
-			// run restore
-			_, err := nw.DumpOnce(opt)
-			if err != nil {
-				mu.Lock()
-				restoreErrs = append(restoreErrs, err)
-				mu.Unlock()
-				return
-			}
 			hostStats := api_v1beta1.HostRestoreStats{
 				Hostname: opt.Host,
 			}
+			// run restore
+			_, err := nw.DumpOnce(opt)
 			hostStats.Duration = time.Since(startTime).String()
-			hostStats.Phase = api_v1beta1.HostRestoreSucceeded
-
-			// add hostStats to restoreOutput
+			if err != nil {
+				hostStats.Phase = api_v1beta1.HostRestoreFailed
+				hostStats.Error = err.Error()
+				mu.Lock()
+				restoreErrs = append(restoreErrs, err)
+				mu.Unlock()
+			} else {
+				hostStats.Phase = api_v1beta1.HostRestoreSucceeded
+			}
+			// add hostStats to restoreOutput. use lock to avoid racing condition.
 			mu.Lock()
 			restoreOutput.upsertHostRestoreStats(hostStats)
 			mu.Unlock()
 		}(dumpOptions[i], time.Now())
 	}
-
 	// wait for all the go routines to complete
 	wg.Wait()
 

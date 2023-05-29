@@ -113,7 +113,7 @@ func (e *BackupJob) resolveTask(jobMeta metav1.ObjectMeta, owner *metav1.OwnerRe
 	return util.UpsertInterimVolume(
 		e.KubeClient,
 		podSpec,
-		targetInfo.InterimVolumeTemplate.ToCorePVC(),
+		targetInfo.InterimVolumeTemplate.ToAPIObject(),
 		jobMeta.Namespace,
 		owner,
 	)

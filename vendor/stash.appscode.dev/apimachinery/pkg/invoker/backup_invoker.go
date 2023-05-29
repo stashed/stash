@@ -156,7 +156,8 @@ func isMemberConditionTrue(conditions []v1beta1.MemberConditions, target v1beta1
 func TargetBackupInitiated(ref v1beta1.TargetRef, targetStatus []v1beta1.BackupTargetStatus) bool {
 	for i := range targetStatus {
 		if TargetMatched(ref, targetStatus[i].Ref) {
-			return targetStatus[i].Phase == v1beta1.TargetBackupRunning ||
+			return kmapi.HasCondition(targetStatus[i].Conditions, v1beta1.BackupExecutorEnsured) ||
+				targetStatus[i].Phase == v1beta1.TargetBackupRunning ||
 				targetStatus[i].Phase == v1beta1.TargetBackupSucceeded ||
 				targetStatus[i].Phase == v1beta1.TargetBackupFailed
 		}

@@ -21512,7 +21512,7 @@ func schema_apimachinery_apis_stash_v1beta1_HostBackupStats(ref common.Reference
 					},
 					"duration": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Duration indicates total time taken to complete backup for this hosts",
+							Description: "Duration indicates total time taken to complete backup for this host",
 							Type:        []string{"string"},
 							Format:      "",
 						},

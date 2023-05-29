@@ -193,7 +193,7 @@ func (e *RestoreJob) resolveTask() (core.PodSpec, error) {
 	return util.UpsertInterimVolume(
 		e.KubeClient,
 		podSpec,
-		targetInfo.InterimVolumeTemplate.ToCorePVC(),
+		targetInfo.InterimVolumeTemplate.ToAPIObject(),
 		e.Invoker.GetObjectMeta().Namespace,
 		e.Invoker.GetOwnerRef(),
 	)
