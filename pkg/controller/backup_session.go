@@ -211,7 +211,16 @@ func (r *backupSessionReconciler) reconcile() error {
 
 	if skippingReason != "" {
 		r.logger.Info(skippingReason)
-		return conditions.SetBackupSkippedConditionToTrue(r.session, skippingReason)
+		if err := conditions.SetBackupSkippedConditionToTrue(r.session, skippingReason); err != nil {
+			return err
+		}
+		// cleanup old BackupSession according to backupHistoryLimit
+		if !r.isBackupHistoryCleaned() {
+			if err := r.cleanupBackupHistory(); err != nil {
+				return conditions.SetBackupHistoryCleanedConditionToFalse(r.session, err)
+			}
+		}
+		return nil
 	}
 
 	if r.shouldExecuteGlobalPreBackupHook() {

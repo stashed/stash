@@ -44,6 +44,7 @@ require (
 	kmodules.xyz/openshift v0.25.0
 	kmodules.xyz/prober v0.25.0
 	kmodules.xyz/webhook-runtime v0.25.0
+	sigs.k8s.io/controller-runtime v0.13.1
 	stash.appscode.dev/apimachinery v0.29.0
 )
 
@@ -194,7 +195,6 @@ require (
 	kmodules.xyz/resource-metrics v0.25.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.32 // indirect
 	sigs.k8s.io/cli-utils v0.33.0 // indirect
-	sigs.k8s.io/controller-runtime v0.13.1 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect

@@ -524,7 +524,7 @@ func (r *restoreInvokerReconciler) targetRestoreInitiated(targetRef api_v1beta1.
 	}
 	for _, target := range status.TargetStatus {
 		if invoker.TargetMatched(target.Ref, targetRef) {
-			return target.Phase == api_v1beta1.TargetRestoreRunning
+			return kmapi.HasCondition(target.Conditions, api_v1beta1.RestoreExecutorEnsured) || target.Phase == api_v1beta1.TargetRestoreRunning
 		}
 	}
 	return false
