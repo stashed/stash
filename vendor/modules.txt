@@ -41,12 +41,9 @@ github.com/Masterminds/sprig/v3
 # github.com/NYTimes/gziphandler v1.1.1
 ## explicit; go 1.11
 github.com/NYTimes/gziphandler
-# github.com/PuerkitoBio/purell v1.1.1
-## explicit
+# github.com/PuerkitoBio/purell v1.2.0
+## explicit; go 1.19
 github.com/PuerkitoBio/purell
-# github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
-## explicit
-github.com/PuerkitoBio/urlesc
 # github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 ## explicit
 github.com/armon/circbuf
@@ -434,7 +431,7 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
-# go.bytebuilders.dev/audit v0.0.26
+# go.bytebuilders.dev/audit v0.0.27
 ## explicit; go 1.18
 go.bytebuilders.dev/audit/api/v1
 go.bytebuilders.dev/audit/lib
@@ -445,13 +442,13 @@ go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1
 go.bytebuilders.dev/license-proxyserver/client/clientset/versioned
 go.bytebuilders.dev/license-proxyserver/client/clientset/versioned/scheme
 go.bytebuilders.dev/license-proxyserver/client/clientset/versioned/typed/proxyserver/v1alpha1
-# go.bytebuilders.dev/license-verifier v0.12.1
+# go.bytebuilders.dev/license-verifier v0.13.2
 ## explicit; go 1.18
 go.bytebuilders.dev/license-verifier
 go.bytebuilders.dev/license-verifier/apis/licenses
 go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1
 go.bytebuilders.dev/license-verifier/info
-# go.bytebuilders.dev/license-verifier/kubernetes v0.12.1
+# go.bytebuilders.dev/license-verifier/kubernetes v0.13.2
 ## explicit; go 1.18
 go.bytebuilders.dev/license-verifier/kubernetes
 # go.etcd.io/etcd/api/v3 v3.5.4
@@ -1578,7 +1575,7 @@ kmodules.xyz/constants/openstack
 kmodules.xyz/csi-utils/volumesnapshot
 kmodules.xyz/csi-utils/volumesnapshot/v1
 kmodules.xyz/csi-utils/volumesnapshot/v1beta1
-# kmodules.xyz/custom-resources v0.25.1
+# kmodules.xyz/custom-resources v0.25.2
 ## explicit; go 1.18
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
@@ -1593,11 +1590,11 @@ kmodules.xyz/custom-resources/client/clientset/versioned/typed/auditor/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/metrics/v1alpha1
 kmodules.xyz/custom-resources/crds
 kmodules.xyz/custom-resources/util/siteinfo
-# kmodules.xyz/objectstore-api v0.25.1-0.20221104003322-f0289b5b6ca2
+# kmodules.xyz/objectstore-api v0.25.1
 ## explicit; go 1.18
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
-# kmodules.xyz/offshoot-api v0.25.3
+# kmodules.xyz/offshoot-api v0.25.4
 ## explicit; go 1.18
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util
@@ -1780,7 +1777,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.3.0
 ## explicit; go 1.12
 sigs.k8s.io/yaml
-# stash.appscode.dev/apimachinery v0.29.1-0.20230529131221-1e979c48da10
+# stash.appscode.dev/apimachinery v0.30.0
 ## explicit; go 1.18
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories

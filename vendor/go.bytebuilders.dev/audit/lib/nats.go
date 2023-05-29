@@ -93,7 +93,7 @@ func NewNatsConfig(cfg *rest.Config, clusterID string, LicenseFile string) (*Nat
 		return nil, err
 	}
 
-	resp, err := http.Post(info.RegistrationAPIEndpoint(), "application/json", bytes.NewReader(data))
+	resp, err := http.Post(info.MustRegistrationAPIEndpoint(), "application/json", bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}

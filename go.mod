@@ -11,10 +11,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/audit v0.0.26
+	go.bytebuilders.dev/audit v0.0.27
 	go.bytebuilders.dev/license-proxyserver v0.0.3
-	go.bytebuilders.dev/license-verifier v0.12.1
-	go.bytebuilders.dev/license-verifier/kubernetes v0.12.1
+	go.bytebuilders.dev/license-verifier v0.13.2
+	go.bytebuilders.dev/license-verifier/kubernetes v0.13.2
 	golang.org/x/text v0.9.0
 	gomodules.xyz/blobfs v0.1.10
 	gomodules.xyz/cert v1.5.0
@@ -38,14 +38,14 @@ require (
 	kmodules.xyz/client-go v0.25.23
 	kmodules.xyz/constants v0.0.0-20220317041001-545c1e31a70a
 	kmodules.xyz/csi-utils v0.25.4
-	kmodules.xyz/custom-resources v0.25.1
-	kmodules.xyz/objectstore-api v0.25.1-0.20221104003322-f0289b5b6ca2
-	kmodules.xyz/offshoot-api v0.25.3
+	kmodules.xyz/custom-resources v0.25.2
+	kmodules.xyz/objectstore-api v0.25.1
+	kmodules.xyz/offshoot-api v0.25.4
 	kmodules.xyz/openshift v0.25.0
 	kmodules.xyz/prober v0.25.0
 	kmodules.xyz/webhook-runtime v0.25.0
 	sigs.k8s.io/controller-runtime v0.13.1
-	stash.appscode.dev/apimachinery v0.29.1-0.20230529131221-1e979c48da10
+	stash.appscode.dev/apimachinery v0.30.0
 )
 
 require (
@@ -63,8 +63,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
-	github.com/PuerkitoBio/purell v1.1.1 // indirect
-	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/PuerkitoBio/purell v1.2.0 // indirect
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2 // indirect
 	github.com/aws/aws-sdk-go v1.44.100 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package urlesc implements query escaping as per RFC 3986.
+// This file implements query escaping as per RFC 3986.
 // It contains some parts of the net/url package, modified so as to allow
 // some reserved characters incorrectly escaped by net/url.
 // See https://github.com/golang/go/issues/5684
-package urlesc
+package purell
 
 import (
 	"bytes"
@@ -67,12 +67,6 @@ func shouldEscape(c byte, mode encoding) bool {
 
 	// Everything else must be escaped.
 	return true
-}
-
-// QueryEscape escapes the string so it can be safely placed
-// inside a URL query.
-func QueryEscape(s string) string {
-	return escape(s, encodeQueryComponent)
 }
 
 func escape(s string, mode encoding) string {
@@ -144,7 +138,7 @@ func unescapeUserinfo(s string) string {
 //	   the form host/path does not add its own /.
 //	- if u.RawQuery is empty, ?query is omitted.
 //	- if u.Fragment is empty, #fragment is omitted.
-func Escape(u *url.URL) string {
+func escapeURL(u *url.URL) string {
 	var buf bytes.Buffer
 	if u.Scheme != "" {
 		buf.WriteString(u.Scheme)

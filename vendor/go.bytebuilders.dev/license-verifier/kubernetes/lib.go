@@ -62,17 +62,17 @@ const (
 )
 
 type LicenseEnforcer struct {
-	opts       verifier.VerifyOptions
-	config     *rest.Config
-	kc         kubernetes.Interface
-	getLicense func() ([]byte, error)
+	licenseFile string
+	opts        verifier.VerifyOptions
+	config      *rest.Config
+	kc          kubernetes.Interface
 }
 
 // NewLicenseEnforcer returns a newly created license enforcer
 func NewLicenseEnforcer(config *rest.Config, licenseFile string) (*LicenseEnforcer, error) {
 	le := LicenseEnforcer{
-		getLicense: getLicense(config, licenseFile),
-		config:     config,
+		config:      config,
+		licenseFile: licenseFile,
 		opts: verifier.VerifyOptions{
 			Features: info.ProductName,
 		},
@@ -97,30 +97,38 @@ func MustLicenseEnforcer(config *rest.Config, licenseFile string) *LicenseEnforc
 	return le
 }
 
-func getLicense(cfg *rest.Config, licenseFile string) func() ([]byte, error) {
-	return func() ([]byte, error) {
-		licenseBytes, err := os.ReadFile(licenseFile)
-		if errors.Is(err, os.ErrNotExist) {
-			req := proxyserver.LicenseRequest{
-				TypeMeta: metav1.TypeMeta{},
-				Request: &proxyserver.LicenseRequestRequest{
-					Features: info.Features(),
-				},
-			}
-			pc, err := proxyclient.NewForConfig(cfg)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed create client for license-proxyserver")
-			}
-			resp, err := pc.ProxyserverV1alpha1().LicenseRequests().Create(context.TODO(), &req, metav1.CreateOptions{})
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to read license")
-			}
-			licenseBytes = []byte(resp.Response.License)
-		} else if err != nil {
+func (le *LicenseEnforcer) getLicense() ([]byte, error) {
+	licenseBytes, err := os.ReadFile(le.licenseFile)
+	if errors.Is(err, os.ErrNotExist) || (err == nil && le.invalidLicense(licenseBytes)) {
+		req := proxyserver.LicenseRequest{
+			TypeMeta: metav1.TypeMeta{},
+			Request: &proxyserver.LicenseRequestRequest{
+				Features: info.Features(),
+			},
+		}
+		pc, err := proxyclient.NewForConfig(le.config)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed create client for license-proxyserver")
+		}
+		resp, err := pc.ProxyserverV1alpha1().LicenseRequests().Create(context.TODO(), &req, metav1.CreateOptions{})
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to read license")
 		}
-		return licenseBytes, nil
+		licenseBytes = []byte(resp.Response.License)
+	} else if err != nil {
+		return nil, errors.Wrap(err, "failed to read license")
 	}
+	return licenseBytes, nil
+}
+
+func (le *LicenseEnforcer) invalidLicense(license []byte) bool {
+	le.opts.License = license
+	// We don't want to acquire license from license-proxyserver is the license file
+	// contains a valid license for a different product.
+	// We want to acquire license-proxyserver is a previously valid license has not expired.
+	// So, we don't check features in the license found is license file.
+	l, err := verifier.ParseLicense(le.opts.ParserOptions)
+	return sets.NewString(l.Features...).HasAny(info.ParseFeatures(le.opts.Features)...) && err != nil
 }
 
 func (le *LicenseEnforcer) createClients() (err error) {
@@ -136,20 +144,11 @@ func (le *LicenseEnforcer) acquireLicense() (err error) {
 }
 
 func (le *LicenseEnforcer) readClusterUID() (err error) {
+	if le.opts.ClusterUID != "" {
+		return
+	}
 	le.opts.ClusterUID, err = clusterid.ClusterUID(le.kc.CoreV1().Namespaces())
 	return err
-}
-
-func (le *LicenseEnforcer) podName() (string, error) {
-	if name, ok := os.LookupEnv("MY_POD_NAME"); ok {
-		return name, nil
-	}
-
-	if meta.PossiblyInCluster() {
-		// Read current pod name
-		return os.Hostname()
-	}
-	return "", errors.New("failed to detect pod name")
 }
 
 func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) error {
@@ -170,10 +169,6 @@ func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) er
 	// Log licenseInfo verification failure
 	klog.Errorln("Failed to verify license. Reason: ", licenseErr.Error())
 
-	podName, err := le.podName()
-	if err != nil {
-		return err
-	}
 	// Read the namespace of current pod
 	namespace := meta.PodNamespace()
 
@@ -183,7 +178,7 @@ func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) er
 		le.config,
 		core.SchemeGroupVersion.WithResource(core.ResourcePods.String()),
 		namespace,
-		podName,
+		meta.PodName(),
 	)
 	if err != nil {
 		return err
