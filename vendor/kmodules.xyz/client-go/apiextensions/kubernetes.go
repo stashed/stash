@@ -58,7 +58,7 @@ func RegisterCRDs(client crd_cs.Interface, crds []*CustomResourceDefinition) err
 			},
 			metav1.UpdateOptions{},
 		)
-		if err != nil {
+		if err != nil && !kerr.IsAlreadyExists(err) {
 			return err
 		}
 	}

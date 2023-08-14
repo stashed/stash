@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	cutil "kmodules.xyz/client-go/conditions"
 )
 
 type BackupSessionHandler struct {
@@ -207,9 +208,9 @@ func upsertBackupHostStatus(cur, new []v1beta1.HostBackupStats) []v1beta1.HostBa
 }
 
 func calculateBackupTargetPhase(status v1beta1.BackupTargetStatus) v1beta1.TargetPhase {
-	if kmapi.IsConditionFalse(status.Conditions, v1beta1.BackupExecutorEnsured) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.PreBackupHookExecutionSucceeded) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.PostBackupHookExecutionSucceeded) {
+	if cutil.IsConditionFalse(status.Conditions, v1beta1.BackupExecutorEnsured) ||
+		cutil.IsConditionFalse(status.Conditions, v1beta1.PreBackupHookExecutionSucceeded) ||
+		cutil.IsConditionFalse(status.Conditions, v1beta1.PostBackupHookExecutionSucceeded) {
 		return v1beta1.TargetBackupFailed
 	}
 
@@ -239,19 +240,19 @@ func calculateBackupTargetPhase(status v1beta1.BackupTargetStatus) v1beta1.Targe
 }
 
 func calculateBackupSessionPhase(status *v1beta1.BackupSessionStatus) v1beta1.BackupSessionPhase {
-	if kmapi.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) {
+	if cutil.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) {
 		return v1beta1.BackupSessionFailed
 	}
 
-	if kmapi.IsConditionTrue(status.Conditions, v1beta1.BackupSkipped) {
+	if cutil.IsConditionTrue(status.Conditions, v1beta1.BackupSkipped) {
 		return v1beta1.BackupSessionSkipped
 	}
 
-	if kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) &&
-		(kmapi.IsConditionTrue(status.Conditions, v1beta1.DeadlineExceeded) ||
-			kmapi.IsConditionFalse(status.Conditions, v1beta1.BackupHistoryCleaned) ||
-			kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPreBackupHookSucceeded) ||
-			kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPostBackupHookSucceeded)) {
+	if cutil.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) &&
+		(cutil.IsConditionTrue(status.Conditions, v1beta1.DeadlineExceeded) ||
+			cutil.IsConditionFalse(status.Conditions, v1beta1.BackupHistoryCleaned) ||
+			cutil.IsConditionFalse(status.Conditions, v1beta1.GlobalPreBackupHookSucceeded) ||
+			cutil.IsConditionFalse(status.Conditions, v1beta1.GlobalPostBackupHookSucceeded)) {
 		return v1beta1.BackupSessionFailed
 	}
 
@@ -272,11 +273,11 @@ func calculateBackupSessionPhase(status *v1beta1.BackupSessionStatus) v1beta1.Ba
 	}
 	completedTargets := successfulTargetCount + failedTargetCount
 
-	if completedTargets == len(status.Targets) && kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) { // Pushing metrics is the last step.
+	if completedTargets == len(status.Targets) && cutil.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) { // Pushing metrics is the last step.
 		if failedTargetCount > 0 ||
-			kmapi.IsConditionFalse(status.Conditions, v1beta1.RetentionPolicyApplied) ||
-			kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryMetricsPushed) ||
-			kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryIntegrityVerified) {
+			cutil.IsConditionFalse(status.Conditions, v1beta1.RetentionPolicyApplied) ||
+			cutil.IsConditionFalse(status.Conditions, v1beta1.RepositoryMetricsPushed) ||
+			cutil.IsConditionFalse(status.Conditions, v1beta1.RepositoryIntegrityVerified) {
 			return v1beta1.BackupSessionFailed
 		}
 		return v1beta1.BackupSessionSucceeded

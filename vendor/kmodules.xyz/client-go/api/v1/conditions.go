@@ -1,5 +1,5 @@
 /*
-Copyright AppsCode Inc. and Contributors
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,190 +17,72 @@ limitations under the License.
 package v1
 
 import (
-	"fmt"
-
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// KEP: https://github.com/kubernetes/enhancements/blob/ced773ab59f0ff080888a912ab99474245623dad/keps/sig-api-machinery/1623-standardize-conditions/README.md
+// ConditionSeverity expresses the severity of a Condition Type failing.
+type ConditionSeverity string
 
-// List of common condition types
 const (
-	ConditionProgressing = "Progressing"
-	ConditionInitialized = "Initialized"
-	ConditionReady       = "Ready"
-	ConditionAvailable   = "Available"
-	ConditionFailed      = "Failed"
+	// ConditionSeverityError specifies that a condition with `Status=False` is an error.
+	ConditionSeverityError ConditionSeverity = "Error"
 
-	ConditionRequestApproved = "Approved"
-	ConditionRequestDenied   = "Denied"
+	// ConditionSeverityWarning specifies that a condition with `Status=False` is a warning.
+	ConditionSeverityWarning ConditionSeverity = "Warning"
+
+	// ConditionSeverityInfo specifies that a condition with `Status=False` is informative.
+	ConditionSeverityInfo ConditionSeverity = "Info"
+
+	// ConditionSeverityNone should apply only to util with `Status=True`.
+	ConditionSeverityNone ConditionSeverity = ""
 )
 
+// ConditionType is a valid value for Condition.Type.
+type ConditionType string
+
+const (
+	// ReadyCondition defines the Ready condition type that summarizes the operational state of an object.
+	ReadyCondition ConditionType = "Ready"
+)
+
+// Condition defines an observation of a object operational state.
 type Condition struct {
 	// Type of condition in CamelCase or in foo.example.com/CamelCase.
-	// Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-	// useful (see .node.status.conditions), the ability to deconflict is important.
-	// +required
-	Type string `json:"type" protobuf:"bytes,1,opt,name=type"`
+	// Many .condition.type values are consistent across resources like Available, but because arbitrary util
+	// can be useful (see .node.status.util), the ability to deconflict is important.
+	Type ConditionType `json:"type" protobuf:"bytes,4,opt,name=type,casttype=ConditionType"`
+
 	// Status of the condition, one of True, False, Unknown.
-	// +required
-	Status core.ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=k8s.io/api/core/v1.ConditionStatus"`
+	Status metav1.ConditionStatus `json:"status" protobuf:"bytes,5,opt,name=status,casttype=k8s.io/api/core/v1.ConditionStatus"`
+
 	// If set, this represents the .metadata.generation that the condition was set based upon.
 	// For instance, if .metadata.generation is currently 12, but the .status.condition[x].observedGeneration is 9, the condition is out of date
 	// with respect to the current state of the instance.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty" protobuf:"varint,3,opt,name=observedGeneration"`
+
+	// Severity provides an explicit classification of Reason code, so the users or machines can immediately
+	// understand the current situation and act accordingly.
+	// The Severity field MUST be set only when Status=False.
+	// +optional
+	Severity ConditionSeverity `json:"severity,omitempty" protobuf:"bytes,6,opt,name=severity,casttype=ConditionSeverity"`
+
 	// Last time the condition transitioned from one status to another.
-	// This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-	// +required
-	LastTransitionTime metav1.Time `json:"lastTransitionTime" protobuf:"bytes,4,opt,name=lastTransitionTime"`
+	// This should be when the underlying condition changed. If that is not known, then using the time when
+	// the API field changed is acceptable.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime" protobuf:"bytes,7,opt,name=lastTransitionTime"`
+
 	// The reason for the condition's last transition in CamelCase.
-	// The specific API may choose whether or not this field is considered a guaranteed API.
+	// The specific API may choose whether this field is considered a guaranteed API.
 	// This field may not be empty.
-	// +required
-	Reason string `json:"reason" protobuf:"bytes,5,opt,name=reason"`
-	// A human readable message indicating details about the transition.
+	// +optional
+	Reason string `json:"reason,omitempty" protobuf:"bytes,8,opt,name=reason"`
+
+	// A human-readable message indicating details about the transition.
 	// This field may be empty.
-	// +required
-	Message string `json:"message" protobuf:"bytes,6,opt,name=message"`
+	// +optional
+	Message string `json:"message,omitempty" protobuf:"bytes,9,opt,name=message"`
 }
 
-func NewCondition(reason string, message string, generation int64, conditionStatus ...bool) Condition {
-	cs := core.ConditionTrue
-	if len(conditionStatus) > 0 && !conditionStatus[0] {
-		cs = core.ConditionFalse
-	}
-
-	return Condition{
-		Type:               reason,
-		Reason:             reason,
-		Message:            message,
-		Status:             cs,
-		LastTransitionTime: metav1.Now(),
-		ObservedGeneration: generation,
-	}
-}
-
-// HasCondition returns "true" if the desired condition provided in "condType" is present in the condition list.
-// Otherwise, it returns "false".
-func HasCondition(conditions []Condition, condType string) bool {
-	for i := range conditions {
-		if conditions[i].Type == condType {
-			return true
-		}
-	}
-	return false
-}
-
-// GetCondition returns a pointer to the desired condition referred by "condType". Otherwise, it returns nil.
-func GetCondition(conditions []Condition, condType string) (int, *Condition) {
-	for i := range conditions {
-		c := conditions[i]
-		if c.Type == condType {
-			return i, &c
-		}
-	}
-	return -1, nil
-}
-
-// SetCondition add/update the desired condition to the condition list. It does nothing if the condition is already in
-// its desired state.
-func SetCondition(conditions []Condition, newCondition Condition) []Condition {
-	idx, curCond := GetCondition(conditions, newCondition.Type)
-	// If the current condition is in its desired state, we have nothing to do. Just return the original condition list.
-	if curCond != nil &&
-		curCond.Status == newCondition.Status &&
-		curCond.Reason == newCondition.Reason &&
-		curCond.Message == newCondition.Message &&
-		curCond.ObservedGeneration == newCondition.ObservedGeneration {
-		return conditions
-	}
-	// The desired conditions is not in the condition list or is not in its desired state.
-	// Update it if present in the condition list, or append the new condition if it does not present.
-	newCondition.LastTransitionTime = metav1.Now()
-	if idx == -1 {
-		conditions = append(conditions, newCondition)
-	} else if newCondition.ObservedGeneration >= curCond.ObservedGeneration {
-		// only update if the new condition is based on observed generation at least as updated as the current condition
-		conditions[idx] = newCondition
-	}
-	return conditions
-}
-
-// RemoveCondition remove a condition from the condition list referred by "condType" parameter.
-func RemoveCondition(conditions []Condition, condType string) []Condition {
-	idx, _ := GetCondition(conditions, condType)
-	if idx == -1 {
-		// The desired condition is not present in the condition list. So, nothing to do.
-		return conditions
-	}
-	return append(conditions[:idx], conditions[idx+1:]...)
-}
-
-// IsConditionTrue returns "true" if the desired condition is in true state.
-// It returns "false" if the desired condition is not in "true" state or is not in the condition list.
-func IsConditionTrue(conditions []Condition, condType string) bool {
-	for i := range conditions {
-		if conditions[i].Type == condType && conditions[i].Status == core.ConditionTrue {
-			return true
-		}
-	}
-	return false
-}
-
-// IsConditionFalse returns "true" if the desired condition is in false state.
-// It returns "false" if the desired condition is not in "false" state or is not in the condition list.
-func IsConditionFalse(conditions []Condition, condType string) bool {
-	for i := range conditions {
-		if conditions[i].Type == condType && conditions[i].Status == core.ConditionFalse {
-			return true
-		}
-	}
-	return false
-}
-
-// IsConditionUnknown returns "true" if the desired condition is in unknown state.
-// It returns "false" if the desired condition is not in "unknown" state or is not in the condition list.
-func IsConditionUnknown(conditions []Condition, condType string) bool {
-	for i := range conditions {
-		if conditions[i].Type == condType && conditions[i].Status == core.ConditionUnknown {
-			return true
-		}
-	}
-	return false
-}
-
-// Status defines the set of statuses a resource can have.
-// Based on kstatus: https://github.com/kubernetes-sigs/cli-utils/tree/master/pkg/kstatus
-// +kubebuilder:validation:Enum=InProgress;Failed;Current;Terminating;NotFound;Unknown
-type Status string
-
-const (
-	// The set of status conditions which can be assigned to resources.
-	InProgressStatus  Status = "InProgress"
-	FailedStatus      Status = "Failed"
-	CurrentStatus     Status = "Current"
-	TerminatingStatus Status = "Terminating"
-	NotFoundStatus    Status = "NotFound"
-	UnknownStatus     Status = "Unknown"
-)
-
-var Statuses = []Status{InProgressStatus, FailedStatus, CurrentStatus, TerminatingStatus, UnknownStatus}
-
-// String returns the status as a string.
-func (s Status) String() string {
-	return string(s)
-}
-
-// StatusFromStringOrDie turns a string into a Status. Will panic if the provided string is
-// not a valid status.
-func StatusFromStringOrDie(text string) Status {
-	s := Status(text)
-	for _, r := range Statuses {
-		if s == r {
-			return s
-		}
-	}
-	panic(fmt.Errorf("string has invalid status: %s", s))
-}
+// Conditions provide observations of the operational state of a object.
+type Conditions []Condition

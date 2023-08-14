@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/reference"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	cutil "kmodules.xyz/client-go/conditions"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -105,7 +106,7 @@ func (inv *BackupConfigurationInvoker) HasCondition(target *v1beta1.TargetRef, c
 	if err != nil {
 		return false, err
 	}
-	return kmapi.HasCondition(backupConfig.Status.Conditions, conditionType), nil
+	return cutil.HasCondition(backupConfig.Status.Conditions, conditionType), nil
 }
 
 func (inv *BackupConfigurationInvoker) GetCondition(target *v1beta1.TargetRef, conditionType string) (int, *kmapi.Condition, error) {
@@ -113,13 +114,13 @@ func (inv *BackupConfigurationInvoker) GetCondition(target *v1beta1.TargetRef, c
 	if err != nil {
 		return -1, nil, err
 	}
-	idx, cond := kmapi.GetCondition(backupConfig.Status.Conditions, conditionType)
+	idx, cond := cutil.GetCondition(backupConfig.Status.Conditions, conditionType)
 	return idx, cond, nil
 }
 
 func (inv *BackupConfigurationInvoker) SetCondition(target *v1beta1.TargetRef, newCondition kmapi.Condition) error {
 	updatedBackupConfig, err := v1beta1_util.UpdateBackupConfigurationStatus(context.TODO(), inv.stashClient.StashV1beta1(), inv.backupConfig.ObjectMeta, func(in *v1beta1.BackupConfigurationStatus) (types.UID, *v1beta1.BackupConfigurationStatus) {
-		in.Conditions = kmapi.SetCondition(in.Conditions, newCondition)
+		in.Conditions = cutil.SetCondition(in.Conditions, newCondition)
 		in.Phase = CalculateBackupInvokerPhase(inv.GetDriver(), in.Conditions)
 		return inv.backupConfig.UID, in
 	}, metav1.UpdateOptions{})
@@ -135,7 +136,7 @@ func (inv *BackupConfigurationInvoker) IsConditionTrue(target *v1beta1.TargetRef
 	if err != nil {
 		return false, err
 	}
-	return kmapi.IsConditionTrue(backupConfig.Status.Conditions, conditionType), nil
+	return cutil.IsConditionTrue(backupConfig.Status.Conditions, conditionType), nil
 }
 
 func (inv *BackupConfigurationInvoker) GetTargetInfo() []BackupTargetInfo {

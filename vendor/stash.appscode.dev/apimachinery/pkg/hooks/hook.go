@@ -30,11 +30,12 @@ import (
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
 	sprig "github.com/Masterminds/sprig/v3"
-	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	cutil "kmodules.xyz/client-go/conditions"
 	prober "kmodules.xyz/prober/api/v1"
 	"kmodules.xyz/prober/probe"
 )
@@ -155,9 +156,9 @@ func getTargetPhase(summary *v1beta1.Summary) string {
 
 func (e *BackupHookExecutor) alreadyExecuted(session *invoker.BackupSessionHandler) bool {
 	if e.HookType == apis.PreBackupHook {
-		return kmapi.HasCondition(session.GetTargetConditions(e.Target), v1beta1.PreBackupHookExecutionSucceeded)
+		return cutil.HasCondition(session.GetTargetConditions(e.Target), v1beta1.PreBackupHookExecutionSucceeded)
 	}
-	return kmapi.HasCondition(session.GetTargetConditions(e.Target), v1beta1.PostBackupHookExecutionSucceeded)
+	return cutil.HasCondition(session.GetTargetConditions(e.Target), v1beta1.PostBackupHookExecutionSucceeded)
 }
 
 func (e *BackupHookExecutor) skipHookExecution(session *invoker.BackupSessionHandler, reason string) error {
@@ -172,11 +173,11 @@ func (e *BackupHookExecutor) skipHookReExecution(session *invoker.BackupSessionH
 	targetConditions := session.GetTargetConditions(e.Target)
 
 	if e.HookType == apis.PreBackupHook {
-		_, cond = kmapi.GetCondition(targetConditions, v1beta1.PreBackupHookExecutionSucceeded)
+		_, cond = cutil.GetCondition(targetConditions, v1beta1.PreBackupHookExecutionSucceeded)
 	} else {
-		_, cond = kmapi.GetCondition(targetConditions, v1beta1.PostBackupHookExecutionSucceeded)
+		_, cond = cutil.GetCondition(targetConditions, v1beta1.PostBackupHookExecutionSucceeded)
 	}
-	if cond != nil && cond.Status == corev1.ConditionFalse {
+	if cond != nil && cond.Status == metav1.ConditionFalse {
 		return fmt.Errorf("%s hook failed to execute. Reason: ", cond.Reason)
 	}
 	return nil
@@ -270,7 +271,7 @@ func (e *RestoreHookExecutor) skipHookReExecution() error {
 		}
 		cond = c
 	}
-	if cond != nil && cond.Status == corev1.ConditionFalse {
+	if cond != nil && cond.Status == metav1.ConditionFalse {
 		return fmt.Errorf("%s hook failed to execute. Reason: ", cond.Reason)
 	}
 	return nil

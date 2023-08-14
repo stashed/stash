@@ -22,7 +22,6 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
@@ -32,7 +31,7 @@ func SetBackendRepositoryInitializedConditionToFalse(session *invoker.BackupSess
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.BackendRepositoryInitialized,
-				Status:             core.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             v1beta1.FailedToInitializeBackendRepository,
 				Message:            fmt.Sprintf("Failed to initialize backend repository. Reason: %v", err.Error()),
 				LastTransitionTime: metav1.Now(),
@@ -46,7 +45,7 @@ func SetBackendRepositoryInitializedConditionToTrue(session *invoker.BackupSessi
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.BackendRepositoryInitialized,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.BackendRepositoryFound,
 				Message:            "Repository exist in the backend.",
 				LastTransitionTime: metav1.Now(),
@@ -63,7 +62,7 @@ func SetBackupExecutorEnsuredToFalse(session *invoker.BackupSessionHandler, targ
 				Conditions: []kmapi.Condition{
 					{
 						Type:               v1beta1.BackupExecutorEnsured,
-						Status:             core.ConditionFalse,
+						Status:             metav1.ConditionFalse,
 						Reason:             v1beta1.FailedToEnsureBackupExecutor,
 						Message:            fmt.Sprintf("Failed to ensure backup executor. Reason: %v", err.Error()),
 						LastTransitionTime: metav1.Now(),
@@ -82,7 +81,7 @@ func SetBackupExecutorEnsuredToTrue(session *invoker.BackupSessionHandler, targe
 				Conditions: []kmapi.Condition{
 					{
 						Type:               v1beta1.BackupExecutorEnsured,
-						Status:             core.ConditionTrue,
+						Status:             metav1.ConditionTrue,
 						Reason:             v1beta1.SuccessfullyEnsuredBackupExecutor,
 						Message:            "Successfully ensured backup executor.",
 						LastTransitionTime: metav1.Now(),
@@ -101,7 +100,7 @@ func SetPreBackupHookExecutionSucceededToFalse(session *invoker.BackupSessionHan
 				Conditions: []kmapi.Condition{
 					{
 						Type:               v1beta1.PreBackupHookExecutionSucceeded,
-						Status:             core.ConditionFalse,
+						Status:             metav1.ConditionFalse,
 						Reason:             v1beta1.FailedToExecutePreBackupHook,
 						Message:            fmt.Sprintf("Failed to execute preBackup hook. Reason: %v", err.Error()),
 						LastTransitionTime: metav1.Now(),
@@ -120,7 +119,7 @@ func SetPreBackupHookExecutionSucceededToTrue(session *invoker.BackupSessionHand
 				Conditions: []kmapi.Condition{
 					{
 						Type:               v1beta1.PreBackupHookExecutionSucceeded,
-						Status:             core.ConditionTrue,
+						Status:             metav1.ConditionTrue,
 						Reason:             v1beta1.SuccessfullyExecutedPreBackupHook,
 						Message:            "Successfully executed preBackup hook.",
 						LastTransitionTime: metav1.Now(),
@@ -139,7 +138,7 @@ func SetPostBackupHookExecutionSucceededToFalse(session *invoker.BackupSessionHa
 				Conditions: []kmapi.Condition{
 					{
 						Type:               v1beta1.PostBackupHookExecutionSucceeded,
-						Status:             core.ConditionFalse,
+						Status:             metav1.ConditionFalse,
 						Reason:             v1beta1.FailedToExecutePostBackupHook,
 						Message:            fmt.Sprintf("Failed to execute postBackup hook. Reason: %v", err.Error()),
 						LastTransitionTime: metav1.Now(),
@@ -162,7 +161,7 @@ func SetPostBackupHookExecutionSucceededToTrueWithMsg(session *invoker.BackupSes
 				Conditions: []kmapi.Condition{
 					{
 						Type:               v1beta1.PostBackupHookExecutionSucceeded,
-						Status:             core.ConditionTrue,
+						Status:             metav1.ConditionTrue,
 						Reason:             v1beta1.SuccessfullyExecutedPostBackupHook,
 						Message:            msg,
 						LastTransitionTime: metav1.Now(),
@@ -178,7 +177,7 @@ func SetGlobalPreBackupHookSucceededConditionToFalse(session *invoker.BackupSess
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.GlobalPreBackupHookSucceeded,
-				Status:             core.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             v1beta1.GlobalPreBackupHookExecutionFailed,
 				Message:            fmt.Sprintf("Failed to execute global PreBackup Hook. Reason: %v.", hookErr),
 				LastTransitionTime: metav1.Now(),
@@ -192,7 +191,7 @@ func SetGlobalPreBackupHookSucceededConditionToTrue(session *invoker.BackupSessi
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.GlobalPreBackupHookSucceeded,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.GlobalPreBackupHookExecutedSuccessfully,
 				Message:            "Global PreBackup hook has been executed successfully",
 				LastTransitionTime: metav1.Now(),
@@ -206,7 +205,7 @@ func SetGlobalPostBackupHookSucceededConditionToFalse(session *invoker.BackupSes
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.GlobalPostBackupHookSucceeded,
-				Status:             core.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             v1beta1.GlobalPostBackupHookExecutionFailed,
 				Message:            fmt.Sprintf("Failed to execute global PostBackup Hook. Reason: %v.", hookErr),
 				LastTransitionTime: metav1.Now(),
@@ -224,7 +223,7 @@ func SetGlobalPostBackupHookSucceededConditionToTrueWithMsg(session *invoker.Bac
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.GlobalPostBackupHookSucceeded,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.GlobalPostBackupHookExecutedSuccessfully,
 				Message:            msg,
 				LastTransitionTime: metav1.Now(),
@@ -238,7 +237,7 @@ func SetRetentionPolicyAppliedConditionToFalse(session *invoker.BackupSessionHan
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.RetentionPolicyApplied,
-				Status:             core.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             v1beta1.FailedToApplyRetentionPolicy,
 				Message:            fmt.Sprintf("Failed to apply retention policy. Reason: %v", err.Error()),
 				LastTransitionTime: metav1.Now(),
@@ -252,7 +251,7 @@ func SetRetentionPolicyAppliedConditionToTrue(session *invoker.BackupSessionHand
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.RetentionPolicyApplied,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.SuccessfullyAppliedRetentionPolicy,
 				Message:            "Successfully applied retention policy.",
 				LastTransitionTime: metav1.Now(),
@@ -266,7 +265,7 @@ func SetRepositoryIntegrityVerifiedConditionToFalse(session *invoker.BackupSessi
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.RepositoryIntegrityVerified,
-				Status:             core.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             v1beta1.FailedToVerifyRepositoryIntegrity,
 				Message:            fmt.Sprintf("Repository integrity verification failed. Reason: %v", err.Error()),
 				LastTransitionTime: metav1.Now(),
@@ -280,7 +279,7 @@ func SetRepositoryIntegrityVerifiedConditionToTrue(session *invoker.BackupSessio
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.RepositoryIntegrityVerified,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.SuccessfullyVerifiedRepositoryIntegrity,
 				Message:            "Repository integrity verification succeeded.",
 				LastTransitionTime: metav1.Now(),
@@ -294,7 +293,7 @@ func SetRepositoryMetricsPushedConditionToFalse(session *invoker.BackupSessionHa
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.RepositoryMetricsPushed,
-				Status:             core.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             v1beta1.FailedToPushRepositoryMetrics,
 				Message:            fmt.Sprintf("Failed to push repository metrics. Reason: %v", err.Error()),
 				LastTransitionTime: metav1.Now(),
@@ -308,7 +307,7 @@ func SetRepositoryMetricsPushedConditionToTrue(session *invoker.BackupSessionHan
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.RepositoryMetricsPushed,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.SuccessfullyPushedRepositoryMetrics,
 				Message:            "Successfully pushed repository metrics.",
 				LastTransitionTime: metav1.Now(),
@@ -322,7 +321,7 @@ func SetBackupSkippedConditionToTrue(session *invoker.BackupSessionHandler, msg 
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.BackupSkipped,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.SkippedTakingNewBackup,
 				Message:            msg,
 				LastTransitionTime: metav1.Now(),
@@ -336,7 +335,7 @@ func SetBackupMetricsPushedConditionToFalse(session *invoker.BackupSessionHandle
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.MetricsPushed,
-				Status:             core.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             v1beta1.FailedToPushMetrics,
 				Message:            fmt.Sprintf("Failed to push metrics. Reason: %v", err.Error()),
 				LastTransitionTime: metav1.Now(),
@@ -350,7 +349,7 @@ func SetBackupMetricsPushedConditionToTrue(session *invoker.BackupSessionHandler
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.MetricsPushed,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.SuccessfullyPushedMetrics,
 				Message:            "Successfully pushed metrics.",
 				LastTransitionTime: metav1.Now(),
@@ -364,7 +363,7 @@ func SetBackupHistoryCleanedConditionToFalse(session *invoker.BackupSessionHandl
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.BackupHistoryCleaned,
-				Status:             core.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             v1beta1.FailedToCleanBackupHistory,
 				Message:            fmt.Sprintf("Failed to cleanup old BackupSessions. Reason: %v", err.Error()),
 				LastTransitionTime: metav1.Now(),
@@ -378,7 +377,7 @@ func SetBackupHistoryCleanedConditionToTrue(session *invoker.BackupSessionHandle
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.BackupHistoryCleaned,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.SuccessfullyCleanedBackupHistory,
 				Message:            "Successfully cleaned up backup history according to backupHistoryLimit.",
 				LastTransitionTime: metav1.Now(),
@@ -392,7 +391,7 @@ func SetBackupDeadlineExceededConditionToTrue(session *invoker.BackupSessionHand
 		Conditions: []kmapi.Condition{
 			{
 				Type:               v1beta1.DeadlineExceeded,
-				Status:             core.ConditionTrue,
+				Status:             metav1.ConditionTrue,
 				Reason:             v1beta1.FailedToCompleteWithinDeadline,
 				Message:            fmt.Sprintf("Failed to complete backup within %s.", timeOut),
 				LastTransitionTime: metav1.Now(),

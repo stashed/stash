@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	cutil "kmodules.xyz/client-go/conditions"
 	"kmodules.xyz/client-go/meta"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
@@ -106,7 +107,7 @@ func hasRestoreMemberCondition(status []v1beta1.RestoreMemberStatus, target v1be
 	// If the target is present in the list, then return the respective value
 	for i := range status {
 		if TargetMatched(status[i].Ref, target) {
-			return kmapi.HasCondition(status[i].Conditions, condType)
+			return cutil.HasCondition(status[i].Conditions, condType)
 		}
 	}
 	// Member is not present in the list, so the condition is not there too
@@ -117,7 +118,7 @@ func getRestoreMemberCondition(status []v1beta1.RestoreMemberStatus, target v1be
 	// If the target is present in the list, then return the respective condition
 	for i := range status {
 		if TargetMatched(status[i].Ref, target) {
-			return kmapi.GetCondition(status[i].Conditions, condType)
+			return cutil.GetCondition(status[i].Conditions, condType)
 		}
 	}
 	// Member is not present in the list
@@ -128,14 +129,14 @@ func setRestoreMemberCondition(status []v1beta1.RestoreMemberStatus, target v1be
 	// If the target is already exist in the list, update its condition
 	for i := range status {
 		if TargetMatched(status[i].Ref, target) {
-			status[i].Conditions = kmapi.SetCondition(status[i].Conditions, newCondition)
+			status[i].Conditions = cutil.SetCondition(status[i].Conditions, newCondition)
 			return status
 		}
 	}
 	// The target does not exist in the list. So, add a new entry.
 	memberStatus := v1beta1.RestoreMemberStatus{
 		Ref:        target,
-		Conditions: kmapi.SetCondition(nil, newCondition),
+		Conditions: cutil.SetCondition(nil, newCondition),
 	}
 	return upsertRestoreMemberStatus(status, memberStatus)
 }
@@ -144,7 +145,7 @@ func isRestoreMemberConditionTrue(status []v1beta1.RestoreMemberStatus, target v
 	// If the target is present in the list, then return the respective value
 	for i := range status {
 		if TargetMatched(status[i].Ref, target) {
-			return kmapi.IsConditionTrue(status[i].Conditions, condType)
+			return cutil.IsConditionTrue(status[i].Conditions, condType)
 		}
 	}
 	// Member is not present in the list, so the condition is false
@@ -153,7 +154,7 @@ func isRestoreMemberConditionTrue(status []v1beta1.RestoreMemberStatus, target v
 
 func upsertConditions(cur []kmapi.Condition, new []kmapi.Condition) []kmapi.Condition {
 	for i := range new {
-		cur = kmapi.SetCondition(cur, new[i])
+		cur = cutil.SetCondition(cur, new[i])
 	}
 	return cur
 }
@@ -275,15 +276,15 @@ func upsertRestoreTargetStatus(cur, new v1beta1.RestoreMemberStatus) v1beta1.Res
 }
 
 func calculateRestoreTargetPhase(status v1beta1.RestoreMemberStatus) v1beta1.RestoreTargetPhase {
-	if kmapi.IsConditionFalse(status.Conditions, v1beta1.RestoreExecutorEnsured) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.PreRestoreHookExecutionSucceeded) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.PostRestoreHookExecutionSucceeded) {
+	if cutil.IsConditionFalse(status.Conditions, v1beta1.RestoreExecutorEnsured) ||
+		cutil.IsConditionFalse(status.Conditions, v1beta1.PreRestoreHookExecutionSucceeded) ||
+		cutil.IsConditionFalse(status.Conditions, v1beta1.PostRestoreHookExecutionSucceeded) {
 		return v1beta1.TargetRestoreFailed
 	}
 
 	if status.TotalHosts == nil ||
 		len(status.Conditions) == 0 ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.RestoreTargetFound) {
+		cutil.IsConditionFalse(status.Conditions, v1beta1.RestoreTargetFound) {
 		return v1beta1.TargetRestorePending
 	}
 

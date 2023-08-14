@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/reference"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	cutil "kmodules.xyz/client-go/conditions"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -108,7 +109,7 @@ func (inv *BackupBatchInvoker) HasCondition(target *v1beta1.TargetRef, condition
 	if target != nil {
 		return hasMemberCondition(backupBatch.Status.MemberConditions, *target, conditionType), nil
 	}
-	return kmapi.HasCondition(backupBatch.Status.Conditions, conditionType), nil
+	return cutil.HasCondition(backupBatch.Status.Conditions, conditionType), nil
 }
 
 func (inv *BackupBatchInvoker) GetCondition(target *v1beta1.TargetRef, conditionType string) (int, *kmapi.Condition, error) {
@@ -120,7 +121,7 @@ func (inv *BackupBatchInvoker) GetCondition(target *v1beta1.TargetRef, condition
 		idx, cond := getMemberCondition(backupBatch.Status.MemberConditions, *target, conditionType)
 		return idx, cond, nil
 	}
-	idx, cond := kmapi.GetCondition(backupBatch.Status.Conditions, conditionType)
+	idx, cond := cutil.GetCondition(backupBatch.Status.Conditions, conditionType)
 	return idx, cond, nil
 }
 
@@ -129,7 +130,7 @@ func (inv *BackupBatchInvoker) SetCondition(target *v1beta1.TargetRef, newCondit
 		if target != nil {
 			in.MemberConditions = setMemberCondition(in.MemberConditions, *target, newCondition)
 		} else {
-			in.Conditions = kmapi.SetCondition(in.Conditions, newCondition)
+			in.Conditions = cutil.SetCondition(in.Conditions, newCondition)
 		}
 		in.Phase = CalculateBackupInvokerPhase(inv.GetDriver(), in.Conditions)
 		return inv.backupBatch.UID, in
@@ -149,7 +150,7 @@ func (inv *BackupBatchInvoker) IsConditionTrue(target *v1beta1.TargetRef, condit
 	if target != nil {
 		return isMemberConditionTrue(backupBatch.Status.MemberConditions, *target, conditionType), nil
 	}
-	return kmapi.IsConditionTrue(backupBatch.Status.Conditions, conditionType), nil
+	return cutil.IsConditionTrue(backupBatch.Status.Conditions, conditionType), nil
 }
 
 func (inv *BackupBatchInvoker) GetTargetInfo() []BackupTargetInfo {
