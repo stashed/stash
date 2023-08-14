@@ -170,7 +170,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 
 		backupOutput.BackupTargetStatus.Conditions = append(backupOutput.BackupTargetStatus.Conditions, kmapi.Condition{
 			Type:               api_v1beta1.PreBackupHookExecutionSucceeded,
-			Status:             corev1.ConditionTrue,
+			Status:             metav1.ConditionTrue,
 			Reason:             api_v1beta1.SuccessfullyExecutedPreBackupHook,
 			Message:            "Successfully executed preBackup hook.",
 			LastTransitionTime: metav1.Now(),
@@ -236,7 +236,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 		}
 		backupOutput.BackupTargetStatus.Conditions = append(backupOutput.BackupTargetStatus.Conditions, kmapi.Condition{
 			Type:               api_v1beta1.PostBackupHookExecutionSucceeded,
-			Status:             corev1.ConditionTrue,
+			Status:             metav1.ConditionTrue,
 			Reason:             api_v1beta1.SuccessfullyExecutedPostBackupHook,
 			Message:            "Successfully executed postBackup hook",
 			LastTransitionTime: metav1.Now(),

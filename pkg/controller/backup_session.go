@@ -45,6 +45,7 @@ import (
 	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	condutil "kmodules.xyz/client-go/conditions"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -540,7 +541,7 @@ func (r *backupSessionReconciler) initiateTargetBackup(index int) error {
 }
 
 func (r *backupSessionReconciler) isBackupHistoryCleaned() bool {
-	return kmapi.HasCondition(r.session.GetConditions(), api_v1beta1.BackupHistoryCleaned)
+	return condutil.HasCondition(r.session.GetConditions(), api_v1beta1.BackupHistoryCleaned)
 }
 
 // cleanupBackupHistory deletes old BackupSessions and theirs associate resources according to BackupHistoryLimit
@@ -623,7 +624,7 @@ func (r *backupSessionReconciler) shouldWaitForTargetPostBackupHookExecution() b
 func (r *backupSessionReconciler) targetPreBackupHookFailed(targetRef api_v1beta1.TargetRef) bool {
 	for _, s := range r.session.GetTargetStatus() {
 		if invoker.TargetMatched(s.Ref, targetRef) {
-			return kmapi.IsConditionFalse(s.Conditions, api_v1beta1.PreBackupHookExecutionSucceeded)
+			return condutil.IsConditionFalse(s.Conditions, api_v1beta1.PreBackupHookExecutionSucceeded)
 		}
 	}
 	return false
@@ -636,7 +637,7 @@ func (r *backupSessionReconciler) postBackupHookExecutedForTarget(targetInfo inv
 
 	for _, s := range r.session.GetTargetStatus() {
 		if invoker.TargetMatched(s.Ref, targetInfo.Target.Ref) {
-			if kmapi.HasCondition(s.Conditions, api_v1beta1.PostBackupHookExecutionSucceeded) {
+			if condutil.HasCondition(s.Conditions, api_v1beta1.PostBackupHookExecutionSucceeded) {
 				return true
 			}
 		}
@@ -650,7 +651,7 @@ func (r *backupSessionReconciler) shouldExecuteGlobalPostBackupHook() bool {
 		if r.globalPreBackupHookFailed() {
 			return false
 		}
-		return !kmapi.HasCondition(r.session.GetConditions(), api_v1beta1.GlobalPostBackupHookSucceeded)
+		return !condutil.HasCondition(r.session.GetConditions(), api_v1beta1.GlobalPostBackupHookSucceeded)
 	}
 	return false
 }
@@ -695,7 +696,7 @@ func (r *backupSessionReconciler) executeGlobalPostBackupHook() error {
 func (r *backupSessionReconciler) shouldExecuteGlobalPreBackupHook() bool {
 	hook := r.invoker.GetGlobalHooks()
 	if hook != nil && hook.PreBackup != nil {
-		return !kmapi.HasCondition(r.session.GetConditions(), api_v1beta1.GlobalPreBackupHookSucceeded)
+		return !condutil.HasCondition(r.session.GetConditions(), api_v1beta1.GlobalPreBackupHookSucceeded)
 	}
 	return false
 }
@@ -809,7 +810,7 @@ func (r *backupSessionReconciler) isSessionCompleted() bool {
 		return true
 	}
 
-	if kmapi.IsConditionTrue(r.session.GetConditions(), api_v1beta1.DeadlineExceeded) {
+	if condutil.IsConditionTrue(r.session.GetConditions(), api_v1beta1.DeadlineExceeded) {
 		return true
 	}
 
@@ -820,7 +821,7 @@ func (r *backupSessionReconciler) isSessionCompleted() bool {
 }
 
 func (r *backupSessionReconciler) globalPreBackupHookFailed() bool {
-	return kmapi.IsConditionFalse(r.session.GetConditions(), api_v1beta1.GlobalPreBackupHookSucceeded)
+	return condutil.IsConditionFalse(r.session.GetConditions(), api_v1beta1.GlobalPreBackupHookSucceeded)
 }
 
 func (r *backupSessionReconciler) isBackupRunning() bool {
@@ -913,7 +914,7 @@ func (r *backupSessionReconciler) getIncompleteBackupSessionForTarget(targetRef 
 }
 
 func (r *backupSessionReconciler) backupMetricPushed() bool {
-	return kmapi.IsConditionTrue(r.session.GetConditions(), api_v1beta1.MetricsPushed)
+	return condutil.IsConditionTrue(r.session.GetConditions(), api_v1beta1.MetricsPushed)
 }
 
 func (r *backupSessionReconciler) sendBackupMetrics() error {

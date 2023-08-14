@@ -42,6 +42,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	condutil "kmodules.xyz/client-go/conditions"
 )
 
 type UpdateStatusOptions struct {
@@ -311,7 +312,7 @@ func (o UpdateStatusOptions) applyRetentionPolicy(inv invoker.BackupInvoker, ses
 }
 
 func isRetentionPolicyApplied(session *invoker.BackupSessionHandler) bool {
-	return kmapi.HasCondition(session.GetConditions(), v1beta1.RetentionPolicyApplied)
+	return condutil.HasCondition(session.GetConditions(), v1beta1.RetentionPolicyApplied)
 }
 
 func (o UpdateStatusOptions) verifyRepositoryIntegrity(session *invoker.BackupSessionHandler) (*restic.RepositoryStats, error) {
@@ -331,7 +332,7 @@ func (o UpdateStatusOptions) verifyRepositoryIntegrity(session *invoker.BackupSe
 }
 
 func isRepoIntegrityVerified(session *invoker.BackupSessionHandler) bool {
-	return kmapi.HasCondition(session.GetConditions(), v1beta1.RepositoryIntegrityVerified)
+	return condutil.HasCondition(session.GetConditions(), v1beta1.RepositoryIntegrityVerified)
 }
 
 func (o *UpdateStatusOptions) sendRepositoryMetrics(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler, repoStats restic.RepositoryStats) error {
@@ -347,7 +348,7 @@ func (o *UpdateStatusOptions) sendRepositoryMetrics(inv invoker.BackupInvoker, s
 }
 
 func isRepositoryMetricSent(session *invoker.BackupSessionHandler) bool {
-	return kmapi.HasCondition(session.GetConditions(), v1beta1.RepositoryMetricsPushed)
+	return condutil.HasCondition(session.GetConditions(), v1beta1.RepositoryMetricsPushed)
 }
 
 func (o *UpdateStatusOptions) updateRepositoryStatus(inv invoker.BackupInvoker, session *invoker.BackupSessionHandler, repoStats restic.RepositoryStats) error {
