@@ -1286,5 +1286,5 @@ sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
 sigs.k8s.io/yaml v1.2.0/go.mod h1:yfXDCHCao9+ENCvLSE62v9VSji2MKu5jeNfTrofGhJc=
 sigs.k8s.io/yaml v1.3.0 h1:a2VclLzOGrwOHDiV8EfBGhvjHvP46CtW5j6POvhYGGo=
 sigs.k8s.io/yaml v1.3.0/go.mod h1:GeOyir5tyXNByN85N/dRIT9es5UQNerPYEKK56eTBm8=
-stash.appscode.dev/apimachinery v0.30.1-0.20230814025143-fcb8a9106d3c h1:/3plffjueo5ffL+XhHAtluJ9TfP+K9elbY1tyIxNeKY=
-stash.appscode.dev/apimachinery v0.30.1-0.20230814025143-fcb8a9106d3c/go.mod h1:IDbssRbYLSnMwZAQOGX4Vam+hl43FofP8BuXMLXVaPQ=
+stash.appscode.dev/apimachinery v0.31.0 h1:AXsuz/4K1ltW6oCVsqOS0EoYksVZTn60LXbK7V4IL90=
+stash.appscode.dev/apimachinery v0.31.0/go.mod h1:IDbssRbYLSnMwZAQOGX4Vam+hl43FofP8BuXMLXVaPQ=
