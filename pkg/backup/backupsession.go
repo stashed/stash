@@ -49,6 +49,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	condutil "kmodules.xyz/client-go/conditions"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
@@ -481,7 +482,7 @@ func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped ||
-		kmapi.IsConditionFalse(backupSession.Status.Conditions, api_v1beta1.GlobalPreBackupHookSucceeded) {
+		condutil.IsConditionFalse(backupSession.Status.Conditions, api_v1beta1.GlobalPreBackupHookSucceeded) {
 		return true
 	}
 

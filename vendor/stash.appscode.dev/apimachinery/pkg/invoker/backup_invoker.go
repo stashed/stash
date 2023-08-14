@@ -27,6 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	cutil "kmodules.xyz/client-go/conditions"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -101,7 +102,7 @@ func hasMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.Ta
 	// If the target is present in the list, then return the respective value
 	for i := range conditions {
 		if TargetMatched(conditions[i].Target, target) {
-			return kmapi.HasCondition(conditions[i].Conditions, condType)
+			return cutil.HasCondition(conditions[i].Conditions, condType)
 		}
 	}
 	// Member is not present in the list, so the condition is not there too
@@ -112,7 +113,7 @@ func getMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.Ta
 	// If the target is present in the list, then return the respective condition
 	for i := range conditions {
 		if TargetMatched(conditions[i].Target, target) {
-			return kmapi.GetCondition(conditions[i].Conditions, condType)
+			return cutil.GetCondition(conditions[i].Conditions, condType)
 		}
 	}
 	// Member is not present in the list
@@ -130,14 +131,14 @@ func setMemberCondition(conditions []v1beta1.MemberConditions, target v1beta1.Ta
 	// If the target is already exist in the list, update its condition
 	for i := range conditions {
 		if TargetMatched(conditions[i].Target, target) {
-			conditions[i].Conditions = kmapi.SetCondition(conditions[i].Conditions, newCondition)
+			conditions[i].Conditions = cutil.SetCondition(conditions[i].Conditions, newCondition)
 			return conditions
 		}
 	}
 	// The target does not exist in the list. So, add a new entry.
 	memberConditions := v1beta1.MemberConditions{
 		Target:     target,
-		Conditions: kmapi.SetCondition(nil, newCondition),
+		Conditions: cutil.SetCondition(nil, newCondition),
 	}
 	return append(conditions, memberConditions)
 }
@@ -146,7 +147,7 @@ func isMemberConditionTrue(conditions []v1beta1.MemberConditions, target v1beta1
 	// If the target is present in the list, then return the respective value
 	for i := range conditions {
 		if TargetMatched(conditions[i].Target, target) {
-			return kmapi.IsConditionTrue(conditions[i].Conditions, condType)
+			return cutil.IsConditionTrue(conditions[i].Conditions, condType)
 		}
 	}
 	// Member is not present in the list, so the condition is false
@@ -156,7 +157,7 @@ func isMemberConditionTrue(conditions []v1beta1.MemberConditions, target v1beta1
 func TargetBackupInitiated(ref v1beta1.TargetRef, targetStatus []v1beta1.BackupTargetStatus) bool {
 	for i := range targetStatus {
 		if TargetMatched(ref, targetStatus[i].Ref) {
-			return kmapi.HasCondition(targetStatus[i].Conditions, v1beta1.BackupExecutorEnsured) ||
+			return cutil.HasCondition(targetStatus[i].Conditions, v1beta1.BackupExecutorEnsured) ||
 				targetStatus[i].Phase == v1beta1.TargetBackupRunning ||
 				targetStatus[i].Phase == v1beta1.TargetBackupSucceeded ||
 				targetStatus[i].Phase == v1beta1.TargetBackupFailed
@@ -176,7 +177,7 @@ func TargetBackupCompleted(ref v1beta1.TargetRef, targetStatus []v1beta1.BackupT
 }
 
 func isConditionSatisfied(conditions []kmapi.Condition, condType string) bool {
-	if kmapi.IsConditionFalse(conditions, condType) || kmapi.IsConditionUnknown(conditions, condType) {
+	if cutil.IsConditionFalse(conditions, condType) || cutil.IsConditionUnknown(conditions, condType) {
 		return false
 	}
 
@@ -189,12 +190,12 @@ func CalculateBackupInvokerPhase(driver v1beta1.Snapshotter, conditions []kmapi.
 		return v1beta1.BackupInvokerNotReady
 	}
 
-	if kmapi.IsConditionFalse(conditions, v1beta1.ValidationPassed) {
+	if cutil.IsConditionFalse(conditions, v1beta1.ValidationPassed) {
 		return v1beta1.BackupInvokerInvalid
 	}
 
-	if kmapi.IsConditionTrue(conditions, v1beta1.ValidationPassed) &&
-		kmapi.IsConditionTrue(conditions, v1beta1.CronJobCreated) &&
+	if cutil.IsConditionTrue(conditions, v1beta1.ValidationPassed) &&
+		cutil.IsConditionTrue(conditions, v1beta1.CronJobCreated) &&
 		backendRequirementsSatisfied(driver, conditions) {
 		return v1beta1.BackupInvokerReady
 	}
@@ -204,7 +205,7 @@ func CalculateBackupInvokerPhase(driver v1beta1.Snapshotter, conditions []kmapi.
 
 func backendRequirementsSatisfied(driver v1beta1.Snapshotter, conditions []kmapi.Condition) bool {
 	if driver == v1beta1.ResticSnapshotter {
-		return kmapi.IsConditionTrue(conditions, v1beta1.RepositoryFound) && kmapi.IsConditionTrue(conditions, v1beta1.BackendSecretFound)
+		return cutil.IsConditionTrue(conditions, v1beta1.RepositoryFound) && cutil.IsConditionTrue(conditions, v1beta1.BackendSecretFound)
 	}
 	return true
 }

@@ -22,7 +22,6 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
@@ -32,7 +31,7 @@ func SetRepositoryFoundConditionToUnknown(i interface{}, err error) error {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.RepositoryFound,
-			Status: core.ConditionUnknown,
+			Status: metav1.ConditionUnknown,
 			Reason: v1beta1.UnableToCheckRepositoryAvailability,
 			Message: fmt.Sprintf("Failed to check whether the Repository %s/%s exist or not. Reason: %v",
 				in.GetRepoRef().Namespace,
@@ -44,7 +43,7 @@ func SetRepositoryFoundConditionToUnknown(i interface{}, err error) error {
 	case invoker.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.RepositoryFound,
-			Status: core.ConditionUnknown,
+			Status: metav1.ConditionUnknown,
 			Reason: v1beta1.UnableToCheckRepositoryAvailability,
 			Message: fmt.Sprintf("Failed to check whether the Repository %s/%s exist or not. Reason: %v",
 				in.GetRepoRef().Namespace,
@@ -63,7 +62,7 @@ func SetRepositoryFoundConditionToFalse(i interface{}) error {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.RepositoryFound,
-			Status: core.ConditionFalse,
+			Status: metav1.ConditionFalse,
 			Reason: v1beta1.RepositoryNotAvailable,
 			Message: fmt.Sprintf("Repository %s/%s does not exist.",
 				in.GetRepoRef().Namespace,
@@ -74,7 +73,7 @@ func SetRepositoryFoundConditionToFalse(i interface{}) error {
 	case invoker.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.RepositoryFound,
-			Status: core.ConditionFalse,
+			Status: metav1.ConditionFalse,
 			Reason: v1beta1.RepositoryNotAvailable,
 			Message: fmt.Sprintf("Repository %s/%s does not exist.",
 				in.GetRepoRef().Namespace,
@@ -92,7 +91,7 @@ func SetRepositoryFoundConditionToTrue(i interface{}) error {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.RepositoryFound,
-			Status: core.ConditionTrue,
+			Status: metav1.ConditionTrue,
 			Reason: v1beta1.RepositoryAvailable,
 			Message: fmt.Sprintf("Repository %s/%s exist.",
 				in.GetRepoRef().Namespace,
@@ -103,7 +102,7 @@ func SetRepositoryFoundConditionToTrue(i interface{}) error {
 	case invoker.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.RepositoryFound,
-			Status: core.ConditionTrue,
+			Status: metav1.ConditionTrue,
 			Reason: v1beta1.RepositoryAvailable,
 			Message: fmt.Sprintf("Repository %s/%s exist.",
 				in.GetRepoRef().Namespace,
@@ -121,7 +120,7 @@ func SetValidationPassedToTrue(i interface{}) error {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:               v1beta1.ValidationPassed,
-			Status:             core.ConditionTrue,
+			Status:             metav1.ConditionTrue,
 			Reason:             v1beta1.ResourceValidationPassed,
 			Message:            "Successfully validated.",
 			LastTransitionTime: metav1.Now(),
@@ -129,7 +128,7 @@ func SetValidationPassedToTrue(i interface{}) error {
 	case invoker.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:               v1beta1.ValidationPassed,
-			Status:             core.ConditionTrue,
+			Status:             metav1.ConditionTrue,
 			Reason:             v1beta1.ResourceValidationPassed,
 			Message:            "Successfully validated.",
 			LastTransitionTime: metav1.Now(),
@@ -144,7 +143,7 @@ func SetValidationPassedToFalse(i interface{}, err error) error {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:               v1beta1.ValidationPassed,
-			Status:             core.ConditionFalse,
+			Status:             metav1.ConditionFalse,
 			Reason:             v1beta1.ResourceValidationFailed,
 			Message:            err.Error(),
 			LastTransitionTime: metav1.Now(),
@@ -152,7 +151,7 @@ func SetValidationPassedToFalse(i interface{}, err error) error {
 	case invoker.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:               v1beta1.ValidationPassed,
-			Status:             core.ConditionFalse,
+			Status:             metav1.ConditionFalse,
 			Reason:             v1beta1.ResourceValidationFailed,
 			Message:            err.Error(),
 			LastTransitionTime: metav1.Now(),
@@ -167,7 +166,7 @@ func SetBackendSecretFoundConditionToUnknown(i interface{}, secretName string, e
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.BackendSecretFound,
-			Status: core.ConditionUnknown,
+			Status: metav1.ConditionUnknown,
 			Reason: v1beta1.UnableToCheckBackendSecretAvailability,
 			Message: fmt.Sprintf("Failed to check whether the backend Secret %s/%s exist or not. Reason: %v",
 				in.GetRepoRef().Namespace,
@@ -179,7 +178,7 @@ func SetBackendSecretFoundConditionToUnknown(i interface{}, secretName string, e
 	case invoker.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.BackendSecretFound,
-			Status: core.ConditionUnknown,
+			Status: metav1.ConditionUnknown,
 			Reason: v1beta1.UnableToCheckBackendSecretAvailability,
 			Message: fmt.Sprintf("Failed to check whether the backend Secret %s/%s exist or not. Reason: %v",
 				in.GetRepoRef().Namespace,
@@ -198,7 +197,7 @@ func SetBackendSecretFoundConditionToFalse(i interface{}, secretName string) err
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.BackendSecretFound,
-			Status: core.ConditionFalse,
+			Status: metav1.ConditionFalse,
 			Reason: v1beta1.BackendSecretNotAvailable,
 			Message: fmt.Sprintf("Backend Secret %s/%s does not exist.",
 				in.GetRepoRef().Namespace,
@@ -209,7 +208,7 @@ func SetBackendSecretFoundConditionToFalse(i interface{}, secretName string) err
 	case invoker.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.BackendSecretFound,
-			Status: core.ConditionFalse,
+			Status: metav1.ConditionFalse,
 			Reason: v1beta1.BackendSecretNotAvailable,
 			Message: fmt.Sprintf("Backend Secret %s/%s does not exist.",
 				in.GetRepoRef().Namespace,
@@ -227,7 +226,7 @@ func SetBackendSecretFoundConditionToTrue(i interface{}, secretName string) erro
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.BackendSecretFound,
-			Status: core.ConditionTrue,
+			Status: metav1.ConditionTrue,
 			Reason: v1beta1.BackendSecretAvailable,
 			Message: fmt.Sprintf("Backend Secret %s/%s exist.",
 				in.GetRepoRef().Namespace,
@@ -238,7 +237,7 @@ func SetBackendSecretFoundConditionToTrue(i interface{}, secretName string) erro
 	case invoker.RestoreInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
 			Type:   v1beta1.BackendSecretFound,
-			Status: core.ConditionTrue,
+			Status: metav1.ConditionTrue,
 			Reason: v1beta1.BackendSecretAvailable,
 			Message: fmt.Sprintf("Backend Secret %s/%s exist.",
 				in.GetRepoRef().Namespace,

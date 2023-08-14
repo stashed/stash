@@ -22,32 +22,32 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
 	. "github.com/onsi/gomega"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	condutil "kmodules.xyz/client-go/conditions"
 )
 
 func (f *Framework) EventuallyCondition(meta metav1.ObjectMeta, kind string, condType string) GomegaAsyncAssertion {
 	return Eventually(
-		func() core.ConditionStatus {
+		func() metav1.ConditionStatus {
 			var conditions []kmapi.Condition
 			switch kind {
 			case v1beta1.ResourceKindBackupConfiguration:
 				bc, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 				if err != nil {
-					return core.ConditionUnknown
+					return metav1.ConditionUnknown
 				}
 				conditions = bc.Status.Conditions
 			case v1beta1.ResourceKindRestoreSession:
 				rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 				if err != nil {
-					return core.ConditionUnknown
+					return metav1.ConditionUnknown
 				}
 				conditions = rs.Status.Conditions
 			}
-			_, cond := kmapi.GetCondition(conditions, condType)
+			_, cond := condutil.GetCondition(conditions, condType)
 			if cond == nil {
-				return core.ConditionUnknown
+				return metav1.ConditionUnknown
 			}
 			return cond.Status
 		},

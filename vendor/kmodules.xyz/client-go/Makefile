@@ -45,7 +45,7 @@ endif
 ### These variables should not need tweaking.
 ###
 
-SRC_PKGS := admissionregistration api apiextensions apiregistration apps batch certificates client core discovery dynamic extensions meta networking openapi policy rbac storage tools
+SRC_PKGS := admissionregistration api apiextensions apiregistration apps batch certificates client conditions core discovery dynamic extensions meta networking openapi policy rbac storage tools
 SRC_DIRS := $(SRC_PKGS) *.go
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
@@ -154,7 +154,7 @@ gen-crd-protos:
 			--packages=-k8s.io/api/core/v1,kmodules.xyz/client-go/api/v1
 
 .PHONY: gen-enum
-gen-enum:
+gen-enum: $(BUILD_DIRS)
 	@docker run                                                 \
 	    -i                                                      \
 	    --rm                                                    \

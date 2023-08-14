@@ -39,6 +39,7 @@ import (
 	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	condutil "kmodules.xyz/client-go/conditions"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
@@ -392,7 +393,7 @@ func (r *restoreInvokerReconciler) isSessionCompleted() bool {
 		return true
 	}
 
-	if kmapi.IsConditionTrue(r.invoker.GetStatus().Conditions, api_v1beta1.DeadlineExceeded) {
+	if condutil.IsConditionTrue(r.invoker.GetStatus().Conditions, api_v1beta1.DeadlineExceeded) {
 		return true
 	}
 
@@ -403,7 +404,7 @@ func (r *restoreInvokerReconciler) isSessionCompleted() bool {
 }
 
 func (r *restoreInvokerReconciler) globalPreRestoreHookFailed() bool {
-	return kmapi.IsConditionFalse(r.invoker.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded)
+	return condutil.IsConditionFalse(r.invoker.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded)
 }
 
 func (r *restoreInvokerReconciler) shouldWaitForTargetPostRestoreHookExecution() bool {
@@ -423,7 +424,7 @@ func (r *restoreInvokerReconciler) shouldWaitForTargetPostRestoreHookExecution()
 func (r *restoreInvokerReconciler) targetPreRestoreHookFailed(targetRef api_v1beta1.TargetRef) bool {
 	for _, s := range r.invoker.GetStatus().TargetStatus {
 		if invoker.TargetMatched(s.Ref, targetRef) {
-			return kmapi.IsConditionFalse(s.Conditions, api_v1beta1.PreRestoreHookExecutionSucceeded)
+			return condutil.IsConditionFalse(s.Conditions, api_v1beta1.PreRestoreHookExecutionSucceeded)
 		}
 	}
 	return false
@@ -437,7 +438,7 @@ func (r *restoreInvokerReconciler) postRestoreHookExecutedForTarget(targetInfo i
 
 	for _, s := range status.TargetStatus {
 		if invoker.TargetMatched(s.Ref, targetInfo.Target.Ref) {
-			if kmapi.HasCondition(s.Conditions, api_v1beta1.PostRestoreHookExecutionSucceeded) {
+			if condutil.HasCondition(s.Conditions, api_v1beta1.PostRestoreHookExecutionSucceeded) {
 				return true
 			}
 		}
@@ -451,7 +452,7 @@ func (r *restoreInvokerReconciler) shouldExecuteGlobalPostRestoreHook() bool {
 		if r.globalPreRestoreHookFailed() {
 			return false
 		}
-		return !kmapi.HasCondition(r.invoker.GetStatus().Conditions, api_v1beta1.GlobalPostRestoreHookSucceeded)
+		return !condutil.HasCondition(r.invoker.GetStatus().Conditions, api_v1beta1.GlobalPostRestoreHookSucceeded)
 	}
 	return false
 }
@@ -493,7 +494,7 @@ func (r *restoreInvokerReconciler) executeGlobalPostRestoreHook() error {
 func (r *restoreInvokerReconciler) shouldExecuteGlobalPreRestoreHook() bool {
 	hook := r.invoker.GetGlobalHooks()
 	if hook != nil && hook.PreRestore != nil {
-		return !kmapi.HasCondition(r.invoker.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded)
+		return !condutil.HasCondition(r.invoker.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded)
 	}
 	return false
 }
@@ -524,7 +525,7 @@ func (r *restoreInvokerReconciler) targetRestoreInitiated(targetRef api_v1beta1.
 	}
 	for _, target := range status.TargetStatus {
 		if invoker.TargetMatched(target.Ref, targetRef) {
-			return kmapi.HasCondition(target.Conditions, api_v1beta1.RestoreExecutorEnsured) || target.Phase == api_v1beta1.TargetRestoreRunning
+			return condutil.HasCondition(target.Conditions, api_v1beta1.RestoreExecutorEnsured) || target.Phase == api_v1beta1.TargetRestoreRunning
 		}
 	}
 	return false
@@ -557,7 +558,7 @@ func (r *restoreInvokerReconciler) setTargetRestorePending(targetRef api_v1beta1
 }
 
 func restoreMetricsPushed(conditions []kmapi.Condition) bool {
-	return kmapi.IsConditionTrue(conditions, api_v1beta1.MetricsPushed)
+	return condutil.IsConditionTrue(conditions, api_v1beta1.MetricsPushed)
 }
 
 func (r *restoreInvokerReconciler) sendRestoreMetrics() error {

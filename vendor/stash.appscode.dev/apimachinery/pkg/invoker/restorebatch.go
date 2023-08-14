@@ -36,6 +36,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/reference"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	cutil "kmodules.xyz/client-go/conditions"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
@@ -111,7 +112,7 @@ func (inv *RestoreBatchInvoker) HasCondition(target *v1beta1.TargetRef, conditio
 	if target != nil {
 		return hasRestoreMemberCondition(restoreBatch.Status.Members, *target, conditionType), nil
 	}
-	return kmapi.HasCondition(restoreBatch.Status.Conditions, conditionType), nil
+	return cutil.HasCondition(restoreBatch.Status.Conditions, conditionType), nil
 }
 
 func (inv *RestoreBatchInvoker) GetCondition(target *v1beta1.TargetRef, conditionType string) (int, *kmapi.Condition, error) {
@@ -123,7 +124,7 @@ func (inv *RestoreBatchInvoker) GetCondition(target *v1beta1.TargetRef, conditio
 		idx, cond := getRestoreMemberCondition(restoreBatch.Status.Members, *target, conditionType)
 		return idx, cond, nil
 	}
-	idx, cond := kmapi.GetCondition(restoreBatch.Status.Conditions, conditionType)
+	idx, cond := cutil.GetCondition(restoreBatch.Status.Conditions, conditionType)
 	return idx, cond, nil
 }
 
@@ -133,7 +134,7 @@ func (inv *RestoreBatchInvoker) SetCondition(target *v1beta1.TargetRef, newCondi
 	if target != nil {
 		status.TargetStatus = setRestoreMemberCondition(status.TargetStatus, *target, newCondition)
 	} else {
-		status.Conditions = kmapi.SetCondition(status.Conditions, newCondition)
+		status.Conditions = cutil.SetCondition(status.Conditions, newCondition)
 	}
 	return inv.UpdateStatus(status)
 }
@@ -146,7 +147,7 @@ func (inv *RestoreBatchInvoker) IsConditionTrue(target *v1beta1.TargetRef, condi
 	if target != nil {
 		return isRestoreMemberConditionTrue(restoreBatch.Status.Members, *target, conditionType), nil
 	}
-	return kmapi.IsConditionTrue(restoreBatch.Status.Conditions, conditionType), nil
+	return cutil.IsConditionTrue(restoreBatch.Status.Conditions, conditionType), nil
 }
 
 func (inv *RestoreBatchInvoker) GetTargetInfo() []RestoreTargetInfo {
@@ -361,14 +362,14 @@ func upsertRestoreMemberStatus(cur []v1beta1.RestoreMemberStatus, new v1beta1.Re
 }
 
 func calculateRestoreBatchPhase(status *v1beta1.RestoreBatchStatus, totalTargets int) v1beta1.RestorePhase {
-	if kmapi.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) {
+	if cutil.IsConditionFalse(status.Conditions, v1beta1.MetricsPushed) {
 		return v1beta1.RestoreFailed
 	}
 
-	if kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) &&
-		(kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPreRestoreHookSucceeded) ||
-			kmapi.IsConditionFalse(status.Conditions, v1beta1.GlobalPostRestoreHookSucceeded) ||
-			kmapi.IsConditionTrue(status.Conditions, v1beta1.DeadlineExceeded)) {
+	if cutil.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) &&
+		(cutil.IsConditionFalse(status.Conditions, v1beta1.GlobalPreRestoreHookSucceeded) ||
+			cutil.IsConditionFalse(status.Conditions, v1beta1.GlobalPostRestoreHookSucceeded) ||
+			cutil.IsConditionTrue(status.Conditions, v1beta1.DeadlineExceeded)) {
 		return v1beta1.RestoreFailed
 	}
 
@@ -376,8 +377,8 @@ func calculateRestoreBatchPhase(status *v1beta1.RestoreBatchStatus, totalTargets
 		return v1beta1.RestorePending
 	}
 
-	if kmapi.IsConditionFalse(status.Conditions, v1beta1.RepositoryFound) ||
-		kmapi.IsConditionFalse(status.Conditions, v1beta1.BackendSecretFound) {
+	if cutil.IsConditionFalse(status.Conditions, v1beta1.RepositoryFound) ||
+		cutil.IsConditionFalse(status.Conditions, v1beta1.BackendSecretFound) {
 		return v1beta1.RestorePending
 	}
 
@@ -406,12 +407,12 @@ func calculateRestoreBatchPhase(status *v1beta1.RestoreBatchStatus, totalTargets
 			return v1beta1.RestoreFailed
 		}
 
-		if kmapi.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) {
+		if cutil.IsConditionTrue(status.Conditions, v1beta1.MetricsPushed) {
 			return v1beta1.RestoreSucceeded
 		}
 	}
 
-	if kmapi.IsConditionFalse(status.Conditions, v1beta1.ValidationPassed) {
+	if cutil.IsConditionFalse(status.Conditions, v1beta1.ValidationPassed) {
 		return v1beta1.RestorePhaseInvalid
 	}
 

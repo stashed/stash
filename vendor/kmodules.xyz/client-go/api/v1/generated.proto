@@ -97,16 +97,15 @@ message ClusterMetadata {
   optional string provider = 4;
 }
 
+// Condition defines an observation of a object operational state.
 message Condition {
   // Type of condition in CamelCase or in foo.example.com/CamelCase.
-  // Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-  // useful (see .node.status.conditions), the ability to deconflict is important.
-  // +required
-  optional string type = 1;
+  // Many .condition.type values are consistent across resources like Available, but because arbitrary util
+  // can be useful (see .node.status.util), the ability to deconflict is important.
+  optional string type = 4;
 
   // Status of the condition, one of True, False, Unknown.
-  // +required
-  optional string status = 2;
+  optional string status = 5;
 
   // If set, this represents the .metadata.generation that the condition was set based upon.
   // For instance, if .metadata.generation is currently 12, but the .status.condition[x].observedGeneration is 9, the condition is out of date
@@ -114,21 +113,27 @@ message Condition {
   // +optional
   optional int64 observedGeneration = 3;
 
+  // Severity provides an explicit classification of Reason code, so the users or machines can immediately
+  // understand the current situation and act accordingly.
+  // The Severity field MUST be set only when Status=False.
+  // +optional
+  optional string severity = 6;
+
   // Last time the condition transitioned from one status to another.
-  // This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-  // +required
-  optional k8s.io.apimachinery.pkg.apis.meta.v1.Time lastTransitionTime = 4;
+  // This should be when the underlying condition changed. If that is not known, then using the time when
+  // the API field changed is acceptable.
+  optional k8s.io.apimachinery.pkg.apis.meta.v1.Time lastTransitionTime = 7;
 
   // The reason for the condition's last transition in CamelCase.
-  // The specific API may choose whether or not this field is considered a guaranteed API.
+  // The specific API may choose whether this field is considered a guaranteed API.
   // This field may not be empty.
-  // +required
-  optional string reason = 5;
+  // +optional
+  optional string reason = 8;
 
-  // A human readable message indicating details about the transition.
+  // A human-readable message indicating details about the transition.
   // This field may be empty.
-  // +required
-  optional string message = 6;
+  // +optional
+  optional string message = 9;
 }
 
 // HealthCheckSpec defines attributes of the health check

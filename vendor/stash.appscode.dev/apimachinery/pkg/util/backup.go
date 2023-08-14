@@ -30,7 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
-	kmapi "kmodules.xyz/client-go/api/v1"
+	cutil "kmodules.xyz/client-go/conditions"
 )
 
 type ActionOptions struct {
@@ -75,7 +75,7 @@ func (opt *ActionOptions) executePreBackupActions(session *invoker.BackupSession
 }
 
 func repoAlreadyInitialized(session *invoker.BackupSessionHandler) bool {
-	return kmapi.HasCondition(session.GetConditions(), v1beta1.BackendRepositoryInitialized)
+	return cutil.HasCondition(session.GetConditions(), v1beta1.BackendRepositoryInitialized)
 }
 
 // IsRepositoryInitialized check whether the backend restic repository has been initialized or not
@@ -85,12 +85,12 @@ func IsRepositoryInitialized(opt ActionOptions) (bool, error) {
 		return false, err
 	}
 	// If the condition is not present, then the repository hasn't been initialized
-	if !kmapi.HasCondition(backupSession.Status.Conditions, v1beta1.BackendRepositoryInitialized) {
+	if !cutil.HasCondition(backupSession.Status.Conditions, v1beta1.BackendRepositoryInitialized) {
 		return false, nil
 	}
 	// If the condition is present but it is set to "False", then the repository initialization has failed. Possibly due to invalid backend / storage secret.
-	if !kmapi.IsConditionTrue(backupSession.Status.Conditions, v1beta1.BackendRepositoryInitialized) {
-		_, cnd := kmapi.GetCondition(backupSession.Status.Conditions, v1beta1.BackendRepositoryInitialized)
+	if !cutil.IsConditionTrue(backupSession.Status.Conditions, v1beta1.BackendRepositoryInitialized) {
+		_, cnd := cutil.GetCondition(backupSession.Status.Conditions, v1beta1.BackendRepositoryInitialized)
 		return false, fmt.Errorf(cnd.Reason)
 	}
 	return true, nil

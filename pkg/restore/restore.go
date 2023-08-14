@@ -40,6 +40,7 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	condutil "kmodules.xyz/client-go/conditions"
 	"kmodules.xyz/client-go/meta"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
@@ -254,7 +255,7 @@ func (opt *Options) isRestoredForThisHost(inv invoker.RestoreInvoker, targetInfo
 	if phase == api_v1beta1.RestoreSucceeded ||
 		phase == api_v1beta1.RestoreFailed ||
 		phase == api_v1beta1.RestorePhaseUnknown ||
-		kmapi.IsConditionFalse(inv.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded) {
+		condutil.IsConditionFalse(inv.GetStatus().Conditions, api_v1beta1.GlobalPreRestoreHookSucceeded) {
 		return true
 	}
 	for _, member := range inv.GetStatus().TargetStatus {
