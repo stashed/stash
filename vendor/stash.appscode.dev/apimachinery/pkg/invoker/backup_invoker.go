@@ -224,7 +224,7 @@ func getTargetBackupSummary(stashClient cs.Interface, target v1beta1.TargetRef, 
 		return summary
 	}
 	summary.Status.Duration = time.Since(backupSession.CreationTimestamp.Time).Round(time.Second).String()
-
+	summary.RetryLeft = backupSession.Spec.RetryLeft
 	if target.Name != "" {
 		for _, t := range backupSession.Status.Targets {
 			if TargetMatched(target, t.Ref) {

@@ -144,6 +144,14 @@ func ParseObjectID(key OID) (*ObjectID, error) {
 	return &id, nil
 }
 
+func MustParseObjectID(key OID) *ObjectID {
+	oid, err := ParseObjectID(key)
+	if err != nil {
+		panic(err)
+	}
+	return oid
+}
+
 func ObjectIDMap(key OID) (map[string]interface{}, error) {
 	id := map[string]interface{}{
 		"group":     "",
@@ -208,8 +216,8 @@ type ObjectInfo struct {
 	Ref      ObjectReference `json:"ref" protobuf:"bytes,2,opt,name=ref"`
 }
 
-// +kubebuilder:validation:Enum=backup_via;catalog;cert_issuer;config;connect_via;exposed_by;id;located_on;monitored_by;offshoot;ops;policy;recommended_for;restore_into;scaled_by;view
-// ENUM(backup_via,catalog,cert_issuer,config,connect_via,exposed_by,id,located_on,monitored_by,offshoot,ops,policy,recommended_for,restore_into,scaled_by,view)
+// +kubebuilder:validation:Enum=authn;authz;auth_secret;backup_via;catalog;cert_issuer;config;connect_via;exposed_by;event;located_on;monitored_by;ocm_bind;offshoot;ops;placed_into;policy;recommended_for;restore_into;scaled_by;storage;view
+// ENUM(authn,authz,auth_secret,backup_via,catalog,cert_issuer,config,connect_via,exposed_by,event,located_on,monitored_by,ocm_bind,offshoot,ops,placed_into,policy,recommended_for,restore_into,scaled_by,storage,view)
 type EdgeLabel string
 
 func (e EdgeLabel) Direct() bool {

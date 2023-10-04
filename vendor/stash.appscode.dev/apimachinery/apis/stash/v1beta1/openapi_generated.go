@@ -339,6 +339,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/runtime.Unknown":                                            schema_k8sio_apimachinery_pkg_runtime_Unknown(ref),
 		"k8s.io/apimachinery/pkg/util/intstr.IntOrString":                                    schema_apimachinery_pkg_util_intstr_IntOrString(ref),
 		"k8s.io/apimachinery/pkg/version.Info":                                               schema_k8sio_apimachinery_pkg_version_Info(ref),
+		"kmodules.xyz/client-go/api/v1.CAPIClusterInfo":                                      schema_kmodulesxyz_client_go_api_v1_CAPIClusterInfo(ref),
 		"kmodules.xyz/client-go/api/v1.CertificatePrivateKey":                                schema_kmodulesxyz_client_go_api_v1_CertificatePrivateKey(ref),
 		"kmodules.xyz/client-go/api/v1.CertificateSpec":                                      schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref),
 		"kmodules.xyz/client-go/api/v1.ClusterMetadata":                                      schema_kmodulesxyz_client_go_api_v1_ClusterMetadata(ref),
@@ -16897,6 +16898,36 @@ func schema_k8sio_apimachinery_pkg_version_Info(ref common.ReferenceCallback) co
 	}
 }
 
+func schema_kmodulesxyz_client_go_api_v1_CAPIClusterInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"provider": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"clusterName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_kmodulesxyz_client_go_api_v1_CertificatePrivateKey(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -22142,7 +22173,7 @@ func schema_apimachinery_apis_stash_v1beta1_PostBackupHook(ref common.ReferenceC
 					},
 					"executionPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ExecutionPolicy specifies when to execute a hook. Supported values are \"Always\", \"OnFailure\", \"OnSuccess\". Default value: \"Always\".",
+							Description: "ExecutionPolicy specifies when to execute a hook. Supported values are \"Always\", \"OnFailure\", \"OnSuccess\", \"OnFinalRetryFailure\". Default value: \"Always\".",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -23125,6 +23156,13 @@ func schema_apimachinery_apis_stash_v1beta1_Summary(ref common.ReferenceCallback
 							Description: "Status specifies the backup/restore status for the respective target",
 							Default:     map[string]interface{}{},
 							Ref:         ref("stash.appscode.dev/apimachinery/apis/stash/v1beta1.TargetStatus"),
+						},
+					},
+					"retryLeft": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RetryLeft specifies number of retry attempts left for the backup session.",
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 				},

@@ -127,20 +127,21 @@ type BackupHooks struct {
 type PostBackupHook struct {
 	*prober.Handler `json:",inline"`
 	// ExecutionPolicy specifies when to execute a hook.
-	// Supported values are "Always", "OnFailure", "OnSuccess".
+	// Supported values are "Always", "OnFailure", "OnSuccess", "OnFinalRetryFailure".
 	// Default value: "Always".
 	// +optional
 	// +kubebuilder:default=Always
-	// +kubebuilder:validation:Enum=Always;OnFailure;OnSuccess
+	// +kubebuilder:validation:Enum=Always;OnFailure;OnSuccess;OnFinalRetryFailure
 	ExecutionPolicy HookExecutionPolicy `json:"executionPolicy,omitempty"`
 }
 
 type HookExecutionPolicy string
 
 const (
-	ExecuteAlways    HookExecutionPolicy = "Always"
-	ExecuteOnFailure HookExecutionPolicy = "OnFailure"
-	ExecuteOnSuccess HookExecutionPolicy = "OnSuccess"
+	ExecuteAlways         HookExecutionPolicy = "Always"
+	ExecuteOnFailure      HookExecutionPolicy = "OnFailure"
+	ExecuteOnSuccess      HookExecutionPolicy = "OnSuccess"
+	ExecuteOnRetryFailure HookExecutionPolicy = "OnFinalRetryFailure"
 )
 
 type EmptyDirSettings struct {

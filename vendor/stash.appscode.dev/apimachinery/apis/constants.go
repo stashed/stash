@@ -152,6 +152,7 @@ const (
 	PrefixStashVolumeSnapshot = "stash-vs"
 	PrefixStashTrigger        = "stash-trigger"
 
+	OperatorContainer     = "operator"
 	StashContainer        = "stash"
 	StashInitContainer    = "stash-init"
 	StashCronJobContainer = "stash-trigger"
@@ -159,6 +160,7 @@ const (
 	ScratchDirVolumeName  = "stash-scratchdir"
 	TmpDirVolumeName      = "stash-tmp-dir"
 	TmpDirMountPath       = "/stash-tmp"
+	ScratchDirMountPath   = "/tmp"
 	PodinfoVolumeName     = "stash-podinfo"
 
 	RecoveryJobPrefix   = "stash-recovery-"
@@ -250,6 +252,6 @@ const (
 )
 
 const (
-	ESMetaFile = "meta.txt"
-	TempDir    = "/tmp"
+	ESMetaFile          = "meta.txt"
+	SnapshotDownloadDir = "snapshots"
 )
