@@ -8,10 +8,16 @@ package v1
 
 import (
 	"fmt"
-	strings "strings"
+	"strings"
 )
 
 const (
+	// EdgeLabelAuthn is a EdgeLabel of type authn.
+	EdgeLabelAuthn EdgeLabel = "authn"
+	// EdgeLabelAuthz is a EdgeLabel of type authz.
+	EdgeLabelAuthz EdgeLabel = "authz"
+	// EdgeLabelAuthSecret is a EdgeLabel of type auth_secret.
+	EdgeLabelAuthSecret EdgeLabel = "auth_secret"
 	// EdgeLabelBackupVia is a EdgeLabel of type backup_via.
 	EdgeLabelBackupVia EdgeLabel = "backup_via"
 	// EdgeLabelCatalog is a EdgeLabel of type catalog.
@@ -24,16 +30,20 @@ const (
 	EdgeLabelConnectVia EdgeLabel = "connect_via"
 	// EdgeLabelExposedBy is a EdgeLabel of type exposed_by.
 	EdgeLabelExposedBy EdgeLabel = "exposed_by"
-	// EdgeLabelId is a EdgeLabel of type id.
-	EdgeLabelId EdgeLabel = "id"
+	// EdgeLabelEvent is a EdgeLabel of type event.
+	EdgeLabelEvent EdgeLabel = "event"
 	// EdgeLabelLocatedOn is a EdgeLabel of type located_on.
 	EdgeLabelLocatedOn EdgeLabel = "located_on"
 	// EdgeLabelMonitoredBy is a EdgeLabel of type monitored_by.
 	EdgeLabelMonitoredBy EdgeLabel = "monitored_by"
+	// EdgeLabelOcmBind is a EdgeLabel of type ocm_bind.
+	EdgeLabelOcmBind EdgeLabel = "ocm_bind"
 	// EdgeLabelOffshoot is a EdgeLabel of type offshoot.
 	EdgeLabelOffshoot EdgeLabel = "offshoot"
 	// EdgeLabelOps is a EdgeLabel of type ops.
 	EdgeLabelOps EdgeLabel = "ops"
+	// EdgeLabelPlacedInto is a EdgeLabel of type placed_into.
+	EdgeLabelPlacedInto EdgeLabel = "placed_into"
 	// EdgeLabelPolicy is a EdgeLabel of type policy.
 	EdgeLabelPolicy EdgeLabel = "policy"
 	// EdgeLabelRecommendedFor is a EdgeLabel of type recommended_for.
@@ -42,6 +52,8 @@ const (
 	EdgeLabelRestoreInto EdgeLabel = "restore_into"
 	// EdgeLabelScaledBy is a EdgeLabel of type scaled_by.
 	EdgeLabelScaledBy EdgeLabel = "scaled_by"
+	// EdgeLabelStorage is a EdgeLabel of type storage.
+	EdgeLabelStorage EdgeLabel = "storage"
 	// EdgeLabelView is a EdgeLabel of type view.
 	EdgeLabelView EdgeLabel = "view"
 )
@@ -49,21 +61,27 @@ const (
 var ErrInvalidEdgeLabel = fmt.Errorf("not a valid EdgeLabel, try [%s]", strings.Join(_EdgeLabelNames, ", "))
 
 var _EdgeLabelNames = []string{
+	string(EdgeLabelAuthn),
+	string(EdgeLabelAuthz),
+	string(EdgeLabelAuthSecret),
 	string(EdgeLabelBackupVia),
 	string(EdgeLabelCatalog),
 	string(EdgeLabelCertIssuer),
 	string(EdgeLabelConfig),
 	string(EdgeLabelConnectVia),
 	string(EdgeLabelExposedBy),
-	string(EdgeLabelId),
+	string(EdgeLabelEvent),
 	string(EdgeLabelLocatedOn),
 	string(EdgeLabelMonitoredBy),
+	string(EdgeLabelOcmBind),
 	string(EdgeLabelOffshoot),
 	string(EdgeLabelOps),
+	string(EdgeLabelPlacedInto),
 	string(EdgeLabelPolicy),
 	string(EdgeLabelRecommendedFor),
 	string(EdgeLabelRestoreInto),
 	string(EdgeLabelScaledBy),
+	string(EdgeLabelStorage),
 	string(EdgeLabelView),
 }
 
@@ -77,21 +95,27 @@ func EdgeLabelNames() []string {
 // EdgeLabelValues returns a list of the values for EdgeLabel
 func EdgeLabelValues() []EdgeLabel {
 	return []EdgeLabel{
+		EdgeLabelAuthn,
+		EdgeLabelAuthz,
+		EdgeLabelAuthSecret,
 		EdgeLabelBackupVia,
 		EdgeLabelCatalog,
 		EdgeLabelCertIssuer,
 		EdgeLabelConfig,
 		EdgeLabelConnectVia,
 		EdgeLabelExposedBy,
-		EdgeLabelId,
+		EdgeLabelEvent,
 		EdgeLabelLocatedOn,
 		EdgeLabelMonitoredBy,
+		EdgeLabelOcmBind,
 		EdgeLabelOffshoot,
 		EdgeLabelOps,
+		EdgeLabelPlacedInto,
 		EdgeLabelPolicy,
 		EdgeLabelRecommendedFor,
 		EdgeLabelRestoreInto,
 		EdgeLabelScaledBy,
+		EdgeLabelStorage,
 		EdgeLabelView,
 	}
 }
@@ -109,21 +133,27 @@ func (x EdgeLabel) IsValid() bool {
 }
 
 var _EdgeLabelValue = map[string]EdgeLabel{
+	"authn":           EdgeLabelAuthn,
+	"authz":           EdgeLabelAuthz,
+	"auth_secret":     EdgeLabelAuthSecret,
 	"backup_via":      EdgeLabelBackupVia,
 	"catalog":         EdgeLabelCatalog,
 	"cert_issuer":     EdgeLabelCertIssuer,
 	"config":          EdgeLabelConfig,
 	"connect_via":     EdgeLabelConnectVia,
 	"exposed_by":      EdgeLabelExposedBy,
-	"id":              EdgeLabelId,
+	"event":           EdgeLabelEvent,
 	"located_on":      EdgeLabelLocatedOn,
 	"monitored_by":    EdgeLabelMonitoredBy,
+	"ocm_bind":        EdgeLabelOcmBind,
 	"offshoot":        EdgeLabelOffshoot,
 	"ops":             EdgeLabelOps,
+	"placed_into":     EdgeLabelPlacedInto,
 	"policy":          EdgeLabelPolicy,
 	"recommended_for": EdgeLabelRecommendedFor,
 	"restore_into":    EdgeLabelRestoreInto,
 	"scaled_by":       EdgeLabelScaledBy,
+	"storage":         EdgeLabelStorage,
 	"view":            EdgeLabelView,
 }
 

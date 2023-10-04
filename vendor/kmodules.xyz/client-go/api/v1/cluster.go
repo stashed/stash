@@ -16,6 +16,8 @@ limitations under the License.
 
 package v1
 
+import "strings"
+
 // +kubebuilder:validation:Enum=Aws;Azure;DigitalOcean;GoogleCloud;Linode;Packet;Scaleway;Vultr;BareMetal;KIND;Generic;Private
 type HostingProvider string
 
@@ -45,4 +47,72 @@ type ClusterMetadata struct {
 	Name        string          `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
 	DisplayName string          `json:"displayName,omitempty" protobuf:"bytes,3,opt,name=displayName"`
 	Provider    HostingProvider `json:"provider,omitempty" protobuf:"bytes,4,opt,name=provider,casttype=HostingProvider"`
+}
+
+type ClusterManager int
+
+const (
+	ClusterManagerACE ClusterManager = 1 << iota
+	ClusterManagerOCMHub
+	ClusterManagerOCMSpoke
+	ClusterManagerOCMMulticlusterControlplane
+	ClusterManagerRancher
+	ClusterManagerOpenShift
+)
+
+func (cm ClusterManager) ManagedByACE() bool {
+	return cm&ClusterManagerACE == ClusterManagerACE
+}
+
+func (cm ClusterManager) ManagedByOCMHub() bool {
+	return cm&ClusterManagerOCMHub == ClusterManagerOCMHub
+}
+
+func (cm ClusterManager) ManagedByOCMSpoke() bool {
+	return cm&ClusterManagerOCMSpoke == ClusterManagerOCMSpoke
+}
+
+func (cm ClusterManager) ManagedByOCMMulticlusterControlplane() bool {
+	return cm&ClusterManagerOCMMulticlusterControlplane == ClusterManagerOCMMulticlusterControlplane
+}
+
+func (cm ClusterManager) ManagedByRancher() bool {
+	return cm&ClusterManagerRancher == ClusterManagerRancher
+}
+
+func (cm ClusterManager) ManagedByOpenShift() bool {
+	return cm&ClusterManagerOpenShift == ClusterManagerOpenShift
+}
+
+func (cm ClusterManager) Strings() []string {
+	out := make([]string, 0, 4)
+	if cm.ManagedByACE() {
+		out = append(out, "ACE")
+	}
+	if cm.ManagedByOCMHub() {
+		out = append(out, "OCMHub")
+	}
+	if cm.ManagedByOCMSpoke() {
+		out = append(out, "OCMSpoke")
+	}
+	if cm.ManagedByOCMMulticlusterControlplane() {
+		out = append(out, "OCMMulticlusterControlplane")
+	}
+	if cm.ManagedByRancher() {
+		out = append(out, "Rancher")
+	}
+	if cm.ManagedByOpenShift() {
+		out = append(out, "OpenShift")
+	}
+	return out
+}
+
+func (cm ClusterManager) String() string {
+	return strings.Join(cm.Strings(), ",")
+}
+
+type CAPIClusterInfo struct {
+	Provider    string `json:"provider,omitempty"`
+	Namespace   string `json:"namespace,omitempty"`
+	ClusterName string `json:"clusterName,omitempty"`
 }

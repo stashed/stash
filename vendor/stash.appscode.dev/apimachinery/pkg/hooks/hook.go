@@ -137,6 +137,9 @@ func IsAllowedByExecutionPolicy(executionPolicy v1beta1.HookExecutionPolicy, sum
 	if executionPolicy == v1beta1.ExecuteOnSuccess && getTargetPhase(summary) != string(v1beta1.TargetBackupSucceeded) {
 		return false
 	}
+	if executionPolicy == v1beta1.ExecuteOnRetryFailure && (getTargetPhase(summary) != string(v1beta1.TargetBackupFailed) || summary.RetryLeft != 0) {
+		return false
+	}
 	return true
 }
 

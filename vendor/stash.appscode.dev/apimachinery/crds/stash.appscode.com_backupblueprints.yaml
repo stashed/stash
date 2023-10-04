@@ -1717,12 +1717,13 @@ spec:
                       executionPolicy:
                         default: Always
                         description: 'ExecutionPolicy specifies when to execute a
-                          hook. Supported values are "Always", "OnFailure", "OnSuccess".
-                          Default value: "Always".'
+                          hook. Supported values are "Always", "OnFailure", "OnSuccess",
+                          "OnFinalRetryFailure". Default value: "Always".'
                         enum:
                         - Always
                         - OnFailure
                         - OnSuccess
+                        - OnFinalRetryFailure
                         type: string
                       httpGet:
                         description: HTTPGet specifies the http Get request to perform.

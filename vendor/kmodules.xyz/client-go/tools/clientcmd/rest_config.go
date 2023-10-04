@@ -24,7 +24,7 @@ import (
 )
 
 // https://github.com/kubernetes/client-go/issues/711#issuecomment-730112049
-func GenerateKubeConfiguration(cfg *rest.Config, namespace string) ([]byte, error) {
+func BuildKubeConfig(cfg *rest.Config, namespace string) (*clientcmdapi.Config, error) {
 	if err := rest.LoadTLSFiles(cfg); err != nil {
 		return nil, err
 	}
@@ -62,13 +62,20 @@ func GenerateKubeConfiguration(cfg *rest.Config, namespace string) ([]byte, erro
 		Extensions:            nil,
 	}
 
-	clientConfig := clientcmdapi.Config{
+	return &clientcmdapi.Config{
 		Kind:           "Config",
 		APIVersion:     "v1",
 		Clusters:       clusters,
 		Contexts:       contexts,
 		CurrentContext: "default-context",
 		AuthInfos:      authinfos,
+	}, nil
+}
+
+func BuildKubeConfigBytes(cfg *rest.Config, namespace string) ([]byte, error) {
+	clientConfig, err := BuildKubeConfig(cfg, namespace)
+	if err != nil {
+		return nil, err
 	}
-	return runtime.Encode(clientcmdlatest.Codec, &clientConfig)
+	return runtime.Encode(clientcmdlatest.Codec, clientConfig)
 }

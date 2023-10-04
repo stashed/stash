@@ -93,6 +93,13 @@ type SetupOptions struct {
 	IONice         *ofst.IONiceSettings
 }
 
+type KeyOptions struct {
+	ID   string
+	User string
+	Host string
+	File string
+}
+
 func NewResticWrapper(options SetupOptions) (*ResticWrapper, error) {
 	wrapper := &ResticWrapper{
 		sh:     shell.NewSession(),

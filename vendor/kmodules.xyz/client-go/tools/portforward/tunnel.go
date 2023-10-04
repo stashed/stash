@@ -101,7 +101,7 @@ func (t *Tunnel) ForwardPort() error {
 	}
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, "POST", u)
 
-	local, err := getAvailablePort()
+	local, err := getAvailablePort(t.Local)
 	if err != nil {
 		return errors.Errorf("could not find an available port: %s", err)
 	}
@@ -131,8 +131,8 @@ func (t *Tunnel) Close() {
 	close(t.stopChan)
 }
 
-func getAvailablePort() (int, error) {
-	l, err := net.Listen("tcp", ":0")
+func getAvailablePort(preferredPort int) (int, error) {
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", preferredPort))
 	if err != nil {
 		return 0, err
 	}

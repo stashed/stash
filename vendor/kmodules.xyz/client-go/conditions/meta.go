@@ -79,13 +79,14 @@ func GetCondition(conditions []kmapi.Condition, condType string) (int, *kmapi.Co
 // SetCondition add/update the desired condition to the condition list. It does nothing if the condition is already in
 // its desired state.
 func SetCondition(conditions []kmapi.Condition, newCondition kmapi.Condition) []kmapi.Condition {
+	isGenerationUnset := newCondition.ObservedGeneration <= 0
 	idx, curCond := GetCondition(conditions, string(newCondition.Type))
 	// If the current condition is in its desired state, we have nothing to do. Just return the original condition list.
 	if curCond != nil &&
 		curCond.Status == newCondition.Status &&
 		curCond.Reason == newCondition.Reason &&
 		curCond.Message == newCondition.Message &&
-		curCond.ObservedGeneration == newCondition.ObservedGeneration {
+		(isGenerationUnset || curCond.ObservedGeneration == newCondition.ObservedGeneration) {
 		return conditions
 	}
 	// The desired conditions is not in the condition list or is not in its desired state.
@@ -93,7 +94,7 @@ func SetCondition(conditions []kmapi.Condition, newCondition kmapi.Condition) []
 	newCondition.LastTransitionTime = metav1.Now()
 	if idx == -1 {
 		conditions = append(conditions, newCondition)
-	} else if newCondition.ObservedGeneration >= curCond.ObservedGeneration {
+	} else if isGenerationUnset || newCondition.ObservedGeneration >= curCond.ObservedGeneration {
 		// only update if the new condition is based on observed generation at least as updated as the current condition
 		conditions[idx] = newCondition
 	}

@@ -33,6 +33,8 @@ type Summary struct {
 	Target TargetRef `json:"target,omitempty"`
 	// Status specifies the backup/restore status for the respective target
 	Status TargetStatus `json:"status,omitempty"`
+	// RetryLeft specifies number of retry attempts left for the backup session.
+	RetryLeft int32 `json:"retryLeft,omitempty"`
 }
 
 type TargetStatus struct {
