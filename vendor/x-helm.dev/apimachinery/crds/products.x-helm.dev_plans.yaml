@@ -1,0 +1,179 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: plans.products.x-helm.dev
+spec:
+  group: products.x-helm.dev
+  names:
+    kind: Plan
+    listKind: PlanList
+    plural: plans
+    singular: plan
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              aggregateUsage:
+                type: string
+              amount:
+                format: int64
+                type: integer
+              amountDecimal:
+                format: double
+                type: number
+              billingScheme:
+                type: string
+              bundle:
+                properties:
+                  name:
+                    type: string
+                  sourceRef:
+                    description: TypedObjectReference represents an typed namespaced
+                      object.
+                    properties:
+                      apiGroup:
+                        type: string
+                      kind:
+                        type: string
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      namespace:
+                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                        type: string
+                    required:
+                    - name
+                    type: object
+                required:
+                - name
+                - sourceRef
+                type: object
+              currency:
+                type: string
+              description:
+                type: string
+              displayName:
+                type: string
+              id:
+                type: string
+              includedPlans:
+                items:
+                  type: string
+                type: array
+              interval:
+                type: string
+              intervalCount:
+                format: int64
+                type: integer
+              name:
+                type: string
+              phase:
+                type: string
+              pricingPattern:
+                additionalProperties:
+                  properties:
+                    expression:
+                      type: string
+                    sizedPrices:
+                      items:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          price:
+                            format: double
+                            type: number
+                        required:
+                        - cpu
+                        - memory
+                        - price
+                        type: object
+                      type: array
+                  type: object
+                type: object
+              productID:
+                type: string
+              tiers:
+                items:
+                  description: PlanTier configures tiered pricing
+                  properties:
+                    flatAmount:
+                      format: int64
+                      type: integer
+                    flatAmountDecimal:
+                      format: double
+                      type: number
+                    unitAmount:
+                      format: int64
+                      type: integer
+                    unitAmountDecimal:
+                      format: double
+                      type: number
+                    upTo:
+                      format: int64
+                      type: integer
+                  type: object
+                type: array
+              tiersMode:
+                type: string
+              transformUsage:
+                description: PlanTransformUsage represents the bucket billing configuration.
+                properties:
+                  divideBy:
+                    format: int64
+                    type: integer
+                  round:
+                    type: string
+                type: object
+              trialPeriodDays:
+                format: int64
+                type: integer
+              usageType:
+                type: string
+              weight:
+                description: Plans for sorted by weight before displaying to users
+                format: int32
+                type: integer
+            required:
+            - description
+            - displayName
+            - id
+            - name
+            - phase
+            - productID
+            - weight
+            type: object
+          status:
+            properties:
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  for this resource. It corresponds to the resource's generation,
+                  which is updated on mutation by the API Server.
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -123,6 +123,9 @@ func (r Redis) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resourc
 			if err != nil {
 				return nil, err
 			}
+			// If spec.cluster.replicas = x
+			// That means in each shard there are (x+1) redis replicas
+			shardReplicas += 1
 			replicas = shards * shardReplicas
 		}
 

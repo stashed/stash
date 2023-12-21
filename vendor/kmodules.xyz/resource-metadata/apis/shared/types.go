@@ -20,32 +20,14 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	releasesapi "x-helm.dev/apimachinery/apis/releases/v1alpha1"
+	helmshared "x-helm.dev/apimachinery/apis/shared"
 )
 
-// ImageSpec contains information about an image used as an icon.
-type ImageSpec struct {
-	// The source for image represented as either an absolute URL to the image or a Data URL containing
-	// the image. Data URLs are defined in RFC 2397.
-	Source string `json:"src"`
-
-	// (optional) The size of the image in pixels (e.g., 25x25).
-	Size string `json:"size,omitempty"`
-
-	// (optional) The mine type of the image (e.g., "image/png").
-	Type string `json:"type,omitempty"`
-}
-
 type DeploymentParameters struct {
-	ProductID string        `json:"productID,omitempty"`
-	PlanID    string        `json:"planID,omitempty"`
-	Chart     *ChartRepoRef `json:"chart,omitempty"`
-}
-
-// ChartRepoRef references to a single version of a Chart
-type ChartRepoRef struct {
-	Name      string                     `json:"name"`
-	Version   string                     `json:"version"`
-	SourceRef kmapi.TypedObjectReference `json:"sourceRef"`
+	ProductID string                      `json:"productID,omitempty"`
+	PlanID    string                      `json:"planID,omitempty"`
+	Chart     *releasesapi.ChartSourceRef `json:"chart,omitempty"`
 }
 
 type ResourceLocator struct {
@@ -68,11 +50,38 @@ type ResourceQuery struct {
 }
 
 type UIParameters struct {
-	Options *ChartRepoRef `json:"options,omitempty"`
-	Editor  *ChartRepoRef `json:"editor,omitempty"`
+	Options *releasesapi.ChartSourceRef `json:"options,omitempty"`
+	Editor  *releasesapi.ChartSourceRef `json:"editor,omitempty"`
+	// +optional
+	Actions []*ActionGroup `json:"actions,omitempty"`
 	// app.kubernetes.io/instance label must be updated at these paths when refilling metadata
 	// +optional
 	InstanceLabelPaths []string `json:"instanceLabelPaths,omitempty"`
+}
+
+type UIParameterTemplate struct {
+	Options *releasesapi.ChartSourceRef `json:"options,omitempty"`
+	Editor  *releasesapi.ChartSourceRef `json:"editor,omitempty"`
+	// +optional
+	Actions []*ActionTemplateGroup `json:"actions,omitempty"`
+	// app.kubernetes.io/instance label must be updated at these paths when refilling metadata
+	// +optional
+	InstanceLabelPaths []string `json:"instanceLabelPaths,omitempty"`
+}
+
+type ActionGroup struct {
+	ActionInfo `json:",inline,omitempty"`
+	Items      []Action `json:"items"`
+}
+
+type Action struct {
+	ActionInfo `json:",inline,omitempty"`
+	// +optional
+	Icons       []helmshared.ImageSpec      `json:"icons,omitempty"`
+	OperationID string                      `json:"operationId"`
+	Flow        string                      `json:"flow"`
+	Disabled    bool                        `json:"disabled"`
+	Editor      *releasesapi.ChartSourceRef `json:"editor,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Source;Target
@@ -105,4 +114,24 @@ type Dashboard struct {
 type If struct {
 	Condition string           `json:"condition,omitempty"`
 	Connected *ResourceLocator `json:"connected,omitempty"`
+}
+
+type ActionTemplateGroup struct {
+	ActionInfo `json:",inline,omitempty"`
+	Items      []ActionTemplate `json:"items"`
+}
+
+type ActionTemplate struct {
+	ActionInfo `json:",inline,omitempty"`
+	// +optional
+	Icons            []helmshared.ImageSpec      `json:"icons,omitempty"`
+	OperationID      string                      `json:"operationId"`
+	Flow             string                      `json:"flow"`
+	DisabledTemplate string                      `json:"disabledTemplate,omitempty"`
+	Editor           *releasesapi.ChartSourceRef `json:"editor,omitempty"`
+}
+
+type ActionInfo struct {
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 }

@@ -75,7 +75,7 @@ func (c *StashController) initRepositoryWatcher() {
 	c.repoInformer = c.stashInformerFactory.Stash().V1alpha1().Repositories().Informer()
 	c.repoQueue = queue.New(api_v1alpha1.ResourceKindRepository, c.MaxNumRequeues, c.NumThreads, c.runRepositoryReconciler)
 	if c.auditor != nil {
-		c.repoInformer.AddEventHandler(c.auditor.ForGVK(api_v1alpha1.SchemeGroupVersion.WithKind(api_v1alpha1.ResourceKindRepository)))
+		c.auditor.ForGVK(c.repoInformer, api_v1alpha1.SchemeGroupVersion.WithKind(api_v1alpha1.ResourceKindRepository))
 	}
 	c.repoInformer.AddEventHandler(queue.NewReconcilableHandler(c.repoQueue.GetQueue(), core.NamespaceAll))
 	c.repoLister = c.stashInformerFactory.Stash().V1alpha1().Repositories().Lister()

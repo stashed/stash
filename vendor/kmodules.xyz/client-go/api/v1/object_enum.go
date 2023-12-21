@@ -52,6 +52,8 @@ const (
 	EdgeLabelRestoreInto EdgeLabel = "restore_into"
 	// EdgeLabelScaledBy is a EdgeLabel of type scaled_by.
 	EdgeLabelScaledBy EdgeLabel = "scaled_by"
+	// EdgeLabelSource is a EdgeLabel of type source.
+	EdgeLabelSource EdgeLabel = "source"
 	// EdgeLabelStorage is a EdgeLabel of type storage.
 	EdgeLabelStorage EdgeLabel = "storage"
 	// EdgeLabelView is a EdgeLabel of type view.
@@ -81,6 +83,7 @@ var _EdgeLabelNames = []string{
 	string(EdgeLabelRecommendedFor),
 	string(EdgeLabelRestoreInto),
 	string(EdgeLabelScaledBy),
+	string(EdgeLabelSource),
 	string(EdgeLabelStorage),
 	string(EdgeLabelView),
 }
@@ -115,6 +118,7 @@ func EdgeLabelValues() []EdgeLabel {
 		EdgeLabelRecommendedFor,
 		EdgeLabelRestoreInto,
 		EdgeLabelScaledBy,
+		EdgeLabelSource,
 		EdgeLabelStorage,
 		EdgeLabelView,
 	}
@@ -153,6 +157,7 @@ var _EdgeLabelValue = map[string]EdgeLabel{
 	"recommended_for": EdgeLabelRecommendedFor,
 	"restore_into":    EdgeLabelRestoreInto,
 	"scaled_by":       EdgeLabelScaledBy,
+	"source":          EdgeLabelSource,
 	"storage":         EdgeLabelStorage,
 	"view":            EdgeLabelView,
 }

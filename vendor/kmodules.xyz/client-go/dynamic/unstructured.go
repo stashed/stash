@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"kmodules.xyz/client-go/meta"
+
 	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -190,4 +192,33 @@ func UpdateStatus(
 		err = fmt.Errorf("failed to update status of %s %s/%s after %d attempts due to %v", gvr.String(), in.GetNamespace(), in.GetName(), attempt, err)
 	}
 	return
+}
+
+func ApplyLabels(ctx context.Context,
+	c dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	key types.NamespacedName,
+	labels map[string]string,
+	opts metav1.PatchOptions,
+) (*unstructured.Unstructured, error) {
+	if !meta.IsOfficialType(gvr.Group) {
+		return nil, fmt.Errorf("only supports official api types, found %+v", gvr)
+	}
+
+	patch := map[string]any{
+		"metadata": map[string]any{
+			"labels": labels,
+		},
+	}
+	data, err := json.Marshal(patch)
+	if err != nil {
+		return nil, err
+	}
+	var ri dynamic.ResourceInterface
+	if key.Namespace == "" {
+		ri = c.Resource(gvr)
+	} else {
+		ri = c.Resource(gvr).Namespace(key.Namespace)
+	}
+	return ri.Patch(ctx, key.Name, types.StrategicMergePatchType, data, opts)
 }

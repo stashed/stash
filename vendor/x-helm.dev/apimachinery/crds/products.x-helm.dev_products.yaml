@@ -1,0 +1,167 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: products.products.x-helm.dev
+spec:
+  group: products.x-helm.dev
+  names:
+    kind: Product
+    listKind: ProductList
+    plural: products
+    singular: product
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              badges:
+                items:
+                  properties:
+                    alt:
+                      type: string
+                    logo:
+                      type: string
+                    url:
+                      type: string
+                  required:
+                  - alt
+                  - logo
+                  - url
+                  type: object
+                type: array
+              description:
+                type: string
+              icons:
+                items:
+                  description: MediaSpec contains information about an image/video.
+                  properties:
+                    description:
+                      description: Description is human readable content explaining
+                        the purpose of the link.
+                      type: string
+                    size:
+                      description: (optional) The size of the image in pixels (e.g.,
+                        25x25).
+                      type: string
+                    src:
+                      description: The source for image represented as either an absolute
+                        URL to the image or a Data URL containing the image. Data
+                        URLs are defined in RFC 2397.
+                      type: string
+                    type:
+                      description: (optional) The mine type of the image (e.g., "image/png").
+                      type: string
+                  required:
+                  - src
+                  type: object
+                type: array
+              id:
+                type: string
+              key:
+                type: string
+              keywords:
+                items:
+                  type: string
+                type: array
+              latestVersion:
+                type: string
+              links:
+                items:
+                  description: Link contains information about an URL to surface documentation,
+                    dashboards, etc.
+                  properties:
+                    description:
+                      description: Description is human readable content explaining
+                        the purpose of the link.
+                      type: string
+                    url:
+                      description: Url typically points at a website address.
+                      type: string
+                  type: object
+                type: array
+              maintainers:
+                items:
+                  description: ContactData contains information about an individual
+                    or organization.
+                  properties:
+                    email:
+                      description: Email is the email address.
+                      type: string
+                    name:
+                      description: Name is the descriptive name.
+                      type: string
+                    url:
+                      description: Url could typically be a website address.
+                      type: string
+                  type: object
+                type: array
+              name:
+                type: string
+              owner:
+                format: int64
+                type: integer
+              ownerName:
+                type: string
+              phase:
+                type: string
+              shortName:
+                type: string
+              summary:
+                type: string
+              tagline:
+                type: string
+              unitLabel:
+                type: string
+              versions:
+                items:
+                  properties:
+                    releaseDate:
+                      format: date-time
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - version
+                  type: object
+                type: array
+            required:
+            - id
+            - key
+            - name
+            - owner
+            - phase
+            - shortName
+            - tagline
+            type: object
+          status:
+            properties:
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  for this resource. It corresponds to the resource's generation,
+                  which is updated on mutation by the API Server.
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -51,6 +51,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// Informer - informer allows you interact with the underlying informer.
+type Informer interface {
+	// AddEventHandlerWithResyncPeriod adds an event handler to the shared informer using the
+	// specified resync period.  Events to a single handler are delivered sequentially, but there is
+	// no coordination between different handlers.
+	AddEventHandlerWithResyncPeriod(handler cache.ResourceEventHandler, resyncPeriod time.Duration)
+}
+
 type EventCreator func(obj client.Object) (*api.Event, error)
 
 type EventPublisher struct {
@@ -157,12 +165,12 @@ func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
 	}
 }
 
-func (p *EventPublisher) ForGVK(gvk schema.GroupVersionKind) cache.ResourceEventHandler {
+func (p *EventPublisher) ForGVK(informer Informer, gvk schema.GroupVersionKind) {
 	if gvk.Version == "" || gvk.Kind == "" {
 		panic(fmt.Sprintf("incomplete GVK; %+v", gvk))
 	}
 
-	return &ResourceEventPublisher{
+	h := &ResourceEventPublisher{
 		p: p,
 		createEvent: func(obj client.Object) (*api.Event, error) {
 			r := obj.DeepCopyObject().(client.Object)
@@ -183,6 +191,7 @@ func (p *EventPublisher) ForGVK(gvk schema.GroupVersionKind) cache.ResourceEvent
 			return ev, nil
 		},
 	}
+	informer.AddEventHandlerWithResyncPeriod(h, 1*time.Hour)
 }
 
 type funcNodeLister func() ([]*core.Node, error)
@@ -278,7 +287,7 @@ func (p *EventPublisher) SetupWithManagerForKind(ctx context.Context, mgr manage
 	if err != nil {
 		return err
 	}
-	i.AddEventHandler(p.ForGVK(gvk))
+	p.ForGVK(i, gvk)
 	return nil
 }
 
@@ -314,24 +323,9 @@ func (p *ResourceEventPublisher) OnAdd(o interface{}) {
 	}
 }
 
-func (p *ResourceEventPublisher) OnUpdate(oldObj, newObj interface{}) {
-	uOld, ok := oldObj.(client.Object)
-	if !ok {
-		return
-	}
+func (p *ResourceEventPublisher) OnUpdate(_, newObj interface{}) {
 	uNew, ok := newObj.(client.Object)
 	if !ok {
-		return
-	}
-
-	if uOld.GetUID() == uNew.GetUID() && uOld.GetGeneration() == uNew.GetGeneration() {
-		if klog.V(8).Enabled() {
-			klog.V(8).InfoS("skipping update event",
-				"gvk", uNew.GetObjectKind().GroupVersionKind(),
-				"namespace", uNew.GetNamespace(),
-				"name", uNew.GetName(),
-			)
-		}
 		return
 	}
 

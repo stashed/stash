@@ -174,22 +174,22 @@ func NewConnection(natscred NatsCredential) (nc *nats.Conn, err error) {
 // called during errors subscriptions etc
 func errorHandler(nc *nats.Conn, s *nats.Subscription, err error) {
 	if s != nil {
-		klog.V(5).Infof("error in event receiver connection: %s: subscription: %s: %s", nc.ConnectedUrl(), s.Subject, err)
+		klog.Warningf("error in event receiver connection: %s: subscription: %s: %s", nc.ConnectedUrl(), s.Subject, err)
 		return
 	}
-	klog.V(5).Infof("Error in event receiver connection: %s: %s", nc.ConnectedUrl(), err)
+	klog.Warningf("Error in event receiver connection: %s: %s", nc.ConnectedUrl(), err)
 }
 
 // called after reconnection
 func reconnectHandler(nc *nats.Conn) {
-	klog.V(5).Infof("Reconnected to %s", nc.ConnectedUrl())
+	klog.Warningf("Reconnected to %s", nc.ConnectedUrl())
 }
 
 // called after disconnection
 func disconnectHandler(nc *nats.Conn, err error) {
 	if err != nil {
-		klog.V(5).Infof("Disconnected from event receiver due to error: %v", err)
+		klog.Warningf("Disconnected from event receiver due to error: %v", err)
 	} else {
-		klog.V(5).Infof("Disconnected from event receiver")
+		klog.Warningln("Disconnected from event receiver")
 	}
 }

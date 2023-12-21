@@ -1,0 +1,261 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: orders.releases.x-helm.dev
+spec:
+  group: releases.x-helm.dev
+  names:
+    kind: Order
+    listKind: OrderList
+    plural: orders
+    singular: order
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Order is the Schema for the orders API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              items:
+                items:
+                  properties:
+                    chart:
+                      properties:
+                        bundle:
+                          description: Bundle points to the parent bundle which was
+                            used to install this, if any. If the chart was installed
+                            directly it will be unset.
+                          properties:
+                            name:
+                              type: string
+                            sourceRef:
+                              description: TypedObjectReference represents an typed
+                                namespaced object.
+                              properties:
+                                apiGroup:
+                                  type: string
+                                kind:
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                                  type: string
+                                namespace:
+                                  description: 'Namespace of the referent. More info:
+                                    https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            version:
+                              type: string
+                          required:
+                          - name
+                          - sourceRef
+                          - version
+                          type: object
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        releaseName:
+                          type: string
+                        resources:
+                          properties:
+                            owned:
+                              items:
+                                description: GroupVersionResource unambiguously identifies
+                                  a resource.  It doesn't anonymously include GroupVersion
+                                  to avoid automatic coercion.  It doesn't use a GroupVersion
+                                  to avoid custom marshalling
+                                properties:
+                                  group:
+                                    type: string
+                                  resource:
+                                    type: string
+                                  version:
+                                    type: string
+                                required:
+                                - group
+                                - resource
+                                - version
+                                type: object
+                              type: array
+                            required:
+                              items:
+                                description: GroupVersionResource unambiguously identifies
+                                  a resource.  It doesn't anonymously include GroupVersion
+                                  to avoid automatic coercion.  It doesn't use a GroupVersion
+                                  to avoid custom marshalling
+                                properties:
+                                  group:
+                                    type: string
+                                  resource:
+                                    type: string
+                                  version:
+                                    type: string
+                                required:
+                                - group
+                                - resource
+                                - version
+                                type: object
+                              type: array
+                          required:
+                          - owned
+                          - required
+                          type: object
+                        sourceRef:
+                          description: TypedObjectReference represents an typed namespaced
+                            object.
+                          properties:
+                            apiGroup:
+                              type: string
+                            kind:
+                              type: string
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                              type: string
+                            namespace:
+                              description: 'Namespace of the referent. More info:
+                                https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        valuesFile:
+                          type: string
+                        valuesPatch:
+                          description: 'RFC 6902 compatible json patch. ref: http://jsonpatch.com'
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        version:
+                          type: string
+                        waitFors:
+                          items:
+                            properties:
+                              all:
+                                type: boolean
+                              for:
+                                type: string
+                              labels:
+                                description: A label selector is a label query over
+                                  a set of resources. The result of matchLabels and
+                                  matchExpressions are ANDed. An empty label selector
+                                  matches all objects. A null label selector matches
+                                  no objects.
+                                properties:
+                                  matchExpressions:
+                                    description: matchExpressions is a list of label
+                                      selector requirements. The requirements are
+                                      ANDed.
+                                    items:
+                                      description: A label selector requirement is
+                                        a selector that contains values, a key, and
+                                        an operator that relates the key and values.
+                                      properties:
+                                        key:
+                                          description: key is the label key that the
+                                            selector applies to.
+                                          type: string
+                                        operator:
+                                          description: operator represents a key's
+                                            relationship to a set of values. Valid
+                                            operators are In, NotIn, Exists and DoesNotExist.
+                                          type: string
+                                        values:
+                                          description: values is an array of string
+                                            values. If the operator is In or NotIn,
+                                            the values array must be non-empty. If
+                                            the operator is Exists or DoesNotExist,
+                                            the values array must be empty. This array
+                                            is replaced during a strategic merge patch.
+                                          items:
+                                            type: string
+                                          type: array
+                                      required:
+                                      - key
+                                      - operator
+                                      type: object
+                                    type: array
+                                  matchLabels:
+                                    additionalProperties:
+                                      type: string
+                                    description: matchLabels is a map of {key,value}
+                                      pairs. A single {key,value} in the matchLabels
+                                      map is equivalent to an element of matchExpressions,
+                                      whose key field is "key", the operator is "In",
+                                      and the values array contains only "value".
+                                      The requirements are ANDed.
+                                    type: object
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              resource:
+                                description: GroupResource specifies a Group and a
+                                  Resource, but does not force a version.  This is
+                                  useful for identifying concepts during lookup stages
+                                  without having partially valid types
+                                properties:
+                                  group:
+                                    type: string
+                                  resource:
+                                    type: string
+                                required:
+                                - group
+                                - resource
+                                type: object
+                              timeout:
+                                type: string
+                            required:
+                            - all
+                            - for
+                            - labels
+                            - resource
+                            - timeout
+                            type: object
+                          type: array
+                      required:
+                      - name
+                      - namespace
+                      - releaseName
+                      - sourceRef
+                      - version
+                      type: object
+                  type: object
+                type: array
+              kubeVersion:
+                description: KubeVersion is a SemVer constraint specifying the version
+                  of Kubernetes required.
+                type: string
+            required:
+            - items
+            type: object
+          status:
+            properties:
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  for this resource. It corresponds to the resource's generation,
+                  which is updated on mutation by the API Server.
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

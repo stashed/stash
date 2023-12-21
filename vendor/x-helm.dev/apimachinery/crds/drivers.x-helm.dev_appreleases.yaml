@@ -1,0 +1,386 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: appreleases.drivers.x-helm.dev
+spec:
+  group: drivers.x-helm.dev
+  names:
+    kind: AppRelease
+    listKind: AppReleaseList
+    plural: appreleases
+    singular: apprelease
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: The type of the appRelease
+      jsonPath: .spec.descriptor.type
+      name: Type
+      type: string
+    - description: The creation date
+      jsonPath: .spec.descriptor.version
+      name: Version
+      type: string
+    - description: The creation date
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AppRelease is the Schema for the appReleases API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AppReleaseSpec defines the specification for an AppRelease.
+            properties:
+              components:
+                description: Components is a list of Kinds for AppRelease's components
+                  (e.g. Deployments, Pods, Services, CRDs). It can be used in conjunction
+                  with the AppRelease's Selector to list or watch the AppReleases
+                  components.
+                items:
+                  description: GroupVersionKind unambiguously identifies a kind.  It
+                    doesn't anonymously include GroupVersion to avoid automatic coercion.  It
+                    doesn't use a GroupVersion to avoid custom marshalling
+                  properties:
+                    group:
+                      type: string
+                    kind:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - group
+                  - kind
+                  - version
+                  type: object
+                type: array
+              descriptor:
+                description: Descriptor regroups information and metadata about an
+                  appRelease.
+                properties:
+                  description:
+                    description: Description is a brief string description of the
+                      AppRelease.
+                    type: string
+                  icons:
+                    description: Icons is an optional list of icons for an appRelease.
+                      Icon information includes the source, size, and mime type.
+                    items:
+                      description: ImageSpec contains information about an image used
+                        as an icon.
+                      properties:
+                        size:
+                          description: (optional) The size of the image in pixels
+                            (e.g., 25x25).
+                          type: string
+                        src:
+                          description: The source for image represented as either
+                            an absolute URL to the image or a Data URL containing
+                            the image. Data URLs are defined in RFC 2397.
+                          type: string
+                        type:
+                          description: (optional) The mine type of the image (e.g.,
+                            "image/png").
+                          type: string
+                      required:
+                      - src
+                      type: object
+                    type: array
+                  keywords:
+                    description: Keywords is an optional list of key words associated
+                      with the appRelease (e.g. MySQL, RDBMS, database).
+                    items:
+                      type: string
+                    type: array
+                  links:
+                    description: Links are a list of descriptive URLs intended to
+                      be used to surface additional documentation, dashboards, etc.
+                    items:
+                      description: Link contains information about an URL to surface
+                        documentation, dashboards, etc.
+                      properties:
+                        description:
+                          description: Description is human readable content explaining
+                            the purpose of the link.
+                          type: string
+                        url:
+                          description: Url typically points at a website address.
+                          type: string
+                      type: object
+                    type: array
+                  maintainers:
+                    description: Maintainers is an optional list of maintainers of
+                      the appRelease. The maintainers in this list maintain the the
+                      source code, images, and package for the appRelease.
+                    items:
+                      description: ContactData contains information about an individual
+                        or organization.
+                      properties:
+                        email:
+                          description: Email is the email address.
+                          type: string
+                        name:
+                          description: Name is the descriptive name.
+                          type: string
+                        url:
+                          description: Url could typically be a website address.
+                          type: string
+                      type: object
+                    type: array
+                  notes:
+                    description: Notes contain a human readable snippets intended
+                      as a quick start for the users of the AppRelease. CommonMark
+                      markdown syntax may be used for rich text representation.
+                    type: string
+                  owners:
+                    description: Owners is an optional list of the owners of the installed
+                      appRelease. The owners of the appRelease should be contacted
+                      in the event of a planned or unplanned disruption affecting
+                      the appRelease.
+                    items:
+                      description: ContactData contains information about an individual
+                        or organization.
+                      properties:
+                        email:
+                          description: Email is the email address.
+                          type: string
+                        name:
+                          description: Name is the descriptive name.
+                          type: string
+                        url:
+                          description: Url could typically be a website address.
+                          type: string
+                      type: object
+                    type: array
+                  type:
+                    description: Type is the type of the appRelease (e.g. WordPress,
+                      MySQL, Cassandra).
+                    type: string
+                  version:
+                    description: Version is an optional version indicator for the
+                      AppRelease.
+                    type: string
+                type: object
+              editor:
+                description: GroupVersionResource unambiguously identifies a resource.  It
+                  doesn't anonymously include GroupVersion to avoid automatic coercion.  It
+                  doesn't use a GroupVersion to avoid custom marshalling
+                properties:
+                  group:
+                    type: string
+                  resource:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - group
+                - resource
+                - version
+                type: object
+              formKeys:
+                items:
+                  type: string
+                type: array
+              release:
+                description: Release regroups information and metadata about a Helm
+                  release.
+                properties:
+                  firstDeployed:
+                    format: date-time
+                    type: string
+                  form:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  lastDeployed:
+                    format: date-time
+                    type: string
+                  modified-at:
+                    format: date-time
+                    type: string
+                  name:
+                    type: string
+                  status:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - name
+                type: object
+              resourceKeys:
+                items:
+                  type: string
+                type: array
+              selector:
+                description: 'Selector is a label query over kinds that created by
+                  the appRelease. It must match the component objects'' labels. More
+                  info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors'
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+            type: object
+          status:
+            description: AppReleaseStatus defines controller's the observed state
+              of AppRelease
+            properties:
+              components:
+                description: Object status array for all matching objects
+                items:
+                  description: ObjectStatus is a generic status holder for objects
+                  properties:
+                    group:
+                      description: Object group
+                      type: string
+                    kind:
+                      description: Kind of object
+                      type: string
+                    link:
+                      description: Link to object
+                      type: string
+                    name:
+                      description: Name of object
+                      type: string
+                    status:
+                      description: 'Status. Values: InProgress, Ready, Unknown'
+                      type: string
+                  type: object
+                type: array
+              componentsReady:
+                description: 'ComponentsReady: status of the components in the format
+                  ready/total'
+                type: string
+              conditions:
+                description: Conditions represents the latest state of the object
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    \n type FooStatus struct{ // Represents the observations of a
+                    foo's current state. // Known .status.conditions.type are: \"Available\",
+                    \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
+                    // +listType=map // +listMapKey=type Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        --- Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed.
+                  It corresponds to the Object's generation, which is updated on mutation
+                  by the API Server.
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

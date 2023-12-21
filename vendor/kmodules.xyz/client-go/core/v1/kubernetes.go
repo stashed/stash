@@ -68,6 +68,15 @@ func EnsureContainerDeleted(containers []core.Container, name string) []core.Con
 	return containers
 }
 
+func GetContainerByName(containers []core.Container, name string) *core.Container {
+	for i := range containers {
+		if containers[i].Name == name {
+			return &containers[i]
+		}
+	}
+	return nil
+}
+
 func UpsertContainer(containers []core.Container, upsert core.Container) []core.Container {
 	for i, container := range containers {
 		if container.Name == upsert.Name {
@@ -114,6 +123,15 @@ func DeleteContainer(containers []core.Container, name string) []core.Container 
 		}
 	}
 	return containers
+}
+
+func GetVolumeByName(volumes []core.Volume, name string) *core.Volume {
+	for i := range volumes {
+		if volumes[i].Name == name {
+			return &volumes[i]
+		}
+	}
+	return nil
 }
 
 func UpsertVolume(volumes []core.Volume, nv ...core.Volume) []core.Volume {
@@ -192,6 +210,15 @@ func EnsureVolumeDeleted(volumes []core.Volume, name string) []core.Volume {
 	return volumes
 }
 
+func GetVolumeMountByName(volumeMounts []core.VolumeMount, name string) *core.VolumeMount {
+	for i := range volumeMounts {
+		if volumeMounts[i].Name == name {
+			return &volumeMounts[i]
+		}
+	}
+	return nil
+}
+
 func UpsertVolumeMount(mounts []core.VolumeMount, nv ...core.VolumeMount) []core.VolumeMount {
 	upsert := func(m core.VolumeMount) {
 		for i, vol := range mounts {
@@ -235,6 +262,15 @@ func EnsureVolumeMountDeletedByPath(mounts []core.VolumeMount, mountPath string)
 		}
 	}
 	return mounts
+}
+
+func GetEnvByName(envs []core.EnvVar, name string) *core.EnvVar {
+	for i := range envs {
+		if envs[i].Name == name {
+			return &envs[i]
+		}
+	}
+	return nil
 }
 
 func UpsertEnvVars(vars []core.EnvVar, nv ...core.EnvVar) []core.EnvVar {

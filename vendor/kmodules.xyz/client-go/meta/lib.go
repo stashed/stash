@@ -210,3 +210,20 @@ func max(x, y int) int {
 	}
 	return y
 }
+
+func IsOfficialType(group string) bool {
+	switch {
+	case group == "":
+		return true
+	case !strings.ContainsRune(group, '.'):
+		return true
+	case group == "k8s.io" || strings.HasSuffix(group, ".k8s.io"):
+		return true
+	case group == "kubernetes.io" || strings.HasSuffix(group, ".kubernetes.io"):
+		return true
+	case group == "x-k8s.io" || strings.HasSuffix(group, ".x-k8s.io"):
+		return true
+	default:
+		return false
+	}
+}

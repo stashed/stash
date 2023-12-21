@@ -58,6 +58,7 @@ const (
 	ClusterManagerOCMMulticlusterControlplane
 	ClusterManagerRancher
 	ClusterManagerOpenShift
+	ClusterManagerVirtualCluster
 )
 
 func (cm ClusterManager) ManagedByACE() bool {
@@ -84,8 +85,12 @@ func (cm ClusterManager) ManagedByOpenShift() bool {
 	return cm&ClusterManagerOpenShift == ClusterManagerOpenShift
 }
 
+func (cm ClusterManager) ManagedByVirtualCluster() bool {
+	return cm&ClusterManagerVirtualCluster == ClusterManagerVirtualCluster
+}
+
 func (cm ClusterManager) Strings() []string {
-	out := make([]string, 0, 4)
+	out := make([]string, 0, 7)
 	if cm.ManagedByACE() {
 		out = append(out, "ACE")
 	}
@@ -103,6 +108,9 @@ func (cm ClusterManager) Strings() []string {
 	}
 	if cm.ManagedByOpenShift() {
 		out = append(out, "OpenShift")
+	}
+	if cm.ManagedByVirtualCluster() {
+		out = append(out, "vcluster")
 	}
 	return out
 }

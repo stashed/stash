@@ -47,8 +47,9 @@ var (
 	ProductName string // This has been renamed to Features
 	ProductUID  string
 
-	prodDomain = "byte.builders"
-	qaDomain   = "appscode.ninja"
+	QADomain             = "appscode.ninja"
+	ProdDomain           = "appscode.com"
+	DeprecatedProdDomain = "byte.builders"
 
 	registrationAPIPath  = "api/v1/register"
 	LicenseIssuerAPIPath = "api/v1/license/issue"
@@ -123,9 +124,9 @@ func APIServerAddress(override ...string) (*url.URL, error) {
 	}
 
 	if SkipLicenseVerification() {
-		return url.Parse("https://api." + qaDomain)
+		return url.Parse("https://api." + QADomain)
 	}
-	return url.Parse("https://api." + prodDomain)
+	return url.Parse("https://api." + ProdDomain)
 }
 
 func HostedEndpoint(u string) (bool, error) {
@@ -142,10 +143,12 @@ func HostedEndpoint(u string) (bool, error) {
 }
 
 func HostedDomain(d string) bool {
-	return d == prodDomain ||
-		d == qaDomain ||
-		strings.HasSuffix(d, "."+prodDomain) ||
-		strings.HasSuffix(d, "."+qaDomain)
+	return d == ProdDomain ||
+		d == DeprecatedProdDomain ||
+		d == QADomain ||
+		strings.HasSuffix(d, "."+ProdDomain) ||
+		strings.HasSuffix(d, "."+DeprecatedProdDomain) ||
+		strings.HasSuffix(d, "."+QADomain)
 }
 
 func LoadLicenseCA() ([]byte, error) {
