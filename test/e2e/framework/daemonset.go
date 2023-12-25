@@ -105,8 +105,8 @@ func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAsser
 }
 
 func (fi *Invocation) WaitUntilDaemonSetReadyWithSidecar(meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
+	return wait.PollUntilContextTimeout(context.Background(), kutil.RetryInterval, kutil.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
+		if obj, err := fi.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {

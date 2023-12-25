@@ -60,12 +60,13 @@ func (r Postgres) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, e
 }
 
 func (r Postgres) modeFn(obj map[string]interface{}) (string, error) {
-	mode, found, err := unstructured.NestedString(obj, "spec", "standbyMode")
-	if err != nil {
-		return "", err
-	}
-	if found && mode != "" {
+	mode, found, err := unstructured.NestedString(obj, "spec", "mode")
+	if err == nil && found {
 		return mode, nil
+	}
+	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
+	if err == nil && found && replicas > 1 {
+		return DBModeCluster, nil
 	}
 	return DBStandalone, nil
 }

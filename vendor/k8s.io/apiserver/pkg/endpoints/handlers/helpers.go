@@ -20,7 +20,9 @@ import (
 	"net/http"
 
 	utilnet "k8s.io/apimachinery/pkg/util/net"
-	"k8s.io/apiserver/pkg/endpoints/request"
+	"k8s.io/apiserver/pkg/audit"
+	"k8s.io/apiserver/pkg/endpoints/metrics"
+	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 )
 
 const (
@@ -75,6 +77,96 @@ func (lazy *lazyAccept) String() string {
 	return "unknown"
 }
 
+// lazyAPIGroup implements String() string and it will
+// lazily get Group from request info.
+type lazyAPIGroup struct {
+	req *http.Request
+}
+
+func (lazy *lazyAPIGroup) String() string {
+	if lazy.req != nil {
+		ctx := lazy.req.Context()
+		requestInfo, ok := apirequest.RequestInfoFrom(ctx)
+		if ok {
+			return requestInfo.APIGroup
+		}
+	}
+
+	return "unknown"
+}
+
+// lazyAPIVersion implements String() string and it will
+// lazily get Group from request info.
+type lazyAPIVersion struct {
+	req *http.Request
+}
+
+func (lazy *lazyAPIVersion) String() string {
+	if lazy.req != nil {
+		ctx := lazy.req.Context()
+		requestInfo, ok := apirequest.RequestInfoFrom(ctx)
+		if ok {
+			return requestInfo.APIVersion
+		}
+	}
+
+	return "unknown"
+}
+
+// lazyName implements String() string and it will
+// lazily get Group from request info.
+type lazyName struct {
+	req *http.Request
+}
+
+func (lazy *lazyName) String() string {
+	if lazy.req != nil {
+		ctx := lazy.req.Context()
+		requestInfo, ok := apirequest.RequestInfoFrom(ctx)
+		if ok {
+			return requestInfo.Name
+		}
+	}
+
+	return "unknown"
+}
+
+// lazySubresource implements String() string and it will
+// lazily get Group from request info.
+type lazySubresource struct {
+	req *http.Request
+}
+
+func (lazy *lazySubresource) String() string {
+	if lazy.req != nil {
+		ctx := lazy.req.Context()
+		requestInfo, ok := apirequest.RequestInfoFrom(ctx)
+		if ok {
+			return requestInfo.Subresource
+		}
+	}
+
+	return "unknown"
+}
+
+// lazyNamespace implements String() string and it will
+// lazily get Group from request info.
+type lazyNamespace struct {
+	req *http.Request
+}
+
+func (lazy *lazyNamespace) String() string {
+	if lazy.req != nil {
+		ctx := lazy.req.Context()
+		requestInfo, ok := apirequest.RequestInfoFrom(ctx)
+		if ok {
+			return requestInfo.Namespace
+		}
+	}
+
+	return "unknown"
+}
+
 // lazyAuditID implements Stringer interface to lazily retrieve
 // the audit ID associated with the request.
 type lazyAuditID struct {
@@ -83,7 +175,56 @@ type lazyAuditID struct {
 
 func (lazy *lazyAuditID) String() string {
 	if lazy.req != nil {
-		return request.GetAuditIDTruncated(lazy.req.Context())
+		return audit.GetAuditIDTruncated(lazy.req.Context())
+	}
+
+	return "unknown"
+}
+
+// lazyVerb implements String() string and it will
+// lazily get normalized Verb
+type lazyVerb struct {
+	req *http.Request
+}
+
+func (lazy *lazyVerb) String() string {
+	if lazy.req == nil {
+		return "unknown"
+	}
+	return metrics.NormalizedVerb(lazy.req)
+}
+
+// lazyResource implements String() string and it will
+// lazily get Resource from request info
+type lazyResource struct {
+	req *http.Request
+}
+
+func (lazy *lazyResource) String() string {
+	if lazy.req != nil {
+		ctx := lazy.req.Context()
+		requestInfo, ok := apirequest.RequestInfoFrom(ctx)
+		if ok {
+			return requestInfo.Resource
+		}
+	}
+
+	return "unknown"
+}
+
+// lazyScope implements String() string and it will
+// lazily get Scope from request info
+type lazyScope struct {
+	req *http.Request
+}
+
+func (lazy *lazyScope) String() string {
+	if lazy.req != nil {
+		ctx := lazy.req.Context()
+		requestInfo, ok := apirequest.RequestInfoFrom(ctx)
+		if ok {
+			return metrics.CleanScope(requestInfo)
+		}
 	}
 
 	return "unknown"

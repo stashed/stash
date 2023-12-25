@@ -135,7 +135,7 @@ func (c *BackupSessionController) runBackupSessionController(invokerRef *core.Ob
 func (c *BackupSessionController) initBackupSessionWatcher() error {
 	c.bsInformer = c.StashInformerFactory.Stash().V1beta1().BackupSessions().Informer()
 	c.bsQueue = queue.New(api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.processBackupSession)
-	c.bsInformer.AddEventHandler(queue.NewFilteredHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = c.bsInformer.AddEventHandler(queue.NewFilteredHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if backupsession, ok := obj.(*api_v1beta1.BackupSession); ok && c.selectedByLabels(backupsession) {
 				queue.Enqueue(c.bsQueue.GetQueue(), backupsession)
@@ -294,7 +294,7 @@ func (c *BackupSessionController) electLeaderPod(targetInfo invoker.BackupTarget
 		EventRecorder: eventer.NewEventRecorder(c.K8sClient, BackupEventComponent),
 	}
 	resLock, err := resourcelock.New(
-		resourcelock.ConfigMapsLeasesResourceLock,
+		resourcelock.LeasesResourceLock,
 		c.Namespace,
 		util.GetBackupConfigmapLockName(targetInfo.Target.Ref),
 		c.K8sClient.CoreV1(),
@@ -353,7 +353,7 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 	}
 
 	resLock, err := resourcelock.New(
-		resourcelock.ConfigMapsLeasesResourceLock,
+		resourcelock.LeasesResourceLock,
 		c.Namespace,
 		util.GetBackupConfigmapLockName(targetInfo.Target.Ref),
 		c.K8sClient.CoreV1(),

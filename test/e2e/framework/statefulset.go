@@ -85,7 +85,7 @@ func (fi *Invocation) StatefulSet(name, volName string, replica int32) apps.Stat
 							core.ReadWriteOnce,
 						},
 						StorageClassName: pointer.StringP(fi.StorageClass),
-						Resources: core.ResourceRequirements{
+						Resources: core.VolumeResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: resource.MustParse("1Gi"),
 							},
@@ -110,8 +110,8 @@ func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAss
 }
 
 func (fi *Invocation) WaitUntilStatefulSetReadyWithSidecar(meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
-		if obj, err := fi.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
+	return wait.PollUntilContextTimeout(context.Background(), kutil.RetryInterval, kutil.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
+		if obj, err := fi.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			if obj.Status.Replicas == obj.Status.ReadyReplicas {
 				pods, err := fi.GetAllPods(obj.ObjectMeta)
 				if err != nil {
@@ -245,7 +245,7 @@ func (fi *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.State
 							core.ReadWriteOnce,
 						},
 						StorageClassName: pointer.StringP(fi.StorageClass),
-						Resources: core.ResourceRequirements{
+						Resources: core.VolumeResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: resource.MustParse("1Gi"),
 							},

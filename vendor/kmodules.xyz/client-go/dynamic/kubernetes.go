@@ -52,7 +52,7 @@ func WaitUntilDeleted(ri dynamic.ResourceInterface, stopCh <-chan struct{}, name
 		return err
 	}
 	// delete operation was successful, now wait for obj to be removed(eg: objects with finalizers)
-	return wait.PollImmediateUntil(kutil.RetryInterval, func() (bool, error) {
+	return wait.PollUntilContextCancel(wait.ContextForChannel(stopCh), kutil.RetryInterval, true, func(ctx context.Context) (bool, error) {
 		_, e2 := ri.Get(context.TODO(), name, metav1.GetOptions{}, subresources...)
 		if kerr.IsNotFound(e2) {
 			return true, nil
@@ -60,7 +60,7 @@ func WaitUntilDeleted(ri dynamic.ResourceInterface, stopCh <-chan struct{}, name
 			return false, e2
 		}
 		return false, nil
-	}, stopCh)
+	})
 }
 
 func UntilHasLabel(config *rest.Config, gvk schema.GroupVersionKind, namespace, name string, key string, value *string, timeout time.Duration) (out string, err error) {

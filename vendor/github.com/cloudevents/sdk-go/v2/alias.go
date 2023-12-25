@@ -21,7 +21,7 @@ import (
 
 // Client
 
-type ClientOption client.Option
+type ClientOption = client.Option
 type Client = client.Client
 
 // Event
@@ -42,7 +42,7 @@ type URIRef = types.URIRef
 
 // HTTP Protocol
 
-type HTTPOption http.Option
+type HTTPOption = http.Option
 
 type HTTPProtocol = http.Protocol
 
@@ -133,6 +133,16 @@ var (
 	// Message Creation
 
 	ToMessage = binding.ToMessage
+
+	// Event Creation
+
+	NewEventFromHTTPRequest   = http.NewEventFromHTTPRequest
+	NewEventFromHTTPResponse  = http.NewEventFromHTTPResponse
+	NewEventsFromHTTPRequest  = http.NewEventsFromHTTPRequest
+	NewEventsFromHTTPResponse = http.NewEventsFromHTTPResponse
+	NewHTTPRequestFromEvent   = http.NewHTTPRequestFromEvent
+	NewHTTPRequestFromEvents  = http.NewHTTPRequestFromEvents
+	IsHTTPBatch               = http.IsHTTPBatch
 
 	// HTTP Messages
 

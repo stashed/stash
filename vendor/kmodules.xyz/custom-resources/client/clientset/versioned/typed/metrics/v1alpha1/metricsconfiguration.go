@@ -20,9 +20,12 @@ package v1alpha1
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1alpha1 "kmodules.xyz/custom-resources/apis/metrics/v1alpha1"
+	metricsv1alpha1 "kmodules.xyz/custom-resources/client/applyconfiguration/metrics/v1alpha1"
 	scheme "kmodules.xyz/custom-resources/client/clientset/versioned/scheme"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,6 +50,7 @@ type MetricsConfigurationInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.MetricsConfigurationList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.MetricsConfiguration, err error)
+	Apply(ctx context.Context, metricsConfiguration *metricsv1alpha1.MetricsConfigurationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.MetricsConfiguration, err error)
 	MetricsConfigurationExpansion
 }
 
@@ -162,6 +166,31 @@ func (c *metricsConfigurations) Patch(ctx context.Context, name string, pt types
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied metricsConfiguration.
+func (c *metricsConfigurations) Apply(ctx context.Context, metricsConfiguration *metricsv1alpha1.MetricsConfigurationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.MetricsConfiguration, err error) {
+	if metricsConfiguration == nil {
+		return nil, fmt.Errorf("metricsConfiguration provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(metricsConfiguration)
+	if err != nil {
+		return nil, err
+	}
+	name := metricsConfiguration.Name
+	if name == nil {
+		return nil, fmt.Errorf("metricsConfiguration.Name must be provided to Apply")
+	}
+	result = &v1alpha1.MetricsConfiguration{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Resource("metricsconfigurations").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

@@ -24,6 +24,7 @@ import (
 	"text/template"
 
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/go-containerregistry/name"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
@@ -90,4 +91,117 @@ func (r ResourceLocator) GraphQuery(oid kmapi.OID) (string, map[string]interface
 		return buf.String(), nil, nil
 	}
 	return "", nil, fmt.Errorf("unknown query type %+v, oid %s", r, oid)
+}
+
+func (r ImageRegistrySpec) DockerHubProxy() string {
+	addr := r.Proxies.DockerHub
+	addr = strings.TrimSpace(addr)
+	addr = strings.TrimSuffix(addr, "/")
+	return addr
+}
+
+func (r ImageRegistrySpec) DockerLibraryProxy() string {
+	addr := r.Proxies.DockerLibrary
+	if addr == "" {
+		addr = r.Proxies.DockerHub
+	}
+	addr = strings.TrimSpace(addr)
+	addr = strings.TrimSuffix(addr, "/")
+	return addr
+}
+
+func (r ImageRegistrySpec) GHCRProxy() string {
+	addr := r.Proxies.GHCR
+	addr = strings.TrimSpace(addr)
+	addr = strings.TrimSuffix(addr, "/")
+	return addr
+}
+
+func (r ImageRegistrySpec) QuayProxy() string {
+	addr := r.Proxies.Quay
+	addr = strings.TrimSpace(addr)
+	addr = strings.TrimSuffix(addr, "/")
+	return addr
+}
+
+func (r ImageRegistrySpec) KubernetesRegistryProxy() string {
+	addr := r.Proxies.Kubernetes
+	addr = strings.TrimSpace(addr)
+	addr = strings.TrimSuffix(addr, "/")
+	return addr
+}
+
+func (r ImageRegistrySpec) AppsCodeRegistryProxy() string {
+	addr := r.Proxies.AppsCode
+	addr = strings.TrimSpace(addr)
+	addr = strings.TrimSuffix(addr, "/")
+	return addr
+}
+
+const defaultTag = "latest"
+
+func NewRef(spec ImageRegistrySpec, img string) (string, error) {
+	ref, err := name.ParseReference(img)
+	if err != nil {
+		return "", err
+	}
+
+	// https://github.com/kmodules/go-containerregistry/blob/master/name/lib_test.go
+	switch ref.Registry {
+	case "index.docker.io":
+		var result string
+		_, bin, found := strings.Cut(ref.Repository, "library/")
+		if found {
+			addr := spec.DockerLibraryProxy()
+			if addr != "" {
+				result = addr + "/" + bin
+			} else {
+				result = bin
+			}
+		} else {
+			addr := spec.DockerHubProxy()
+			if addr != "" {
+				result = addr + "/" + ref.Repository
+			} else {
+				result = ref.Repository
+			}
+		}
+		if ref.Tag != "" && ref.Tag != defaultTag {
+			result += ":" + ref.Tag
+		}
+		return result, nil
+	case "ghcr.io":
+		result := spec.GHCRProxy() + "/" + ref.Repository
+		if ref.Tag != "" && ref.Tag != defaultTag {
+			result += ":" + ref.Tag
+		}
+		return result, nil
+	case "quay.io":
+		result := spec.QuayProxy() + "/" + ref.Repository
+		if ref.Tag != "" && ref.Tag != defaultTag {
+			result += ":" + ref.Tag
+		}
+		return result, nil
+	case "registry.k8s.io":
+		result := spec.KubernetesRegistryProxy() + "/" + ref.Repository
+		if ref.Tag != "" && ref.Tag != defaultTag {
+			result += ":" + ref.Tag
+		}
+		return result, nil
+	case "r.appscode.com":
+		result := spec.AppsCodeRegistryProxy() + "/" + ref.Repository
+		if ref.Tag != "" && ref.Tag != defaultTag {
+			result += ":" + ref.Tag
+		}
+		return result, nil
+	}
+	return "", fmt.Errorf("registry not support for image %s", img)
+}
+
+func MustNewRef(spec ImageRegistrySpec, img string) string {
+	out, err := NewRef(spec, img)
+	if err != nil {
+		panic(err)
+	}
+	return out
 }

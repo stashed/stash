@@ -91,7 +91,7 @@ func PatchMutatingWebhookConfigurationObject(ctx context.Context, c kubernetes.I
 
 func TryUpdateMutatingWebhookConfiguration(ctx context.Context, c kubernetes.Interface, name string, transform func(*reg.MutatingWebhookConfiguration) *reg.MutatingWebhookConfiguration, opts metav1.UpdateOptions) (result *reg.MutatingWebhookConfiguration, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {

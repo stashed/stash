@@ -377,7 +377,7 @@ func (o *UpdateStatusOptions) updateRepositoryStatus(inv invoker.BackupInvoker, 
 }
 
 func (o UpdateStatusOptions) waitUntilOtherHostsCompleted(backupSession *v1beta1.BackupSession, curTarget v1beta1.TargetRef, numCurHosts int) error {
-	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (done bool, err error) {
+	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 30*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		klog.Infof("Waiting for all other targets/hosts to complete their backup.....")
 		newBackupSession, err := o.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(context.TODO(), backupSession.Name, metav1.GetOptions{})
 		if err != nil {

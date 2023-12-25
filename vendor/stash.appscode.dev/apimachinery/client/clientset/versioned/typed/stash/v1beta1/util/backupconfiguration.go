@@ -82,7 +82,7 @@ func PatchBackupConfigurationObject(ctx context.Context, c cs.StashV1beta1Interf
 
 func TryUpdateBackupConfiguration(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupConfiguration) *api.BackupConfiguration, opts metav1.UpdateOptions) (result *api.BackupConfiguration, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.BackupConfigurations(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
@@ -128,7 +128,7 @@ func UpdateBackupConfigurationStatus(
 	if err != nil {
 		return nil, err
 	}
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		var e2 error
 		result, e2 = c.BackupConfigurations(meta.Namespace).UpdateStatus(ctx, apply(cur), opts)

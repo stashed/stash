@@ -81,7 +81,7 @@ func PatchPVObject(ctx context.Context, c kubernetes.Interface, cur, mod *core.P
 
 func TryUpdatePV(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.PersistentVolume) *core.PersistentVolume, opts metav1.UpdateOptions) (result *core.PersistentVolume, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.CoreV1().PersistentVolumes().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {

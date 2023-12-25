@@ -25,7 +25,6 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -37,9 +36,9 @@ type FakeRepositories struct {
 	ns   string
 }
 
-var repositoriesResource = schema.GroupVersionResource{Group: "stash.appscode.com", Version: "v1alpha1", Resource: "repositories"}
+var repositoriesResource = v1alpha1.SchemeGroupVersion.WithResource("repositories")
 
-var repositoriesKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1alpha1", Kind: "Repository"}
+var repositoriesKind = v1alpha1.SchemeGroupVersion.WithKind("Repository")
 
 // Get takes name of the repository, and returns the corresponding repository object, and an error if there is any.
 func (c *FakeRepositories) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Repository, err error) {

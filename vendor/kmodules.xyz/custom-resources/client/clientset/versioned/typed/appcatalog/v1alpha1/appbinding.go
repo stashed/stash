@@ -20,9 +20,12 @@ package v1alpha1
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1alpha1 "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+	appcatalogv1alpha1 "kmodules.xyz/custom-resources/client/applyconfiguration/appcatalog/v1alpha1"
 	scheme "kmodules.xyz/custom-resources/client/clientset/versioned/scheme"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,6 +50,7 @@ type AppBindingInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AppBindingList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AppBinding, err error)
+	Apply(ctx context.Context, appBinding *appcatalogv1alpha1.AppBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AppBinding, err error)
 	AppBindingExpansion
 }
 
@@ -172,6 +176,32 @@ func (c *appBindings) Patch(ctx context.Context, name string, pt types.PatchType
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied appBinding.
+func (c *appBindings) Apply(ctx context.Context, appBinding *appcatalogv1alpha1.AppBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AppBinding, err error) {
+	if appBinding == nil {
+		return nil, fmt.Errorf("appBinding provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(appBinding)
+	if err != nil {
+		return nil, err
+	}
+	name := appBinding.Name
+	if name == nil {
+		return nil, fmt.Errorf("appBinding.Name must be provided to Apply")
+	}
+	result = &v1alpha1.AppBinding{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("appbindings").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

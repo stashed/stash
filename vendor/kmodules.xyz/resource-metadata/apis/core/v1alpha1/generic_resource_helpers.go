@@ -73,7 +73,7 @@ func ToGenericResource(item client.Object, apiType *kmapi.ResourceID, cmeta *kma
 
 	genres := GenericResource{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: GroupVersion.String(),
+			APIVersion: SchemeGroupVersion.String(),
 			Kind:       ResourceKindGenericResource,
 		},
 		ObjectMeta: metav1.ObjectMeta{

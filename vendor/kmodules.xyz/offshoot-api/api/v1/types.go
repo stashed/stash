@@ -28,14 +28,14 @@ type ObjectMeta struct {
 	// and services.
 	// More info: http://kubernetes.io/docs/user-guide/labels
 	// +optional
-	Labels map[string]string `json:"labels,omitempty" protobuf:"bytes,1,rep,name=labels"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// Annotations is an unstructured key value map stored with a resource that may be
 	// set by external tools to store and retrieve arbitrary metadata. They are not
 	// queryable and should be preserved when modifying objects.
 	// More info: http://kubernetes.io/docs/user-guide/annotations
 	// +optional
-	Annotations map[string]string `json:"annotations,omitempty" protobuf:"bytes,2,rep,name=annotations"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // PodTemplateSpec describes the data a pod should have when created from a template
@@ -43,17 +43,17 @@ type PodTemplateSpec struct {
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
-	ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	ObjectMeta `json:"metadata,omitempty"`
 
 	// Workload controller's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
-	Controller ObjectMeta `json:"controller,omitempty" protobuf:"bytes,2,opt,name=controller"`
+	Controller ObjectMeta `json:"controller,omitempty"`
 
 	// Specification of the desired behavior of the pod.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
 	// +optional
-	Spec PodSpec `json:"spec,omitempty" protobuf:"bytes,3,opt,name=spec"`
+	Spec PodSpec `json:"spec,omitempty"`
 }
 
 type PodSpec struct {
@@ -62,7 +62,7 @@ type PodSpec struct {
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge,retainKeys
-	Volumes []Volume `json:"volumes,omitempty" patchStrategy:"merge,retainKeys" patchMergeKey:"name" protobuf:"bytes,1,rep,name=volumes"`
+	Volumes []Volume `json:"volumes,omitempty" patchStrategy:"merge,retainKeys" patchMergeKey:"name"`
 
 	// List of initialization containers belonging to the pod.
 	// Init containers are executed in order prior to containers being started. If any
@@ -79,7 +79,7 @@ type PodSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	InitContainers []core.Container `json:"initContainers,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,20,rep,name=initContainers"`
+	InitContainers []core.Container `json:"initContainers,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 
 	// Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request.
 	// Value must be non-negative integer. The value zero indicates stop immediately via
@@ -90,7 +90,7 @@ type PodSpec struct {
 	// Set this value longer than the expected cleanup time for your process.
 	// Defaults to 30 seconds.
 	// +optional
-	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty" protobuf:"varint,4,opt,name=terminationGracePeriodSeconds"`
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 
 	// Set DNS policy for the pod.
 	// Defaults to "ClusterFirst".
@@ -99,38 +99,38 @@ type PodSpec struct {
 	// To have DNS options set along with hostNetwork, you have to specify DNS policy
 	// explicitly to 'ClusterFirstWithHostNet'.
 	// +optional
-	DNSPolicy core.DNSPolicy `json:"dnsPolicy,omitempty" protobuf:"bytes,6,opt,name=dnsPolicy,casttype=DNSPolicy"`
+	DNSPolicy core.DNSPolicy `json:"dnsPolicy,omitempty"`
 
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +optional
 	// +mapType=atomic
-	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,7,rep,name=nodeSelector"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// ServiceAccountName is the name of the ServiceAccount to use to run this pod.
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
 	// +optional
-	ServiceAccountName string `json:"serviceAccountName,omitempty" protobuf:"bytes,8,opt,name=serviceAccountName"`
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
 	// Host networking requested for this pod. Use the host's network namespace.
 	// If this option is set, the ports that will be used must be specified.
 	// Default to false.
 	// +k8s:conversion-gen=false
 	// +optional
-	HostNetwork bool `json:"hostNetwork,omitempty" protobuf:"varint,11,opt,name=hostNetwork"`
+	HostNetwork bool `json:"hostNetwork,omitempty"`
 
 	// Use the host's pid namespace.
 	// Optional: Default to false.
 	// +k8s:conversion-gen=false
 	// +optional
-	HostPID bool `json:"hostPID,omitempty" protobuf:"varint,12,opt,name=hostPID"`
+	HostPID bool `json:"hostPID,omitempty"`
 
 	// Use the host's ipc namespace.
 	// Optional: Default to false.
 	// +k8s:conversion-gen=false
 	// +optional
-	HostIPC bool `json:"hostIPC,omitempty" protobuf:"varint,13,opt,name=hostIPC"`
+	HostIPC bool `json:"hostIPC,omitempty"`
 
 	// Share a single process namespace between all of the containers in a pod.
 	// When this is set containers will be able to view and signal processes from other containers
@@ -139,12 +139,12 @@ type PodSpec struct {
 	// Optional: Default to false.
 	// +k8s:conversion-gen=false
 	// +optional
-	ShareProcessNamespace *bool `json:"shareProcessNamespace,omitempty" protobuf:"varint,27,opt,name=shareProcessNamespace"`
+	ShareProcessNamespace *bool `json:"shareProcessNamespace,omitempty"`
 
 	// SecurityContext holds pod-level security attributes and common container settings.
 	// Optional: Defaults to empty.  See type description for default values of each field.
 	// +optional
-	SecurityContext *core.PodSecurityContext `json:"securityContext,omitempty" protobuf:"bytes,14,opt,name=securityContext"`
+	SecurityContext *core.PodSecurityContext `json:"securityContext,omitempty"`
 
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	// If specified, these secrets will be passed to individual puller implementations for them to use.
@@ -152,20 +152,20 @@ type PodSpec struct {
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,15,rep,name=imagePullSecrets"`
+	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 
 	// If specified, the pod's scheduling constraints
 	// +optional
-	Affinity *core.Affinity `json:"affinity,omitempty" protobuf:"bytes,18,opt,name=affinity"`
+	Affinity *core.Affinity `json:"affinity,omitempty"`
 
 	// If specified, the pod will be dispatched by specified scheduler.
 	// If not specified, the pod will be dispatched by default scheduler.
 	// +optional
-	SchedulerName string `json:"schedulerName,omitempty" protobuf:"bytes,19,opt,name=schedulerName"`
+	SchedulerName string `json:"schedulerName,omitempty"`
 
 	// If specified, the pod's tolerations.
 	// +optional
-	Tolerations []core.Toleration `json:"tolerations,omitempty" protobuf:"bytes,22,opt,name=tolerations"`
+	Tolerations []core.Toleration `json:"tolerations,omitempty"`
 
 	// If specified, indicates the pod's priority. "system-node-critical" and
 	// "system-cluster-critical" are two special keywords which indicate the
@@ -174,7 +174,7 @@ type PodSpec struct {
 	// If not specified, the pod priority will be default or zero if there is no
 	// default.
 	// +optional
-	PriorityClassName string `json:"priorityClassName,omitempty" protobuf:"bytes,24,opt,name=priorityClassName"`
+	PriorityClassName string `json:"priorityClassName,omitempty"`
 
 	// The priority value. Various system components use this field to find the
 	// priority of the pod. When Priority Admission Controller is enabled, it
@@ -182,13 +182,13 @@ type PodSpec struct {
 	// this field from PriorityClassName.
 	// The higher the value, the higher the priority.
 	// +optional
-	Priority *int32 `json:"priority,omitempty" protobuf:"bytes,25,opt,name=priority"`
+	Priority *int32 `json:"priority,omitempty"`
 
 	// Specifies the DNS parameters of a pod.
 	// Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
 	// +optional
-	DNSConfig *core.PodDNSConfig `json:"dnsConfig,omitempty" protobuf:"bytes,26,opt,name=dnsConfig"`
+	DNSConfig *core.PodDNSConfig `json:"dnsConfig,omitempty"`
 
 	// RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used
 	// to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run.
@@ -196,13 +196,13 @@ type PodSpec struct {
 	// empty definition that uses the default runtime handler.
 	// More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class
 	// +optional
-	RuntimeClassName *string `json:"runtimeClassName,omitempty" protobuf:"bytes,29,opt,name=runtimeClassName"`
+	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
 
 	// EnableServiceLinks indicates whether information about services should be injected into pod's
 	// environment variables, matching the syntax of Docker links.
 	// Optional: Defaults to true.
 	// +optional
-	EnableServiceLinks *bool `json:"enableServiceLinks,omitempty" protobuf:"varint,30,opt,name=enableServiceLinks"`
+	EnableServiceLinks *bool `json:"enableServiceLinks,omitempty"`
 
 	// TopologySpreadConstraints describes how a group of pods ought to spread across topology
 	// domains. Scheduler will schedule pods in a way which abides by the constraints.
@@ -213,7 +213,7 @@ type PodSpec struct {
 	// +listType=map
 	// +listMapKey=topologyKey
 	// +listMapKey=whenUnsatisfiable
-	TopologySpreadConstraints []core.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty" patchStrategy:"merge" patchMergeKey:"topologyKey" protobuf:"bytes,33,opt,name=topologySpreadConstraints"`
+	TopologySpreadConstraints []core.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty" patchStrategy:"merge" patchMergeKey:"topologyKey"`
 
 	////////////////////////////////////////////////////////
 	// Application (database) Container Specific Settings //
@@ -228,16 +228,16 @@ type PodSpec struct {
 	// Cannot be updated.
 	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
-	Args []string `json:"args,omitempty" protobuf:"bytes,1001,rep,name=args"`
+	Args []string `json:"args,omitempty"`
 
 	// List of environment variables to set in the container.
 	// Cannot be updated.
 	// +optional
-	Env []core.EnvVar `json:"env,omitempty" protobuf:"bytes,1002,rep,name=env"`
+	Env []core.EnvVar `json:"env,omitempty"`
 
 	// Compute Resources required by the sidecar container.
 	// +optional
-	Resources core.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,1003,opt,name=resources"`
+	Resources core.ResourceRequirements `json:"resources,omitempty"`
 
 	// Periodic probe of container liveness.
 	// Container will be restarted if the probe fails.
@@ -246,7 +246,7 @@ type PodSpec struct {
 	// Cannot be updated.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
-	LivenessProbe *core.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,1004,opt,name=livenessProbe"`
+	LivenessProbe *core.Probe `json:"livenessProbe,omitempty"`
 
 	// Periodic probe of container service readiness.
 	// Container will be removed from service endpoints if the probe fails.
@@ -255,25 +255,25 @@ type PodSpec struct {
 	// To ignore defaulting, set the value to empty ReadynessProbe "{}".
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
-	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty" protobuf:"bytes,1005,opt,name=readinessProbe"`
+	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty"`
 
 	// Actions that the management system should take in response to container lifecycle events.
 	// Cannot be updated.
 	// +optional
-	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty" protobuf:"bytes,1006,opt,name=lifecycle"`
+	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty"`
 
 	// Security options the pod should run with.
 	// More info: https://kubernetes.io/docs/concepts/policy/security-context/
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 	// +optional
-	ContainerSecurityContext *core.SecurityContext `json:"containerSecurityContext,omitempty" protobuf:"bytes,1007,opt,name=containerSecurityContext"`
+	ContainerSecurityContext *core.SecurityContext `json:"containerSecurityContext,omitempty"`
 
 	// Pod volumes to mount into the container's filesystem.
 	// Cannot be updated.
 	// +optional
 	// +patchMergeKey=mountPath
 	// +patchStrategy=merge
-	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,1008,rep,name=volumeMounts"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath"`
 }
 
 // ServiceTemplateSpec describes the data a service should have when created from a template
@@ -281,12 +281,12 @@ type ServiceTemplateSpec struct {
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
-	ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	ObjectMeta `json:"metadata,omitempty"`
 
 	// Specification of the desired behavior of the service.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
 	// +optional
-	Spec ServiceSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Spec ServiceSpec `json:"spec,omitempty"`
 }
 
 // ServiceSpec describes the attributes that a user creates on a service.
@@ -295,7 +295,7 @@ type ServiceSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +patchMergeKey=port
 	// +patchStrategy=merge
-	Ports []ServicePort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,1,rep,name=ports"`
+	Ports []ServicePort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"port"`
 
 	// clusterIP is the IP address of the service and is usually assigned
 	// randomly by the master. If an address is specified manually and is not in
@@ -307,7 +307,7 @@ type ServiceSpec struct {
 	// type is ExternalName.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +optional
-	ClusterIP string `json:"clusterIP,omitempty" protobuf:"bytes,2,opt,name=clusterIP"`
+	ClusterIP string `json:"clusterIP,omitempty"`
 
 	// type determines how the Service is exposed. Defaults to ClusterIP. Valid
 	// options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
@@ -324,7 +324,7 @@ type ServiceSpec struct {
 	// to the clusterIP.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services---service-types
 	// +optional
-	Type core.ServiceType `json:"type,omitempty" protobuf:"bytes,3,opt,name=type,casttype=k8s.io/api/core/v1.ServiceType"`
+	Type core.ServiceType `json:"type,omitempty"`
 
 	// externalIPs is a list of IP addresses for which nodes in the cluster
 	// will also accept traffic for this service.  These IPs are not managed by
@@ -332,7 +332,7 @@ type ServiceSpec struct {
 	// at a node with this IP.  A common example is external load-balancers
 	// that are not part of the Kubernetes system.
 	// +optional
-	ExternalIPs []string `json:"externalIPs,omitempty" protobuf:"bytes,4,rep,name=externalIPs"`
+	ExternalIPs []string `json:"externalIPs,omitempty"`
 
 	// Only applies to Service Type: LoadBalancer
 	// LoadBalancer will get created with the IP specified in this field.
@@ -340,14 +340,14 @@ type ServiceSpec struct {
 	// the loadBalancerIP when a load balancer is created.
 	// This field will be ignored if the cloud-provider does not support the feature.
 	// +optional
-	LoadBalancerIP string `json:"loadBalancerIP,omitempty" protobuf:"bytes,5,opt,name=loadBalancerIP"`
+	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
 
 	// If specified and supported by the platform, this will restrict traffic through the cloud-provider
 	// load-balancer will be restricted to the specified client IPs. This field will be ignored if the
 	// cloud-provider does not support the feature."
 	// More info: https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/
 	// +optional
-	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty" protobuf:"bytes,6,rep,name=loadBalancerSourceRanges"`
+	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
 
 	// externalTrafficPolicy denotes if this Service desires to route external
 	// traffic to node-local or cluster-wide endpoints. "Local" preserves the
@@ -356,7 +356,7 @@ type ServiceSpec struct {
 	// "Cluster" obscures the client source IP and may cause a second hop to
 	// another node, but should have good overall load-spreading.
 	// +optional
-	ExternalTrafficPolicy core.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty" protobuf:"bytes,7,opt,name=externalTrafficPolicy,casttype=k8s.io/api/core/v1.ServiceExternalTrafficPolicyType"`
+	ExternalTrafficPolicy core.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
 
 	// healthCheckNodePort specifies the healthcheck nodePort for the service.
 	// If not specified, HealthCheckNodePort is created by the service api
@@ -364,11 +364,11 @@ type ServiceSpec struct {
 	// if specified by the client. Only effects when Type is set to LoadBalancer
 	// and ExternalTrafficPolicy is set to Local.
 	// +optional
-	HealthCheckNodePort int32 `json:"healthCheckNodePort,omitempty" protobuf:"varint,8,opt,name=healthCheckNodePort"`
+	HealthCheckNodePort int32 `json:"healthCheckNodePort,omitempty"`
 
 	// sessionAffinityConfig contains the configurations of session affinity.
 	// +optional
-	SessionAffinityConfig *core.SessionAffinityConfig `json:"sessionAffinityConfig,omitempty" protobuf:"bytes,9,opt,name=sessionAffinityConfig"`
+	SessionAffinityConfig *core.SessionAffinityConfig `json:"sessionAffinityConfig,omitempty"`
 }
 
 // ServicePort contains information on service's port.
@@ -378,10 +378,10 @@ type ServicePort struct {
 	// the 'Name' field in EndpointPort objects.
 	// Optional if only one ServicePort is defined on this service.
 	// +optional
-	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	Name string `json:"name,omitempty"`
 
 	// The port that will be exposed by this service.
-	Port int32 `json:"port" protobuf:"varint,2,opt,name=port"`
+	Port int32 `json:"port"`
 
 	// The port on each node on which this service is exposed when type=NodePort or LoadBalancer.
 	// Usually assigned by the system. If specified, it will be allocated to the service
@@ -389,7 +389,7 @@ type ServicePort struct {
 	// Default is to auto-allocate a port if the ServiceType of this Service requires one.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 	// +optional
-	NodePort int32 `json:"nodePort,omitempty" protobuf:"varint,3,opt,name=nodePort"`
+	NodePort int32 `json:"nodePort,omitempty"`
 }
 
 // Beware of MergeServicePorts

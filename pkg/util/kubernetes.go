@@ -238,8 +238,8 @@ func DeleteAllConfigMapLocks(k8sClient kubernetes.Interface, namespace, name, ki
 }
 
 func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
+	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, apis.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
+		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
@@ -247,8 +247,8 @@ func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 }
 
 func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := kubeClient.AppsV1().DaemonSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
+	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, apis.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
+		if obj, err := kubeClient.AppsV1().DaemonSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status.DesiredNumberScheduled == obj.Status.NumberReady && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
@@ -256,8 +256,8 @@ func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.Object
 }
 
 func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := kubeClient.AppsV1().StatefulSets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
+	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, apis.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
+		if obj, err := kubeClient.AppsV1().StatefulSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
@@ -265,8 +265,8 @@ func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.Obje
 }
 
 func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(apis.RetryInterval, apis.ReadinessTimeout, func() (bool, error) {
-		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
+	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, apis.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
+		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Spec.Replicas == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
@@ -274,8 +274,8 @@ func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) e
 }
 
 func WaitUntilPVCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(apis.RetryInterval, 2*time.Hour, func() (bool, error) {
-		if obj, err := c.CoreV1().PersistentVolumeClaims(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
+	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, 2*time.Hour, true, func(ctx context.Context) (bool, error) {
+		if obj, err := c.CoreV1().PersistentVolumeClaims(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status.Phase == core.ClaimBound, nil
 		}
 		return false, nil

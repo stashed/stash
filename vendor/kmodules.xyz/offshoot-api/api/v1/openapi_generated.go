@@ -425,6 +425,22 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodRuntimeSettings(ref common.Refere
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
+					"podLabels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodLabels are the labels that will be attached with the respective Pod",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 					"podAnnotations": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PodAnnotations are the annotations that will be attached with the respective Pod",

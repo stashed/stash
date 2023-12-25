@@ -81,7 +81,7 @@ func PatchPodObject(ctx context.Context, c kubernetes.Interface, cur, mod *core.
 
 func TryUpdatePod(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Pod) *core.Pod, opts metav1.UpdateOptions) (result *core.Pod, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.CoreV1().Pods(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
@@ -144,7 +144,7 @@ func RestartPods(ctx context.Context, c kubernetes.Interface, namespace string, 
 }
 
 func WaitUntilPodRunning(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		if pod, err := c.CoreV1().Pods(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			runningAndReady, _ := PodRunningAndReady(*pod)
 			return runningAndReady, nil
@@ -159,7 +159,7 @@ func WaitUntilPodRunningBySelector(ctx context.Context, c kubernetes.Interface, 
 		return err
 	}
 
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		podList, err := c.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: r.String(),
 		})
@@ -187,7 +187,7 @@ func WaitUntilPodDeletedBySelector(ctx context.Context, c kubernetes.Interface, 
 		return err
 	}
 
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		podList, err := c.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: sel.String(),
 		})
@@ -200,7 +200,7 @@ func WaitUntilPodDeletedBySelector(ctx context.Context, c kubernetes.Interface, 
 
 // WaitUntillPodTerminatedByLabel waits until all pods with the label are terminated. Timeout is 5 minutes.
 func WaitUntillPodTerminatedByLabel(ctx context.Context, c kubernetes.Interface, namespace string, label string) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.GCTimeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.GCTimeout, true, func(ctx context.Context) (bool, error) {
 		podList, err := c.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: label})
 		if err != nil {
 			return false, nil

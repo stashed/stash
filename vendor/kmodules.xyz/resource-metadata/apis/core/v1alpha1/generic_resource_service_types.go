@@ -32,6 +32,8 @@ const (
 
 // GenericResourceService reports any ops services used by any resource
 
+// +genclient
+// +genclient:onlyVerbs=get,list
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type GenericResourceService struct {
 	metav1.TypeMeta   `json:",inline"`

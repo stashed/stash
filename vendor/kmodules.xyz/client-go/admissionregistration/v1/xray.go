@@ -117,7 +117,7 @@ func (d ValidatingWebhookXray) IsActive(ctx context.Context) error {
 
 	attempt := 0
 	var failures []string
-	return wait.PollImmediateUntil(kutil.RetryInterval, func() (bool, error) {
+	return wait.PollUntilContextCancel(wait.ContextForChannel(d.stopCh), kutil.RetryInterval, true, func(ctx context.Context) (bool, error) {
 		apisvc, err := apireg.ApiregistrationV1().APIServices().Get(ctx, d.apisvc, metav1.GetOptions{})
 		if err != nil {
 			return false, retry(err)
@@ -166,7 +166,7 @@ func (d ValidatingWebhookXray) IsActive(ctx context.Context) error {
 			}
 		}
 		return false, nil
-	}, d.stopCh)
+	})
 }
 
 func (d ValidatingWebhookXray) updateAPIService(ctx context.Context, apireg apireg_cs.Interface, apisvc *apiregistration.APIService, err error) error {

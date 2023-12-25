@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -126,7 +127,7 @@ func NewCmdRestore() *cobra.Command {
 }
 
 func waitUntilAllPreviousTargetsExecuted(opt *restore.Options, tref v1beta1_api.TargetRef) error {
-	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 30*time.Minute, true, func(ctx context.Context) (bool, error) {
 		klog.Infof("Waiting for all previous targets to complete their restore process...")
 		inv, err := invoker.NewRestoreInvoker(opt.KubeClient, opt.StashClient, opt.InvokerKind, opt.InvokerName, opt.Namespace)
 		if err != nil {

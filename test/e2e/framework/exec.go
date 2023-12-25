@@ -18,6 +18,7 @@ package framework
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	core "k8s.io/api/core/v1"
@@ -48,7 +49,7 @@ func (f *Framework) ExecOnPod(pod *core.Pod, command ...string) (string, error) 
 		return "", fmt.Errorf("failed to init executor: %v", err)
 	}
 
-	err = exec.Stream(remotecommand.StreamOptions{
+	err = exec.StreamWithContext(context.Background(), remotecommand.StreamOptions{
 		Stdout: &execOut,
 		Stderr: &execErr,
 	})

@@ -138,8 +138,8 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 }
 
 func WaitUntilRepositoryDeleted(sc cs.Interface, repository *v1alpha1.Repository) error {
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := sc.StashV1alpha1().Repositories(repository.Namespace).Get(context.TODO(), repository.Name, metav1.GetOptions{}); err != nil {
+	return wait.PollUntilContextTimeout(context.Background(), PullInterval, WaitTimeOut, true, func(ctx context.Context) (done bool, err error) {
+		if _, err := sc.StashV1alpha1().Repositories(repository.Namespace).Get(ctx, repository.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -293,11 +293,11 @@ func (fi *Invocation) WaitUntilResourceDeleted(obj runtime.Object) error {
 }
 
 func (fi *Invocation) waitUntilResourceDeleted(gvr schema.GroupVersionResource, objMeta metav1.ObjectMeta) error {
-	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+	return wait.PollUntilContextTimeout(context.Background(), PullInterval, WaitTimeOut, true, func(ctx context.Context) (done bool, err error) {
 		if gvr.Resource == v1beta1.ResourcePluralBackupBlueprint {
-			_, err = fi.dmClient.Resource(gvr).Get(context.TODO(), objMeta.Name, metav1.GetOptions{})
+			_, err = fi.dmClient.Resource(gvr).Get(ctx, objMeta.Name, metav1.GetOptions{})
 		} else {
-			_, err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Get(context.TODO(), objMeta.Name, metav1.GetOptions{})
+			_, err = fi.dmClient.Resource(gvr).Namespace(objMeta.Namespace).Get(ctx, objMeta.Name, metav1.GetOptions{})
 		}
 		if err != nil {
 			if kerr.IsNotFound(err) {

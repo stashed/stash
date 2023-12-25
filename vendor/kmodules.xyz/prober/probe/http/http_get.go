@@ -33,7 +33,8 @@ const (
 
 // New creates GetProber that will skip TLS verification while probing.
 // followNonLocalRedirects configures whether the prober should follow redirects to a different hostname.
-//   If disabled, redirects to other hosts will trigger a warning result.
+//
+//	If disabled, redirects to other hosts will trigger a warning result.
 func NewHttpGet(followNonLocalRedirects bool) GetProber {
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
 	return NewGetWithTLSConfig(tlsConfig, followNonLocalRedirects)
@@ -41,7 +42,8 @@ func NewHttpGet(followNonLocalRedirects bool) GetProber {
 
 // NewWithTLSConfig takes tls config as parameter.
 // followNonLocalRedirects configures whether the prober should follow redirects to a different hostname.
-//   If disabled, redirects to other hosts will trigger a warning result.
+//
+//	If disabled, redirects to other hosts will trigger a warning result.
 func NewGetWithTLSConfig(config *tls.Config, followNonLocalRedirects bool) GetProber {
 	// We do not want the probe use node's local proxy set.
 	transport := utilnet.SetTransportDefaults(

@@ -61,7 +61,7 @@ const (
 )
 
 func tryGetServiceAccountTokenSecret(kc kubernetes.Interface, sa types.NamespacedName) (secret *core.Secret, err error) {
-	err = wait.PollImmediate(kutil.RetryInterval, retryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), kutil.RetryInterval, retryTimeout, true, func(ctx context.Context) (bool, error) {
 		var e2 error
 		secret, e2 = getServiceAccountTokenSecret(kc, sa)
 		if e2 == nil {

@@ -19,7 +19,7 @@ REPO     := $(notdir $(shell pwd))
 BIN      := client-go
 
 # https://github.com/appscodelabs/gengo-builder
-CODE_GENERATOR_IMAGE ?= ghcr.io/appscode/gengo:release-1.25
+CODE_GENERATOR_IMAGE ?= ghcr.io/appscode/gengo:release-1.29
 
 # This version-strategy uses git tags to set the version string
 git_branch       := $(shell git rev-parse --abbrev-ref HEAD)

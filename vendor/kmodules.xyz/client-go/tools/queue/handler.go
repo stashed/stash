@@ -179,7 +179,7 @@ func EnqueueAfter(queue workqueue.RateLimitingInterface, obj interface{}, durati
 	queue.AddAfter(key, duration)
 }
 
-func (h *QueueingEventHandler) OnAdd(obj interface{}) {
+func (h *QueueingEventHandler) OnAdd(obj interface{}, isInInitialList bool) {
 	klog.V(6).Infof("Add event for %+v\n", obj)
 	if h.enqueueAdd == nil || h.enqueueAdd(obj) {
 		if h.restrictToNamespace != core.NamespaceAll {
@@ -279,8 +279,8 @@ func (w versionedEventHandler) setGroupVersionKind(obj interface{}) interface{} 
 	return obj
 }
 
-func (w versionedEventHandler) OnAdd(obj interface{}) {
-	w.inner.OnAdd(w.setGroupVersionKind(obj))
+func (w versionedEventHandler) OnAdd(obj interface{}, isInInitialList bool) {
+	w.inner.OnAdd(w.setGroupVersionKind(obj), isInInitialList)
 }
 
 func (w versionedEventHandler) OnUpdate(oldObj, newObj interface{}) {
@@ -307,9 +307,9 @@ func (w filteredEventHandler) matches(obj interface{}) bool {
 	return err == nil && w.sel.Matches(labels.Set(accessor.GetLabels()))
 }
 
-func (w filteredEventHandler) OnAdd(obj interface{}) {
+func (w filteredEventHandler) OnAdd(obj interface{}, isInInitialList bool) {
 	if w.matches(obj) {
-		w.inner.OnAdd(obj)
+		w.inner.OnAdd(obj, isInInitialList)
 	}
 }
 

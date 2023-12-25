@@ -85,7 +85,7 @@ func PatchDeploymentObject(ctx context.Context, c kubernetes.Interface, cur, mod
 
 func TryUpdateDeployment(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.Deployment) *apps.Deployment, opts metav1.UpdateOptions) (result *apps.Deployment, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.AppsV1().Deployments(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
@@ -122,7 +122,7 @@ func DeploymentsAreReady(items []*apps.Deployment) (bool, string) {
 }
 
 func WaitUntilDeploymentReady(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
 			return IsDeploymentReady(obj), nil
 		}

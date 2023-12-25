@@ -58,6 +58,8 @@ type ControlPlaneInfo struct {
 
 // ResourceSummary is the Schema for the ResourceSummary API
 
+// +genclient
+// +genclient:onlyVerbs=get,list
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ResourceSummary struct {
 	metav1.TypeMeta   `json:",inline"`

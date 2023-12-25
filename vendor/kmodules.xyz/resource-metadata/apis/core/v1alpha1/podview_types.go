@@ -214,6 +214,8 @@ type ResourceView struct {
 
 // PodView is the Schema for the podviews API
 
+// +genclient
+// +genclient:onlyVerbs=get,list
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type PodView struct {
 	metav1.TypeMeta   `json:",inline"`

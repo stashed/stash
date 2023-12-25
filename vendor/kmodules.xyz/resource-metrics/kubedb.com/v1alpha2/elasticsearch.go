@@ -173,7 +173,7 @@ func ElasticsearchNodeResources(
 		node.Replicas = pointer.Int64P(1)
 	}
 	rr := fn(node.Resources)
-	sr := fn(node.Storage.Resources)
+	sr := fn(api.ToResourceRequirements(node.Storage.Resources))
 	rr[core.ResourceStorage] = *sr.Storage()
 
 	return rr, *node.Replicas, nil

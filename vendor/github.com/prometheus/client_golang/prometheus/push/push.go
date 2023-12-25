@@ -15,17 +15,17 @@
 // builder approach. Create a Pusher with New and then add the various options
 // by using its methods, finally calling Add or Push, like this:
 //
-//    // Easy case:
-//    push.New("http://example.org/metrics", "my_job").Gatherer(myRegistry).Push()
+//	// Easy case:
+//	push.New("http://example.org/metrics", "my_job").Gatherer(myRegistry).Push()
 //
-//    // Complex case:
-//    push.New("http://example.org/metrics", "my_job").
-//        Collector(myCollector1).
-//        Collector(myCollector2).
-//        Grouping("zone", "xy").
-//        Client(&myHTTPClient).
-//        BasicAuth("top", "secret").
-//        Add()
+//	// Complex case:
+//	push.New("http://example.org/metrics", "my_job").
+//	    Collector(myCollector1).
+//	    Collector(myCollector2).
+//	    Grouping("zone", "xy").
+//	    Client(&myHTTPClient).
+//	    BasicAuth("top", "secret").
+//	    Add()
 //
 // See the examples section for more detailed examples.
 //
@@ -77,6 +77,7 @@ type Pusher struct {
 	registerer prometheus.Registerer
 
 	client             HTTPDoer
+	header             http.Header
 	useBasicAuth       bool
 	username, password string
 
@@ -201,6 +202,13 @@ func (p *Pusher) Client(c HTTPDoer) *Pusher {
 	return p
 }
 
+// Header sets a custom HTTP header for the Pusher's client. For convenience, this method
+// returns a pointer to the Pusher itself.
+func (p *Pusher) Header(header http.Header) *Pusher {
+	p.header = header
+	return p
+}
+
 // BasicAuth configures the Pusher to use HTTP Basic Authentication with the
 // provided username and password. For convenience, this method returns a
 // pointer to the Pusher itself.
@@ -235,6 +243,9 @@ func (p *Pusher) Delete() error {
 	req, err := http.NewRequest(http.MethodDelete, p.fullURL(), nil)
 	if err != nil {
 		return err
+	}
+	if p.header != nil {
+		req.Header = p.header
 	}
 	if p.useBasicAuth {
 		req.SetBasicAuth(p.username, p.password)
@@ -278,13 +289,16 @@ func (p *Pusher) push(ctx context.Context, method string) error {
 		}
 		if err := enc.Encode(mf); err != nil {
 			return fmt.Errorf(
-				"failed to encode metric familty %s, error is %w",
+				"failed to encode metric family %s, error is %w",
 				mf.GetName(), err)
 		}
 	}
 	req, err := http.NewRequestWithContext(ctx, method, p.fullURL(), buf)
 	if err != nil {
 		return err
+	}
+	if p.header != nil {
+		req.Header = p.header
 	}
 	if p.useBasicAuth {
 		req.SetBasicAuth(p.username, p.password)

@@ -143,11 +143,13 @@ type ObjectModel struct {
 
 type ResourceObject struct {
 	Filename string                     `json:"filename,omitempty"`
+	Key      string                     `json:"key,omitempty"`
 	Data     *unstructured.Unstructured `json:"data,omitempty"`
 }
 
 type ResourceFile struct {
 	Filename string `json:"filename,omitempty"`
+	Key      string `json:"key,omitempty"`
 	Data     string `json:"data,omitempty"`
 }
 

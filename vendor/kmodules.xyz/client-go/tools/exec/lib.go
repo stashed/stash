@@ -73,26 +73,30 @@ func TTY(enable bool) func(*Options) {
 }
 
 func Exec(config *rest.Config, pod types.NamespacedName, options ...func(*Options)) (string, error) {
+	ctx := context.Background()
+
 	kc, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return "", err
 	}
-	p, err := kc.CoreV1().Pods(pod.Namespace).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+	p, err := kc.CoreV1().Pods(pod.Namespace).Get(ctx, pod.Name, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
-	return execIntoPod(config, kc, p, options...)
+	return execIntoPod(ctx, config, kc, p, options...)
 }
 
 func ExecIntoPod(config *rest.Config, pod *core.Pod, options ...func(*Options)) (string, error) {
+	ctx := context.Background()
+
 	kc, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return "", err
 	}
-	return execIntoPod(config, kc, pod, options...)
+	return execIntoPod(ctx, config, kc, pod, options...)
 }
 
-func execIntoPod(config *rest.Config, kc kubernetes.Interface, pod *core.Pod, options ...func(*Options)) (string, error) {
+func execIntoPod(ctx context.Context, config *rest.Config, kc kubernetes.Interface, pod *core.Pod, options ...func(*Options)) (string, error) {
 	var (
 		execOut bytes.Buffer
 		execErr bytes.Buffer
@@ -141,7 +145,7 @@ func execIntoPod(config *rest.Config, kc kubernetes.Interface, pod *core.Pod, op
 		return "", fmt.Errorf("failed to init executor: %v", err)
 	}
 
-	err = exec.Stream(opts.StreamOptions)
+	err = exec.StreamWithContext(ctx, opts.StreamOptions)
 	if err != nil {
 		return "", fmt.Errorf("could not execute: %v", err)
 	}

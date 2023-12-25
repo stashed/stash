@@ -57,8 +57,11 @@ func (r restClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return apiutil.NewDynamicRESTMapper(config)
+	hc, err := rest.HTTPClientFor(config)
+	if err != nil {
+		return nil, err
+	}
+	return apiutil.NewDynamicRESTMapper(config, hc)
 }
 
 func (r restClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {

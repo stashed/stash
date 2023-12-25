@@ -25,7 +25,6 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	testing "k8s.io/client-go/testing"
 )
 
@@ -35,9 +34,9 @@ type FakeSnapshots struct {
 	ns   string
 }
 
-var snapshotsResource = schema.GroupVersionResource{Group: "repositories.stash.appscode.com", Version: "v1alpha1", Resource: "snapshots"}
+var snapshotsResource = v1alpha1.SchemeGroupVersion.WithResource("snapshots")
 
-var snapshotsKind = schema.GroupVersionKind{Group: "repositories.stash.appscode.com", Version: "v1alpha1", Kind: "Snapshot"}
+var snapshotsKind = v1alpha1.SchemeGroupVersion.WithKind("Snapshot")
 
 // Get takes name of the snapshot, and returns the corresponding snapshot object, and an error if there is any.
 func (c *FakeSnapshots) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Snapshot, err error) {

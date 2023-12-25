@@ -82,7 +82,7 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 func (c *StashController) initDaemonSetWatcher() {
 	c.dsInformer = c.kubeInformerFactory.Apps().V1().DaemonSets().Informer()
 	c.dsQueue = queue.New("DaemonSet", c.MaxNumRequeues, c.NumThreads, c.processDaemonSetEvent)
-	c.dsInformer.AddEventHandler(queue.DefaultEventHandler(c.dsQueue.GetQueue(), core.NamespaceAll))
+	_, _ = c.dsInformer.AddEventHandler(queue.DefaultEventHandler(c.dsQueue.GetQueue(), core.NamespaceAll))
 	c.dsLister = c.kubeInformerFactory.Apps().V1().DaemonSets().Lister()
 }
 

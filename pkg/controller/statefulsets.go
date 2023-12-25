@@ -82,7 +82,7 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 func (c *StashController) initStatefulSetWatcher() {
 	c.ssInformer = c.kubeInformerFactory.Apps().V1().StatefulSets().Informer()
 	c.ssQueue = queue.New("StatefulSet", c.MaxNumRequeues, c.NumThreads, c.processStatefulSetEvent)
-	c.ssInformer.AddEventHandler(queue.DefaultEventHandler(c.ssQueue.GetQueue(), core.NamespaceAll))
+	_, _ = c.ssInformer.AddEventHandler(queue.DefaultEventHandler(c.ssQueue.GetQueue(), core.NamespaceAll))
 	c.ssLister = c.kubeInformerFactory.Apps().V1().StatefulSets().Lister()
 }
 

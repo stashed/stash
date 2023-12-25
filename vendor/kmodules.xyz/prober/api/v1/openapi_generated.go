@@ -85,7 +85,6 @@ func schema_kmodulesxyz_prober_api_v1_HTTPPostAction(ref common.ReferenceCallbac
 					"port": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.",
-							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/apimachinery/pkg/util/intstr.IntOrString"),
 						},
 					},

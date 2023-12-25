@@ -131,7 +131,7 @@ func TryUpdate(
 	}
 
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := ri.Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
@@ -167,7 +167,7 @@ func UpdateStatus(
 
 	attempt := 0
 	cur := in.DeepCopy()
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		var e2 error
 		result, e2 = ri.UpdateStatus(ctx, transform(cur), opts)

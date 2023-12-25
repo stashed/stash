@@ -19,35 +19,37 @@ limitations under the License.
 // DO NOT EDIT!
 
 /*
-	Package v1 is a generated protocol buffer package.
+Package v1 is a generated protocol buffer package.
 
-	It is generated from these files:
-		kmodules.xyz/openshift/apis/apps/v1/generated.proto
+It is generated from these files:
 
-	It has these top-level messages:
-		CustomDeploymentStrategyParams
-		DeploymentCause
-		DeploymentCauseImageTrigger
-		DeploymentCondition
-		DeploymentConfig
-		DeploymentConfigList
-		DeploymentConfigRollback
-		DeploymentConfigRollbackSpec
-		DeploymentConfigSpec
-		DeploymentConfigStatus
-		DeploymentDetails
-		DeploymentLog
-		DeploymentLogOptions
-		DeploymentRequest
-		DeploymentStrategy
-		DeploymentTriggerImageChangeParams
-		DeploymentTriggerPolicies
-		DeploymentTriggerPolicy
-		ExecNewPodHook
-		LifecycleHook
-		RecreateDeploymentStrategyParams
-		RollingDeploymentStrategyParams
-		TagImageHook
+	kmodules.xyz/openshift/apis/apps/v1/generated.proto
+
+It has these top-level messages:
+
+	CustomDeploymentStrategyParams
+	DeploymentCause
+	DeploymentCauseImageTrigger
+	DeploymentCondition
+	DeploymentConfig
+	DeploymentConfigList
+	DeploymentConfigRollback
+	DeploymentConfigRollbackSpec
+	DeploymentConfigSpec
+	DeploymentConfigStatus
+	DeploymentDetails
+	DeploymentLog
+	DeploymentLogOptions
+	DeploymentRequest
+	DeploymentStrategy
+	DeploymentTriggerImageChangeParams
+	DeploymentTriggerPolicies
+	DeploymentTriggerPolicy
+	ExecNewPodHook
+	LifecycleHook
+	RecreateDeploymentStrategyParams
+	RollingDeploymentStrategyParams
+	TagImageHook
 */
 package v1
 
