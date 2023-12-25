@@ -20,16 +20,16 @@ import "k8s.io/apimachinery/pkg/runtime"
 
 // ResourceHandler can handle admission requests that happen to a
 // resource.
-//  * OnCreate is called when an object is created. If an error is
-//      returned admission is denied. Otherwise, if an object is
-//      returned, it is used to compute a patch and should be used as
-//      MutatingAdmissionWebhook.
-//  * OnUpdate is called when an object is updated. Note that oldObj is
-//      the existing object.  If an error is  returned admission is denied.
-//      Otherwise, if an object is returned, it is used to compute a patch
-//      and should be used as MutatingAdmissionWebhook.
-//  * OnDelete will gets the current state of object when delete request
-//      is received.
+//   - OnCreate is called when an object is created. If an error is
+//     returned admission is denied. Otherwise, if an object is
+//     returned, it is used to compute a patch and should be used as
+//     MutatingAdmissionWebhook.
+//   - OnUpdate is called when an object is updated. Note that oldObj is
+//     the existing object.  If an error is  returned admission is denied.
+//     Otherwise, if an object is returned, it is used to compute a patch
+//     and should be used as MutatingAdmissionWebhook.
+//   - OnDelete will gets the current state of object when delete request
+//     is received.
 type ResourceHandler interface {
 	OnCreate(obj runtime.Object) (runtime.Object, error)
 	OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error)

@@ -21,33 +21,50 @@ import (
 	"net/http"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/exporters/otlp"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"k8s.io/client-go/transport"
 	"k8s.io/component-base/tracing/api/v1"
 )
 
+// TracerProvider is an OpenTelemetry TracerProvider which can be shut down
+type TracerProvider interface {
+	oteltrace.TracerProvider
+	Shutdown(context.Context) error
+}
+
+type noopTracerProvider struct {
+	oteltrace.TracerProvider
+}
+
+func (n *noopTracerProvider) Shutdown(context.Context) error {
+	return nil
+}
+
+func NewNoopTracerProvider() TracerProvider {
+	return &noopTracerProvider{TracerProvider: oteltrace.NewNoopTracerProvider()}
+}
+
 // NewProvider creates a TracerProvider in a component, and enforces recommended tracing behavior
 func NewProvider(ctx context.Context,
 	tracingConfig *v1.TracingConfiguration,
-	addedOpts []otlpgrpc.Option,
+	addedOpts []otlptracegrpc.Option,
 	resourceOpts []resource.Option,
-) (oteltrace.TracerProvider, error) {
+) (TracerProvider, error) {
 	if tracingConfig == nil {
-		return oteltrace.NewNoopTracerProvider(), nil
+		return NewNoopTracerProvider(), nil
 	}
-	opts := append([]otlpgrpc.Option{}, addedOpts...)
+	opts := append([]otlptracegrpc.Option{}, addedOpts...)
 	if tracingConfig.Endpoint != nil {
-		opts = append(opts, otlpgrpc.WithEndpoint(*tracingConfig.Endpoint))
+		opts = append(opts, otlptracegrpc.WithEndpoint(*tracingConfig.Endpoint))
 	}
-	opts = append(opts, otlpgrpc.WithInsecure())
-	driver := otlpgrpc.NewDriver(opts...)
-	exporter, err := otlp.NewExporter(ctx, driver)
+	opts = append(opts, otlptracegrpc.WithInsecure())
+	exporter, err := otlptracegrpc.New(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -79,16 +96,24 @@ func WithTracing(handler http.Handler, tp oteltrace.TracerProvider, serviceName 
 		otelhttp.WithPropagators(Propagators()),
 		otelhttp.WithTracerProvider(tp),
 	}
+	wrappedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Add the http.target attribute to the otelhttp span
+		// Workaround for https://github.com/open-telemetry/opentelemetry-go-contrib/issues/3743
+		if r.URL != nil {
+			oteltrace.SpanFromContext(r.Context()).SetAttributes(semconv.HTTPTarget(r.URL.RequestURI()))
+		}
+		handler.ServeHTTP(w, r)
+	})
 	// With Noop TracerProvider, the otelhttp still handles context propagation.
 	// See https://github.com/open-telemetry/opentelemetry-go/tree/main/example/passthrough
-	return otelhttp.NewHandler(handler, serviceName, opts...)
+	return otelhttp.NewHandler(wrappedHandler, serviceName, opts...)
 }
 
 // WrapperFor can be used to add tracing to a *rest.Config.
 // Example usage:
 // tp := NewProvider(...)
 // config, _ := rest.InClusterConfig()
-// config.Wrap(WrapperFor(&tp))
+// config.Wrap(WrapperFor(tp))
 // kubeclient, _ := clientset.NewForConfig(config)
 func WrapperFor(tp oteltrace.TracerProvider) transport.WrapperFunc {
 	return func(rt http.RoundTripper) http.RoundTripper {

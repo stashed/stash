@@ -478,7 +478,7 @@ spec:
                               between the SizeLimit specified here and the sum of
                               memory limits of all containers in a pod. The default
                               is nil which means that the limit is undefined. More
-                              info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                              info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             x-kubernetes-int-or-string: true
                         type: object
@@ -568,9 +568,12 @@ spec:
                                       the provisioner or an external controller can
                                       support the specified data source, it will create
                                       a new volume based on the contents of the specified
-                                      data source. If the AnyVolumeDataSource feature
-                                      gate is enabled, this field will always have
-                                      the same contents as the DataSourceRef field.'
+                                      data source. When the AnyVolumeDataSource feature
+                                      gate is enabled, dataSource contents will be
+                                      copied to dataSourceRef, and dataSourceRef contents
+                                      will be copied to dataSource when dataSourceRef.namespace
+                                      is not specified. If the namespace is specified,
+                                      then dataSourceRef will not be copied to dataSource.'
                                     properties:
                                       apiGroup:
                                         description: APIGroup is the group for the
@@ -596,28 +599,35 @@ spec:
                                     description: 'dataSourceRef specifies the object
                                       from which to populate the volume with data,
                                       if a non-empty volume is desired. This may be
-                                      any local object from a non-empty API group
-                                      (non core object) or a PersistentVolumeClaim
-                                      object. When this field is specified, volume
-                                      binding will only succeed if the type of the
-                                      specified object matches some installed volume
-                                      populator or dynamic provisioner. This field
-                                      will replace the functionality of the DataSource
-                                      field and as such if both fields are non-empty,
-                                      they must have the same value. For backwards
-                                      compatibility, both fields (DataSource and DataSourceRef)
-                                      will be set to the same value automatically
-                                      if one of them is empty and the other is non-empty.
-                                      There are two important differences between
-                                      DataSource and DataSourceRef: * While DataSource
-                                      only allows two specific types of objects, DataSourceRef
+                                      any object from a non-empty API group (non core
+                                      object) or a PersistentVolumeClaim object. When
+                                      this field is specified, volume binding will
+                                      only succeed if the type of the specified object
+                                      matches some installed volume populator or dynamic
+                                      provisioner. This field will replace the functionality
+                                      of the dataSource field and as such if both
+                                      fields are non-empty, they must have the same
+                                      value. For backwards compatibility, when namespace
+                                      isn''t specified in dataSourceRef, both fields
+                                      (dataSource and dataSourceRef) will be set to
+                                      the same value automatically if one of them
+                                      is empty and the other is non-empty. When namespace
+                                      is specified in dataSourceRef, dataSource isn''t
+                                      set to the same value and must be empty. There
+                                      are three important differences between dataSource
+                                      and dataSourceRef: * While dataSource only allows
+                                      two specific types of objects, dataSourceRef
                                       allows any non-core object, as well as PersistentVolumeClaim
-                                      objects. * While DataSource ignores disallowed
-                                      values (dropping them), DataSourceRef preserves
+                                      objects. * While dataSource ignores disallowed
+                                      values (dropping them), dataSourceRef preserves
                                       all values, and generates an error if a disallowed
-                                      value is specified. (Beta) Using this field
-                                      requires the AnyVolumeDataSource feature gate
-                                      to be enabled.'
+                                      value is specified. * While dataSource only
+                                      allows local objects, dataSourceRef allows objects
+                                      in any namespaces. (Beta) Using this field requires
+                                      the AnyVolumeDataSource feature gate to be enabled.
+                                      (Alpha) Using the namespace field of dataSourceRef
+                                      requires the CrossNamespaceVolumeDataSource
+                                      feature gate to be enabled.'
                                     properties:
                                       apiGroup:
                                         description: APIGroup is the group for the
@@ -634,11 +644,21 @@ spec:
                                         description: Name is the name of resource
                                           being referenced
                                         type: string
+                                      namespace:
+                                        description: Namespace is the namespace of
+                                          resource being referenced Note that when
+                                          a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant
+                                          object is required in the referent namespace
+                                          to allow that namespace's owner to accept
+                                          the reference. See the ReferenceGrant documentation
+                                          for details. (Alpha) This field requires
+                                          the CrossNamespaceVolumeDataSource feature
+                                          gate to be enabled.
+                                        type: string
                                     required:
                                     - kind
                                     - name
                                     type: object
-                                    x-kubernetes-map-type: atomic
                                   resources:
                                     description: 'resources represents the minimum
                                       resources the volume should have. If RecoverVolumeExpansionFailure
@@ -671,7 +691,8 @@ spec:
                                           Requests is omitted for a container, it
                                           defaults to Limits if that is explicitly
                                           specified, otherwise to an implementation-defined
-                                          value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                          value. Requests cannot exceed Limits. More
+                                          info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                         type: object
                                     type: object
                                   selector:
@@ -730,6 +751,28 @@ spec:
                                     description: 'storageClassName is the name of
                                       the StorageClass required by the claim. More
                                       info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                                    type: string
+                                  volumeAttributesClassName:
+                                    description: 'volumeAttributesClassName may be
+                                      used to set the VolumeAttributesClass used by
+                                      this claim. If specified, the CSI driver will
+                                      create or update the volume with the attributes
+                                      defined in the corresponding VolumeAttributesClass.
+                                      This has a different purpose than storageClassName,
+                                      it can be changed after the claim is created.
+                                      An empty string value means that no VolumeAttributesClass
+                                      will be applied to the claim but it''s not allowed
+                                      to reset this field to empty string once it
+                                      is set. If unspecified and the PersistentVolumeClaim
+                                      is unbound, the default VolumeAttributesClass
+                                      will be set by the persistentvolume controller
+                                      if it exists. If the resource referred to by
+                                      volumeAttributesClass does not exist, this PersistentVolumeClaim
+                                      will be set to a Pending state, as reflected
+                                      by the modifyVolumeStatus field, until such
+                                      as a resource exists. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+                                      (Alpha) Using this field requires the VolumeAttributesClass
+                                      feature gate to be enabled.'
                                     type: string
                                   volumeMode:
                                     description: volumeMode defines what type of volume
@@ -1109,6 +1152,105 @@ spec:
                               description: Projection that may be projected along
                                 with other supported volume types
                               properties:
+                                clusterTrustBundle:
+                                  description: "ClusterTrustBundle allows a pod to
+                                    access the `.spec.trustBundle` field of ClusterTrustBundle
+                                    objects in an auto-updating file. \n Alpha, gated
+                                    by the ClusterTrustBundleProjection feature gate.
+                                    \n ClusterTrustBundle objects can either be selected
+                                    by name, or by the combination of signer name
+                                    and a label selector. \n Kubelet performs aggressive
+                                    normalization of the PEM contents written into
+                                    the pod filesystem.  Esoteric PEM features such
+                                    as inter-block comments and block headers are
+                                    stripped.  Certificates are deduplicated. The
+                                    ordering of certificates within the file is arbitrary,
+                                    and Kubelet may change the order over time."
+                                  properties:
+                                    labelSelector:
+                                      description: Select all ClusterTrustBundles
+                                        that match this label selector.  Only has
+                                        effect if signerName is set.  Mutually-exclusive
+                                        with name.  If unset, interpreted as "match
+                                        nothing".  If set but empty, interpreted as
+                                        "match everything".
+                                      properties:
+                                        matchExpressions:
+                                          description: matchExpressions is a list
+                                            of label selector requirements. The requirements
+                                            are ANDed.
+                                          items:
+                                            description: A label selector requirement
+                                              is a selector that contains values,
+                                              a key, and an operator that relates
+                                              the key and values.
+                                            properties:
+                                              key:
+                                                description: key is the label key
+                                                  that the selector applies to.
+                                                type: string
+                                              operator:
+                                                description: operator represents a
+                                                  key's relationship to a set of values.
+                                                  Valid operators are In, NotIn, Exists
+                                                  and DoesNotExist.
+                                                type: string
+                                              values:
+                                                description: values is an array of
+                                                  string values. If the operator is
+                                                  In or NotIn, the values array must
+                                                  be non-empty. If the operator is
+                                                  Exists or DoesNotExist, the values
+                                                  array must be empty. This array
+                                                  is replaced during a strategic merge
+                                                  patch.
+                                                items:
+                                                  type: string
+                                                type: array
+                                            required:
+                                            - key
+                                            - operator
+                                            type: object
+                                          type: array
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          description: matchLabels is a map of {key,value}
+                                            pairs. A single {key,value} in the matchLabels
+                                            map is equivalent to an element of matchExpressions,
+                                            whose key field is "key", the operator
+                                            is "In", and the values array contains
+                                            only "value". The requirements are ANDed.
+                                          type: object
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    name:
+                                      description: Select a single ClusterTrustBundle
+                                        by object name.  Mutually-exclusive with signerName
+                                        and labelSelector.
+                                      type: string
+                                    optional:
+                                      description: If true, don't block pod startup
+                                        if the referenced ClusterTrustBundle(s) aren't
+                                        available.  If using name, then the named
+                                        ClusterTrustBundle is allowed not to exist.  If
+                                        using signerName, then the combination of
+                                        signerName and labelSelector is allowed to
+                                        match zero ClusterTrustBundles.
+                                      type: boolean
+                                    path:
+                                      description: Relative path from the volume root
+                                        to write the bundle.
+                                      type: string
+                                    signerName:
+                                      description: Select all ClusterTrustBundles
+                                        that match this signer name. Mutually-exclusive
+                                        with name.  The contents of all selected ClusterTrustBundles
+                                        will be unified and deduplicated.
+                                      type: string
+                                  required:
+                                  - path
+                                  type: object
                                 configMap:
                                   description: configMap information about the configMap
                                     data to project
@@ -1741,7 +1883,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -1800,7 +1944,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -1891,7 +2037,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -1950,7 +2098,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -2107,10 +2257,10 @@ spec:
                               description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                               type: string
                             name:
-                              description: 'Name of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names'
                               type: string
                             uid:
-                              description: 'UID of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
+                              description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#uids'
                               type: string
                           required:
                           - apiVersion
@@ -2137,9 +2287,12 @@ spec:
                           * An existing PVC (PersistentVolumeClaim) If the provisioner
                           or an external controller can support the specified data
                           source, it will create a new volume based on the contents
-                          of the specified data source. If the AnyVolumeDataSource
-                          feature gate is enabled, this field will always have the
-                          same contents as the DataSourceRef field.'
+                          of the specified data source. When the AnyVolumeDataSource
+                          feature gate is enabled, dataSource contents will be copied
+                          to dataSourceRef, and dataSourceRef contents will be copied
+                          to dataSource when dataSourceRef.namespace is not specified.
+                          If the namespace is specified, then dataSourceRef will not
+                          be copied to dataSource.'
                         properties:
                           apiGroup:
                             description: APIGroup is the group for the resource being
@@ -2161,24 +2314,30 @@ spec:
                       dataSourceRef:
                         description: 'dataSourceRef specifies the object from which
                           to populate the volume with data, if a non-empty volume
-                          is desired. This may be any local object from a non-empty
-                          API group (non core object) or a PersistentVolumeClaim object.
+                          is desired. This may be any object from a non-empty API
+                          group (non core object) or a PersistentVolumeClaim object.
                           When this field is specified, volume binding will only succeed
                           if the type of the specified object matches some installed
                           volume populator or dynamic provisioner. This field will
-                          replace the functionality of the DataSource field and as
+                          replace the functionality of the dataSource field and as
                           such if both fields are non-empty, they must have the same
-                          value. For backwards compatibility, both fields (DataSource
-                          and DataSourceRef) will be set to the same value automatically
-                          if one of them is empty and the other is non-empty. There
-                          are two important differences between DataSource and DataSourceRef:
-                          * While DataSource only allows two specific types of objects,
-                          DataSourceRef allows any non-core object, as well as PersistentVolumeClaim
-                          objects. * While DataSource ignores disallowed values (dropping
-                          them), DataSourceRef preserves all values, and generates
-                          an error if a disallowed value is specified. (Beta) Using
-                          this field requires the AnyVolumeDataSource feature gate
-                          to be enabled.'
+                          value. For backwards compatibility, when namespace isn''t
+                          specified in dataSourceRef, both fields (dataSource and
+                          dataSourceRef) will be set to the same value automatically
+                          if one of them is empty and the other is non-empty. When
+                          namespace is specified in dataSourceRef, dataSource isn''t
+                          set to the same value and must be empty. There are three
+                          important differences between dataSource and dataSourceRef:
+                          * While dataSource only allows two specific types of objects,
+                          dataSourceRef allows any non-core object, as well as PersistentVolumeClaim
+                          objects. * While dataSource ignores disallowed values (dropping
+                          them), dataSourceRef preserves all values, and generates
+                          an error if a disallowed value is specified. * While dataSource
+                          only allows local objects, dataSourceRef allows objects
+                          in any namespaces. (Beta) Using this field requires the
+                          AnyVolumeDataSource feature gate to be enabled. (Alpha)
+                          Using the namespace field of dataSourceRef requires the
+                          CrossNamespaceVolumeDataSource feature gate to be enabled.'
                         properties:
                           apiGroup:
                             description: APIGroup is the group for the resource being
@@ -2192,11 +2351,20 @@ spec:
                           name:
                             description: Name is the name of resource being referenced
                             type: string
+                          namespace:
+                            description: Namespace is the namespace of resource being
+                              referenced Note that when a namespace is specified,
+                              a gateway.networking.k8s.io/ReferenceGrant object is
+                              required in the referent namespace to allow that namespace's
+                              owner to accept the reference. See the ReferenceGrant
+                              documentation for details. (Alpha) This field requires
+                              the CrossNamespaceVolumeDataSource feature gate to be
+                              enabled.
+                            type: string
                         required:
                         - kind
                         - name
                         type: object
-                        x-kubernetes-map-type: atomic
                       resources:
                         description: 'resources represents the minimum resources the
                           volume should have. If RecoverVolumeExpansionFailure feature
@@ -2226,7 +2394,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       selector:
@@ -2280,6 +2448,25 @@ spec:
                         description: 'storageClassName is the name of the StorageClass
                           required by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
                         type: string
+                      volumeAttributesClassName:
+                        description: 'volumeAttributesClassName may be used to set
+                          the VolumeAttributesClass used by this claim. If specified,
+                          the CSI driver will create or update the volume with the
+                          attributes defined in the corresponding VolumeAttributesClass.
+                          This has a different purpose than storageClassName, it can
+                          be changed after the claim is created. An empty string value
+                          means that no VolumeAttributesClass will be applied to the
+                          claim but it''s not allowed to reset this field to empty
+                          string once it is set. If unspecified and the PersistentVolumeClaim
+                          is unbound, the default VolumeAttributesClass will be set
+                          by the persistentvolume controller if it exists. If the
+                          resource referred to by volumeAttributesClass does not exist,
+                          this PersistentVolumeClaim will be set to a Pending state,
+                          as reflected by the modifyVolumeStatus field, until such
+                          as a resource exists. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+                          (Alpha) Using this field requires the VolumeAttributesClass
+                          feature gate to be enabled.'
+                        type: string
                       volumeMode:
                         description: volumeMode defines what type of volume is required
                           by the claim. Value of Filesystem is implied when not included
@@ -2300,6 +2487,49 @@ spec:
                         items:
                           type: string
                         type: array
+                      allocatedResourceStatuses:
+                        additionalProperties:
+                          description: When a controller receives persistentvolume
+                            claim update with ClaimResourceStatus for a resource that
+                            it does not recognizes, then it should ignore that update
+                            and let other controllers handle it.
+                          type: string
+                        description: "allocatedResourceStatuses stores status of resource
+                          being resized for the given PVC. Key names follow standard
+                          Kubernetes label syntax. Valid values are either: * Un-prefixed
+                          keys: - storage - the capacity of the volume. * Custom resources
+                          must use implementation-defined prefixed names such as \"example.com/my-custom-resource\"
+                          Apart from above values - keys that are unprefixed or have
+                          kubernetes.io prefix are considered reserved and hence may
+                          not be used. \n ClaimResourceStatus can be in any of following
+                          states: - ControllerResizeInProgress: State set when resize
+                          controller starts resizing the volume in control-plane.
+                          - ControllerResizeFailed: State set when resize has failed
+                          in resize controller with a terminal error. - NodeResizePending:
+                          State set when resize controller has finished resizing the
+                          volume but further resizing of volume is needed on the node.
+                          - NodeResizeInProgress: State set when kubelet starts resizing
+                          the volume. - NodeResizeFailed: State set when resizing
+                          has failed in kubelet with a terminal error. Transient errors
+                          don't set NodeResizeFailed. For example: if expanding a
+                          PVC for more capacity - this field can be one of the following
+                          states: - pvc.status.allocatedResourceStatus['storage']
+                          = \"ControllerResizeInProgress\" - pvc.status.allocatedResourceStatus['storage']
+                          = \"ControllerResizeFailed\" - pvc.status.allocatedResourceStatus['storage']
+                          = \"NodeResizePending\" - pvc.status.allocatedResourceStatus['storage']
+                          = \"NodeResizeInProgress\" - pvc.status.allocatedResourceStatus['storage']
+                          = \"NodeResizeFailed\" When this field is not set, it means
+                          that no resize operation is in progress for the given PVC.
+                          \n A controller that receives PVC update with previously
+                          unknown resourceName or ClaimResourceStatus should ignore
+                          the update for the purpose it was designed. For example
+                          - a controller that only is responsible for resizing capacity
+                          of the volume, should ignore PVC updates that change other
+                          valid resources associated with PVC. \n This is an alpha
+                          field and requires enabling RecoverVolumeExpansionFailure
+                          feature."
+                        type: object
+                        x-kubernetes-map-type: granular
                       allocatedResources:
                         additionalProperties:
                           anyOf:
@@ -2307,18 +2537,29 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: allocatedResources is the storage resource within
-                          AllocatedResources tracks the capacity allocated to a PVC.
-                          It may be larger than the actual capacity when a volume
-                          expansion operation is requested. For storage quota, the
-                          larger value from allocatedResources and PVC.spec.resources
-                          is used. If allocatedResources is not set, PVC.spec.resources
-                          alone is used for quota calculation. If a volume expansion
-                          capacity request is lowered, allocatedResources is only
-                          lowered if there are no expansion operations in progress
-                          and if the actual volume capacity is equal or lower than
-                          the requested capacity. This is an alpha field and requires
-                          enabling RecoverVolumeExpansionFailure feature.
+                        description: "allocatedResources tracks the resources allocated
+                          to a PVC including its capacity. Key names follow standard
+                          Kubernetes label syntax. Valid values are either: * Un-prefixed
+                          keys: - storage - the capacity of the volume. * Custom resources
+                          must use implementation-defined prefixed names such as \"example.com/my-custom-resource\"
+                          Apart from above values - keys that are unprefixed or have
+                          kubernetes.io prefix are considered reserved and hence may
+                          not be used. \n Capacity reported here may be larger than
+                          the actual capacity when a volume expansion operation is
+                          requested. For storage quota, the larger value from allocatedResources
+                          and PVC.spec.resources is used. If allocatedResources is
+                          not set, PVC.spec.resources alone is used for quota calculation.
+                          If a volume expansion capacity request is lowered, allocatedResources
+                          is only lowered if there are no expansion operations in
+                          progress and if the actual volume capacity is equal or lower
+                          than the requested capacity. \n A controller that receives
+                          PVC update with previously unknown resourceName should ignore
+                          the update for the purpose it was designed. For example
+                          - a controller that only is responsible for resizing capacity
+                          of the volume, should ignore PVC updates that change other
+                          valid resources associated with PVC. \n This is an alpha
+                          field and requires enabling RecoverVolumeExpansionFailure
+                          feature."
                         type: object
                       capacity:
                         additionalProperties:
@@ -2335,7 +2576,7 @@ spec:
                           volume claim. If underlying persistent volume is being resized
                           then the Condition will be set to 'ResizeStarted'.
                         items:
-                          description: PersistentVolumeClaimCondition contails details
+                          description: PersistentVolumeClaimCondition contains details
                             about state of pvc
                           properties:
                             lastProbeTime:
@@ -2370,15 +2611,43 @@ spec:
                           - type
                           type: object
                         type: array
+                      currentVolumeAttributesClassName:
+                        description: currentVolumeAttributesClassName is the current
+                          name of the VolumeAttributesClass the PVC is using. When
+                          unset, there is no VolumeAttributeClass applied to this
+                          PersistentVolumeClaim This is an alpha field and requires
+                          enabling VolumeAttributesClass feature.
+                        type: string
+                      modifyVolumeStatus:
+                        description: ModifyVolumeStatus represents the status object
+                          of ControllerModifyVolume operation. When this is unset,
+                          there is no ModifyVolume operation being attempted. This
+                          is an alpha field and requires enabling VolumeAttributesClass
+                          feature.
+                        properties:
+                          status:
+                            description: 'status is the status of the ControllerModifyVolume
+                              operation. It can be in any of following states: - Pending
+                              Pending indicates that the PersistentVolumeClaim cannot
+                              be modified due to unmet requirements, such as the specified
+                              VolumeAttributesClass not existing. - InProgress InProgress
+                              indicates that the volume is being modified. - Infeasible
+                              Infeasible indicates that the request has been rejected
+                              as invalid by the CSI driver. To resolve the error,
+                              a valid VolumeAttributesClass needs to be specified.
+                              Note: New statuses can be added in the future. Consumers
+                              should check for unknown statuses and fail appropriately.'
+                            type: string
+                          targetVolumeAttributesClassName:
+                            description: targetVolumeAttributesClassName is the name
+                              of the VolumeAttributesClass the PVC currently being
+                              reconciled
+                            type: string
+                        required:
+                        - status
+                        type: object
                       phase:
                         description: phase represents the current phase of PersistentVolumeClaim.
-                        type: string
-                      resizeStatus:
-                        description: resizeStatus stores status of resize operation.
-                          ResizeStatus is not set by default but when expansion is
-                          complete resizeStatus is set to empty string by resize controller
-                          or kubelet. This is an alpha field and requires enabling
-                          RecoverVolumeExpansionFailure feature.
                         type: string
                     type: object
                 type: object
@@ -2669,7 +2938,10 @@ spec:
                                         to be used in HTTP probes
                                       properties:
                                         name:
-                                          description: The header field name
+                                          description: The header field name. This
+                                            will be canonicalized upon output, so
+                                            case-variant names will be understood
+                                            as the same header.
                                           type: string
                                         value:
                                           description: The header field value
@@ -2696,6 +2968,18 @@ spec:
                                     type: string
                                 required:
                                 - port
+                                type: object
+                              sleep:
+                                description: Sleep represents the duration that the
+                                  container should sleep before being terminated.
+                                properties:
+                                  seconds:
+                                    description: Seconds is the number of seconds
+                                      to sleep.
+                                    format: int64
+                                    type: integer
+                                required:
+                                - seconds
                                 type: object
                               tcpSocket:
                                 description: Deprecated. TCPSocket is NOT supported
@@ -2768,7 +3052,10 @@ spec:
                                         to be used in HTTP probes
                                       properties:
                                         name:
-                                          description: The header field name
+                                          description: The header field name. This
+                                            will be canonicalized upon output, so
+                                            case-variant names will be understood
+                                            as the same header.
                                           type: string
                                         value:
                                           description: The header field value
@@ -2795,6 +3082,18 @@ spec:
                                     type: string
                                 required:
                                 - port
+                                type: object
+                              sleep:
+                                description: Sleep represents the duration that the
+                                  container should sleep before being terminated.
+                                properties:
+                                  seconds:
+                                    description: Seconds is the number of seconds
+                                      to sleep.
+                                    format: int64
+                                    type: integer
+                                required:
+                                - seconds
                                 type: object
                               tcpSocket:
                                 description: Deprecated. TCPSocket is NOT supported
@@ -2849,8 +3148,7 @@ spec:
                             type: integer
                           grpc:
                             description: GRPC specifies an action involving a GRPC
-                              port. This is a beta field and requires enabling GRPCContainerProbe
-                              feature gate.
+                              port.
                             properties:
                               port:
                                 description: Port number of the gRPC service. Number
@@ -2882,7 +3180,9 @@ spec:
                                     to be used in HTTP probes
                                   properties:
                                     name:
-                                      description: The header field name
+                                      description: The header field name. This will
+                                        be canonicalized upon output, so case-variant
+                                        names will be understood as the same header.
                                       type: string
                                     value:
                                       description: The header field value
@@ -3010,8 +3310,7 @@ spec:
                             type: integer
                           grpc:
                             description: GRPC specifies an action involving a GRPC
-                              port. This is a beta field and requires enabling GRPCContainerProbe
-                              feature gate.
+                              port.
                             properties:
                               port:
                                 description: Port number of the gRPC service. Number
@@ -3043,7 +3342,9 @@ spec:
                                     to be used in HTTP probes
                                   properties:
                                     name:
-                                      description: The header field name
+                                      description: The header field name. This will
+                                        be canonicalized upon output, so case-variant
+                                        names will be understood as the same header.
                                       type: string
                                     value:
                                       description: The header field value
@@ -3137,6 +3438,28 @@ spec:
                         description: 'Compute Resources required by container. Cannot
                           be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
                           limits:
                             additionalProperties:
                               anyOf:
@@ -3158,7 +3481,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       securityContext:
@@ -3282,8 +3605,9 @@ spec:
                                   defined in a file on the node should be used. The
                                   profile must be preconfigured on the node to work.
                                   Must be a descending path, relative to the kubelet's
-                                  configured seccomp profile location. Must only be
-                                  set if type is "Localhost".
+                                  configured seccomp profile location. Must be set
+                                  if type is "Localhost". Must NOT be set for any
+                                  other type.
                                 type: string
                               type:
                                 description: "type indicates which kind of seccomp
@@ -3316,15 +3640,11 @@ spec:
                                 type: string
                               hostProcess:
                                 description: HostProcess determines if a container
-                                  should be run as a 'Host Process' container. This
-                                  field is alpha-level and will only be honored by
-                                  components that enable the WindowsHostProcessContainers
-                                  feature flag. Setting this field without the feature
-                                  flag will result in errors when validating the Pod.
-                                  All of a Pod's containers must have the same effective
+                                  should be run as a 'Host Process' container. All
+                                  of a Pod's containers must have the same effective
                                   HostProcess value (it is not allowed to have a mix
-                                  of HostProcess containers and non-HostProcess containers).  In
-                                  addition, if HostProcess is true then HostNetwork
+                                  of HostProcess containers and non-HostProcess containers).
+                                  In addition, if HostProcess is true then HostNetwork
                                   must also be set to true.
                                 type: boolean
                               runAsUserName:
@@ -3591,7 +3911,9 @@ spec:
                                       properties:
                                         labelSelector:
                                           description: A label query over a set of
-                                            resources, in this case pods.
+                                            resources, in this case pods. If it's
+                                            null, this PodAffinityTerm matches with
+                                            no Pods.
                                           properties:
                                             matchExpressions:
                                               description: matchExpressions is a list
@@ -3645,6 +3967,51 @@ spec:
                                               type: object
                                           type: object
                                           x-kubernetes-map-type: atomic
+                                        matchLabelKeys:
+                                          description: MatchLabelKeys is a set of
+                                            pod label keys to select which pods will
+                                            be taken into consideration. The keys
+                                            are used to lookup values from the incoming
+                                            pod labels, those key-value labels are
+                                            merged with `LabelSelector` as `key in
+                                            (value)` to select the group of existing
+                                            pods which pods will be taken into consideration
+                                            for the incoming pod's pod (anti) affinity.
+                                            Keys that don't exist in the incoming
+                                            pod labels will be ignored. The default
+                                            value is empty. The same key is forbidden
+                                            to exist in both MatchLabelKeys and LabelSelector.
+                                            Also, MatchLabelKeys cannot be set when
+                                            LabelSelector isn't set. This is an alpha
+                                            field and requires enabling MatchLabelKeysInPodAffinity
+                                            feature gate.
+                                          items:
+                                            type: string
+                                          type: array
+                                          x-kubernetes-list-type: atomic
+                                        mismatchLabelKeys:
+                                          description: MismatchLabelKeys is a set
+                                            of pod label keys to select which pods
+                                            will be taken into consideration. The
+                                            keys are used to lookup values from the
+                                            incoming pod labels, those key-value labels
+                                            are merged with `LabelSelector` as `key
+                                            notin (value)` to select the group of
+                                            existing pods which pods will be taken
+                                            into consideration for the incoming pod's
+                                            pod (anti) affinity. Keys that don't exist
+                                            in the incoming pod labels will be ignored.
+                                            The default value is empty. The same key
+                                            is forbidden to exist in both MismatchLabelKeys
+                                            and LabelSelector. Also, MismatchLabelKeys
+                                            cannot be set when LabelSelector isn't
+                                            set. This is an alpha field and requires
+                                            enabling MatchLabelKeysInPodAffinity feature
+                                            gate.
+                                          items:
+                                            type: string
+                                          type: array
+                                          x-kubernetes-list-type: atomic
                                         namespaceSelector:
                                           description: A label query over the set
                                             of namespaces that the term applies to.
@@ -3766,7 +4133,8 @@ spec:
                                   properties:
                                     labelSelector:
                                       description: A label query over a set of resources,
-                                        in this case pods.
+                                        in this case pods. If it's null, this PodAffinityTerm
+                                        matches with no Pods.
                                       properties:
                                         matchExpressions:
                                           description: matchExpressions is a list
@@ -3817,6 +4185,48 @@ spec:
                                           type: object
                                       type: object
                                       x-kubernetes-map-type: atomic
+                                    matchLabelKeys:
+                                      description: MatchLabelKeys is a set of pod
+                                        label keys to select which pods will be taken
+                                        into consideration. The keys are used to lookup
+                                        values from the incoming pod labels, those
+                                        key-value labels are merged with `LabelSelector`
+                                        as `key in (value)` to select the group of
+                                        existing pods which pods will be taken into
+                                        consideration for the incoming pod's pod (anti)
+                                        affinity. Keys that don't exist in the incoming
+                                        pod labels will be ignored. The default value
+                                        is empty. The same key is forbidden to exist
+                                        in both MatchLabelKeys and LabelSelector.
+                                        Also, MatchLabelKeys cannot be set when LabelSelector
+                                        isn't set. This is an alpha field and requires
+                                        enabling MatchLabelKeysInPodAffinity feature
+                                        gate.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                    mismatchLabelKeys:
+                                      description: MismatchLabelKeys is a set of pod
+                                        label keys to select which pods will be taken
+                                        into consideration. The keys are used to lookup
+                                        values from the incoming pod labels, those
+                                        key-value labels are merged with `LabelSelector`
+                                        as `key notin (value)` to select the group
+                                        of existing pods which pods will be taken
+                                        into consideration for the incoming pod's
+                                        pod (anti) affinity. Keys that don't exist
+                                        in the incoming pod labels will be ignored.
+                                        The default value is empty. The same key is
+                                        forbidden to exist in both MismatchLabelKeys
+                                        and LabelSelector. Also, MismatchLabelKeys
+                                        cannot be set when LabelSelector isn't set.
+                                        This is an alpha field and requires enabling
+                                        MatchLabelKeysInPodAffinity feature gate.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
                                     namespaceSelector:
                                       description: A label query over the set of namespaces
                                         that the term applies to. The term is applied
@@ -3931,7 +4341,9 @@ spec:
                                       properties:
                                         labelSelector:
                                           description: A label query over a set of
-                                            resources, in this case pods.
+                                            resources, in this case pods. If it's
+                                            null, this PodAffinityTerm matches with
+                                            no Pods.
                                           properties:
                                             matchExpressions:
                                               description: matchExpressions is a list
@@ -3985,6 +4397,51 @@ spec:
                                               type: object
                                           type: object
                                           x-kubernetes-map-type: atomic
+                                        matchLabelKeys:
+                                          description: MatchLabelKeys is a set of
+                                            pod label keys to select which pods will
+                                            be taken into consideration. The keys
+                                            are used to lookup values from the incoming
+                                            pod labels, those key-value labels are
+                                            merged with `LabelSelector` as `key in
+                                            (value)` to select the group of existing
+                                            pods which pods will be taken into consideration
+                                            for the incoming pod's pod (anti) affinity.
+                                            Keys that don't exist in the incoming
+                                            pod labels will be ignored. The default
+                                            value is empty. The same key is forbidden
+                                            to exist in both MatchLabelKeys and LabelSelector.
+                                            Also, MatchLabelKeys cannot be set when
+                                            LabelSelector isn't set. This is an alpha
+                                            field and requires enabling MatchLabelKeysInPodAffinity
+                                            feature gate.
+                                          items:
+                                            type: string
+                                          type: array
+                                          x-kubernetes-list-type: atomic
+                                        mismatchLabelKeys:
+                                          description: MismatchLabelKeys is a set
+                                            of pod label keys to select which pods
+                                            will be taken into consideration. The
+                                            keys are used to lookup values from the
+                                            incoming pod labels, those key-value labels
+                                            are merged with `LabelSelector` as `key
+                                            notin (value)` to select the group of
+                                            existing pods which pods will be taken
+                                            into consideration for the incoming pod's
+                                            pod (anti) affinity. Keys that don't exist
+                                            in the incoming pod labels will be ignored.
+                                            The default value is empty. The same key
+                                            is forbidden to exist in both MismatchLabelKeys
+                                            and LabelSelector. Also, MismatchLabelKeys
+                                            cannot be set when LabelSelector isn't
+                                            set. This is an alpha field and requires
+                                            enabling MatchLabelKeysInPodAffinity feature
+                                            gate.
+                                          items:
+                                            type: string
+                                          type: array
+                                          x-kubernetes-list-type: atomic
                                         namespaceSelector:
                                           description: A label query over the set
                                             of namespaces that the term applies to.
@@ -4106,7 +4563,8 @@ spec:
                                   properties:
                                     labelSelector:
                                       description: A label query over a set of resources,
-                                        in this case pods.
+                                        in this case pods. If it's null, this PodAffinityTerm
+                                        matches with no Pods.
                                       properties:
                                         matchExpressions:
                                           description: matchExpressions is a list
@@ -4157,6 +4615,48 @@ spec:
                                           type: object
                                       type: object
                                       x-kubernetes-map-type: atomic
+                                    matchLabelKeys:
+                                      description: MatchLabelKeys is a set of pod
+                                        label keys to select which pods will be taken
+                                        into consideration. The keys are used to lookup
+                                        values from the incoming pod labels, those
+                                        key-value labels are merged with `LabelSelector`
+                                        as `key in (value)` to select the group of
+                                        existing pods which pods will be taken into
+                                        consideration for the incoming pod's pod (anti)
+                                        affinity. Keys that don't exist in the incoming
+                                        pod labels will be ignored. The default value
+                                        is empty. The same key is forbidden to exist
+                                        in both MatchLabelKeys and LabelSelector.
+                                        Also, MatchLabelKeys cannot be set when LabelSelector
+                                        isn't set. This is an alpha field and requires
+                                        enabling MatchLabelKeysInPodAffinity feature
+                                        gate.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                    mismatchLabelKeys:
+                                      description: MismatchLabelKeys is a set of pod
+                                        label keys to select which pods will be taken
+                                        into consideration. The keys are used to lookup
+                                        values from the incoming pod labels, those
+                                        key-value labels are merged with `LabelSelector`
+                                        as `key notin (value)` to select the group
+                                        of existing pods which pods will be taken
+                                        into consideration for the incoming pod's
+                                        pod (anti) affinity. Keys that don't exist
+                                        in the incoming pod labels will be ignored.
+                                        The default value is empty. The same key is
+                                        forbidden to exist in both MismatchLabelKeys
+                                        and LabelSelector. Also, MismatchLabelKeys
+                                        cannot be set when LabelSelector isn't set.
+                                        This is an alpha field and requires enabling
+                                        MatchLabelKeysInPodAffinity feature gate.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
                                     namespaceSelector:
                                       description: A label query over the set of namespaces
                                         that the term applies to. The term is applied
@@ -4290,6 +4790,12 @@ spec:
                           type: string
                         description: PodAnnotations are the annotations that will
                           be attached with the respective Pod
+                        type: object
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: PodLabels are the labels that will be attached
+                          with the respective Pod
                         type: object
                       priority:
                         description: The priority value. Various system components
@@ -4435,8 +4941,9 @@ spec:
                                   defined in a file on the node should be used. The
                                   profile must be preconfigured on the node to work.
                                   Must be a descending path, relative to the kubelet's
-                                  configured seccomp profile location. Must only be
-                                  set if type is "Localhost".
+                                  configured seccomp profile location. Must be set
+                                  if type is "Localhost". Must NOT be set for any
+                                  other type.
                                 type: string
                               type:
                                 description: "type indicates which kind of seccomp
@@ -4452,9 +4959,14 @@ spec:
                           supplementalGroups:
                             description: A list of groups applied to the first process
                               run in each container, in addition to the container's
-                              primary GID.  If unspecified, no groups will be added
-                              to any container. Note that this field cannot be set
-                              when spec.os.name is windows.
+                              primary GID, the fsGroup (if specified), and group memberships
+                              defined in the container image for the uid of the container
+                              process. If unspecified, no additional groups are added
+                              to any container. Note that group memberships defined
+                              in the container image for the uid of the container
+                              process are still effective, even if they are not included
+                              in this list. Note that this field cannot be set when
+                              spec.os.name is windows.
                             items:
                               format: int64
                               type: integer
@@ -4499,15 +5011,11 @@ spec:
                                 type: string
                               hostProcess:
                                 description: HostProcess determines if a container
-                                  should be run as a 'Host Process' container. This
-                                  field is alpha-level and will only be honored by
-                                  components that enable the WindowsHostProcessContainers
-                                  feature flag. Setting this field without the feature
-                                  flag will result in errors when validating the Pod.
-                                  All of a Pod's containers must have the same effective
+                                  should be run as a 'Host Process' container. All
+                                  of a Pod's containers must have the same effective
                                   HostProcess value (it is not allowed to have a mix
-                                  of HostProcess containers and non-HostProcess containers).  In
-                                  addition, if HostProcess is true then HostNetwork
+                                  of HostProcess containers and non-HostProcess containers).
+                                  In addition, if HostProcess is true then HostNetwork
                                   must also be set to true.
                                 type: boolean
                               runAsUserName:
@@ -4632,15 +5140,19 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             matchLabelKeys:
-                              description: MatchLabelKeys is a set of pod label keys
+                              description: "MatchLabelKeys is a set of pod label keys
                                 to select the pods over which spreading will be calculated.
                                 The keys are used to lookup values from the incoming
                                 pod labels, those key-value labels are ANDed with
                                 labelSelector to select the group of existing pods
                                 over which spreading will be calculated for the incoming
-                                pod. Keys that don't exist in the incoming pod labels
-                                will be ignored. A null or empty list means only match
-                                against labelSelector.
+                                pod. The same key is forbidden to exist in both MatchLabelKeys
+                                and LabelSelector. MatchLabelKeys cannot be set when
+                                LabelSelector isn't set. Keys that don't exist in
+                                the incoming pod labels will be ignored. A null or
+                                empty list means only match against labelSelector.
+                                \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                feature gate to be enabled (enabled by default)."
                               items:
                                 type: string
                               type: array
@@ -4703,8 +5215,8 @@ spec:
                                 in the calculations. - Ignore: nodeAffinity/nodeSelector
                                 are ignored. All nodes are included in the calculations.
                                 \n If this value is nil, the behavior is equivalent
-                                to the Honor policy. This is a alpha-level feature
-                                enabled by the NodeInclusionPolicyInPodTopologySpread
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
                                 feature flag."
                               type: string
                             nodeTaintsPolicy:
@@ -4715,8 +5227,8 @@ spec:
                                 has a toleration, are included. - Ignore: node taints
                                 are ignored. All nodes are included. \n If this value
                                 is nil, the behavior is equivalent to the Ignore policy.
-                                This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread
-                                feature flag."
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
                               type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.

@@ -89,7 +89,7 @@ func PatchNodeObject(ctx context.Context, c kubernetes.Interface, cur, mod *core
 
 func TryUpdateNode(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node, opts metav1.UpdateOptions) (result *core.Node, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.CoreV1().Nodes().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
@@ -204,7 +204,7 @@ func DetectTopology(ctx context.Context, mc metadata.Interface) (*Topology, erro
 	var topology Topology
 	topology.TotalNodes = 0
 
-	mapRegion := make(map[string]sets.String)
+	mapRegion := make(map[string]sets.Set[string])
 	instances := make(map[string]int)
 	first := true
 
@@ -259,7 +259,7 @@ func DetectTopology(ctx context.Context, mc metadata.Interface) (*Topology, erro
 		region, _ := meta_util.GetStringValueForKeys(labels, topology.LabelRegion)
 		zone, _ := meta_util.GetStringValueForKeys(labels, topology.LabelZone)
 		if _, ok := mapRegion[region]; !ok {
-			mapRegion[region] = sets.NewString()
+			mapRegion[region] = sets.Set[string]{}
 		}
 		mapRegion[region].Insert(zone)
 
@@ -278,7 +278,7 @@ func DetectTopology(ctx context.Context, mc metadata.Interface) (*Topology, erro
 
 	regions := make(map[string][]string)
 	for k, v := range mapRegion {
-		regions[k] = v.List()
+		regions[k] = sets.List(v)
 	}
 	topology.Regions = regions
 	topology.InstanceTypes = instances

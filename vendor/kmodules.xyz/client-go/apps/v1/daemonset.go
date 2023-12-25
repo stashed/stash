@@ -81,7 +81,7 @@ func PatchDaemonSetObject(ctx context.Context, c kubernetes.Interface, cur, mod 
 
 func TryUpdateDaemonSet(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.DaemonSet) *apps.DaemonSet, opts metav1.UpdateOptions) (result *apps.DaemonSet, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.AppsV1().DaemonSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
@@ -101,7 +101,7 @@ func TryUpdateDaemonSet(ctx context.Context, c kubernetes.Interface, meta metav1
 }
 
 func WaitUntilDaemonSetReady(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		// It takes some time to populate .status field of the DaemonSet after it is being created.
 		// If this function is called just after creating a DaemonSet, the Get methond returns an obj with .status field is defaulted to their default values.
 		// At this time, "obj.Status.DesiredNumberScheduled" and "obj.Status.NumberReady" both are defaulted to 0 and "obj.Status.DesiredNumberScheduled == obj.Status.NumberReady"

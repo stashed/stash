@@ -25,7 +25,6 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -37,9 +36,9 @@ type FakeBackupSessions struct {
 	ns   string
 }
 
-var backupsessionsResource = schema.GroupVersionResource{Group: "stash.appscode.com", Version: "v1beta1", Resource: "backupsessions"}
+var backupsessionsResource = v1beta1.SchemeGroupVersion.WithResource("backupsessions")
 
-var backupsessionsKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1beta1", Kind: "BackupSession"}
+var backupsessionsKind = v1beta1.SchemeGroupVersion.WithKind("BackupSession")
 
 // Get takes name of the backupSession, and returns the corresponding backupSession object, and an error if there is any.
 func (c *FakeBackupSessions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.BackupSession, err error) {

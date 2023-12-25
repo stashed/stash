@@ -132,7 +132,7 @@ func (f *Framework) PVCForMinioServer() core.PersistentVolumeClaim {
 			AccessModes: []core.PersistentVolumeAccessMode{
 				core.ReadWriteOnce,
 			},
-			Resources: core.ResourceRequirements{
+			Resources: core.VolumeResourceRequirements{
 				Requests: core.ResourceList{
 					core.ResourceStorage: resource.MustParse("1Gi"),
 				},

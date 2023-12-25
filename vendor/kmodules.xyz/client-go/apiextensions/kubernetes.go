@@ -66,7 +66,7 @@ func RegisterCRDs(client crd_cs.Interface, crds []*CustomResourceDefinition) err
 }
 
 func WaitForCRDReady(client crd_cs.Interface, crds []*CustomResourceDefinition) error {
-	err := wait.Poll(3*time.Second, 5*time.Minute, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), 3*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 		for _, crd := range crds {
 			var gvr schema.GroupVersionResource
 			if crd.V1 != nil {

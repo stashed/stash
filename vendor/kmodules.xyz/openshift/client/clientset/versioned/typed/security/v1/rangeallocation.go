@@ -20,9 +20,12 @@ package v1
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1 "kmodules.xyz/openshift/apis/security/v1"
+	securityv1 "kmodules.xyz/openshift/client/applyconfiguration/security/v1"
 	scheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,6 +50,7 @@ type RangeAllocationInterface interface {
 	List(ctx context.Context, opts metav1.ListOptions) (*v1.RangeAllocationList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.RangeAllocation, err error)
+	Apply(ctx context.Context, rangeAllocation *securityv1.RangeAllocationApplyConfiguration, opts metav1.ApplyOptions) (result *v1.RangeAllocation, err error)
 	RangeAllocationExpansion
 }
 
@@ -162,6 +166,31 @@ func (c *rangeAllocations) Patch(ctx context.Context, name string, pt types.Patc
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied rangeAllocation.
+func (c *rangeAllocations) Apply(ctx context.Context, rangeAllocation *securityv1.RangeAllocationApplyConfiguration, opts metav1.ApplyOptions) (result *v1.RangeAllocation, err error) {
+	if rangeAllocation == nil {
+		return nil, fmt.Errorf("rangeAllocation provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(rangeAllocation)
+	if err != nil {
+		return nil, err
+	}
+	name := rangeAllocation.Name
+	if name == nil {
+		return nil, fmt.Errorf("rangeAllocation.Name must be provided to Apply")
+	}
+	result = &v1.RangeAllocation{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Resource("rangeallocations").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

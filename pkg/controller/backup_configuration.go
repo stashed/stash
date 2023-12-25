@@ -116,7 +116,7 @@ func (c *StashController) initBackupConfigurationWatcher() {
 	if c.auditor != nil {
 		c.auditor.ForGVK(c.bcInformer, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 	}
-	c.bcInformer.AddEventHandler(queue.NewEventHandler(c.bcQueue.GetQueue(), func(oldObj, newObj interface{}) bool {
+	_, _ = c.bcInformer.AddEventHandler(queue.NewEventHandler(c.bcQueue.GetQueue(), func(oldObj, newObj interface{}) bool {
 		bc := newObj.(*api_v1beta1.BackupConfiguration)
 		desiredPhase := invoker.CalculateBackupInvokerPhase(bc.Spec.Driver, bc.Status.Conditions)
 		return bc.GetDeletionTimestamp() != nil ||

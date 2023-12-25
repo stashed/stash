@@ -24,6 +24,7 @@ import (
 	_ "kmodules.xyz/resource-metrics/core/v1"
 	_ "kmodules.xyz/resource-metrics/kubedb.com/v1alpha2"
 	_ "kmodules.xyz/resource-metrics/kubevault.com/v1alpha2"
+	_ "kmodules.xyz/resource-metrics/ops.kubedb.com/v1alpha1"
 
 	core "k8s.io/api/core/v1"
 )

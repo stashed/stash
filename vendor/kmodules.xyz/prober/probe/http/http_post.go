@@ -31,7 +31,8 @@ import (
 
 // New creates PostProber that will skip TLS verification while probing.
 // followNonLocalRedirects configures whether the prober should follow redirects to a different hostname.
-//   If disabled, redirects to other hosts will trigger a warning result.
+//
+//	If disabled, redirects to other hosts will trigger a warning result.
 func NewHttpPost(followNonLocalRedirects bool) PostProber {
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
 	return NewPostWithTLSConfig(tlsConfig, followNonLocalRedirects)
@@ -39,7 +40,8 @@ func NewHttpPost(followNonLocalRedirects bool) PostProber {
 
 // NewWithTLSConfig takes tls config as parameter.
 // followNonLocalRedirects configures whether the prober should follow redirects to a different hostname.
-//   If disabled, redirects to other hosts will trigger a warning result.
+//
+//	If disabled, redirects to other hosts will trigger a warning result.
 func NewPostWithTLSConfig(config *tls.Config, followNonLocalRedirects bool) PostProber {
 	// We do not want the probe use node's local proxy set.
 	transport := utilnet.SetTransportDefaults(

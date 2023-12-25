@@ -19,31 +19,33 @@ limitations under the License.
 // DO NOT EDIT!
 
 /*
-	Package v1 is a generated protocol buffer package.
+Package v1 is a generated protocol buffer package.
 
-	It is generated from these files:
-		kmodules.xyz/openshift/apis/security/v1/generated.proto
+It is generated from these files:
 
-	It has these top-level messages:
-		AllowedFlexVolume
-		FSGroupStrategyOptions
-		IDRange
-		PodSecurityPolicyReview
-		PodSecurityPolicyReviewSpec
-		PodSecurityPolicyReviewStatus
-		PodSecurityPolicySelfSubjectReview
-		PodSecurityPolicySelfSubjectReviewSpec
-		PodSecurityPolicySubjectReview
-		PodSecurityPolicySubjectReviewSpec
-		PodSecurityPolicySubjectReviewStatus
-		RangeAllocation
-		RangeAllocationList
-		RunAsUserStrategyOptions
-		SELinuxContextStrategyOptions
-		SecurityContextConstraints
-		SecurityContextConstraintsList
-		ServiceAccountPodSecurityPolicyReviewStatus
-		SupplementalGroupsStrategyOptions
+	kmodules.xyz/openshift/apis/security/v1/generated.proto
+
+It has these top-level messages:
+
+	AllowedFlexVolume
+	FSGroupStrategyOptions
+	IDRange
+	PodSecurityPolicyReview
+	PodSecurityPolicyReviewSpec
+	PodSecurityPolicyReviewStatus
+	PodSecurityPolicySelfSubjectReview
+	PodSecurityPolicySelfSubjectReviewSpec
+	PodSecurityPolicySubjectReview
+	PodSecurityPolicySubjectReviewSpec
+	PodSecurityPolicySubjectReviewStatus
+	RangeAllocation
+	RangeAllocationList
+	RunAsUserStrategyOptions
+	SELinuxContextStrategyOptions
+	SecurityContextConstraints
+	SecurityContextConstraintsList
+	ServiceAccountPodSecurityPolicyReviewStatus
+	SupplementalGroupsStrategyOptions
 */
 package v1
 

@@ -33,8 +33,7 @@ type Interface interface {
 	ProxyserverV1alpha1() proxyserverv1alpha1.ProxyserverV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	proxyserverV1alpha1 *proxyserverv1alpha1.ProxyserverV1alpha1Client

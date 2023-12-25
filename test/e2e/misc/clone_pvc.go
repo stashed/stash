@@ -96,7 +96,7 @@ var _ = Describe("Clone", func() {
 									core.ReadWriteOnce,
 								},
 								StorageClassName: pointer.StringP(f.StorageClass),
-								Resources: core.ResourceRequirements{
+								Resources: core.VolumeResourceRequirements{
 									Requests: core.ResourceList{
 										core.ResourceStorage: resource.MustParse("10Mi"),
 									},
@@ -179,7 +179,7 @@ var _ = Describe("Clone", func() {
 									core.ReadWriteOnce,
 								},
 								StorageClassName: pointer.StringP(f.StorageClass),
-								Resources: core.ResourceRequirements{
+								Resources: core.VolumeResourceRequirements{
 									Requests: core.ResourceList{
 										core.ResourceStorage: resource.MustParse("10Mi"),
 									},

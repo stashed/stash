@@ -82,7 +82,7 @@ func PatchJobObject(ctx context.Context, c kubernetes.Interface, cur, mod *batch
 
 func TryUpdateJob(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.Job) *batch.Job, opts metav1.UpdateOptions) (result *batch.Job, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.BatchV1().Jobs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
@@ -102,7 +102,7 @@ func TryUpdateJob(ctx context.Context, c kubernetes.Interface, meta metav1.Objec
 }
 
 func WaitUntilJobCompletion(ctx context.Context, c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollInfinite(kutil.RetryInterval, func() (bool, error) {
+	return wait.PollUntilContextCancel(ctx, kutil.RetryInterval, true, func(ctx context.Context) (bool, error) {
 		job, err := c.BatchV1().Jobs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {

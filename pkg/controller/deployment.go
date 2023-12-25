@@ -82,7 +82,7 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 func (c *StashController) initDeploymentWatcher() {
 	c.dpInformer = c.kubeInformerFactory.Apps().V1().Deployments().Informer()
 	c.dpQueue = queue.New("Deployment", c.MaxNumRequeues, c.NumThreads, c.processDeploymentEvent)
-	c.dpInformer.AddEventHandler(queue.DefaultEventHandler(c.dpQueue.GetQueue(), core.NamespaceAll))
+	_, _ = c.dpInformer.AddEventHandler(queue.DefaultEventHandler(c.dpQueue.GetQueue(), core.NamespaceAll))
 	c.dpLister = c.kubeInformerFactory.Apps().V1().Deployments().Lister()
 }
 

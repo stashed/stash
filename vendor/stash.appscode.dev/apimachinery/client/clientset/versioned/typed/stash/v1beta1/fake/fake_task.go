@@ -25,7 +25,6 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -36,9 +35,9 @@ type FakeTasks struct {
 	Fake *FakeStashV1beta1
 }
 
-var tasksResource = schema.GroupVersionResource{Group: "stash.appscode.com", Version: "v1beta1", Resource: "tasks"}
+var tasksResource = v1beta1.SchemeGroupVersion.WithResource("tasks")
 
-var tasksKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1beta1", Kind: "Task"}
+var tasksKind = v1beta1.SchemeGroupVersion.WithKind("Task")
 
 // Get takes name of the task, and returns the corresponding task object, and an error if there is any.
 func (c *FakeTasks) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.Task, err error) {

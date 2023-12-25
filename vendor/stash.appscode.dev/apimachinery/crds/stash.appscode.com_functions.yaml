@@ -330,7 +330,9 @@ spec:
                                     to be used in HTTP probes
                                   properties:
                                     name:
-                                      description: The header field name
+                                      description: The header field name. This will
+                                        be canonicalized upon output, so case-variant
+                                        names will be understood as the same header.
                                       type: string
                                     value:
                                       description: The header field value
@@ -357,6 +359,17 @@ spec:
                                 type: string
                             required:
                             - port
+                            type: object
+                          sleep:
+                            description: Sleep represents the duration that the container
+                              should sleep before being terminated.
+                            properties:
+                              seconds:
+                                description: Seconds is the number of seconds to sleep.
+                                format: int64
+                                type: integer
+                            required:
+                            - seconds
                             type: object
                           tcpSocket:
                             description: Deprecated. TCPSocket is NOT supported as
@@ -425,7 +438,9 @@ spec:
                                     to be used in HTTP probes
                                   properties:
                                     name:
-                                      description: The header field name
+                                      description: The header field name. This will
+                                        be canonicalized upon output, so case-variant
+                                        names will be understood as the same header.
                                       type: string
                                     value:
                                       description: The header field value
@@ -452,6 +467,17 @@ spec:
                                 type: string
                             required:
                             - port
+                            type: object
+                          sleep:
+                            description: Sleep represents the duration that the container
+                              should sleep before being terminated.
+                            properties:
+                              seconds:
+                                description: Seconds is the number of seconds to sleep.
+                                format: int64
+                                type: integer
+                            required:
+                            - seconds
                             type: object
                           tcpSocket:
                             description: Deprecated. TCPSocket is NOT supported as
@@ -505,8 +531,6 @@ spec:
                         type: integer
                       grpc:
                         description: GRPC specifies an action involving a GRPC port.
-                          This is a beta field and requires enabling GRPCContainerProbe
-                          feature gate.
                         properties:
                           port:
                             description: Port number of the gRPC service. Number must
@@ -538,7 +562,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -664,8 +690,6 @@ spec:
                         type: integer
                       grpc:
                         description: GRPC specifies an action involving a GRPC port.
-                          This is a beta field and requires enabling GRPCContainerProbe
-                          feature gate.
                         properties:
                           port:
                             description: Port number of the gRPC service. Number must
@@ -697,7 +721,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -789,6 +815,28 @@ spec:
                     description: 'Compute Resources required by container. Cannot
                       be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                     properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
                       limits:
                         additionalProperties:
                           anyOf:
@@ -809,7 +857,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   securityContext:
@@ -930,7 +979,8 @@ spec:
                               in a file on the node should be used. The profile must
                               be preconfigured on the node to work. Must be a descending
                               path, relative to the kubelet's configured seccomp profile
-                              location. Must only be set if type is "Localhost".
+                              location. Must be set if type is "Localhost". Must NOT
+                              be set for any other type.
                             type: string
                           type:
                             description: "type indicates which kind of seccomp profile
@@ -962,15 +1012,12 @@ spec:
                             type: string
                           hostProcess:
                             description: HostProcess determines if a container should
-                              be run as a 'Host Process' container. This field is
-                              alpha-level and will only be honored by components that
-                              enable the WindowsHostProcessContainers feature flag.
-                              Setting this field without the feature flag will result
-                              in errors when validating the Pod. All of a Pod's containers
-                              must have the same effective HostProcess value (it is
-                              not allowed to have a mix of HostProcess containers
-                              and non-HostProcess containers).  In addition, if HostProcess
-                              is true then HostNetwork must also be set to true.
+                              be run as a 'Host Process' container. All of a Pod's
+                              containers must have the same effective HostProcess
+                              value (it is not allowed to have a mix of HostProcess
+                              containers and non-HostProcess containers). In addition,
+                              if HostProcess is true then HostNetwork must also be
+                              set to true.
                             type: boolean
                           runAsUserName:
                             description: The UserName in Windows to run the entrypoint

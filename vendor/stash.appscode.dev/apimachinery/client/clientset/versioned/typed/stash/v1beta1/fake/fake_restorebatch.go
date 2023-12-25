@@ -25,7 +25,6 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -37,9 +36,9 @@ type FakeRestoreBatches struct {
 	ns   string
 }
 
-var restorebatchesResource = schema.GroupVersionResource{Group: "stash.appscode.com", Version: "v1beta1", Resource: "restorebatches"}
+var restorebatchesResource = v1beta1.SchemeGroupVersion.WithResource("restorebatches")
 
-var restorebatchesKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1beta1", Kind: "RestoreBatch"}
+var restorebatchesKind = v1beta1.SchemeGroupVersion.WithKind("RestoreBatch")
 
 // Get takes name of the restoreBatch, and returns the corresponding restoreBatch object, and an error if there is any.
 func (c *FakeRestoreBatches) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.RestoreBatch, err error) {

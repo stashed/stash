@@ -97,7 +97,7 @@ func IsRepositoryInitialized(opt ActionOptions) (bool, error) {
 }
 
 func WaitForBackendRepository(opt ActionOptions) error {
-	return wait.PollImmediate(5*time.Second, 30*time.Minute, func() (done bool, err error) {
+	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 30*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		klog.Infof("Waiting for the backend repository.....")
 		repoInitialized, err := IsRepositoryInitialized(opt)
 		if err != nil {

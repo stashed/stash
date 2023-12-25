@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func ResourceListForRoles(rr map[PodRole]core.ResourceList, roles []PodRole) core.ResourceList {
@@ -56,29 +57,75 @@ func ResourceListForRoles(rr map[PodRole]core.ResourceList, roles []PodRole) cor
 }
 
 func AddResourceList(x, y core.ResourceList) core.ResourceList {
+	names := sets.NewString()
+	for k := range x {
+		names.Insert(string(k))
+	}
+	for k := range y {
+		names.Insert(string(k))
+	}
+
 	result := core.ResourceList{}
+	for _, fullName := range names.UnsortedList() {
+		_, name, found := strings.Cut(fullName, ".")
+		var rf resource.Format
+		if found {
+			rf = resourceFormat(core.ResourceName(name))
+		} else {
+			rf = resourceFormat(core.ResourceName(fullName))
+		}
 
-	cpu := resource.Quantity{Format: resource.DecimalSI}
-	cpu.Add(*x.Cpu())
-	cpu.Add(*y.Cpu())
-	if !cpu.IsZero() {
-		result[core.ResourceCPU] = cpu
-	}
-
-	memory := resource.Quantity{Format: resource.BinarySI}
-	memory.Add(*x.Memory())
-	memory.Add(*y.Memory())
-	if !memory.IsZero() {
-		result[core.ResourceMemory] = memory
-	}
-
-	storage := resource.Quantity{Format: resource.BinarySI}
-	storage.Add(*x.Storage())
-	storage.Add(*y.Storage())
-	if !storage.IsZero() {
-		result[core.ResourceStorage] = storage
+		sum := resource.Quantity{Format: rf}
+		sum.Add(*x.Name(core.ResourceName(fullName), rf))
+		sum.Add(*y.Name(core.ResourceName(fullName), rf))
+		if !sum.IsZero() {
+			result[core.ResourceName(fullName)] = sum
+		}
 	}
 	return result
+}
+
+func SubtractResourceList(x, y core.ResourceList) core.ResourceList {
+	names := sets.NewString()
+	for k := range x {
+		names.Insert(string(k))
+	}
+	for k := range y {
+		names.Insert(string(k))
+	}
+
+	result := core.ResourceList{}
+	for _, fullName := range names.UnsortedList() {
+		_, name, found := strings.Cut(fullName, ".")
+		var rf resource.Format
+		if found {
+			rf = resourceFormat(core.ResourceName(name))
+		} else {
+			rf = resourceFormat(core.ResourceName(fullName))
+		}
+
+		sum := resource.Quantity{Format: rf}
+		sum.Add(*x.Name(core.ResourceName(fullName), rf))
+		sum.Sub(*y.Name(core.ResourceName(fullName), rf))
+		result[core.ResourceName(fullName)] = sum
+	}
+	return result
+}
+
+func resourceFormat(name core.ResourceName) resource.Format {
+	switch name {
+	case core.ResourceCPU:
+		return resource.DecimalSI
+	case core.ResourceMemory:
+		return resource.BinarySI
+	case core.ResourceStorage:
+		return resource.BinarySI
+	case core.ResourcePods:
+		return resource.DecimalSI
+	case core.ResourceEphemeralStorage:
+		return resource.BinarySI
+	}
+	return resource.DecimalExponent
 }
 
 func MulResourceList(x core.ResourceList, multiplier int64) core.ResourceList {
@@ -246,7 +293,7 @@ func StorageResources(
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse storage %#v: %w", storage, err)
 	}
-	return fn(storage.Resources), nil
+	return fn(ToResourceRequirements(storage.Resources)), nil
 }
 
 type AppNode struct {
@@ -275,8 +322,15 @@ func AppNodeResources(
 		node.Replicas = pointer.Int64P(1)
 	}
 	rr := fn(node.PodTemplate.Spec.Resources)
-	sr := fn(node.Storage.Resources)
+	sr := fn(ToResourceRequirements(node.Storage.Resources))
 	rr[core.ResourceStorage] = *sr.Storage()
 
 	return rr, *node.Replicas, nil
+}
+
+func ToResourceRequirements(vrr core.VolumeResourceRequirements) core.ResourceRequirements {
+	return core.ResourceRequirements{
+		Limits:   vrr.Limits,
+		Requests: vrr.Requests,
+	}
 }

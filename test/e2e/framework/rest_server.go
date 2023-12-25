@@ -119,7 +119,7 @@ func (fi *Invocation) PVCForRestServer() core.PersistentVolumeClaim {
 			AccessModes: []core.PersistentVolumeAccessMode{
 				core.ReadWriteOnce,
 			},
-			Resources: core.ResourceRequirements{
+			Resources: core.VolumeResourceRequirements{
 				Requests: core.ResourceList{
 					core.ResourceName(core.ResourceStorage): resource.MustParse("2Gi"),
 				},

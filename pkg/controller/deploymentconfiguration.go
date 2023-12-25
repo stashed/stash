@@ -87,7 +87,7 @@ func (c *StashController) initDeploymentConfigWatcher() {
 	}
 	c.dcInformer = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Informer()
 	c.dcQueue = queue.New(apis.KindDeploymentConfig, c.MaxNumRequeues, c.NumThreads, c.processDeploymentConfigEvent)
-	c.dcInformer.AddEventHandler(queue.DefaultEventHandler(c.dcQueue.GetQueue(), core.NamespaceAll))
+	_, _ = c.dcInformer.AddEventHandler(queue.DefaultEventHandler(c.dcQueue.GetQueue(), core.NamespaceAll))
 	c.dcLister = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Lister()
 }
 
