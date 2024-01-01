@@ -34,17 +34,25 @@ const (
 	scanEscape
 )
 
+// predefined mode bits to control escape tokens.
+const (
+	dollar byte = 1 << iota
+	backslash
+	escapeAll = dollar | backslash
+)
+
 // returns true if rune is accepted.
 type acceptFunc func(r rune, i int) bool
 
 // scanner implements a lexical scanner that reads unicode
 // characters and tokens from a string buffer.
 type scanner struct {
-	buf   string
-	pos   int
-	start int
-	width int
-	mode  byte
+	buf         string
+	pos         int
+	start       int
+	width       int
+	mode        byte
+	escapeChars byte
 
 	accept acceptFunc
 }
@@ -96,6 +104,11 @@ func (s *scanner) peek() rune {
 // scanned token. Valid after calling scan().
 func (s *scanner) string() string {
 	return s.buf[s.start:s.pos]
+}
+
+// tests if the bit exists for a given character bit
+func (s *scanner) shouldEscape(character byte) bool {
+	return s.escapeChars&character != 0
 }
 
 // scan reads the next token or Unicode character from source and
@@ -176,25 +189,26 @@ func (s *scanner) scanRbrack(r rune) bool {
 }
 
 // scanEscaped reads the next token or Unicode character from source
-// and returns true if it being escaped and should be sipped.
+// and returns true if it being escaped and should be skipped.
 func (s *scanner) scanEscaped(r rune) bool {
 	if s.mode&scanEscape == 0 {
 		return false
 	}
-	if r == '$' {
+	if r == '$' && s.shouldEscape(dollar) {
 		if s.peek() == '$' {
 			return true
 		}
 	}
-	if r != '\\' {
-		return false
+	if r == '\\' && s.shouldEscape(backslash) {
+		switch s.peek() {
+		case '/', '\\':
+			return true
+		default:
+			return false
+		}
 	}
-	switch s.peek() {
-	case '/', '\\':
-		return true
-	default:
-		return false
-	}
+
+	return false
 }
 
 //

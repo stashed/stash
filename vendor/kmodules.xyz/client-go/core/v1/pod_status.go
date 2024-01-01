@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
 	core "k8s.io/api/core/v1"
 )
 
@@ -107,4 +109,128 @@ func UpsertPodReadinessGateConditionType(readinessGates []core.PodReadinessGate,
 	return append(readinessGates, core.PodReadinessGate{
 		ConditionType: conditionType,
 	})
+}
+
+const (
+	// NodeUnreachablePodReason is the reason on a pod when its state cannot be confirmed as kubelet is unresponsive
+	// on the node it is (was) running.
+	NodeUnreachablePodReason = "NodeLost"
+)
+
+// GetPodStatus returns pod status like kubectl
+// Adapted from: https://github.com/kubernetes/kubernetes/blob/735804dc812ce647f8c130dced45b5ba4079b76e/pkg/printers/internalversion/printers.go#L825
+func GetPodStatus(pod *core.Pod) string {
+	reason := string(pod.Status.Phase)
+	if pod.Status.Reason != "" {
+		reason = pod.Status.Reason
+	}
+
+	// If the Pod carries {type:PodScheduled, reason:WaitingForGates}, set reason to 'SchedulingGated'.
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == core.PodScheduled && condition.Reason == core.PodReasonSchedulingGated {
+			reason = core.PodReasonSchedulingGated
+		}
+	}
+
+	initContainers := make(map[string]*core.Container)
+	for i := range pod.Spec.InitContainers {
+		initContainers[pod.Spec.InitContainers[i].Name] = &pod.Spec.InitContainers[i]
+	}
+
+	initializing := false
+	for i := range pod.Status.InitContainerStatuses {
+		container := pod.Status.InitContainerStatuses[i]
+		switch {
+		case container.State.Terminated != nil && container.State.Terminated.ExitCode == 0:
+			continue
+		case isRestartableInitContainer(initContainers[container.Name]) &&
+			container.Started != nil && *container.Started:
+			continue
+		case container.State.Terminated != nil:
+			// initialization is failed
+			if len(container.State.Terminated.Reason) == 0 {
+				if container.State.Terminated.Signal != 0 {
+					reason = fmt.Sprintf("Init:Signal:%d", container.State.Terminated.Signal)
+				} else {
+					reason = fmt.Sprintf("Init:ExitCode:%d", container.State.Terminated.ExitCode)
+				}
+			} else {
+				reason = "Init:" + container.State.Terminated.Reason
+			}
+			initializing = true
+		case container.State.Waiting != nil && len(container.State.Waiting.Reason) > 0 && container.State.Waiting.Reason != "PodInitializing":
+			reason = "Init:" + container.State.Waiting.Reason
+			initializing = true
+		default:
+			reason = fmt.Sprintf("Init:%d/%d", i, len(pod.Spec.InitContainers))
+			initializing = true
+		}
+		break
+	}
+
+	if !initializing || isPodInitializedConditionTrue(&pod.Status) {
+		hasRunning := false
+		for i := len(pod.Status.ContainerStatuses) - 1; i >= 0; i-- {
+			container := pod.Status.ContainerStatuses[i]
+
+			if container.State.Waiting != nil && container.State.Waiting.Reason != "" {
+				reason = container.State.Waiting.Reason
+			} else if container.State.Terminated != nil && container.State.Terminated.Reason != "" {
+				reason = container.State.Terminated.Reason
+			} else if container.State.Terminated != nil && container.State.Terminated.Reason == "" {
+				if container.State.Terminated.Signal != 0 {
+					reason = fmt.Sprintf("Signal:%d", container.State.Terminated.Signal)
+				} else {
+					reason = fmt.Sprintf("ExitCode:%d", container.State.Terminated.ExitCode)
+				}
+			} else if container.Ready && container.State.Running != nil {
+				hasRunning = true
+			}
+		}
+
+		// change pod status back to "Running" if there is at least one container still reporting as "Running" status
+		if reason == "Completed" && hasRunning {
+			if hasPodReadyCondition(pod.Status.Conditions) {
+				reason = "Running"
+			} else {
+				reason = "NotReady"
+			}
+		}
+	}
+
+	if pod.DeletionTimestamp != nil && pod.Status.Reason == NodeUnreachablePodReason {
+		reason = "Unknown"
+	} else if pod.DeletionTimestamp != nil {
+		reason = "Terminating"
+	}
+
+	return reason
+}
+
+func hasPodReadyCondition(conditions []core.PodCondition) bool {
+	for _, condition := range conditions {
+		if condition.Type == core.PodReady && condition.Status == core.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
+func isRestartableInitContainer(initContainer *core.Container) bool {
+	if initContainer.RestartPolicy == nil {
+		return false
+	}
+
+	return *initContainer.RestartPolicy == core.ContainerRestartPolicyAlways
+}
+
+func isPodInitializedConditionTrue(status *core.PodStatus) bool {
+	for _, condition := range status.Conditions {
+		if condition.Type != core.PodInitialized {
+			continue
+		}
+
+		return condition.Status == core.ConditionTrue
+	}
+	return false
 }
