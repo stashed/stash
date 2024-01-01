@@ -1,9 +1,28 @@
 package parse
 
-import "errors"
+import (
+	"errors"
+)
 
-// ErrBadSubstitution represents a substitution parsing error.
-var ErrBadSubstitution = errors.New("bad substitution")
+var (
+	// ErrBadSubstitution represents a substitution parsing error.
+	ErrBadSubstitution = errors.New("bad substitution")
+
+	// ErrMissingClosingBrace represents a missing closing brace "}" error.
+	ErrMissingClosingBrace = errors.New("missing closing brace")
+
+	// ErrParseVariableName represents the error when unable to parse a
+	// variable name within a substitution.
+	ErrParseVariableName = errors.New("unable to parse variable name")
+
+	// ErrParseFuncSubstitution represents the error when unable to parse the
+	// substitution within a function parameter.
+	ErrParseFuncSubstitution = errors.New("unable to parse substitution within function")
+
+	// ErrParseDefaultFunction represent the error when unable to parse a
+	// default function.
+	ErrParseDefaultFunction = errors.New("unable to parse default function")
+)
 
 // Tree is the representation of a single parsed SQL statement.
 type Tree struct {
@@ -31,6 +50,7 @@ func (t *Tree) Parse(buf string) (tree *Tree, err error) {
 func (t *Tree) parseAny() (Node, error) {
 	t.scanner.accept = acceptRune
 	t.scanner.mode = scanIdent | scanLbrack | scanEscape
+	t.scanner.escapeChars = dollar
 
 	switch t.scanner.scan() {
 	case tokenIdent:
@@ -67,6 +87,8 @@ func (t *Tree) parseAny() (Node, error) {
 }
 
 func (t *Tree) parseFunc() (Node, error) {
+	// Turn on all escape characters
+	t.scanner.escapeChars = escapeAll
 	switch t.scanner.peek() {
 	case '#':
 		return t.parseLenFunc()
@@ -80,7 +102,7 @@ func (t *Tree) parseFunc() (Node, error) {
 	case tokenIdent:
 		name = t.scanner.string()
 	default:
-		return nil, ErrBadSubstitution
+		return nil, ErrParseVariableName
 	}
 
 	switch t.scanner.peek() {
@@ -104,7 +126,7 @@ func (t *Tree) parseFunc() (Node, error) {
 	case tokenRbrack:
 		return newFuncNode(name), nil
 	default:
-		return nil, ErrBadSubstitution
+		return nil, ErrMissingClosingBrace
 	}
 }
 
@@ -119,8 +141,12 @@ func (t *Tree) parseParam(accept acceptFunc, mode byte) (Node, error) {
 		return newTextNode(
 			t.scanner.string(),
 		), nil
+	case tokenRbrack:
+		return newTextNode(
+			t.scanner.string(),
+		), nil
 	default:
-		return nil, ErrBadSubstitution
+		return nil, ErrParseFuncSubstitution
 	}
 }
 
@@ -290,27 +316,23 @@ func (t *Tree) parseDefaultFunc(name string) (Node, error) {
 	case tokenIdent:
 		node.Name = t.scanner.string()
 	default:
-		return nil, ErrBadSubstitution
+		return nil, ErrParseDefaultFunction
 	}
 
-	// check for blank string
-	switch t.scanner.peek() {
-	case '}':
-		return node, t.consumeRbrack()
-	}
-
-	// scan arg[1]
-	{
+	// loop through all possible runes in default param
+	for {
+		// this acts as the break condition. Peek to see if we reached the end
+		switch t.scanner.peek() {
+		case '}':
+			return node, t.consumeRbrack()
+		}
 		param, err := t.parseParam(acceptNotClosing, scanIdent)
 		if err != nil {
 			return nil, err
 		}
 
-		// param.Value = t.scanner.string()
 		node.Args = append(node.Args, param)
 	}
-
-	return node, t.consumeRbrack()
 }
 
 // parses the ${param,} string function
