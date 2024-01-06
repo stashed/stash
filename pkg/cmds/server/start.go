@@ -94,10 +94,7 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 	// Fixes https://github.com/Azure/AKS/issues/522
 	clientcmd.Fix(serverConfig.ClientConfig)
 
-	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(v1alpha1.GetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(server.Scheme))
-	serverConfig.OpenAPIConfig.Info.Title = "stash-operator"
-	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
-	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
+	ignorePrefixes := []string{
 		"/swaggerapi",
 		"/apis/admission.stash.appscode.com/v1alpha1",
 		"/apis/admission.stash.appscode.com/v1alpha1/resticvalidators",
@@ -111,6 +108,16 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 		"/apis/admission.stash.appscode.com/v1beta1/restoresessionmutators",
 		"/apis/admission.stash.appscode.com/v1beta1/backupconfigurationvalidators",
 	}
+
+	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(v1alpha1.GetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(server.Scheme))
+	serverConfig.OpenAPIConfig.Info.Title = "stash-webhook-server"
+	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
+	serverConfig.OpenAPIConfig.IgnorePrefixes = ignorePrefixes
+
+	serverConfig.OpenAPIV3Config = genericapiserver.DefaultOpenAPIV3Config(v1alpha1.GetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(server.Scheme))
+	serverConfig.OpenAPIV3Config.Info.Title = "stash-webhook-server"
+	serverConfig.OpenAPIV3Config.Info.Version = v1alpha1.SchemeGroupVersion.Version
+	serverConfig.OpenAPIV3Config.IgnorePrefixes = ignorePrefixes
 
 	extraConfig := controller.NewConfig(serverConfig.ClientConfig)
 	if err := o.ExtraOptions.ApplyTo(extraConfig); err != nil {
