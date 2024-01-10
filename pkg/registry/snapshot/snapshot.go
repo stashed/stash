@@ -18,6 +18,7 @@ package snapshot
 
 import (
 	"context"
+	"strings"
 
 	"stash.appscode.dev/apimachinery/apis/repositories"
 	repov1alpha1 "stash.appscode.dev/apimachinery/apis/repositories/v1alpha1"
@@ -60,6 +61,7 @@ var (
 	_ rest.GracefulDeleter          = &REST{}
 	_ rest.GroupVersionKindProvider = &REST{}
 	_ rest.CategoriesProvider       = &REST{}
+	_ rest.SingularNameProvider     = &REST{}
 )
 
 func NewREST(config *restconfig.Config) *REST {
@@ -90,6 +92,10 @@ func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVe
 
 func (r *REST) Categories() []string {
 	return []string{"storage", "appscode", "all"}
+}
+
+func (r *REST) GetSingularName() string {
+	return strings.ToLower(repov1alpha1.ResourceKindSnapshot)
 }
 
 func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
