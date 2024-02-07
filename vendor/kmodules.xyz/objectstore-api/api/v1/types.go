@@ -98,10 +98,11 @@ type LocalSpec struct {
 }
 
 type S3Spec struct {
-	Endpoint string `json:"endpoint" protobuf:"bytes,1,opt,name=endpoint"`
-	Bucket   string `json:"bucket" protobuf:"bytes,2,opt,name=bucket"`
-	Prefix   string `json:"prefix,omitempty" protobuf:"bytes,3,opt,name=prefix"`
-	Region   string `json:"region,omitempty" protobuf:"bytes,4,opt,name=region"`
+	Endpoint    string `json:"endpoint" protobuf:"bytes,1,opt,name=endpoint"`
+	Bucket      string `json:"bucket" protobuf:"bytes,2,opt,name=bucket"`
+	Prefix      string `json:"prefix,omitempty" protobuf:"bytes,3,opt,name=prefix"`
+	Region      string `json:"region,omitempty" protobuf:"bytes,4,opt,name=region"`
+	InsecureTLS bool   `json:"insecureTLS,omitempty" protobuf:"varint,5,opt,name=insecureTLS"`
 }
 
 type GCSSpec struct {

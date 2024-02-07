@@ -60,8 +60,8 @@ func ExtractAddonInfo(appClient appcatalog_cs.Interface, task v1beta1.TaskRef, t
 		addon.RestoreTask.Name = task.Name
 	}
 	if len(task.Params) != 0 {
-		addon.BackupTask.Params = getTaskParams(task)
-		addon.RestoreTask.Params = getTaskParams(task)
+		addon.BackupTask.Params = upsertParams(addon.BackupTask.Params, getTaskParams(task))
+		addon.RestoreTask.Params = upsertParams(addon.BackupTask.Params, getTaskParams(task))
 	}
 
 	return &addon, nil
@@ -74,4 +74,25 @@ func getTaskParams(task v1beta1.TaskRef) []appcat.Param {
 		params[i].Value = task.Params[i].Value
 	}
 	return params
+}
+
+func upsertParams(oldParams, newParams []appcat.Param) []appcat.Param {
+	paramMap := make(map[string]appcat.Param)
+
+	for _, newParam := range newParams {
+		paramMap[newParam.Name] = newParam
+	}
+
+	for _, oldParam := range oldParams {
+		if _, found := paramMap[oldParam.Name]; !found {
+			paramMap[oldParam.Name] = oldParam
+		}
+	}
+
+	var updatedParams []appcat.Param
+	for _, param := range paramMap {
+		updatedParams = append(updatedParams, param)
+	}
+
+	return updatedParams
 }

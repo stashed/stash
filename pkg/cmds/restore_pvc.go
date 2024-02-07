@@ -113,6 +113,7 @@ func NewCmdRestorePVC() *cobra.Command {
 	cmd.Flags().StringVar(&opt.setupOpt.Provider, "provider", opt.setupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&opt.setupOpt.Bucket, "bucket", opt.setupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")
 	cmd.Flags().StringVar(&opt.setupOpt.Endpoint, "endpoint", opt.setupOpt.Endpoint, "Endpoint for s3/s3 compatible backend or REST server URL")
+	cmd.Flags().BoolVar(&opt.setupOpt.InsecureTLS, "insecure-tls", opt.setupOpt.InsecureTLS, "InsecureTLS for TLS secure s3/s3 compatible backend")
 	cmd.Flags().StringVar(&opt.setupOpt.Region, "region", opt.setupOpt.Region, "Region for s3/s3 compatible backend")
 	cmd.Flags().StringVar(&opt.setupOpt.Path, "path", opt.setupOpt.Path, "Directory inside the bucket where backed up data will be stored")
 	cmd.Flags().StringVar(&opt.setupOpt.ScratchDir, "scratch-dir", opt.setupOpt.ScratchDir, "Temporary directory")

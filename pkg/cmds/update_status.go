@@ -84,6 +84,7 @@ func NewCmdUpdateStatus() *cobra.Command {
 	cmd.Flags().StringVar(&opt.SetupOpt.Provider, "provider", opt.SetupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&opt.SetupOpt.Bucket, "bucket", opt.SetupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")
 	cmd.Flags().StringVar(&opt.SetupOpt.Endpoint, "endpoint", opt.SetupOpt.Endpoint, "Endpoint for s3/s3 compatible backend or REST server URL")
+	cmd.Flags().BoolVar(&opt.SetupOpt.InsecureTLS, "insecure-tls", opt.SetupOpt.InsecureTLS, "InsecureTLS for TLS secure s3/s3 compatible backend")
 	cmd.Flags().StringVar(&opt.SetupOpt.Region, "region", opt.SetupOpt.Region, "Region for s3/s3 compatible backend")
 	cmd.Flags().StringVar(&opt.SetupOpt.Path, "path", opt.SetupOpt.Path, "Directory inside the bucket where backed up data will be stored")
 	cmd.Flags().StringVar(&opt.SetupOpt.ScratchDir, "scratch-dir", opt.SetupOpt.ScratchDir, "Temporary directory")

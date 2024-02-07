@@ -87,6 +87,7 @@ type SetupOptions struct {
 	CacertFile     string
 	ScratchDir     string
 	EnableCache    bool
+	InsecureTLS    bool
 	MaxConnections int64
 	StorageSecret  *core.Secret
 	Nice           *ofst.NiceSettings

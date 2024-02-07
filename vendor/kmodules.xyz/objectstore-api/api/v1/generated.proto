@@ -88,6 +88,8 @@ message S3Spec {
   optional string prefix = 3;
 
   optional string region = 4;
+
+  optional bool insecureTLS = 5;
 }
 
 message SwiftSpec {
