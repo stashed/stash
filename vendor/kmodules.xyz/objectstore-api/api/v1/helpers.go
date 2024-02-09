@@ -163,3 +163,11 @@ func (backend Backend) Region() (string, bool) {
 	}
 	return "", false
 }
+
+// InsecureTLS returns insecureTLS of S3/S3 compatible backend
+func (backend Backend) InsecureTLS() bool {
+	if backend.S3 != nil {
+		return backend.S3.InsecureTLS
+	}
+	return false
+}

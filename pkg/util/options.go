@@ -95,6 +95,7 @@ func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt Extr
 	}
 	endpoint, _ := repository.Spec.Backend.Endpoint()
 	region, _ := repository.Spec.Backend.Region()
+	insecureTLS := repository.Spec.Backend.InsecureTLS()
 
 	return restic.SetupOptions{
 		Provider:       provider,
@@ -102,6 +103,7 @@ func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt Extr
 		Path:           prefix,
 		Endpoint:       endpoint,
 		Region:         region,
+		InsecureTLS:    insecureTLS,
 		CacertFile:     extraOpt.CacertFile,
 		StorageSecret:  extraOpt.StorageSecret,
 		ScratchDir:     extraOpt.ScratchDir,

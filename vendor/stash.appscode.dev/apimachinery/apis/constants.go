@@ -78,6 +78,7 @@ const (
 	RepositoryPrefix          = "REPOSITORY_PREFIX"
 	RepositoryEndpoint        = "REPOSITORY_ENDPOINT"
 	RepositoryRegion          = "REPOSITORY_REGION"
+	RepositoryInsecureTLS     = "REPOSITORY_INSECURE_TLS"
 
 	Hostname       = "HOSTNAME"
 	SourceHostname = "SOURCE_HOSTNAME"

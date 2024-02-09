@@ -164,8 +164,11 @@ func (r *TaskOptions) setRepositoryVariables() error {
 		vars[apis.RepositorySecretName] = r.Repository.Spec.Backend.StorageSecretName
 		vars[apis.RepositorySecretNamespace] = r.Repository.Namespace
 	}
-	if r.Repository.Spec.Backend.S3 != nil && r.Repository.Spec.Backend.S3.Endpoint != "" {
-		vars[apis.RepositoryEndpoint] = r.Repository.Spec.Backend.S3.Endpoint
+	if r.Repository.Spec.Backend.S3 != nil {
+		vars[apis.RepositoryInsecureTLS] = strconv.FormatBool(r.Repository.Spec.Backend.S3.InsecureTLS)
+		if r.Repository.Spec.Backend.S3.Endpoint != "" {
+			vars[apis.RepositoryEndpoint] = r.Repository.Spec.Backend.S3.Endpoint
+		}
 	}
 	endpoint, found := r.Repository.Spec.Backend.Endpoint()
 	if found {

@@ -1867,7 +1867,7 @@ kmodules.xyz/custom-resources/util/siteinfo
 # kmodules.xyz/go-containerregistry v0.0.12
 ## explicit; go 1.21.5
 kmodules.xyz/go-containerregistry/name
-# kmodules.xyz/objectstore-api v0.29.0
+# kmodules.xyz/objectstore-api v0.29.1
 ## explicit; go 1.21
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
@@ -2062,7 +2062,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 ## explicit; go 1.12
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
-# stash.appscode.dev/apimachinery v0.32.1-0.20240101013736-ef308633d8b2
+# stash.appscode.dev/apimachinery v0.32.1-0.20240206075719-41610d0ce38f
 ## explicit; go 1.21.5
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
