@@ -421,17 +421,17 @@ github.com/klauspost/compress/internal/cpuinfo
 github.com/klauspost/compress/internal/snapref
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
-# github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0
-## explicit; go 1.15
-github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1
-github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1
-github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned
-github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/fake
-github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/scheme
-github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/typed/volumesnapshot/v1
-github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/typed/volumesnapshot/v1/fake
-github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/typed/volumesnapshot/v1beta1
-github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned/typed/volumesnapshot/v1beta1/fake
+# github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0
+## explicit; go 1.21
+github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumegroupsnapshot/v1alpha1
+github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumesnapshot/v1
+github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned
+github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned/fake
+github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned/scheme
+github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned/typed/volumegroupsnapshot/v1alpha1
+github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned/typed/volumegroupsnapshot/v1alpha1/fake
+github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned/typed/volumesnapshot/v1
+github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned/typed/volumesnapshot/v1/fake
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
@@ -1845,11 +1845,9 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/csi-utils v0.25.4
-## explicit; go 1.18
-kmodules.xyz/csi-utils/volumesnapshot
+# kmodules.xyz/csi-utils v0.29.1
+## explicit; go 1.21.5
 kmodules.xyz/csi-utils/volumesnapshot/v1
-kmodules.xyz/csi-utils/volumesnapshot/v1beta1
 # kmodules.xyz/custom-resources v0.29.1
 ## explicit; go 1.21.5
 kmodules.xyz/custom-resources/apis/appcatalog
@@ -1921,7 +1919,7 @@ kmodules.xyz/resource-metrics/core/v1
 kmodules.xyz/resource-metrics/kubedb.com/v1alpha2
 kmodules.xyz/resource-metrics/kubevault.com/v1alpha2
 kmodules.xyz/resource-metrics/ops.kubedb.com/v1alpha1
-# kmodules.xyz/webhook-runtime v0.29.1
+# kmodules.xyz/webhook-runtime v0.29.0
 ## explicit; go 1.21.5
 kmodules.xyz/webhook-runtime/admission
 kmodules.xyz/webhook-runtime/admission/v1beta1

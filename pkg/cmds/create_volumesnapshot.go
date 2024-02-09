@@ -31,8 +31,8 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/volumesnapshot"
 
-	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	vscs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumesnapshot/v1"
+	vscs "github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned"
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +44,7 @@ import (
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/meta"
-	vsu "kmodules.xyz/csi-utils/volumesnapshot"
+	vsu "kmodules.xyz/csi-utils/volumesnapshot/v1"
 	prober "kmodules.xyz/prober/probe"
 )
 
@@ -189,7 +189,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
 		parts := strings.Split(bsMeta.Name, "-")
 		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, inv.GetObjectMeta().Namespace, pvcName, parts[len(parts)-1])
-		snapshot, err := vsu.CreateVolumeSnapshot(context.TODO(), opt.snapshotClient, &volumeSnapshot)
+		snapshot, err := opt.snapshotClient.SnapshotV1().VolumeSnapshots(volumeSnapshot.Namespace).Create(context.TODO(), &volumeSnapshot, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
 		}

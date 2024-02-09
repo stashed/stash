@@ -5,7 +5,7 @@ go 1.21.7
 require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gogo/protobuf v1.3.2
-	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0
+	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0
 	github.com/onsi/ginkgo/v2 v2.14.0
 	github.com/onsi/gomega v1.30.0
 	github.com/pkg/errors v0.9.1
@@ -37,13 +37,13 @@ require (
 	k8s.io/kubernetes v1.13.0
 	kmodules.xyz/client-go v0.29.6
 	kmodules.xyz/constants v0.0.0-20230304030334-d2d1f28732a5
-	kmodules.xyz/csi-utils v0.25.4
+	kmodules.xyz/csi-utils v0.29.1
 	kmodules.xyz/custom-resources v0.29.1
 	kmodules.xyz/objectstore-api v0.29.1
 	kmodules.xyz/offshoot-api v0.29.0
 	kmodules.xyz/openshift v0.29.0
 	kmodules.xyz/prober v0.29.0
-	kmodules.xyz/webhook-runtime v0.29.1
+	kmodules.xyz/webhook-runtime v0.29.0
 	sigs.k8s.io/controller-runtime v0.17.0
 	stash.appscode.dev/apimachinery v0.32.1-0.20240209175028-1fb8e3376f2c
 )

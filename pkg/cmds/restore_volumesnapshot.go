@@ -31,19 +31,17 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	vscs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
+	vscs "github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned"
 	"github.com/spf13/cobra"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	storage_api_v1 "k8s.io/api/storage/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
-	vsu "kmodules.xyz/csi-utils/volumesnapshot"
 	prober "kmodules.xyz/prober/probe"
 )
 
@@ -161,7 +159,7 @@ func (opt *VSoption) restoreVolumeSnapshot(targetInfo invoker.RestoreTargetInfo)
 	for i := range pvcList {
 		// verify that the respective VolumeSnapshot exist
 		if pvcList[i].Spec.DataSource != nil {
-			_, err := vsu.GetVolumeSnapshot(context.TODO(), opt.snapshotClient, types.NamespacedName{Namespace: opt.namespace, Name: pvcList[i].Spec.DataSource.Name})
+			_, err := opt.snapshotClient.SnapshotV1().VolumeSnapshots(opt.namespace).Get(context.TODO(), pvcList[i].Spec.DataSource.Name, metav1.GetOptions{})
 			if err != nil {
 				if kerr.IsNotFound(err) { // respective VolumeSnapshot does not exist
 					restoreOutput.RestoreTargetStatus.Stats = append(restoreOutput.RestoreTargetStatus.Stats, api_v1beta1.HostRestoreStats{

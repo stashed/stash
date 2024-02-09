@@ -42,7 +42,7 @@ type GenericWebhook struct {
 	plural   schema.GroupVersionResource
 	singular string
 
-	srcGroups sets.Set[string]
+	srcGroups sets.String
 	target    schema.GroupVersionKind
 	factory   api.GetterFactory
 	get       api.GetFunc
@@ -65,7 +65,7 @@ func NewGenericWebhook(
 	return &GenericWebhook{
 		plural:    plural,
 		singular:  singular,
-		srcGroups: sets.New[string](srcGroups...),
+		srcGroups: sets.NewString(srcGroups...),
 		target:    target,
 		factory:   factory,
 		handler:   handler,

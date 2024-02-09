@@ -18,10 +18,11 @@ package v1
 
 import (
 	"context"
+	"time"
 
 	jsonpatch "github.com/evanphx/json-patch/v5"
-	api "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	cs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
+	api "github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumesnapshot/v1"
+	cs "github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,7 +82,7 @@ func PatchVolumeSnapshotObject(ctx context.Context, c cs.Interface, cur, mod *ap
 
 func TryUpdateVolumeSnapshot(ctx context.Context, c cs.Interface, meta metav1.ObjectMeta, transform func(*api.VolumeSnapshot) *api.VolumeSnapshot, opts metav1.UpdateOptions) (result *api.VolumeSnapshot, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.SnapshotV1().VolumeSnapshots(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if apierrors.IsNotFound(e2) {
@@ -98,4 +99,13 @@ func TryUpdateVolumeSnapshot(ctx context.Context, c cs.Interface, meta metav1.Ob
 		err = errors.Errorf("failed to update VolumeSnapshot %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
+}
+
+func WaitUntilVolumeSnapshotReady(c cs.Interface, meta types.NamespacedName) error {
+	return wait.PollUntilContextTimeout(context.TODO(), kutil.RetryInterval, 2*time.Hour, true, func(ctx context.Context) (bool, error) {
+		if obj, err := c.SnapshotV1().VolumeSnapshots(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{}); err == nil {
+			return obj.Status != nil && obj.Status.ReadyToUse != nil && *obj.Status.ReadyToUse, nil
+		}
+		return false, nil
+	})
 }

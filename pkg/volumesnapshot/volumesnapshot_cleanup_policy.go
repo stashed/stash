@@ -24,13 +24,12 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	vscs "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumesnapshot/v1"
+	vscs "github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
-	vsu "kmodules.xyz/csi-utils/volumesnapshot"
 )
 
 // Some of the code of this file has been copied from restic/restic repository.
@@ -146,7 +145,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 	}
 
 	for _, vs := range removed {
-		err := vsu.DeleteVolumeSnapshot(context.TODO(), vsClient, types.NamespacedName{Namespace: namespace, Name: vs.VolumeSnap.Name})
+		err := vsClient.SnapshotV1().VolumeSnapshots(namespace).Delete(context.TODO(), vs.VolumeSnap.Name, metav1.DeleteOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
 				return nil
@@ -160,7 +159,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 }
 
 func CleanupSnapshots(policy v1alpha1.RetentionPolicy, hostBackupStats []v1beta1.HostBackupStats, namespace string, vsClient vscs.Interface) error {
-	vsList, err := vsu.ListVolumeSnapshot(context.TODO(), vsClient, namespace, v1.ListOptions{})
+	vsList, err := vsClient.SnapshotV1().VolumeSnapshots(namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) || len(vsList.Items) == 0 {
 			return nil
