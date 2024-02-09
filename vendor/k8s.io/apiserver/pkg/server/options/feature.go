@@ -42,7 +42,7 @@ func NewFeatureOptions() *FeatureOptions {
 		EnableProfiling:           defaults.EnableProfiling,
 		DebugSocketPath:           defaults.DebugSocketPath,
 		EnableContentionProfiling: defaults.EnableContentionProfiling,
-		EnablePriorityAndFairness: true,
+		EnablePriorityAndFairness: false,
 	}
 }
 
