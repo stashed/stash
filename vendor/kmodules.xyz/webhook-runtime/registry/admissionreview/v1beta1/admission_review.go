@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"context"
+	"strings"
 
 	admission "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +40,7 @@ var (
 	_ rest.Scoper                   = &REST{}
 	_ rest.GroupVersionKindProvider = &REST{}
 	_ rest.Storage                  = &REST{}
+	_ rest.SingularNameProvider     = &REST{}
 )
 
 func NewREST(hookFn AdmissionHookFunc) *REST {
@@ -53,6 +55,10 @@ func (r *REST) New() runtime.Object {
 
 func (r *REST) GroupVersionKind(_ schema.GroupVersion) schema.GroupVersionKind {
 	return admission.SchemeGroupVersion.WithKind("AdmissionReview")
+}
+
+func (r *REST) GetSingularName() string {
+	return strings.ToLower("AdmissionReview")
 }
 
 func (r *REST) NamespaceScoped() bool {

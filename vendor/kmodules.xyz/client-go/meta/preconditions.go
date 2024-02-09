@@ -25,7 +25,7 @@ import (
 )
 
 type PreConditionSet struct {
-	sets.String
+	sets.Set[string]
 }
 
 func (s PreConditionSet) PreconditionFunc() []mergepatch.PreconditionFunc {
@@ -36,7 +36,7 @@ func (s PreConditionSet) PreconditionFunc() []mergepatch.PreconditionFunc {
 		mergepatch.RequireMetadataKeyUnchanged("namespace"),
 	}
 
-	for _, field := range s.List() {
+	for _, field := range sets.List[string](s.Set) {
 		preconditions = append(preconditions,
 			RequireChainKeyUnchanged(field),
 		)
@@ -45,7 +45,7 @@ func (s PreConditionSet) PreconditionFunc() []mergepatch.PreconditionFunc {
 }
 
 func (s PreConditionSet) Error() error {
-	strList := strings.Join(s.List(), "\n\t")
+	strList := strings.Join(sets.List[string](s.Set), "\n\t")
 	return fmt.Errorf(strings.Join([]string{`At least one of the following was changed:
 	apiVersion
 	kind

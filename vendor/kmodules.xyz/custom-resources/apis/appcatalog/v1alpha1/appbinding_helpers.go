@@ -81,7 +81,7 @@ func (a AppBinding) Host() (string, error) {
 	} else if c.URL != nil {
 		u, err := url.Parse(*c.URL)
 		if err != nil {
-			return "", err
+			return ParseMySQLHost(*c.URL)
 		}
 		return u.Host, nil
 	}
@@ -99,7 +99,7 @@ func (a AppBinding) Hostname() (string, error) {
 	} else if c.URL != nil {
 		u, err := url.Parse(*c.URL)
 		if err != nil {
-			return "", err
+			return ParseMySQLHostname(*c.URL)
 		}
 		return u.Hostname(), nil
 	}
@@ -111,12 +111,18 @@ func (a AppBinding) Port() (int32, error) {
 	if c.Service != nil { // preferred source for MYSQL app binding
 		return c.Service.Port, nil
 	} else if c.URL != nil {
+		var port string
 		u, err := url.Parse(*c.URL)
 		if err != nil {
-			return 0, err
+			port, err = ParseMySQLPort(*c.URL)
+			if err != nil {
+				return 0, nil
+			}
+		} else {
+			port = u.Port()
 		}
-		port, err := strconv.ParseInt(u.Port(), 10, 32)
-		return int32(port), err
+		result, err := strconv.ParseInt(port, 10, 32)
+		return int32(result), err
 	}
 	return 0, errors.New("connection url is missing")
 }
