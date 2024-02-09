@@ -2080,8 +2080,8 @@ sigs.k8s.io/structured-merge-diff/v4/value
 ## explicit; go 1.12
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
-# stash.appscode.dev/apimachinery v0.32.1-0.20240209175028-1fb8e3376f2c
-## explicit; go 1.21.6
+# stash.appscode.dev/apimachinery v0.33.0-rc.0
+## explicit; go 1.21.5
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
 stash.appscode.dev/apimachinery/apis/repositories/install
