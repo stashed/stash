@@ -1919,7 +1919,7 @@ kmodules.xyz/resource-metrics/core/v1
 kmodules.xyz/resource-metrics/kubedb.com/v1alpha2
 kmodules.xyz/resource-metrics/kubevault.com/v1alpha2
 kmodules.xyz/resource-metrics/ops.kubedb.com/v1alpha1
-# kmodules.xyz/webhook-runtime v0.29.0
+# kmodules.xyz/webhook-runtime v0.29.1
 ## explicit; go 1.21.5
 kmodules.xyz/webhook-runtime/admission
 kmodules.xyz/webhook-runtime/admission/v1beta1

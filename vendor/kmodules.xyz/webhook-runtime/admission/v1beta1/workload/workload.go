@@ -49,7 +49,7 @@ type WorkloadWebhook struct {
 	singular string
 	kind     string
 
-	srcGroups sets.String
+	srcGroups sets.Set[string]
 	factory   api.GetterFactory
 	get       api.GetFunc
 	handler   admission.ResourceHandler
@@ -71,7 +71,7 @@ func NewWorkloadWebhook(
 		plural:    plural,
 		singular:  singular,
 		kind:      kind,
-		srcGroups: sets.NewString(core.GroupName, appsv1.GroupName, extensions.GroupName, batchv1.GroupName),
+		srcGroups: sets.New[string](core.GroupName, appsv1.GroupName, extensions.GroupName, batchv1.GroupName),
 		factory:   factory,
 		handler:   handler,
 	}

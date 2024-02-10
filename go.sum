@@ -1588,8 +1588,8 @@ kmodules.xyz/resource-metadata v0.18.2-0.20240209092240-01f2d51a9f27 h1:MVAZE8rS
 kmodules.xyz/resource-metadata v0.18.2-0.20240209092240-01f2d51a9f27/go.mod h1:I9HeSgkshwzwUy0IDhp4yIfRFbFQJ21syeSf4NsB04o=
 kmodules.xyz/resource-metrics v0.29.0 h1:YBSVCbGdAugUqZK4igHu3fPhxvpYar4xejE6njryNM4=
 kmodules.xyz/resource-metrics v0.29.0/go.mod h1:OuG/QobZ7o8GFHl/u3lqaUR0fDZDegxtV8Vdh+MNBD4=
-kmodules.xyz/webhook-runtime v0.29.0 h1:6W3/MMcaCwLGbEggj6i5+WmOziwV3WwroWpfwe29rTU=
-kmodules.xyz/webhook-runtime v0.29.0/go.mod h1:/TBpnSdTISjjUh4euI3XhNlpFU937CfKYoWjDm39pUY=
+kmodules.xyz/webhook-runtime v0.29.1 h1:SQ8NvwJpxv5CUuXIubSg9g0Bk8BBnj4dhCWEk6Ou8g8=
+kmodules.xyz/webhook-runtime v0.29.1/go.mod h1:WVgNO4NqFdYwYZ82L6QIycN1Ax47y+yXi7XIHekYylo=
 nhooyr.io/websocket v1.8.7/go.mod h1:B70DZP8IakI65RVQ51MsWP/8jndNma26DVA/nFSCgW0=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
