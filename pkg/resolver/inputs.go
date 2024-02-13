@@ -149,6 +149,7 @@ func (r *TaskOptions) setRepositoryVariables() error {
 
 	vars[apis.RepositoryName] = r.Repository.Name
 	vars[apis.RepositoryNamespace] = r.Repository.Namespace
+	vars[apis.RepositoryInsecureTLS] = strconv.FormatBool(false)
 
 	var err error
 	if vars[apis.RepositoryProvider], err = r.Repository.Spec.Backend.Provider(); err != nil {
@@ -165,7 +166,9 @@ func (r *TaskOptions) setRepositoryVariables() error {
 		vars[apis.RepositorySecretNamespace] = r.Repository.Namespace
 	}
 	if r.Repository.Spec.Backend.S3 != nil {
-		vars[apis.RepositoryInsecureTLS] = strconv.FormatBool(r.Repository.Spec.Backend.S3.InsecureTLS)
+		if r.Repository.Spec.Backend.S3.InsecureTLS {
+			vars[apis.RepositoryInsecureTLS] = strconv.FormatBool(true)
+		}
 		if r.Repository.Spec.Backend.S3.Endpoint != "" {
 			vars[apis.RepositoryEndpoint] = r.Repository.Spec.Backend.S3.Endpoint
 		}
