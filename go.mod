@@ -35,7 +35,7 @@ require (
 	k8s.io/klog/v2 v2.110.1
 	k8s.io/kube-aggregator v0.29.0
 	k8s.io/kubernetes v1.13.0
-	kmodules.xyz/client-go v0.29.6
+	kmodules.xyz/client-go v0.29.7
 	kmodules.xyz/constants v0.0.0-20230304030334-d2d1f28732a5
 	kmodules.xyz/csi-utils v0.29.1
 	kmodules.xyz/custom-resources v0.29.1
@@ -45,7 +45,7 @@ require (
 	kmodules.xyz/prober v0.29.0
 	kmodules.xyz/webhook-runtime v0.29.1
 	sigs.k8s.io/controller-runtime v0.17.0
-	stash.appscode.dev/apimachinery v0.33.0-rc.0
+	stash.appscode.dev/apimachinery v0.33.0
 )
 
 require (
