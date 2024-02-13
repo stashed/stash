@@ -1815,7 +1815,7 @@ k8s.io/utils/trace
 # kmodules.xyz/apiversion v0.2.0
 ## explicit; go 1.14
 kmodules.xyz/apiversion
-# kmodules.xyz/client-go v0.29.6
+# kmodules.xyz/client-go v0.29.7
 ## explicit; go 1.21.5
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -2080,7 +2080,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 ## explicit; go 1.12
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
-# stash.appscode.dev/apimachinery v0.33.0-rc.0
+# stash.appscode.dev/apimachinery v0.33.0
 ## explicit; go 1.21.5
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories

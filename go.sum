@@ -1566,8 +1566,8 @@ k8s.io/utils v0.0.0-20231127182322-b307cd553661 h1:FepOBzJ0GXm8t0su67ln2wAZjbQ6R
 k8s.io/utils v0.0.0-20231127182322-b307cd553661/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 kmodules.xyz/apiversion v0.2.0 h1:vAQYqZFm4xu4pbB1cAdHbFEPES6EQkcR4wc06xdTOWk=
 kmodules.xyz/apiversion v0.2.0/go.mod h1:oPX8g8LvlPdPX3Yc5YvCzJHQnw3YF/X4/jdW0b1am80=
-kmodules.xyz/client-go v0.29.6 h1:xTVq5LZvsPBUTLY7PORq7zveLOj/vpuTDvkpHWOk3RM=
-kmodules.xyz/client-go v0.29.6/go.mod h1:pHuzpwzEcDUIGjVVvwz9N8lY+6A7HXwvs2d7NtK7Hho=
+kmodules.xyz/client-go v0.29.7 h1:ax1QB4CA2olWU+DsLHwSiK5xvLlxOBpMnJWSu+gvRi8=
+kmodules.xyz/client-go v0.29.7/go.mod h1:uzg0eWRy+KvxAcXRRu2KNJlVgXXYbTujAgwsz/XR5EU=
 kmodules.xyz/constants v0.0.0-20230304030334-d2d1f28732a5 h1:wybpLbdInCO2QripCkVXFce37ESUWKHdWXHHFLXJchg=
 kmodules.xyz/constants v0.0.0-20230304030334-d2d1f28732a5/go.mod h1:3C5i73Z7fcMVyu5TXtPuizGD8vWAbesXFVp1ESbIa1k=
 kmodules.xyz/csi-utils v0.29.1 h1:O0WDb/rsqj+FwT3C/KshB9hhBTh84YCP3fVb1UGMuHw=
@@ -1608,7 +1608,7 @@ sigs.k8s.io/structured-merge-diff/v4 v4.4.1 h1:150L+0vs/8DA78h1u02ooW1/fFq/Lwr+s
 sigs.k8s.io/structured-merge-diff/v4 v4.4.1/go.mod h1:N8hJocpFajUSSeSJ9bOZ77VzejKZaXsTtZo4/u7Io08=
 sigs.k8s.io/yaml v1.4.0 h1:Mk1wCc2gy/F0THH0TAp1QYyJNzRm2KCLy3o5ASXVI5E=
 sigs.k8s.io/yaml v1.4.0/go.mod h1:Ejl7/uTz7PSA4eKMyQCUTnhZYNmLIl+5c2lQPGR2BPY=
-stash.appscode.dev/apimachinery v0.33.0-rc.0 h1:yfLn3YYgfo12pTI8oOZBswkQpzFt4MzPaIaoZ2Nok64=
-stash.appscode.dev/apimachinery v0.33.0-rc.0/go.mod h1:M51wIqUONZ7cmx/h5W+Lp+/TlYAF8z7+kQJPsvtl7G4=
+stash.appscode.dev/apimachinery v0.33.0 h1:0HpdLsXTErZWTPl3xH1N2ev8SwLOwH20mTd8Y4Oy+yg=
+stash.appscode.dev/apimachinery v0.33.0/go.mod h1:3A7DVqgJfI7LbLAM5pBpJebd/mChJb86nmekm73TRGw=
 x-helm.dev/apimachinery v0.0.16 h1:Eb160xcdH9fMVHak5QSWYWxoaReytch+A7kk25QWjx0=
 x-helm.dev/apimachinery v0.0.16/go.mod h1:05brgFw5oWOX7OTXT090SQojqXjbttqWfqoJo+ejBU4=
