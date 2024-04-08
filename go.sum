@@ -1613,7 +1613,7 @@ sigs.k8s.io/structured-merge-diff/v4 v4.4.1 h1:150L+0vs/8DA78h1u02ooW1/fFq/Lwr+s
 sigs.k8s.io/structured-merge-diff/v4 v4.4.1/go.mod h1:N8hJocpFajUSSeSJ9bOZ77VzejKZaXsTtZo4/u7Io08=
 sigs.k8s.io/yaml v1.4.0 h1:Mk1wCc2gy/F0THH0TAp1QYyJNzRm2KCLy3o5ASXVI5E=
 sigs.k8s.io/yaml v1.4.0/go.mod h1:Ejl7/uTz7PSA4eKMyQCUTnhZYNmLIl+5c2lQPGR2BPY=
-stash.appscode.dev/apimachinery v0.33.0 h1:0HpdLsXTErZWTPl3xH1N2ev8SwLOwH20mTd8Y4Oy+yg=
-stash.appscode.dev/apimachinery v0.33.0/go.mod h1:3A7DVqgJfI7LbLAM5pBpJebd/mChJb86nmekm73TRGw=
+stash.appscode.dev/apimachinery v0.34.0 h1:8/Vi6w5Q+eAf7M7HArhvK+gay9cHPOvzAK6QCwdzRTg=
+stash.appscode.dev/apimachinery v0.34.0/go.mod h1:qAVdUDtYDYiytYqKIHon4BMs1OXBdu3wDpfEfhM18b0=
 x-helm.dev/apimachinery v0.0.16 h1:Eb160xcdH9fMVHak5QSWYWxoaReytch+A7kk25QWjx0=
 x-helm.dev/apimachinery v0.0.16/go.mod h1:05brgFw5oWOX7OTXT090SQojqXjbttqWfqoJo+ejBU4=
