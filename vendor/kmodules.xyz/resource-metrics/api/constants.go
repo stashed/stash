@@ -28,6 +28,8 @@ const (
 	PodRoleReplicasPerShard PodRole = "replicas_per_shard"
 	PodRoleConfigServer     PodRole = "config_server"
 	PodRoleMongos           PodRole = "mongos"
+	PodRoleAggregator       PodRole = "aggregator"
+	PodRoleLeaf             PodRole = "leaf"
 )
 
 type ReplicaList map[PodRole]int64

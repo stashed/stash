@@ -48,6 +48,7 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/dynamic"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clusterid"
@@ -393,4 +394,19 @@ func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, features [
 		return fmt.Errorf("license %s is not valid for products %q", license.ID, strings.Join(features, ","))
 	}
 	return nil
+}
+
+func LicenseProvided(cfg *rest.Config, licenseFile string) bool {
+	if licenseFile != "" {
+		return true
+	}
+
+	if cfg != nil {
+		ok, _ := discovery.HasGVK(
+			kubernetes.NewForConfigOrDie(cfg).Discovery(),
+			proxyserver.SchemeGroupVersion.String(),
+			proxyserver.ResourceKindLicenseRequest)
+		return ok
+	}
+	return false
 }

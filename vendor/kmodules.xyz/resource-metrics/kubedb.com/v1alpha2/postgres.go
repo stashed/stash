@@ -68,7 +68,7 @@ func (r Postgres) modeFn(obj map[string]interface{}) (string, error) {
 	if err == nil && found && replicas > 1 {
 		return DBModeCluster, nil
 	}
-	return DBStandalone, nil
+	return DBModeStandalone, nil
 }
 
 func (r Postgres) usesTLSFn(obj map[string]interface{}) (bool, error) {

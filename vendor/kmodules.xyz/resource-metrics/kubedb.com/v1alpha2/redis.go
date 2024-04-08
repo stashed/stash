@@ -89,7 +89,7 @@ func (r Redis) modeFn(obj map[string]interface{}) (string, error) {
 	if found {
 		return mode, nil
 	}
-	return DBStandalone, nil
+	return DBModeStandalone, nil
 }
 
 func (r Redis) usesTLSFn(obj map[string]interface{}) (bool, error) {

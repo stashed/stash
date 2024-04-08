@@ -19,15 +19,23 @@ package meta
 import (
 	"fmt"
 	"hash"
-	"hash/fnv"
 	"reflect"
 	"strconv"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/structs"
+	"github.com/zeebo/xxh3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
+
+func ResourceHash(obj metav1.Object) string {
+	h := xxh3.New()
+	_, _ = h.WriteString(string(obj.GetUID()))
+	_, _ = h.WriteString(",")
+	_, _ = h.WriteString(strconv.FormatInt(obj.GetGeneration(), 10))
+	return strconv.FormatUint(h.Sum64(), 10)
+}
 
 // ObjectHash includes all top label fields (like data, spec) except TypeMeta, ObjectMeta and Status
 // also includes Generation, Annotation and Labels form ObjectMeta
@@ -57,7 +65,7 @@ func ObjectHash(in metav1.Object) string {
 		}
 	}
 
-	h := fnv.New64a()
+	h := xxh3.New()
 	DeepHashObject(h, obj)
 	return strconv.FormatUint(h.Sum64(), 10)
 }
@@ -77,7 +85,7 @@ func GenerationHash(in metav1.Object) string {
 		}
 		obj["annotations"] = data
 	}
-	h := fnv.New64a()
+	h := xxh3.New()
 	DeepHashObject(h, obj)
 	return strconv.FormatUint(h.Sum64(), 10)
 }

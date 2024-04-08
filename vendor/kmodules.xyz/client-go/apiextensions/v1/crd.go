@@ -18,6 +18,7 @@ package v1
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -27,6 +28,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
+)
+
+const (
+	RetryTimeout = 10 * time.Minute
 )
 
 func CreateOrUpdateCustomResourceDefinition(
@@ -70,7 +75,7 @@ func TryUpdateCustomResourceDefinition(
 	opts metav1.UpdateOptions,
 ) (result *api.CustomResourceDefinition, err error) {
 	attempt := 0
-	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
