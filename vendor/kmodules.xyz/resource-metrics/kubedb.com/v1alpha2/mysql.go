@@ -90,7 +90,7 @@ func (r MySQL) modeFn(obj map[string]interface{}) (string, error) {
 	if found {
 		return mode, nil
 	}
-	return DBStandalone, nil
+	return DBModeStandalone, nil
 }
 
 func (r MySQL) usesTLSFn(obj map[string]interface{}) (bool, error) {

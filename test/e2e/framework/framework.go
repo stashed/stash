@@ -54,10 +54,9 @@ var RootFramework *Framework
 var TestFailed = false
 
 func New(clientConfig *rest.Config, storageClass, registry, slackWebhook string) *Framework {
-	store, err := certstore.New(blobfs.NewInMemoryFS(), filepath.Join("", "pki"))
-	Expect(err).NotTo(HaveOccurred())
+	store := certstore.New(blobfs.NewInMemoryFS(), filepath.Join("", "pki"), 0)
 
-	err = store.InitCA()
+	err := store.InitCA()
 	Expect(err).NotTo(HaveOccurred())
 
 	kubeClient := kubernetes.NewForConfigOrDie(clientConfig)

@@ -86,6 +86,7 @@ var rxDWORDHost = regexp.MustCompile(`^(\d+)((?:\.+)?(?:\:\d*)?)$`)
 var rxOctalHost = regexp.MustCompile(`^(0\d*)\.(0\d*)\.(0\d*)\.(0\d*)((?:\.+)?(?:\:\d*)?)$`)
 var rxHexHost = regexp.MustCompile(`^0x([0-9A-Fa-f]+)((?:\.+)?(?:\:\d*)?)$`)
 var rxHostDots = regexp.MustCompile(`^(.+?)(:\d+)?$`)
+var rxHostInteriorDots = regexp.MustCompile(`\.+`)
 var rxEmptyPort = regexp.MustCompile(`:+$`)
 
 // Map of flags to implementation function.
@@ -368,6 +369,7 @@ func removeUnncessaryHostDots(u *url.URL) {
 				u.Host += matches[2]
 			}
 		}
+		u.Host = rxHostInteriorDots.ReplaceAllString(u.Host, ".")
 	}
 }
 

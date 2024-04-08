@@ -67,7 +67,7 @@ func (r PgBouncer) modeFn(obj map[string]interface{}) (string, error) {
 	if replicas > 1 {
 		return DBModeCluster, nil
 	}
-	return DBStandalone, nil
+	return DBModeStandalone, nil
 }
 
 func (r PgBouncer) usesTLSFn(obj map[string]interface{}) (bool, error) {

@@ -106,7 +106,7 @@ func (r MongoDB) modeFn(obj map[string]interface{}) (string, error) {
 	if found && rs != nil {
 		return DBModeReplicaSet, nil
 	}
-	return DBStandalone, nil
+	return DBModeStandalone, nil
 }
 
 func (r MongoDB) usesTLSFn(obj map[string]interface{}) (bool, error) {

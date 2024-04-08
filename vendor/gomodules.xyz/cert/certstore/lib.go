@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"gomodules.xyz/blobfs"
@@ -41,12 +42,19 @@ type CertStore struct {
 	organization []string
 	prefix       string
 	ca           string
+	duration     time.Duration
 	caKey        *rsa.PrivateKey
 	caCert       *x509.Certificate
 }
 
-func New(fs blobfs.Interface, dir string, organization ...string) (*CertStore, error) {
-	return &CertStore{fs: fs, dir: dir, ca: "ca", organization: append([]string(nil), organization...)}, nil
+func New(fs blobfs.Interface, dir string, duration time.Duration, organization ...string) *CertStore {
+	return &CertStore{
+		fs:           fs,
+		dir:          dir,
+		ca:           "ca",
+		duration:     duration,
+		organization: append([]string(nil), organization...),
+	}
 }
 
 func (s *CertStore) InitCA(prefix ...string) error {
@@ -138,6 +146,7 @@ func (s *CertStore) createCAFromKey(key *rsa.PrivateKey) error {
 			DNSNames: []string{s.ca},
 			IPs:      []net.IP{net.ParseIP("127.0.0.1")},
 		},
+		Duration: s.duration,
 	}
 	crt, err := cert.NewSelfSignedCACert(cfg, key)
 	if err != nil {
@@ -211,6 +220,7 @@ func (s *CertStore) NewServerCertPair(sans cert.AltNames) (*x509.Certificate, *r
 		Organization: s.organization,
 		AltNames:     sans,
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		Duration:     s.duration,
 	}
 	key, err := cert.NewPrivateKey()
 	if err != nil {
@@ -231,6 +241,27 @@ func (s *CertStore) NewServerCertPairBytes(sans cert.AltNames) ([]byte, []byte, 
 	return cert.EncodeCertPEM(crt), cert.EncodePrivateKeyPEM(key), nil
 }
 
+func (cs *CertStore) GetServerCertPair(name string, sans cert.AltNames) (*x509.Certificate, *rsa.PrivateKey, error) {
+	crt, key, err := cs.Read(name)
+	if err != nil || time.Until(crt.NotAfter) < 10*time.Minute {
+		crt, key, err := cs.NewServerCertPair(sans)
+		if err != nil {
+			return nil, nil, err
+		}
+		err = cs.Write(name, crt, key)
+		return crt, key, err
+	}
+	return crt, key, nil
+}
+
+func (s *CertStore) GetServerCertPairBytes(name string, sans cert.AltNames) ([]byte, []byte, error) {
+	crt, key, err := s.GetServerCertPair(name, sans)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cert.EncodeCertPEM(crt), cert.EncodePrivateKeyPEM(key), nil
+}
+
 // NewPeerCertPair is used to create cert pair that can serve as both server and client.
 // This is used to issue peer certificates for etcd.
 func (s *CertStore) NewPeerCertPair(sans cert.AltNames) (*x509.Certificate, *rsa.PrivateKey, error) {
@@ -239,6 +270,7 @@ func (s *CertStore) NewPeerCertPair(sans cert.AltNames) (*x509.Certificate, *rsa
 		Organization: s.organization,
 		AltNames:     sans,
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		Duration:     s.duration,
 	}
 	key, err := cert.NewPrivateKey()
 	if err != nil {
@@ -265,6 +297,7 @@ func (s *CertStore) NewClientCertPair(sans cert.AltNames, organization ...string
 		Organization: organization,
 		AltNames:     sans,
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		Duration:     s.duration,
 	}
 	key, err := cert.NewPrivateKey()
 	if err != nil {

@@ -49,15 +49,28 @@ type ClusterMetadata struct {
 	Provider    HostingProvider `json:"provider,omitempty" protobuf:"bytes,4,opt,name=provider,casttype=HostingProvider"`
 }
 
+/*
+ENUM(
+
+	ACE                         = 1
+	OCMHub                      = 2
+	OCMMulticlusterControlplane = 4
+	OCMSpoke                    = 8
+	OpenShift                   = 16
+	Rancher                     = 32
+	VirtualCluster              = 64
+
+)
+*/
 type ClusterManager int
 
 const (
 	ClusterManagerACE ClusterManager = 1 << iota
 	ClusterManagerOCMHub
-	ClusterManagerOCMSpoke
 	ClusterManagerOCMMulticlusterControlplane
-	ClusterManagerRancher
+	ClusterManagerOCMSpoke
 	ClusterManagerOpenShift
+	ClusterManagerRancher
 	ClusterManagerVirtualCluster
 )
 

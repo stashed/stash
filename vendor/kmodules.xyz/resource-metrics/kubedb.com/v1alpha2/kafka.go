@@ -93,9 +93,9 @@ func (r Kafka) modeFn(obj map[string]interface{}) (string, error) {
 		return "", err
 	}
 	if found && !reflect.ValueOf(topology).IsNil() {
-		return "Dedicated", nil
+		return DBModeDedicated, nil
 	}
-	return "Combined", nil
+	return DBModeCombined, nil
 }
 
 func (r Kafka) usesTLSFn(obj map[string]interface{}) (bool, error) {
