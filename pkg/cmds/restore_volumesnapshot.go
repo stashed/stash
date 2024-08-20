@@ -254,8 +254,7 @@ func (opt *VSoption) restoreVolumeSnapshot(targetInfo invoker.RestoreTargetInfo)
 		}
 		err := prober.RunProbe(opt.config, targetInfo.Hooks.PostRestore.Handler, podName, opt.namespace)
 		if err != nil {
-			return nil, fmt.Errorf(err.Error() + "Warning: The actual restore process may be succeeded." +
-				"Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")
+			return nil, fmt.Errorf("%w Warning: The actual restore process may be succeeded. Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'", err)
 		}
 		klog.Infoln("postRestore hooks has been executed successfully")
 	}

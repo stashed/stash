@@ -108,7 +108,7 @@ func (f *Framework) SecretForMinioServer(ips []net.IP) core.Secret {
 
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf(MinioServerSecret + f.namespace),
+			Name:      MinioServerSecret + f.namespace,
 			Namespace: f.namespace,
 		},
 		Data: map[string][]byte{
