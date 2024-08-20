@@ -18,7 +18,7 @@ concurrency:
 jobs:
   build:
     if: contains(github.event.issue.html_url, '/pull/') && startsWith(github.event.comment.body, '/ok-to-test')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v1
 
@@ -52,7 +52,7 @@ jobs:
           make push
 
   config:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: build
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -82,7 +82,7 @@ jobs:
   kubernetes:
     name: Kubernetes
     needs: config
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix: ${{ fromJson(needs.config.outputs.matrix) }}
     steps:

@@ -231,8 +231,7 @@ func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, inv invoker.
 		}
 		err := prober.RunProbe(opt.config, targetInfo.Hooks.PostBackup.Handler, podName, opt.namespace)
 		if err != nil {
-			return nil, fmt.Errorf(err.Error() + "Warning: The actual backup process may be succeeded." +
-				"Hence, the backup snapshots might be present in the backend even if the overall BackupSession phase is 'Failed'")
+			return nil, fmt.Errorf("%w Warning: The actual backup process may be succeeded. Hence, the backup snapshots might be present in the backend even if the overall BackupSession phase is 'Failed'", err)
 		}
 		backupOutput.BackupTargetStatus.Conditions = append(backupOutput.BackupTargetStatus.Conditions, kmapi.Condition{
 			Type:               api_v1beta1.PostBackupHookExecutionSucceeded,
