@@ -43,8 +43,8 @@ func (_ DaemonSet) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, 
 	return nil, nil
 }
 
-func (r DaemonSet) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
+func (r DaemonSet) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
 		containers, err := api.AggregateContainerResources(obj, fn, api.AddResourceList, "spec", "template", "spec", "containers")
 		if err != nil {
 			return nil, err
@@ -53,9 +53,9 @@ func (r DaemonSet) roleResourceFn(fn func(rr core.ResourceRequirements) core.Res
 		if err != nil {
 			return nil, err
 		}
-		return map[api.PodRole]core.ResourceList{
-			api.PodRoleDefault: containers,
-			api.PodRoleInit:    initContainers,
+		return map[api.PodRole]api.PodInfo{
+			api.PodRoleDefault: {Resource: containers, Replicas: 1},
+			api.PodRoleInit:    {Resource: initContainers, Replicas: 1},
 		}, nil
 	}
 }

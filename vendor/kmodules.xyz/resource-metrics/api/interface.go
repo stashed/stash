@@ -17,10 +17,15 @@ limitations under the License.
 package api
 
 import (
+	"slices"
+
 	core "k8s.io/api/core/v1"
 )
 
 type ResourceCalculator interface {
+	GetRoleResourceLimitsFn() func(obj map[string]interface{}) (map[PodRole]PodInfo, error)
+	GetRoleResourceRequestsFn() func(obj map[string]interface{}) (map[PodRole]PodInfo, error)
+
 	Replicas(obj map[string]interface{}) (int64, error)
 	RoleReplicas(obj map[string]interface{}) (ReplicaList, error)
 
@@ -35,6 +40,9 @@ type ResourceCalculator interface {
 
 	RoleResourceLimits(obj map[string]interface{}) (map[PodRole]core.ResourceList, error)
 	RoleResourceRequests(obj map[string]interface{}) (map[PodRole]core.ResourceList, error)
+
+	PodResourceRequests(obj map[string]interface{}) (core.ResourceList, error)
+	PodResourceLimits(obj map[string]interface{}) (core.ResourceList, error)
 }
 
 type ResourceCalculatorFuncs struct {
@@ -48,11 +56,19 @@ type ResourceCalculatorFuncs struct {
 	RoleReplicasFn         func(obj map[string]interface{}) (ReplicaList, error)
 	ModeFn                 func(obj map[string]interface{}) (string, error)
 	UsesTLSFn              func(obj map[string]interface{}) (bool, error)
-	RoleResourceLimitsFn   func(obj map[string]interface{}) (map[PodRole]core.ResourceList, error)
-	RoleResourceRequestsFn func(obj map[string]interface{}) (map[PodRole]core.ResourceList, error)
+	RoleResourceLimitsFn   func(obj map[string]interface{}) (map[PodRole]PodInfo, error)
+	RoleResourceRequestsFn func(obj map[string]interface{}) (map[PodRole]PodInfo, error)
 }
 
 var _ ResourceCalculator = &ResourceCalculatorFuncs{}
+
+func (c ResourceCalculatorFuncs) GetRoleResourceLimitsFn() func(obj map[string]interface{}) (map[PodRole]PodInfo, error) {
+	return c.RoleResourceLimitsFn
+}
+
+func (c ResourceCalculatorFuncs) GetRoleResourceRequestsFn() func(obj map[string]interface{}) (map[PodRole]PodInfo, error) {
+	return c.RoleResourceRequestsFn
+}
 
 func (c ResourceCalculatorFuncs) Replicas(obj map[string]interface{}) (int64, error) {
 	replicas, err := c.RoleReplicas(obj)
@@ -123,9 +139,74 @@ func (c ResourceCalculatorFuncs) AppResourceRequests(obj map[string]interface{})
 }
 
 func (c ResourceCalculatorFuncs) RoleResourceLimits(obj map[string]interface{}) (map[PodRole]core.ResourceList, error) {
-	return c.RoleResourceLimitsFn(obj)
+	ret := make(map[PodRole]core.ResourceList)
+	rr, err := c.RoleResourceLimitsFn(obj)
+	if err != nil {
+		return nil, err
+	}
+	for role, info := range rr {
+		ret[role] = MulResourceList(info.Resource, info.Replicas)
+	}
+	return ret, nil
 }
 
 func (c ResourceCalculatorFuncs) RoleResourceRequests(obj map[string]interface{}) (map[PodRole]core.ResourceList, error) {
-	return c.RoleResourceRequestsFn(obj)
+	ret := make(map[PodRole]core.ResourceList)
+	rr, err := c.RoleResourceRequestsFn(obj)
+	if err != nil {
+		return nil, err
+	}
+	for role, info := range rr {
+		ret[role] = MulResourceList(info.Resource, info.Replicas)
+	}
+	return ret, nil
+}
+
+func (c ResourceCalculatorFuncs) PodResourceLimits(obj map[string]interface{}) (core.ResourceList, error) {
+	rl, err := c.RoleResourceLimitsFn(obj)
+	if err != nil {
+		return nil, err
+	}
+	return c.calcForPod(rl), nil
+}
+
+func (c ResourceCalculatorFuncs) PodResourceRequests(obj map[string]interface{}) (core.ResourceList, error) {
+	rr, err := c.RoleResourceRequestsFn(obj)
+	if err != nil {
+		return nil, err
+	}
+	return c.calcForPod(rr), nil
+}
+
+func (c ResourceCalculatorFuncs) calcForPod(roleInfoMap map[PodRole]PodInfo) core.ResourceList {
+	mx := core.ResourceList{}
+	extraRoles := c.getExtraRoles()
+	for _, role := range c.AppRoles {
+		if _, exist := roleInfoMap[role]; !exist {
+			continue
+		}
+		res := roleInfoMap[role].Resource
+		for _, extraRole := range extraRoles {
+			if _, exist := roleInfoMap[extraRole]; !exist {
+				continue
+			}
+			extraRes := roleInfoMap[extraRole].Resource
+			res = AddResourceList(res, extraRes)
+		}
+		if initInfo, exist := roleInfoMap[PodRoleInit]; exist {
+			res = MaxResourceList(res, initInfo.Resource)
+		}
+		mx = MaxResourceList(res, mx)
+	}
+	return mx
+}
+
+func (c ResourceCalculatorFuncs) getExtraRoles() []PodRole {
+	roles := make([]PodRole, 0)
+	for _, role := range c.RuntimeRoles {
+		if !slices.Contains(c.AppRoles, role) {
+			roles = append(roles, role)
+		}
+	}
+	return roles
 }

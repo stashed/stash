@@ -114,8 +114,8 @@ func (r MongoDB) usesTLSFn(obj map[string]interface{}) (bool, error) {
 	return found, err
 }
 
-func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
+func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -149,11 +149,11 @@ func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resou
 				return nil, err
 			}
 
-			return map[api.PodRole]core.ResourceList{
-				api.PodRoleTotalShard:   api.MulResourceList(shard, shards*shardReplicas),
-				api.PodRoleConfigServer: api.MulResourceList(configServer, configServerReplicas),
-				api.PodRoleMongos:       api.MulResourceList(mongos, mongosReplicas),
-				api.PodRoleExporter:     api.MulResourceList(exporter, shards*shardReplicas+configServerReplicas+mongosReplicas),
+			return map[api.PodRole]api.PodInfo{
+				api.PodRoleTotalShard:   {Resource: shard, Replicas: shards * shardReplicas},
+				api.PodRoleConfigServer: {Resource: configServer, Replicas: configServerReplicas},
+				api.PodRoleMongos:       {Resource: mongos, Replicas: mongosReplicas},
+				api.PodRoleExporter:     {Resource: exporter, Replicas: shards*shardReplicas + configServerReplicas + mongosReplicas},
 			}, nil
 		}
 
@@ -163,9 +163,9 @@ func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resou
 			return nil, err
 		}
 
-		return map[api.PodRole]core.ResourceList{
-			api.PodRoleDefault:  api.MulResourceList(container, replicas),
-			api.PodRoleExporter: api.MulResourceList(exporter, replicas),
+		return map[api.PodRole]api.PodInfo{
+			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
+			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
 		}, nil
 	}
 }

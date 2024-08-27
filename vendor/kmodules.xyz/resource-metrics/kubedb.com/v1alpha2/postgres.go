@@ -76,8 +76,8 @@ func (r Postgres) usesTLSFn(obj map[string]interface{}) (bool, error) {
 	return found, err
 }
 
-func (r Postgres) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
+func (r Postgres) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
 		container, replicas, err := api.AppNodeResources(obj, fn, "spec")
 		if err != nil {
 			return nil, err
@@ -87,9 +87,9 @@ func (r Postgres) roleResourceFn(fn func(rr core.ResourceRequirements) core.Reso
 		if err != nil {
 			return nil, err
 		}
-		return map[api.PodRole]core.ResourceList{
-			api.PodRoleDefault:  api.MulResourceList(container, replicas),
-			api.PodRoleExporter: api.MulResourceList(exporter, replicas),
+		return map[api.PodRole]api.PodInfo{
+			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
+			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
 		}, nil
 	}
 }

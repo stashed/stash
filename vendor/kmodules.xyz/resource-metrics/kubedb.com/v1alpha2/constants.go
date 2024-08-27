@@ -27,8 +27,10 @@ const (
 )
 
 const (
+	ClickHouseContainerName  = "clickhouse"
 	DruidContainerName       = "druid"
 	FerretDBContainerName    = "ferretdb"
+	MSSQLServerContainerName = "mssql"
 	PgpoolContainerName      = "pgpool"
 	RabbitMQContainerName    = "rabbitmq"
 	SinglestoreContainerName = "singlestore"

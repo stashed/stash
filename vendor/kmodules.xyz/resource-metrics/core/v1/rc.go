@@ -52,8 +52,8 @@ func (_ ReplicationController) roleReplicasFn(obj map[string]interface{}) (api.R
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r ReplicationController) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
+func (r ReplicationController) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
 		rr, err := r.roleReplicasFn(obj)
 		if err != nil {
 			return nil, err
@@ -68,9 +68,9 @@ func (r ReplicationController) roleResourceFn(fn func(rr core.ResourceRequiremen
 		if err != nil {
 			return nil, err
 		}
-		return map[api.PodRole]core.ResourceList{
-			api.PodRoleDefault: api.MulResourceList(container, replicas),
-			api.PodRoleInit:    api.MulResourceList(initContainers, replicas),
+		return map[api.PodRole]api.PodInfo{
+			api.PodRoleDefault: {Resource: container, Replicas: replicas},
+			api.PodRoleInit:    {Resource: initContainers, Replicas: replicas},
 		}, nil
 	}
 }

@@ -39,8 +39,8 @@ type Solr struct{}
 
 func (r Solr) ResourceCalculator() api.ResourceCalculator {
 	return &api.ResourceCalculatorFuncs{
-		AppRoles:               []api.PodRole{api.PodRoleDefault},
-		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleExporter},
+		AppRoles:               []api.PodRole{api.PodRoleDefault, api.PodRoleCoordinator, api.PodRoleOverseer, api.PodRoleData},
+		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleCoordinator, api.PodRoleOverseer, api.PodRoleData, api.PodRoleExporter},
 		RoleReplicasFn:         r.roleReplicasFn,
 		ModeFn:                 r.modeFn,
 		UsesTLSFn:              r.usesTLSFn,
@@ -58,7 +58,6 @@ func (r Solr) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error
 	}
 
 	if found && topology != nil {
-		var replicas int64 = 0
 		for role, roleSpec := range topology {
 			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]interface{}), "replicas")
 			if err != nil {
@@ -66,13 +65,8 @@ func (r Solr) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error
 			}
 			if found {
 				result[api.PodRole(role)] = roleReplicas
-				replicas += roleReplicas
-			} else {
-				result[api.PodRole(role)] = 1
-				replicas += 1
 			}
 		}
-		result[api.PodRoleDefault] = replicas
 	} else {
 		// Combined mode
 		replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
@@ -105,8 +99,8 @@ func (r Solr) usesTLSFn(obj map[string]interface{}) (bool, error) {
 	return found, err
 }
 
-func (r Solr) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
+func (r Solr) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -118,22 +112,18 @@ func (r Solr) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resource
 		}
 		if found && topology != nil {
 			var replicas int64 = 0
-			var totalResources core.ResourceList
-			result := map[api.PodRole]core.ResourceList{}
+			result := map[api.PodRole]api.PodInfo{}
 
 			for role, roleSpec := range topology {
 				rolePerReplicaResources, roleReplicas, err := api.AppNodeResourcesV2(roleSpec.(map[string]interface{}), fn, SolrContainerName)
 				if err != nil {
 					return nil, err
 				}
-
-				roleResources := api.MulResourceList(rolePerReplicaResources, roleReplicas)
-				result[api.PodRole(role)] = roleResources
-				totalResources = api.AddResourceList(totalResources, roleResources)
+				replicas += roleReplicas
+				result[api.PodRole(role)] = api.PodInfo{Resource: rolePerReplicaResources, Replicas: roleReplicas}
 			}
 
-			result[api.PodRoleDefault] = totalResources
-			result[api.PodRoleExporter] = api.MulResourceList(exporter, replicas)
+			result[api.PodRoleExporter] = api.PodInfo{Resource: exporter, Replicas: replicas}
 			return result, nil
 		}
 
@@ -143,9 +133,9 @@ func (r Solr) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resource
 			return nil, err
 		}
 
-		return map[api.PodRole]core.ResourceList{
-			api.PodRoleDefault:  api.MulResourceList(container, replicas),
-			api.PodRoleExporter: api.MulResourceList(exporter, replicas),
+		return map[api.PodRole]api.PodInfo{
+			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
+			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
 		}, nil
 	}
 }

@@ -100,8 +100,8 @@ func (r Singlestore) usesTLSFn(obj map[string]interface{}) (bool, error) {
 	return found, err
 }
 
-func (r Singlestore) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
+func (r Singlestore) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -122,10 +122,10 @@ func (r Singlestore) roleResourceFn(fn func(rr core.ResourceRequirements) core.R
 				return nil, err
 			}
 
-			return map[api.PodRole]core.ResourceList{
-				api.PodRoleAggregator: api.MulResourceList(aggregator, aggregatorReplicas),
-				api.PodRoleLeaf:       api.MulResourceList(leaf, leafReplicas),
-				api.PodRoleExporter:   api.MulResourceList(exporter, aggregatorReplicas+leafReplicas),
+			return map[api.PodRole]api.PodInfo{
+				api.PodRoleAggregator: {Resource: aggregator, Replicas: aggregatorReplicas},
+				api.PodRoleLeaf:       {Resource: leaf, Replicas: leafReplicas},
+				api.PodRoleExporter:   {Resource: exporter, Replicas: aggregatorReplicas + leafReplicas},
 			}, nil
 		}
 
@@ -134,9 +134,9 @@ func (r Singlestore) roleResourceFn(fn func(rr core.ResourceRequirements) core.R
 			return nil, err
 		}
 
-		return map[api.PodRole]core.ResourceList{
-			api.PodRoleDefault:  api.MulResourceList(container, replicas),
-			api.PodRoleExporter: api.MulResourceList(exporter, replicas),
+		return map[api.PodRole]api.PodInfo{
+			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
+			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
 		}, nil
 	}
 }

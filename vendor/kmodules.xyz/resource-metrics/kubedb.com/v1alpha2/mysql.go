@@ -98,8 +98,8 @@ func (r MySQL) usesTLSFn(obj map[string]interface{}) (bool, error) {
 	return found, err
 }
 
-func (r MySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]core.ResourceList, error) {
+func (r MySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
 		container, replicas, err := api.AppNodeResources(obj, fn, "spec")
 		if err != nil {
 			return nil, err
@@ -110,9 +110,9 @@ func (r MySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resourc
 			return nil, err
 		}
 
-		result := map[api.PodRole]core.ResourceList{
-			api.PodRoleDefault:  api.MulResourceList(container, replicas),
-			api.PodRoleExporter: api.MulResourceList(exporter, replicas),
+		result := map[api.PodRole]api.PodInfo{
+			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
+			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
 		}
 
 		// InnoDB Router
@@ -125,7 +125,7 @@ func (r MySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resourc
 			if err != nil {
 				return nil, err
 			}
-			result[api.PodRoleRouter] = api.MulResourceList(router, replicas)
+			result[api.PodRoleRouter] = api.PodInfo{Resource: router, Replicas: replicas}
 		}
 		return result, nil
 	}
