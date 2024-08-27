@@ -377,7 +377,7 @@ func checkRestoreFailureInHostStatus(status []v1beta1.HostRestoreStats) (bool, s
 
 func checkFailureInConditions(conditions []kmapi.Condition) (bool, string) {
 	for _, c := range conditions {
-		if c.Status == metav1.ConditionFalse || c.Type == v1beta1.DeadlineExceeded {
+		if c.Status == metav1.ConditionFalse || c.Type == v1beta1.DeadlineExceeded || c.Type == v1beta1.BackupDisrupted {
 			return true, c.Message
 		}
 	}

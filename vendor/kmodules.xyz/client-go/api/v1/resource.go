@@ -18,6 +18,7 @@ package v1
 
 import (
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,6 +67,14 @@ func (r ResourceID) GroupVersionResource() schema.GroupVersionResource {
 
 func (r ResourceID) GroupVersionKind() schema.GroupVersionKind {
 	return schema.GroupVersionKind{Group: r.Group, Version: r.Version, Kind: r.Kind}
+}
+
+func (r ResourceID) ListGroupVersionKind() schema.GroupVersionKind {
+	kind := r.Kind + "List"
+	if strings.HasSuffix(r.Kind, "List") {
+		kind = r.Kind
+	}
+	return schema.GroupVersionKind{Group: r.Group, Version: r.Version, Kind: kind}
 }
 
 func (r ResourceID) MetaGVR() metav1.GroupVersionResource {
@@ -156,9 +165,9 @@ func ExtractResourceID(mapper meta.RESTMapper, in ResourceID) (*ResourceID, erro
 	}
 
 	kindFound := in.Kind != ""
-	resFOund := in.Name != ""
+	resFound := in.Name != ""
 	if kindFound {
-		if resFOund {
+		if resFound {
 			return &in, nil
 		} else {
 			var versions []string
@@ -175,7 +184,7 @@ func ExtractResourceID(mapper meta.RESTMapper, in ResourceID) (*ResourceID, erro
 			return NewResourceID(mapping), nil
 		}
 	} else {
-		if resFOund {
+		if resFound {
 			gvk, err := mapper.KindFor(in.GroupVersionResource())
 			if err != nil {
 				return nil, err

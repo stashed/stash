@@ -24,15 +24,15 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
-	proxyserver "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
-	proxyclient "go.bytebuilders.dev/license-proxyserver/client/clientset/versioned"
 	verifier "go.bytebuilders.dev/license-verifier"
+	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 	"go.bytebuilders.dev/license-verifier/info"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"go.bytebuilders.dev/license-verifier/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 )
@@ -45,10 +45,10 @@ const (
 )
 
 type NatsConfig struct {
-	LicenseID string     `json:"licenseID"`
-	Subject   string     `json:"natsSubject"`
-	Server    string     `json:"natsServer"`
-	Client    *nats.Conn `json:"-"`
+	// LicenseID string     `json:"licenseID"`
+	Subject string     `json:"natsSubject"`
+	Server  string     `json:"natsServer"`
+	Client  *nats.Conn `json:"-"`
 }
 
 // NatsCredential represents the api response of the register licensed user api
@@ -57,29 +57,37 @@ type NatsCredential struct {
 	Credential []byte `json:"credential"`
 }
 
-func NewNatsConfig(cfg *rest.Config, clusterID string, LicenseFile string) (*NatsConfig, error) {
-	var licenseBytes []byte
-	var err error
+type LicenseIDGetter interface {
+	GetLicenseID() string
+}
 
-	licenseBytes, err = os.ReadFile(LicenseFile)
-	if errors.Is(err, os.ErrNotExist) {
-		req := proxyserver.LicenseRequest{
-			TypeMeta: metav1.TypeMeta{},
-			Request: &proxyserver.LicenseRequestRequest{
-				Features: info.Features(),
-			},
-		}
-		pc, err := proxyclient.NewForConfig(cfg)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed create client for license-proxyserver")
-		}
-		resp, err := pc.ProxyserverV1alpha1().LicenseRequests().Create(context.TODO(), &req, metav1.CreateOptions{})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read license")
-		}
-		licenseBytes = []byte(resp.Response.License)
-	} else if err != nil {
-		return nil, errors.Wrap(err, "failed to read license")
+type LicenseUpdater struct {
+	le      *kubernetes.LicenseEnforcer
+	License v1alpha1.License
+	mu      sync.Mutex
+}
+
+func (lu *LicenseUpdater) GetLicenseID() string {
+	lu.mu.Lock()
+	defer lu.mu.Unlock()
+
+	l := lu.License
+	if l.Status == v1alpha1.LicenseActive && time.Now().After(l.NotAfter.Time) {
+		license, _ := lu.le.LoadLicense()
+		lu.License = license
+		l = license
+	}
+	return l.ID
+}
+
+func NewNatsConfig(cfg *rest.Config, clusterID string, LicenseFile string) (*NatsConfig, LicenseIDGetter, error) {
+	le, err := kubernetes.NewLicenseEnforcer(cfg, LicenseFile)
+	if err != nil {
+		return nil, nil, err
+	}
+	license, licenseBytes := le.LoadLicense()
+	if license.Status != v1alpha1.LicenseActive {
+		return nil, nil, fmt.Errorf("license status is %s", license.Status)
 	}
 
 	opts := verifier.Options{
@@ -90,46 +98,46 @@ func NewNatsConfig(cfg *rest.Config, clusterID string, LicenseFile string) (*Nat
 	}
 	data, err := json.Marshal(opts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	resp, err := http.Post(info.MustRegistrationAPIEndpoint(), "application/json", bytes.NewReader(data))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(resp.Status + ", " + string(body))
+		return nil, nil, errors.New(resp.Status + ", " + string(body))
 	}
 
 	var natscred NatsCredential
 	err = json.Unmarshal(body, &natscred)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	klog.V(5).InfoS("using event receiver", "address", natscred.Server, "subject", natscred.Subject, "licenseID", natscred.LicenseID)
+	klog.V(5).InfoS("using event receiver", "address", natscred.Server, "subject", natscred.Subject, "licenseID", license.ID)
 
-	natscred.Client, err = NewConnection(natscred)
+	natscred.Client, err = NewConnection(license.ID, natscred)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &natscred.NatsConfig, nil
+	return &natscred.NatsConfig, &LicenseUpdater{le: le, License: license}, nil
 }
 
 // NewConnection creates a new NATS connection
-func NewConnection(natscred NatsCredential) (nc *nats.Conn, err error) {
+func NewConnection(licenseID string, natscred NatsCredential) (nc *nats.Conn, err error) {
 	servers := natscred.Server
 
 	opts := []nats.Option{
-		nats.Name(fmt.Sprintf("%s.%s", natscred.LicenseID, info.ProductName)),
+		nats.Name(fmt.Sprintf("%s.%s", licenseID, info.ProductName)),
 		nats.MaxReconnects(-1),
 		nats.ErrorHandler(errorHandler),
 		nats.ReconnectHandler(reconnectHandler),

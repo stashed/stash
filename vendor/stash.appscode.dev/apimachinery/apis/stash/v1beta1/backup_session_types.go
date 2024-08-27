@@ -236,6 +236,9 @@ const (
 
 	// DeadlineExceeded  indicates whether the session deadline was exceeded or not
 	DeadlineExceeded = "DeadlineExceeded"
+
+	// BackupDisrupted indicates whether the backup was disrupted or not
+	BackupDisrupted = "BackupDisrupted"
 )
 
 // =========================== Condition Reasons =======================
@@ -276,4 +279,6 @@ const (
 	FailedToExecutePostBackupHook      = "FailedToExecutePostBackupHook"
 
 	FailedToCompleteWithinDeadline = "FailedToCompleteWithinDeadline"
+
+	FailedToCompleteDueToDisruption = "FailedToCompleteDueToDisruption"
 )

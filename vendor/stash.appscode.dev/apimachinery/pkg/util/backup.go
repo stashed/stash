@@ -18,6 +18,7 @@ package util
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -91,7 +92,7 @@ func IsRepositoryInitialized(opt ActionOptions) (bool, error) {
 	// If the condition is present but it is set to "False", then the repository initialization has failed. Possibly due to invalid backend / storage secret.
 	if !cutil.IsConditionTrue(backupSession.Status.Conditions, v1beta1.BackendRepositoryInitialized) {
 		_, cnd := cutil.GetCondition(backupSession.Status.Conditions, v1beta1.BackendRepositoryInitialized)
-		return false, fmt.Errorf(cnd.Reason)
+		return false, errors.New(cnd.Reason)
 	}
 	return true, nil
 }

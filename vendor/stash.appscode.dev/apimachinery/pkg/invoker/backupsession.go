@@ -210,6 +210,7 @@ func upsertBackupHostStatus(cur, new []v1beta1.HostBackupStats) []v1beta1.HostBa
 func calculateBackupTargetPhase(status v1beta1.BackupTargetStatus) v1beta1.TargetPhase {
 	if cutil.IsConditionFalse(status.Conditions, v1beta1.BackupExecutorEnsured) ||
 		cutil.IsConditionFalse(status.Conditions, v1beta1.PreBackupHookExecutionSucceeded) ||
+		cutil.IsConditionTrue(status.Conditions, v1beta1.BackupDisrupted) ||
 		cutil.IsConditionFalse(status.Conditions, v1beta1.PostBackupHookExecutionSucceeded) {
 		return v1beta1.TargetBackupFailed
 	}

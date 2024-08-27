@@ -374,6 +374,18 @@ func (in *RegistryInfo) DeepCopyInto(out *RegistryInfo) {
 			(*out)[key] = val
 		}
 	}
+	if in.Certs != nil {
+		in, out := &in.Certs, &out.Certs
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

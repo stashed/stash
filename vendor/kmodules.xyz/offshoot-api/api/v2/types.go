@@ -129,17 +129,14 @@ type PodSpec struct {
 	// Host networking requested for this pod. Use the host's network namespace.
 	// If this option is set, the ports that will be used must be specified.
 	// Default to false.
-	// +k8s:conversion-gen=false
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
 	// Use the host's pid namespace.
 	// Optional: Default to false.
-	// +k8s:conversion-gen=false
 	// +optional
 	HostPID bool `json:"hostPID,omitempty"`
 	// Use the host's ipc namespace.
 	// Optional: Default to false.
-	// +k8s:conversion-gen=false
 	// +optional
 	HostIPC bool `json:"hostIPC,omitempty"`
 	// Share a single process namespace between all of the containers in a pod.
@@ -147,7 +144,6 @@ type PodSpec struct {
 	// in the same pod, and the first process in each container will not be assigned PID 1.
 	// HostPID and ShareProcessNamespace cannot both be set.
 	// Optional: Default to false.
-	// +k8s:conversion-gen=false
 	// +optional
 	ShareProcessNamespace *bool `json:"shareProcessNamespace,omitempty"`
 	// SecurityContext holds pod-level security attributes and common container settings.
@@ -161,9 +157,6 @@ type PodSpec struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
-	// If specified, the pod's scheduling constraints
-	// +optional
-	Affinity *core.Affinity `json:"affinity,omitempty"`
 	// If specified, the pod will be dispatched by specified scheduler.
 	// If not specified, the pod will be dispatched by default scheduler.
 	// +optional
@@ -229,16 +222,6 @@ type PodSpec struct {
 	// More info: https://git.k8s.io/enhancements/keps/sig-node/688-pod-overhead/README.md
 	// +optional
 	Overhead core.ResourceList `json:"overhead,omitempty"`
-	// TopologySpreadConstraints describes how a group of pods ought to spread across topology
-	// domains. Scheduler will schedule pods in a way which abides by the constraints.
-	// All topologySpreadConstraints are ANDed.
-	// +optional
-	// +patchMergeKey=topologyKey
-	// +patchStrategy=merge
-	// +listType=map
-	// +listMapKey=topologyKey
-	// +listMapKey=whenUnsatisfiable
-	TopologySpreadConstraints []core.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty" patchStrategy:"merge" patchMergeKey:"topologyKey"`
 	// If true the pod's hostname will be configured as the pod's FQDN, rather than the leaf name (the default).
 	// In Linux containers, this means setting the FQDN in the hostname field of the kernel (the nodename field of struct utsname).
 	// In Windows containers, this means setting the registry value of hostname for the registry key HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters to FQDN.
@@ -286,7 +269,11 @@ type PodSpec struct {
 	// mitigating container breakout vulnerabilities even allowing users to run their
 	// containers as root without actually having root privileges on the host.
 	// This field is alpha-level and is only honored by servers that enable the UserNamespacesSupport feature.
-	// +k8s:conversion-gen=false
 	// +optional
 	HostUsers *bool `json:"hostUsers,omitempty"`
+
+	// PodPlacementPolicy is the reference of the podPlacementPolicy
+	// +kubebuilder:default={name:"default"}
+	// +optional
+	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
 }

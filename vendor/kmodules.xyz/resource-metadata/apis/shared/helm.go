@@ -58,11 +58,16 @@ type RegistryProxies struct {
 type RegistryInfo struct {
 	//+optional
 	Credentials map[string]string `json:"credentials"`
+	//+optional
+	Certs map[string]string `json:"certs"`
+	//+optional
+	ImagePullSecrets []string `json:"imagePullSecrets"`
 }
 
 type HelmInfo struct {
-	Repositories map[string]*HelmRepository `json:"repositories"`
-	Releases     map[string]*HelmRelease    `json:"releases"`
+	CreateNamespace bool                       `json:"createNamespace"`
+	Repositories    map[string]*HelmRepository `json:"repositories"`
+	Releases        map[string]*HelmRelease    `json:"releases"`
 }
 
 type HelmRepository struct {

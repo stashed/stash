@@ -48,8 +48,8 @@ func (m *PostgresOpsRequest) VolumeExpansionPathMapping() map[OpsReqPath]Referen
 	}
 }
 
-func (m *PostgresOpsRequest) GetReferencedDbObjectPath() []string {
-	return []string{"spec", "databaseRef", "referencedDB"}
+func (m *PostgresOpsRequest) GetAppRefPath() []string {
+	return []string{"spec", "databaseRef"}
 }
 
 func (m *PostgresOpsRequest) GroupVersionKind() schema.GroupVersionKind {

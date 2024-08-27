@@ -216,8 +216,8 @@ type ObjectInfo struct {
 	Ref      ObjectReference `json:"ref" protobuf:"bytes,2,opt,name=ref"`
 }
 
-// +kubebuilder:validation:Enum=authn;authz;auth_secret;backup_via;catalog;cert_issuer;config;connect_via;exposed_by;event;located_on;monitored_by;ocm_bind;offshoot;ops;placed_into;policy;recommended_for;restore_into;scaled_by;source;storage;view
-// ENUM(authn,authz,auth_secret,backup_via,catalog,cert_issuer,config,connect_via,exposed_by,event,located_on,monitored_by,ocm_bind,offshoot,ops,placed_into,policy,recommended_for,restore_into,scaled_by,source,storage,view)
+// +kubebuilder:validation:Enum=authn;authz;auth_secret;backup_via;catalog;cert_issuer;config;connect_via;exposed_by;event;located_on;monitored_by;ocm_bind;offshoot;ops;policy;recommended_for;restore_into;scaled_by;source;storage;view
+// ENUM(authn,authz,auth_secret,backup_via,catalog,cert_issuer,config,connect_via,exposed_by,event,located_on,monitored_by,ocm_bind,offshoot,ops,policy,recommended_for,restore_into,scaled_by,source,storage,view)
 type EdgeLabel string
 
 func (e EdgeLabel) Direct() bool {

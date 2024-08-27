@@ -198,12 +198,14 @@ const (
 )
 
 const (
-	LabelApp             = "app"
-	LabelInvokerType     = StashKey + "/invoker-type"
-	LabelInvokerName     = StashKey + "/invoker-name"
-	LabelTargetKind      = StashKey + "/target-kind"
-	LabelTargetNamespace = StashKey + "/target-namespace"
-	LabelTargetName      = StashKey + "/target-name"
+	LabelApp              = "app"
+	LabelInvokerType      = StashKey + "/invoker-type"
+	LabelInvokerName      = StashKey + "/invoker-name"
+	LabelTargetKind       = StashKey + "/target-kind"
+	LabelTargetNamespace  = StashKey + "/target-namespace"
+	LabelTargetName       = StashKey + "/target-name"
+	LabelTargetAPIGroup   = StashKey + "/target-api-group"
+	LabelTargetAPIVersion = StashKey + "/target-api-version"
 )
 
 const (

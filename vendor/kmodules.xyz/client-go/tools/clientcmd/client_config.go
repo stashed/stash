@@ -20,6 +20,7 @@ import (
 	"net"
 	"os"
 
+	"kmodules.xyz/client-go/cluster"
 	"kmodules.xyz/client-go/meta"
 
 	"github.com/pkg/errors"
@@ -111,10 +112,10 @@ func Fix(cfg *rest.Config) *rest.Config {
 		in(cfg.Host, "https://"+net.JoinHostPort(host, port), "https://kubernetes.default.svc", "https://kubernetes.default.svc:443") {
 		// uses service ip or cluster dns
 
-		if cert, err := meta.APIServerCertificate(cfg); err == nil {
+		if cert, err := cluster.APIServerCertificate(cfg); err == nil {
 			// kube-apiserver cert found
 
-			if host, err := meta.TestAKS(cert); err == nil {
+			if host, err := cluster.TestAKS(cert); err == nil {
 				// AKS cluster
 
 				h := "https://" + host

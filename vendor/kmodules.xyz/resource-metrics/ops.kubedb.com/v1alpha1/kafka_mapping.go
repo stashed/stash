@@ -50,8 +50,8 @@ func (m *kafkaOpsRequest) VolumeExpansionPathMapping() map[OpsReqPath]Referenced
 	}
 }
 
-func (m *kafkaOpsRequest) GetReferencedDbObjectPath() []string {
-	return []string{"spec", "databaseRef", "referencedDB"}
+func (m *kafkaOpsRequest) GetAppRefPath() []string {
+	return []string{"spec", "databaseRef"}
 }
 
 func (m *kafkaOpsRequest) GroupVersionKind() schema.GroupVersionKind {
