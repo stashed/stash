@@ -17,7 +17,7 @@ limitations under the License.
 package meta
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/mergepatch"
@@ -46,7 +46,7 @@ func (s PreConditionSet) PreconditionFunc() []mergepatch.PreconditionFunc {
 
 func (s PreConditionSet) Error() error {
 	strList := strings.Join(sets.List[string](s.Set), "\n\t")
-	return fmt.Errorf(strings.Join([]string{`At least one of the following was changed:
+	return errors.New(strings.Join([]string{`At least one of the following was changed:
 	apiVersion
 	kind
 	name

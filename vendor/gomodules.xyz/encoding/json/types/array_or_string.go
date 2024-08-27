@@ -24,9 +24,10 @@ import (
 )
 
 /*
-        GO => Json
-        [] => `[]`
-     ["a"] => `"a"`
+	   GO => Json
+	   [] => `[]`
+	["a"] => `"a"`
+
 ["a", "b"] => `["a","b"]`
 */
 type ArrayOrString []string

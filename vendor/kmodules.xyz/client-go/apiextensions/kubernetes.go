@@ -34,6 +34,10 @@ import (
 )
 
 func RegisterCRDs(client crd_cs.Interface, crds []*CustomResourceDefinition) error {
+	return RegisterWithOpts(client, crds, false)
+}
+
+func RegisterWithOpts(client crd_cs.Interface, crds []*CustomResourceDefinition, preserveConversion bool) error {
 	for _, crd := range crds {
 		// Use crd v1 for k8s >= 1.16, if available
 		// ref: https://github.com/kubernetes/kubernetes/issues/91395
@@ -49,13 +53,7 @@ func RegisterCRDs(client crd_cs.Interface, crds []*CustomResourceDefinition) err
 			context.TODO(),
 			client,
 			crd.V1.Name,
-			func(in *crdv1.CustomResourceDefinition) *crdv1.CustomResourceDefinition {
-				in.Labels = meta_util.OverwriteKeys(in.Labels, crd.V1.Labels)
-				in.Annotations = meta_util.OverwriteKeys(in.Annotations, crd.V1.Annotations)
-
-				in.Spec = crd.V1.Spec
-				return in
-			},
+			transform(crd, preserveConversion),
 			metav1.UpdateOptions{},
 		)
 		if err != nil && !kerr.IsAlreadyExists(err) {
@@ -63,6 +61,48 @@ func RegisterCRDs(client crd_cs.Interface, crds []*CustomResourceDefinition) err
 		}
 	}
 	return WaitForCRDReady(client, crds)
+}
+
+func UpdateWithOpts(client crd_cs.Interface, crds []*CustomResourceDefinition, preserveConversion bool) error {
+	for _, crd := range crds {
+		// Use crd v1 for k8s >= 1.16, if available
+		// ref: https://github.com/kubernetes/kubernetes/issues/91395
+		if crd.V1 == nil {
+			gvr := schema.GroupVersionResource{
+				Group:    crd.V1beta1.Spec.Group,
+				Version:  crd.V1beta1.Spec.Versions[0].Name,
+				Resource: crd.V1beta1.Spec.Names.Plural,
+			}
+			return fmt.Errorf("missing V1 definition for %s", gvr)
+		}
+
+		_, _, err := v1.UpdateCustomResourceDefinitionIfPresent(
+			context.TODO(),
+			client,
+			crd.V1.Name,
+			transform(crd, preserveConversion),
+			metav1.UpdateOptions{},
+		)
+		if err != nil && !kerr.IsAlreadyExists(err) {
+			return err
+		}
+	}
+	return WaitForCRDReady(client, crds)
+}
+
+func transform(crd *CustomResourceDefinition, preserveConversion bool) func(in *crdv1.CustomResourceDefinition) *crdv1.CustomResourceDefinition {
+	return func(in *crdv1.CustomResourceDefinition) *crdv1.CustomResourceDefinition {
+		in.Labels = meta_util.OverwriteKeys(in.Labels, crd.V1.Labels)
+		in.Annotations = meta_util.OverwriteKeys(in.Annotations, crd.V1.Annotations)
+
+		conversion := in.Spec.Conversion
+		in.Spec = crd.V1.Spec
+		// preserve conversion
+		if preserveConversion && crd.V1.Spec.Conversion == nil && conversion != nil {
+			in.Spec.Conversion = conversion
+		}
+		return in
+	}
 }
 
 func WaitForCRDReady(client crd_cs.Interface, crds []*CustomResourceDefinition) error {

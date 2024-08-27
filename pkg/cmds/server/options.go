@@ -140,7 +140,7 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	}
 
 	if cfg.LicenseProvided() {
-		l := license.MustLicenseEnforcer(cfg.ClientConfig, cfg.LicenseFile).LoadLicense()
+		l, _ := license.MustLicenseEnforcer(cfg.ClientConfig, cfg.LicenseFile).LoadLicense()
 		if l.Status != licenseapi.LicenseActive {
 			return fmt.Errorf("license status %s, reason: %s", l.Status, l.Reason)
 		}

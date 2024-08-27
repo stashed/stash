@@ -42,8 +42,6 @@ const (
 	EdgeLabelOffshoot EdgeLabel = "offshoot"
 	// EdgeLabelOps is a EdgeLabel of type ops.
 	EdgeLabelOps EdgeLabel = "ops"
-	// EdgeLabelPlacedInto is a EdgeLabel of type placed_into.
-	EdgeLabelPlacedInto EdgeLabel = "placed_into"
 	// EdgeLabelPolicy is a EdgeLabel of type policy.
 	EdgeLabelPolicy EdgeLabel = "policy"
 	// EdgeLabelRecommendedFor is a EdgeLabel of type recommended_for.
@@ -78,7 +76,6 @@ var _EdgeLabelNames = []string{
 	string(EdgeLabelOcmBind),
 	string(EdgeLabelOffshoot),
 	string(EdgeLabelOps),
-	string(EdgeLabelPlacedInto),
 	string(EdgeLabelPolicy),
 	string(EdgeLabelRecommendedFor),
 	string(EdgeLabelRestoreInto),
@@ -113,7 +110,6 @@ func EdgeLabelValues() []EdgeLabel {
 		EdgeLabelOcmBind,
 		EdgeLabelOffshoot,
 		EdgeLabelOps,
-		EdgeLabelPlacedInto,
 		EdgeLabelPolicy,
 		EdgeLabelRecommendedFor,
 		EdgeLabelRestoreInto,
@@ -152,7 +148,6 @@ var _EdgeLabelValue = map[string]EdgeLabel{
 	"ocm_bind":        EdgeLabelOcmBind,
 	"offshoot":        EdgeLabelOffshoot,
 	"ops":             EdgeLabelOps,
-	"placed_into":     EdgeLabelPlacedInto,
 	"policy":          EdgeLabelPolicy,
 	"recommended_for": EdgeLabelRecommendedFor,
 	"restore_into":    EdgeLabelRestoreInto,

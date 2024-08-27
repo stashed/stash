@@ -357,6 +357,9 @@ func AppNodeResourcesV2(
 	}
 
 	dbContainer := GetContainerByName(node.PodTemplate.Spec.Containers, containerName)
+	if dbContainer == nil {
+		return nil, 0, fmt.Errorf("failed to find container %s in pod template", containerName)
+	}
 	rr := fn(dbContainer.Resources)
 	sr := fn(ToResourceRequirements(node.Storage.Resources))
 	rr[core.ResourceStorage] = *sr.Storage()

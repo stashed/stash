@@ -116,19 +116,16 @@ type PodSpec struct {
 	// Host networking requested for this pod. Use the host's network namespace.
 	// If this option is set, the ports that will be used must be specified.
 	// Default to false.
-	// +k8s:conversion-gen=false
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
 
 	// Use the host's pid namespace.
 	// Optional: Default to false.
-	// +k8s:conversion-gen=false
 	// +optional
 	HostPID bool `json:"hostPID,omitempty"`
 
 	// Use the host's ipc namespace.
 	// Optional: Default to false.
-	// +k8s:conversion-gen=false
 	// +optional
 	HostIPC bool `json:"hostIPC,omitempty"`
 
@@ -137,7 +134,6 @@ type PodSpec struct {
 	// in the same pod, and the first process in each container will not be assigned PID 1.
 	// HostPID and ShareProcessNamespace cannot both be set.
 	// Optional: Default to false.
-	// +k8s:conversion-gen=false
 	// +optional
 	ShareProcessNamespace *bool `json:"shareProcessNamespace,omitempty"`
 
@@ -274,6 +270,10 @@ type PodSpec struct {
 	// +patchMergeKey=mountPath
 	// +patchStrategy=merge
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath"`
+
+	// PodPlacementPolicy is the reference of the podPlacementPolicy
+	// +optional
+	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
 }
 
 // ServiceTemplateSpec describes the data a service should have when created from a template
@@ -388,6 +388,25 @@ type ServicePort struct {
 	// if unused or else creation of the service will fail.
 	// Default is to auto-allocate a port if the ServiceType of this Service requires one.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+	// +optional
+	NodePort int32 `json:"nodePort,omitempty"`
+}
+
+// GatewayPort contains information on Gateway service's port.
+type GatewayPort struct {
+	// The name of this port within the gateway service.
+	// +optional
+	Name string `json:"name,omitempty"`
+
+	// The port that will be exposed by the gateway service.
+	Port int32 `json:"port"`
+
+	// Number of the port to access the backend service.
+	// +optional
+	BackendServicePort int32 `json:"backendServicePort,omitempty"`
+
+	// The port on each node on which this gateway service is exposed when type is
+	// NodePort or LoadBalancer.
 	// +optional
 	NodePort int32 `json:"nodePort,omitempty"`
 }

@@ -41,8 +41,8 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/tools/clusterid"
-	auditorapi "kmodules.xyz/custom-resources/apis/auditor/v1alpha1"
-	"kmodules.xyz/custom-resources/util/siteinfo"
+	identityapi "kmodules.xyz/resource-metadata/apis/identity/v1alpha1"
+	identitylib "kmodules.xyz/resource-metadata/pkg/identity"
 	cachex "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -66,11 +66,12 @@ type EventPublisher struct {
 	connect func() error
 
 	nats        *NatsConfig
+	lu          LicenseIDGetter
 	mapper      discovery.ResourceMapper
 	createEvent EventCreator
 
 	siMutex gosync.Mutex
-	si      *auditorapi.SiteInfo
+	si      *identityapi.SiteInfo
 }
 
 func NewEventPublisher(
@@ -90,7 +91,7 @@ func NewEventPublisher(
 }
 
 func NewResilientEventPublisher(
-	fnConnect func() (*NatsConfig, error),
+	fnConnect func() (*NatsConfig, LicenseIDGetter, error),
 	mapper discovery.ResourceMapper,
 	fnCreateEvent EventCreator,
 ) *EventPublisher {
@@ -100,7 +101,7 @@ func NewResilientEventPublisher(
 	}
 	p.connect = func() error {
 		var err error
-		p.nats, err = fnConnect()
+		p.nats, p.lu, err = fnConnect()
 		if err != nil {
 			klog.V(5).InfoS("failed to connect with event receiver", "error", err)
 		}
@@ -120,9 +121,9 @@ func (p *EventPublisher) NatsClient() (*nats.Conn, error) {
 func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
 	event := cloudeventssdk.NewEvent()
 	event.SetID(fmt.Sprintf("%s.%d", ev.Resource.GetUID(), ev.Resource.GetGeneration()))
-	// /byte.builders/auditor/license_id/feature/info.ProductName/api_group/api_resource/
+	// /appscode.com/auditor/license_id/feature/info.ProductName/api_group/api_resource/
 	// ref: https://github.com/cloudevents/spec/blob/v1.0.1/spec.md#source-1
-	event.SetSource(fmt.Sprintf("/byte.builders/auditor/%s/feature/%s/%s/%s", ev.LicenseID, info.ProductName, ev.ResourceID.Group, ev.ResourceID.Name))
+	event.SetSource(fmt.Sprintf("/%s/auditor/%s/feature/%s/%s/%s", info.ProdDomain, ev.LicenseID, info.ProductName, ev.ResourceID.Group, ev.ResourceID.Name))
 	// obj.getUID
 	// ref: https://github.com/cloudevents/spec/blob/v1.0.1/spec.md#subject
 	event.SetSubject(string(ev.Resource.GetUID()))
@@ -187,7 +188,7 @@ func (p *EventPublisher) ForGVK(informer Informer, gvk schema.GroupVersionKind) 
 			if p.nats == nil {
 				return nil, fmt.Errorf("not connected to nats")
 			}
-			ev.LicenseID = p.nats.LicenseID
+			ev.LicenseID = p.lu.GetLicenseID()
 
 			return ev, nil
 		},
@@ -231,51 +232,53 @@ func (p *EventPublisher) SetupSiteInfoPublisherWithManager(mgr manager.Manager) 
 
 func (p *EventPublisher) setupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.Interface, nodeInformer cachex.Informer, listNodes funcNodeLister) error {
 	var err error
-	p.si, err = siteinfo.GetSiteInfo(cfg, kc, nil, "")
+	p.si, err = identitylib.GetSiteInfo(cfg, kc, nil, "")
 	if err != nil {
 		return err
 	}
 	if p.si.Product == nil {
-		p.si.Product = new(auditorapi.ProductInfo)
+		p.si.Product = new(identityapi.ProductInfo)
 	}
 
+	event := func(_ client.Object) (*api.Event, error) {
+		cmeta, err := clusterid.ClusterMetadata(kc)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := listNodes()
+		if err != nil {
+			return nil, err
+		}
+
+		p.siMutex.Lock()
+		p.si.Kubernetes.Cluster = cmeta
+		identitylib.RefreshNodeStats(p.si, nodes)
+		p.siMutex.Unlock()
+
+		p.once.Do(p.connect)
+		if p.nats == nil {
+			return nil, fmt.Errorf("not connected to nats")
+		}
+
+		licenseID := p.lu.GetLicenseID()
+		p.si.Product.LicenseID = licenseID
+		p.si.Name = fmt.Sprintf("%s.%s", licenseID, p.si.Product.ProductName)
+		ev := &api.Event{
+			Resource: p.si,
+			ResourceID: kmapi.ResourceID{
+				Group:   identityapi.SchemeGroupVersion.Group,
+				Version: identityapi.SchemeGroupVersion.Version,
+				Name:    identityapi.ResourceSiteInfos,
+				Kind:    identityapi.ResourceKindSiteInfo,
+				Scope:   kmapi.ClusterScoped,
+			},
+			LicenseID: licenseID,
+		}
+		return ev, nil
+	}
 	_, err = nodeInformer.AddEventHandlerWithResyncPeriod(&SiteInfoPublisher{
-		p: p,
-		createEvent: func(_ client.Object) (*api.Event, error) {
-			cmeta, err := clusterid.ClusterMetadata(kc.CoreV1().Namespaces())
-			if err != nil {
-				return nil, err
-			}
-			nodes, err := listNodes()
-			if err != nil {
-				return nil, err
-			}
-
-			p.siMutex.Lock()
-			p.si.Kubernetes.Cluster = cmeta
-			siteinfo.RefreshNodeStats(p.si, nodes)
-			p.siMutex.Unlock()
-
-			p.once.Do(p.connect)
-			if p.nats == nil {
-				return nil, fmt.Errorf("not connected to nats")
-			}
-
-			p.si.Product.LicenseID = p.nats.LicenseID
-			p.si.Name = fmt.Sprintf("%s.%s", p.nats.LicenseID, p.si.Product.ProductName)
-			ev := &api.Event{
-				Resource: p.si,
-				ResourceID: kmapi.ResourceID{
-					Group:   auditorapi.SchemeGroupVersion.Group,
-					Version: auditorapi.SchemeGroupVersion.Version,
-					Name:    auditorapi.ResourceSiteInfos,
-					Kind:    auditorapi.ResourceKindSiteInfo,
-					Scope:   kmapi.ClusterScoped,
-				},
-				LicenseID: p.nats.LicenseID,
-			}
-			return ev, nil
-		},
+		p:           p,
+		createEvent: event,
 	}, eventInterval)
 	return err
 }

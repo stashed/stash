@@ -42,7 +42,7 @@ func (m *ProxySQLOpsRequest) VolumeExpansionPathMapping() map[OpsReqPath]Referen
 	return map[OpsReqPath]ReferencedObjPath{}
 }
 
-func (m *ProxySQLOpsRequest) GetReferencedDbObjectPath() []string {
+func (m *ProxySQLOpsRequest) GetAppRefPath() []string {
 	return []string{"spec", "proxyRef", "referencedDB"}
 }
 

@@ -25,9 +25,10 @@ import (
 )
 
 /*
-    GO => Json
-    [] => `[]`
-   [1] => `1`
+	 GO => Json
+	 [] => `[]`
+	[1] => `1`
+
 [1, 2] => `[1,2]`
 */
 type ArrayOrInt []int

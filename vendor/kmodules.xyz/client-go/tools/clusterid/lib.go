@@ -18,30 +18,15 @@ package clusterid
 
 import (
 	"context"
-	"flag"
-	"fmt"
 
 	kmapi "kmodules.xyz/client-go/api/v1"
+	clustermeta "kmodules.xyz/client-go/cluster"
 
-	"github.com/spf13/pflag"
-	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
-
-var clusterName = ""
-
-func AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&clusterName, "cluster-name", clusterName, "Name of cluster used in a multi-cluster setup")
-}
-
-func AddGoFlags(fs *flag.FlagSet) {
-	fs.StringVar(&clusterName, "cluster-name", clusterName, "Name of cluster used in a multi-cluster setup")
-}
-
-func ClusterName() string {
-	return clusterName
-}
 
 func ClusterUID(client corev1.NamespaceInterface) (string, error) {
 	ns, err := client.Get(context.TODO(), metav1.NamespaceSystem, metav1.GetOptions{})
@@ -51,27 +36,21 @@ func ClusterUID(client corev1.NamespaceInterface) (string, error) {
 	return string(ns.UID), nil
 }
 
-func ClusterMetadataForNamespace(ns *core.Namespace) (*kmapi.ClusterMetadata, error) {
-	if ns.Name != metav1.NamespaceSystem {
-		return nil, fmt.Errorf("expected namespace %s, found namespace %s", metav1.NamespaceSystem, ns.Name)
-	}
-	name := ns.Annotations[kmapi.ClusterNameKey]
-	if name == "" {
-		name = ClusterName()
-	}
-	obj := &kmapi.ClusterMetadata{
-		UID:         string(ns.UID),
-		Name:        name,
-		DisplayName: ns.Annotations[kmapi.ClusterDisplayNameKey],
-		Provider:    kmapi.HostingProvider(ns.Annotations[kmapi.ClusterProviderNameKey]),
-	}
-	return obj, nil
-}
-
-func ClusterMetadata(client corev1.NamespaceInterface) (*kmapi.ClusterMetadata, error) {
-	ns, err := client.Get(context.TODO(), metav1.NamespaceSystem, metav1.GetOptions{})
+func ClusterMetadata(client kubernetes.Interface) (*kmapi.ClusterMetadata, error) {
+	ns, err := client.CoreV1().Namespaces().Get(context.TODO(), metav1.NamespaceSystem, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return ClusterMetadataForNamespace(ns)
+
+	cm, err := client.CoreV1().ConfigMaps(metav1.NamespacePublic).Get(context.TODO(), kmapi.AceInfoConfigMapName, metav1.GetOptions{})
+	if err == nil {
+		result, err := clustermeta.ClusterMetadataFromConfigMap(cm, string(ns.UID))
+		if err == nil {
+			return result, nil
+		}
+	} else if !kerr.IsNotFound(err) {
+		return nil, err
+	}
+
+	return clustermeta.LegacyClusterMetadataFromNamespace(ns)
 }

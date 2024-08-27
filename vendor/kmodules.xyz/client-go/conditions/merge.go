@@ -65,9 +65,9 @@ func merge(conditions []localizedCondition, targetCondition kmapi.ConditionType,
 	targetMessage := getMessage(g, options)
 
 	if g.TopGroup().status == metav1.ConditionFalse {
-		return FalseCondition(targetCondition, targetReason, g.TopGroup().severity, targetMessage)
+		return FalseCondition(targetCondition, targetReason, g.TopGroup().severity, targetMessage) //nolint:govet
 	}
-	return UnknownCondition(targetCondition, targetReason, targetMessage)
+	return UnknownCondition(targetCondition, targetReason, targetMessage) //nolint:govet
 }
 
 // getConditionGroups groups a list of conditions according to status, severity values.

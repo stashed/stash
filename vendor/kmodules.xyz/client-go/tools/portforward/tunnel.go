@@ -186,7 +186,7 @@ func (t *Tunnel) getFirstSelectedPod(k8sClient kubernetes.Interface) (*core.Pod,
 		if err != nil {
 			return nil, err
 		}
-		if obj.Spec.Selector == nil || len(obj.Spec.Selector) == 0 {
+		if len(obj.Spec.Selector) == 0 {
 			return nil, fmt.Errorf("invalid label selector. Error: %v", err)
 		}
 		podSelector = labels.SelectorFromSet(obj.Spec.Selector)

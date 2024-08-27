@@ -30,7 +30,7 @@ func GetScaledObject(opsObj map[string]interface{}) (ScaledObject, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbObj, err := extractReferencedObject(opsObj, opsPathMapper.GetReferencedDbObjectPath()...)
+	dbObj, err := extractReferencedObject(opsObj, opsPathMapper.GetAppRefPath()...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func splitPathToSlice(path string) []string {
 
 func extractReferencedObject(opsObj map[string]interface{}, refDbPath ...string) (map[string]interface{}, error) {
 	if len(refDbPath) == 0 {
-		refDbPath = []string{"spec", "databaseRef", "referencedDB"}
+		return nil, errors.New("refDbPath is empty")
 	}
 	dbObj, found, _ := unstructured.NestedMap(opsObj, refDbPath...)
 	if !found {

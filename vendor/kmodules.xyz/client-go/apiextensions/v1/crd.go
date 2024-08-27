@@ -67,6 +67,34 @@ func CreateOrUpdateCustomResourceDefinition(
 	return cur, kutil.VerbUpdated, nil
 }
 
+func UpdateCustomResourceDefinitionIfPresent(
+	ctx context.Context,
+	c cs.Interface,
+	name string,
+	transform func(in *api.CustomResourceDefinition) *api.CustomResourceDefinition,
+	opts metav1.UpdateOptions,
+) (*api.CustomResourceDefinition, kutil.VerbType, error) {
+	_, err := c.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, name, metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		return transform(&api.CustomResourceDefinition{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: api.SchemeGroupVersion.String(),
+				Kind:       "CustomResourceDefinition",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}), kutil.VerbUnchanged, nil
+	} else if err != nil {
+		return nil, kutil.VerbUnchanged, err
+	}
+	cur, err := TryUpdateCustomResourceDefinition(ctx, c, name, transform, opts)
+	if err != nil {
+		return nil, kutil.VerbUnchanged, err
+	}
+	return cur, kutil.VerbUpdated, nil
+}
+
 func TryUpdateCustomResourceDefinition(
 	ctx context.Context,
 	c cs.Interface,

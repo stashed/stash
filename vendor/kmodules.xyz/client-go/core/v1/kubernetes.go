@@ -79,6 +79,15 @@ func GetContainerByName(containers []core.Container, name string) *core.Containe
 	return nil
 }
 
+func GetContainerIdByName(containers []core.Container, name string) int {
+	for i := range containers {
+		if containers[i].Name == name {
+			return i
+		}
+	}
+	return -1
+}
+
 func UpsertContainer(containers []core.Container, upsert core.Container) []core.Container {
 	for i, container := range containers {
 		if container.Name == upsert.Name {

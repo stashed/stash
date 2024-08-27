@@ -38,8 +38,8 @@ func (m *MemcachedOpsRequest) VolumeExpansionPathMapping() map[OpsReqPath]Refere
 	return map[OpsReqPath]ReferencedObjPath{}
 }
 
-func (m *MemcachedOpsRequest) GetReferencedDbObjectPath() []string {
-	return []string{"spec", "databaseRef", "referencedDB"}
+func (m *MemcachedOpsRequest) GetAppRefPath() []string {
+	return []string{"spec", "databaseRef"}
 }
 
 func (m *MemcachedOpsRequest) GroupVersionKind() schema.GroupVersionKind {

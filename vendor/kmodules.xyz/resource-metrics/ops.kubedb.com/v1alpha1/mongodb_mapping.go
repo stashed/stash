@@ -63,8 +63,8 @@ func (m *MongoDBOpsRequest) VolumeExpansionPathMapping() map[OpsReqPath]Referenc
 	}
 }
 
-func (m *MongoDBOpsRequest) GetReferencedDbObjectPath() []string {
-	return []string{"spec", "databaseRef", "referencedDB"}
+func (m *MongoDBOpsRequest) GetAppRefPath() []string {
+	return []string{"spec", "databaseRef"}
 }
 
 func (m *MongoDBOpsRequest) GroupVersionKind() schema.GroupVersionKind {
