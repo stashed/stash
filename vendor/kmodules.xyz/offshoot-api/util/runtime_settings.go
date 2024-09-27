@@ -81,7 +81,7 @@ func ApplyContainerRuntimeSettings(container core.Container, settings ofst.Conta
 }
 
 func ApplyPodRuntimeSettings(podSpec core.PodSpec, settings ofst.PodRuntimeSettings) core.PodSpec {
-	if settings.NodeSelector != nil && len(settings.NodeSelector) > 0 {
+	if len(settings.NodeSelector) > 0 {
 		podSpec.NodeSelector = settings.NodeSelector
 	}
 	if settings.ServiceAccountName != "" {

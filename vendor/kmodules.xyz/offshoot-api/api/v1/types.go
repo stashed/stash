@@ -392,25 +392,6 @@ type ServicePort struct {
 	NodePort int32 `json:"nodePort,omitempty"`
 }
 
-// GatewayPort contains information on Gateway service's port.
-type GatewayPort struct {
-	// The name of this port within the gateway service.
-	// +optional
-	Name string `json:"name,omitempty"`
-
-	// The port that will be exposed by the gateway service.
-	Port int32 `json:"port"`
-
-	// Number of the port to access the backend service.
-	// +optional
-	BackendServicePort int32 `json:"backendServicePort,omitempty"`
-
-	// The port on each node on which this gateway service is exposed when type is
-	// NodePort or LoadBalancer.
-	// +optional
-	NodePort int32 `json:"nodePort,omitempty"`
-}
-
 // Beware of MergeServicePorts
 // ref: https://github.com/kmodules/client-go/blob/03dac1aea5084354127990a10d0b0e7529460dd5/core/v1/service.go#L103-L136
 func PatchServicePorts(cur []core.ServicePort, desired []ServicePort) []core.ServicePort {

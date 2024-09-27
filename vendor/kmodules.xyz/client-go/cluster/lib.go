@@ -211,14 +211,14 @@ func getCAPIValues(values map[string]any) (string, string, string, error) {
 	return capiProvider, clusterName, ns, nil
 }
 
-func getProviderName(kind string) string {
+func getProviderName(kind string) kmapi.CAPIProvider {
 	switch kind {
 	case "AWSManagedCluster", "AWSManagedControlPlane":
-		return "capa"
+		return kmapi.CAPIProviderCAPA
 	case "AzureManagedCluster":
-		return "capz"
+		return kmapi.CAPIProviderCAPZ
 	case "GCPManagedCluster":
-		return "capg"
+		return kmapi.CAPIProviderCAPG
 	}
 	return ""
 }
