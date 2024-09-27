@@ -358,6 +358,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/client-go/api/v1.CAPIClusterInfo":                                      schema_kmodulesxyz_client_go_api_v1_CAPIClusterInfo(ref),
 		"kmodules.xyz/client-go/api/v1.CertificatePrivateKey":                                schema_kmodulesxyz_client_go_api_v1_CertificatePrivateKey(ref),
 		"kmodules.xyz/client-go/api/v1.CertificateSpec":                                      schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref),
+		"kmodules.xyz/client-go/api/v1.ClusterInfo":                                          schema_kmodulesxyz_client_go_api_v1_ClusterInfo(ref),
 		"kmodules.xyz/client-go/api/v1.ClusterMetadata":                                      schema_kmodulesxyz_client_go_api_v1_ClusterMetadata(ref),
 		"kmodules.xyz/client-go/api/v1.Condition":                                            schema_kmodulesxyz_client_go_api_v1_Condition(ref),
 		"kmodules.xyz/client-go/api/v1.HealthCheckSpec":                                      schema_kmodulesxyz_client_go_api_v1_HealthCheckSpec(ref),
@@ -401,7 +402,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/objectstore-api/api/v1.SwiftSpec":                                      schema_kmodulesxyz_objectstore_api_api_v1_SwiftSpec(ref),
 		"kmodules.xyz/offshoot-api/api/v1.ContainerRuntimeSettings":                          schema_kmodulesxyz_offshoot_api_api_v1_ContainerRuntimeSettings(ref),
 		"kmodules.xyz/offshoot-api/api/v1.EphemeralVolumeSource":                             schema_kmodulesxyz_offshoot_api_api_v1_EphemeralVolumeSource(ref),
+		"kmodules.xyz/offshoot-api/api/v1.Gateway":                                           schema_kmodulesxyz_offshoot_api_api_v1_Gateway(ref),
+		"kmodules.xyz/offshoot-api/api/v1.GatewayPort":                                       schema_kmodulesxyz_offshoot_api_api_v1_GatewayPort(ref),
 		"kmodules.xyz/offshoot-api/api/v1.IONiceSettings":                                    schema_kmodulesxyz_offshoot_api_api_v1_IONiceSettings(ref),
+		"kmodules.xyz/offshoot-api/api/v1.NamedServiceStatus":                                schema_kmodulesxyz_offshoot_api_api_v1_NamedServiceStatus(ref),
+		"kmodules.xyz/offshoot-api/api/v1.NamedURL":                                          schema_kmodulesxyz_offshoot_api_api_v1_NamedURL(ref),
 		"kmodules.xyz/offshoot-api/api/v1.NiceSettings":                                      schema_kmodulesxyz_offshoot_api_api_v1_NiceSettings(ref),
 		"kmodules.xyz/offshoot-api/api/v1.ObjectMeta":                                        schema_kmodulesxyz_offshoot_api_api_v1_ObjectMeta(ref),
 		"kmodules.xyz/offshoot-api/api/v1.PartialObjectMeta":                                 schema_kmodulesxyz_offshoot_api_api_v1_PartialObjectMeta(ref),
@@ -18492,23 +18497,27 @@ func schema_kmodulesxyz_client_go_api_v1_CAPIClusterInfo(ref common.ReferenceCal
 				Properties: map[string]spec.Schema{
 					"provider": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
 						},
 					},
 					"namespace": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
 						},
 					},
 					"clusterName": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
 						},
 					},
 				},
+				Required: []string{"provider", "namespace", "clusterName"},
 			},
 		},
 	}
@@ -18651,6 +18660,56 @@ func schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref common.ReferenceCal
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.TypedLocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "kmodules.xyz/client-go/api/v1.CertificatePrivateKey", "kmodules.xyz/client-go/api/v1.X509Subject"},
+	}
+}
+
+func schema_kmodulesxyz_client_go_api_v1_ClusterInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ClusterInfo used in ace-installer",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"uid": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"clusterManagers": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"capi": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("kmodules.xyz/client-go/api/v1.CAPIClusterInfo"),
+						},
+					},
+				},
+				Required: []string{"uid", "name", "clusterManagers"},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/client-go/api/v1.CAPIClusterInfo"},
 	}
 }
 
@@ -20527,6 +20586,118 @@ func schema_kmodulesxyz_offshoot_api_api_v1_EphemeralVolumeSource(ref common.Ref
 	}
 }
 
+func schema_kmodulesxyz_offshoot_api_api_v1_Gateway(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"ip": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"hostname": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"services": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Services is an optional configuration for services used to expose database",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kmodules.xyz/offshoot-api/api/v1.NamedServiceStatus"),
+									},
+								},
+							},
+						},
+					},
+					"ui": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UI is an optional list of database web uis",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kmodules.xyz/offshoot-api/api/v1.NamedURL"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name", "namespace"},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/offshoot-api/api/v1.NamedServiceStatus", "kmodules.xyz/offshoot-api/api/v1.NamedURL"},
+	}
+}
+
+func schema_kmodulesxyz_offshoot_api_api_v1_GatewayPort(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GatewayPort contains information on Gateway service's port.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The name of this port within the gateway service.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"port": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The port that will be exposed by the gateway service.",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"backendServicePort": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Number of the port to access the backend service.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"nodePort": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The port on each node on which this gateway service is exposed when type is NodePort or LoadBalancer.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+				Required: []string{"port"},
+			},
+		},
+	}
+}
+
 func schema_kmodulesxyz_offshoot_api_api_v1_IONiceSettings(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -20549,6 +20720,85 @@ func schema_kmodulesxyz_offshoot_api_api_v1_IONiceSettings(ref common.ReferenceC
 				},
 			},
 		},
+	}
+}
+
+func schema_kmodulesxyz_offshoot_api_api_v1_NamedServiceStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"alias": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Alias represents the identifier of the service.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kmodules.xyz/offshoot-api/api/v1.GatewayPort"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"alias", "ports"},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/offshoot-api/api/v1.GatewayPort"},
+	}
+}
+
+func schema_kmodulesxyz_offshoot_api_api_v1_NamedURL(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"alias": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Alias represents the identifier of the service. This should match the db ui chart name",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URL of the database ui",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"port": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("kmodules.xyz/offshoot-api/api/v1.GatewayPort"),
+						},
+					},
+					"helmRelease": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HelmRelease is the name of the helm release used to deploy this ui The name format is typically <alias>-<db-name>",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+				},
+				Required: []string{"alias", "url", "port"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.GatewayPort"},
 	}
 }
 
@@ -21304,6 +21554,12 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodSpec(ref common.ReferenceCallback
 									},
 								},
 							},
+						},
+					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
 				},
