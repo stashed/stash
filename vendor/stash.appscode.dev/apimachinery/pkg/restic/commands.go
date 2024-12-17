@@ -37,6 +37,7 @@ import (
 
 const (
 	ResticCMD = "/bin/restic"
+	BashCMD   = "/bin/bash"
 )
 
 type Snapshot struct {
@@ -438,7 +439,13 @@ func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 				return nil, err
 			}
 		}
-		w.sh.Command(cmd.Name, cmd.Args...)
+
+		// Executes Bash commands with "-c" for multiple dump args.
+		if cmd.Name == BashCMD {
+			w.sh.Command(cmd.Name, "-c", cmd.getCommandArgsAsString())
+		} else {
+			w.sh.Command(cmd.Name, cmd.Args...)
+		}
 	}
 	out, err := w.sh.Output()
 	if err != nil {
@@ -580,4 +587,12 @@ func (w *ResticWrapper) appendInsecureTLSFlag(args []interface{}) []interface{} 
 		return append(args, "--insecure-tls")
 	}
 	return args
+}
+
+func (c *Command) getCommandArgsAsString() string {
+	var cmdParts []string
+	for _, arg := range c.Args {
+		cmdParts = append(cmdParts, fmt.Sprintf("%v", arg))
+	}
+	return strings.Join(cmdParts, " ")
 }

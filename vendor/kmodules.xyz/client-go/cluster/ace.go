@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func IsACEManaged(kc client.Client) bool {
+func IsACEManaged(kc client.Reader) bool {
 	var list unstructured.UnstructuredList
 	list.SetAPIVersion("apps/v1")
 	list.SetKind("Deployment")

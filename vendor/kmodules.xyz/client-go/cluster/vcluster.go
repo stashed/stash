@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func IsVirtualCluster(kc client.Client) (bool, error) {
+func IsVirtualCluster(kc client.Reader) (bool, error) {
 	var list core.NodeList
 	err := kc.List(context.TODO(), &list)
 	if err != nil {
@@ -44,7 +44,7 @@ func IsVirtualCluster(kc client.Client) (bool, error) {
 	return false, nil
 }
 
-func MustIsVirtualCluster(kc client.Client) bool {
+func MustIsVirtualCluster(kc client.Reader) bool {
 	ok, _ := IsVirtualCluster(kc)
 	return ok
 }

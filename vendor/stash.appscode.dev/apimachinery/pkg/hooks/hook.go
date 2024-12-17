@@ -48,12 +48,49 @@ type HookExecutor struct {
 }
 
 func (e *HookExecutor) Execute() error {
-	if e.Hook.HTTPPost != nil && strings.Contains(e.Hook.HTTPPost.Body, "{{") {
-		if err := e.renderTemplate(); err != nil {
+	if err := e.renderHookTemplate(); err != nil {
+		return err
+	}
+	return probe.RunProbe(e.Config, e.Hook, e.ExecutorPod.Name, e.ExecutorPod.Namespace)
+}
+
+func (e *HookExecutor) renderHookTemplate() error {
+	if e.Hook.Exec != nil {
+		if err := e.renderExecCommand(); err != nil {
 			return err
 		}
 	}
-	return probe.RunProbe(e.Config, e.Hook, e.ExecutorPod.Name, e.ExecutorPod.Namespace)
+
+	if e.Hook.HTTPPost != nil {
+		if err := e.renderHTTPPostBody(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *HookExecutor) renderExecCommand() error {
+	for idx, cmd := range e.Hook.Exec.Command {
+		if strings.Contains(cmd, "{{") {
+			rendered, err := e.renderTemplate(cmd)
+			if err != nil {
+				return err
+			}
+			e.Hook.Exec.Command[idx] = rendered
+		}
+	}
+	return nil
+}
+
+func (e *HookExecutor) renderHTTPPostBody() error {
+	if strings.Contains(e.Hook.HTTPPost.Body, "{{") {
+		rendered, err := e.renderTemplate(e.Hook.HTTPPost.Body)
+		if err != nil {
+			return err
+		}
+		e.Hook.HTTPPost.Body = rendered
+	}
+	return nil
 }
 
 var pool = sync.Pool{
@@ -62,24 +99,24 @@ var pool = sync.Pool{
 	},
 }
 
-func (e *HookExecutor) renderTemplate() error {
-	tpl, err := template.New("hook-template").Funcs(sprig.TxtFuncMap()).Parse(e.Hook.HTTPPost.Body)
+func (e *HookExecutor) renderTemplate(text string) (string, error) {
+	tpl, err := template.New("hook-template").
+		Funcs(sprig.TxtFuncMap()).
+		Option("missingkey=default").
+		Parse(text)
 	if err != nil {
-		return err
+		return "", err
 	}
-	tpl.Option("missingkey=default")
 
 	buf := pool.Get().(*bytes.Buffer)
-	buf.Reset()
 	defer pool.Put(buf)
+	buf.Reset()
 
-	err = tpl.Execute(buf, e.Summary)
-	if err != nil {
-		return err
+	if err := tpl.Execute(buf, e.Summary); err != nil {
+		return "", err
 	}
 
-	e.Hook.HTTPPost.Body = strings.TrimSpace(buf.String())
-	return nil
+	return strings.TrimSpace(buf.String()), nil
 }
 
 type BackupHookExecutor struct {

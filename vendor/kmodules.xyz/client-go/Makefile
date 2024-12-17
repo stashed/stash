@@ -56,7 +56,7 @@ OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
 BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian12
-BASEIMAGE_DBG    ?= debian:bookworm
+BASEIMAGE_DBG    ?= debian:12
 
 GO_VERSION       ?= 1.23
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)

@@ -27,6 +27,14 @@ import "k8s.io/apimachinery/pkg/apis/meta/v1/generated.proto";
 // Package-wide variables from generator "generated".
 option go_package = "kmodules.xyz/client-go/api/v1";
 
+message CAPIClusterInfo {
+  optional string provider = 1;
+
+  optional string namespace = 2;
+
+  optional string clusterName = 3;
+}
+
 // CertificatePrivateKey contains configuration options for private keys
 // used by the Certificate controller.
 // This allows control of how private keys are rotated.
@@ -63,6 +71,10 @@ message CertificateSpec {
   optional k8s.io.apimachinery.pkg.apis.meta.v1.Duration duration = 5;
 
   // Certificate renew before expiration duration
+  //
+  // Deprecated use `ReconfigureTLS` type OpsRequest instead.
+  //
+  // +deprecated
   // +optional
   optional k8s.io.apimachinery.pkg.apis.meta.v1.Duration renewBefore = 6;
 
@@ -87,6 +99,18 @@ message CertificateSpec {
   optional CertificatePrivateKey privateKey = 11;
 }
 
+// ClusterInfo used in ace-installer
+message ClusterInfo {
+  optional string uid = 1;
+
+  optional string name = 2;
+
+  repeated string clusterManagers = 3;
+
+  // +optional
+  optional CAPIClusterInfo capi = 4;
+}
+
 message ClusterMetadata {
   optional string uid = 1;
 
@@ -95,6 +119,18 @@ message ClusterMetadata {
   optional string displayName = 3;
 
   optional string provider = 4;
+
+  optional string ownerID = 5;
+
+  optional string ownerType = 6;
+
+  optional string apiEndpoint = 7;
+
+  optional string caBundle = 8;
+
+  optional string managerID = 9;
+
+  optional string hubClusterID = 10;
 }
 
 // Condition defines an observation of a object operational state.

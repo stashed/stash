@@ -21,7 +21,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -34,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -157,7 +157,7 @@ func UpsertClusterMetadata(kc client.Client, md *kmapi.ClusterMetadata) error {
 	return err
 }
 
-func DetectCAPICluster(kc client.Client) (*kmapi.CAPIClusterInfo, error) {
+func DetectCAPICluster(kc client.Reader) (*kmapi.CAPIClusterInfo, error) {
 	var list unstructured.UnstructuredList
 	list.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "cluster.x-k8s.io",
@@ -170,7 +170,8 @@ func DetectCAPICluster(kc client.Client) (*kmapi.CAPIClusterInfo, error) {
 	} else if err != nil {
 		return nil, err
 	} else if len(list.Items) > 1 {
-		return nil, errors.New("multiple CAPI cluster object found")
+		klog.Warningln("multiple CAPI cluster object found")
+		return nil, nil
 	}
 
 	obj := list.Items[0].UnstructuredContent()
@@ -219,6 +220,8 @@ func getProviderName(kind string) kmapi.CAPIProvider {
 		return kmapi.CAPIProviderCAPZ
 	case "GCPManagedCluster":
 		return kmapi.CAPIProviderCAPG
+	case "HetznerCluster":
+		return kmapi.CAPIProviderCAPH
 	}
 	return ""
 }
@@ -236,7 +239,7 @@ func DetectClusterManager(kc client.Client, mappers ...meta.RESTMapper) kmapi.Cl
 	if IsOpenClusterHub(mapper) {
 		result |= kmapi.ClusterManagerOCMHub
 	}
-	if IsOpenClusterSpoke(mapper) {
+	if IsOpenClusterSpoke(kc) {
 		result |= kmapi.ClusterManagerOCMSpoke
 	}
 	if IsOpenClusterMulticlusterControlplane(mapper) {

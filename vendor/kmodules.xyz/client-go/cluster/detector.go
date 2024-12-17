@@ -87,9 +87,9 @@ func DetectProvider(cfg *rest.Config, mapper meta.RESTMapper) (kmapi.HostingProv
 
 	for _, host := range crt.DNSNames {
 		if strings.HasSuffix(host, eksDomain) {
-			return kmapi.HostingProviderAWS, nil
+			return kmapi.HostingProviderEKS, nil
 		} else if strings.HasSuffix(host, aksDomain) {
-			return kmapi.HostingProviderAzure, nil
+			return kmapi.HostingProviderAKS, nil
 		} else if strings.HasSuffix(host, doDomain) {
 			return kmapi.HostingProviderDigitalOcean, nil
 		} else if strings.HasSuffix(host, exoscaleDomain) {
@@ -108,7 +108,7 @@ func DetectProvider(cfg *rest.Config, mapper meta.RESTMapper) (kmapi.HostingProv
 		Group: "networking.gke.io",
 		Kind:  "Network",
 	}); err == nil {
-		return kmapi.HostingProviderGoogleCloud, nil
+		return kmapi.HostingProviderGKE, nil
 	}
 
 	return "", nil

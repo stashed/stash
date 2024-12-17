@@ -129,15 +129,15 @@ func isInProject(kc client.Client, nsName, seedNS string) (bool, error) {
 	return projectId == seedProjectId, nil
 }
 
-func GetDefaultProjectId(kc client.Client) (string, bool, error) {
+func GetDefaultProjectId(kc client.Reader) (string, bool, error) {
 	return GetProjectId(kc, metav1.NamespaceDefault)
 }
 
-func GetSystemProjectId(kc client.Client) (string, bool, error) {
+func GetSystemProjectId(kc client.Reader) (string, bool, error) {
 	return GetProjectId(kc, metav1.NamespaceSystem)
 }
 
-func GetProjectId(kc client.Client, nsName string) (string, bool, error) {
+func GetProjectId(kc client.Reader, nsName string) (string, bool, error) {
 	var ns core.Namespace
 	err := kc.Get(context.TODO(), client.ObjectKey{Name: nsName}, &ns)
 	if err != nil {
