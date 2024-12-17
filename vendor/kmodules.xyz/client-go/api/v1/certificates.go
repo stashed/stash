@@ -59,6 +59,10 @@ type CertificateSpec struct {
 	Duration *metav1.Duration `json:"duration,omitempty" protobuf:"bytes,5,opt,name=duration"`
 
 	// Certificate renew before expiration duration
+	//
+	// Deprecated use `ReconfigureTLS` type OpsRequest instead.
+	//
+	// +deprecated
 	// +optional
 	RenewBefore *metav1.Duration `json:"renewBefore,omitempty" protobuf:"bytes,6,opt,name=renewBefore"`
 

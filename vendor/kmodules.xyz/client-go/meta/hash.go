@@ -33,7 +33,11 @@ func ResourceHash(obj metav1.Object) string {
 	h := xxh3.New()
 	_, _ = h.WriteString(string(obj.GetUID()))
 	_, _ = h.WriteString(",")
-	_, _ = h.WriteString(strconv.FormatInt(obj.GetGeneration(), 10))
+	if obj.GetGeneration() > 0 {
+		_, _ = h.WriteString(strconv.FormatInt(obj.GetGeneration(), 10))
+	} else {
+		_, _ = h.WriteString(ObjectHash(obj))
+	}
 	return strconv.FormatUint(h.Sum64(), 10)
 }
 
@@ -57,11 +61,20 @@ func ObjectHash(in metav1.Object) string {
 		obj["annotations"] = data
 	}
 
-	st := structs.New(in)
-	for _, field := range st.Fields() {
-		fieldName := field.Name()
-		if fieldName != "ObjectMeta" && fieldName != "TypeMeta" && fieldName != "Status" {
-			obj[fieldName] = field.Value()
+	u, isUnstructured := in.(*unstructured.Unstructured)
+	if isUnstructured {
+		for fieldName, v := range u.UnstructuredContent() {
+			if fieldName != "metadata" && fieldName != "apiVersion" && fieldName != "kind" && fieldName != "status" {
+				obj[fieldName] = v
+			}
+		}
+	} else {
+		st := structs.New(in)
+		for _, field := range st.Fields() {
+			fieldName := field.Name()
+			if fieldName != "ObjectMeta" && fieldName != "TypeMeta" && fieldName != "Status" {
+				obj[fieldName] = field.Value()
+			}
 		}
 	}
 

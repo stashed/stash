@@ -18,6 +18,7 @@ package client
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	apiutil2 "kmodules.xyz/client-go/client/apiutil"
@@ -26,7 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/authentication/user"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/transport"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
@@ -36,6 +39,9 @@ import (
 
 // NewDelegatingClientInput encapsulates the input parameters to create a new delegating client.
 type NewDelegatingClientInput struct {
+	config  *restclient.Config
+	options client.Options
+
 	CacheReader       client.Reader
 	Client            client.Client
 	UncachedObjects   []client.Object
@@ -58,9 +64,11 @@ func NewDelegatingClient(in NewDelegatingClientInput) (client.Client, error) {
 		uncachedGVKs[gvk] = struct{}{}
 	}
 
-	return &delegatingClient{
-		scheme: in.Client.Scheme(),
-		mapper: in.Client.RESTMapper(),
+	return &DelegatingClient{
+		config:  in.config,
+		options: in.options,
+		scheme:  in.Client.Scheme(),
+		mapper:  in.Client.RESTMapper(),
 		Reader: &delegatingReader{
 			CacheReader:       in.CacheReader,
 			ClientReader:      in.Client,
@@ -75,7 +83,7 @@ func NewDelegatingClient(in NewDelegatingClientInput) (client.Client, error) {
 	}, nil
 }
 
-type delegatingClient struct {
+type DelegatingClient struct {
 	client.Reader
 	client.Writer
 	client.StatusClient
@@ -83,25 +91,57 @@ type delegatingClient struct {
 
 	scheme *runtime.Scheme
 	mapper meta.RESTMapper
+
+	config  *restclient.Config
+	options client.Options
+}
+
+func (d *DelegatingClient) RestConfig() *restclient.Config {
+	return d.config
+}
+
+func (d *DelegatingClient) Impersonate(u user.Info) (*restclient.Config, client.Client, error) {
+	config := restclient.CopyConfig(d.config)
+	config.Impersonate = restclient.ImpersonationConfig{
+		UserName: u.GetName(),
+		UID:      u.GetUID(),
+		Groups:   u.GetGroups(),
+		Extra:    u.GetExtra(),
+	}
+
+	// share the transport between all clients
+	optionsShallowCopy := d.options
+	if d.options.HTTPClient != nil {
+		optionsShallowCopy.HTTPClient = &http.Client{
+			Transport: transport.NewImpersonatingRoundTripper(transport.ImpersonationConfig{
+				UserName: u.GetName(),
+				UID:      u.GetUID(),
+				Groups:   u.GetGroups(),
+				Extra:    u.GetExtra(),
+			}, d.options.HTTPClient.Transport),
+		}
+	}
+	cc, err := NewClient(config, optionsShallowCopy)
+	return config, cc, err
 }
 
 // GroupVersionKindFor returns the GroupVersionKind for the given object.
-func (d *delegatingClient) GroupVersionKindFor(obj runtime.Object) (schema.GroupVersionKind, error) {
+func (d *DelegatingClient) GroupVersionKindFor(obj runtime.Object) (schema.GroupVersionKind, error) {
 	return apiutil.GVKForObject(obj, d.scheme)
 }
 
 // IsObjectNamespaced returns true if the GroupVersionKind of the object is namespaced.
-func (d *delegatingClient) IsObjectNamespaced(obj runtime.Object) (bool, error) {
+func (d *DelegatingClient) IsObjectNamespaced(obj runtime.Object) (bool, error) {
 	return apiutil.IsObjectNamespaced(obj, d.scheme, d.mapper)
 }
 
 // Scheme returns the scheme this client is using.
-func (d *delegatingClient) Scheme() *runtime.Scheme {
+func (d *DelegatingClient) Scheme() *runtime.Scheme {
 	return d.scheme
 }
 
 // RESTMapper returns the rest mapper this client is using.
-func (d *delegatingClient) RESTMapper() meta.RESTMapper {
+func (d *DelegatingClient) RESTMapper() meta.RESTMapper {
 	return d.mapper
 }
 
@@ -167,7 +207,7 @@ func (d *delegatingReader) List(ctx context.Context, list client.ObjectList, opt
 	return d.CacheReader.List(ctx, list, opts...)
 }
 
-func (d *delegatingClient) SubResource(subResource string) client.SubResourceClient {
+func (d *DelegatingClient) SubResource(subResource string) client.SubResourceClient {
 	return d.SubResourceClientConstructor.SubResource(subResource)
 }
 
@@ -181,6 +221,8 @@ func NewClient(config *restclient.Config, options client.Options) (client.Client
 		return nil, err
 	}
 	co := NewDelegatingClientInput{
+		config:   config,
+		options:  options,
 		Client:   c,
 		Cachable: cachable,
 	}
