@@ -20,14 +20,14 @@ jobs:
     if: contains(github.event.issue.html_url, '/pull/') && startsWith(github.event.comment.body, '/ok-to-test')
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
         id: qemu
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Checkout pr
         env:
@@ -86,7 +86,7 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.config.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
 
       - name: Checkout pr
         env:
