@@ -143,8 +143,7 @@ func CreateOrPatchE(ctx context.Context, c client.Client, obj client.Object, tra
 
 func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object, transform TransformFunc, opts ...client.PatchOption) (kutil.VerbType, error) {
 	return CreateOrPatchE(ctx, c, obj, func(obj client.Object, createOp bool) (client.Object, error) {
-		transform(obj, createOp)
-		return obj, nil
+		return transform(obj, createOp), nil
 	}, opts...)
 }
 
@@ -188,8 +187,7 @@ func PatchE(ctx context.Context, c client.Client, obj client.Object, transform P
 
 func Patch(ctx context.Context, c client.Client, obj client.Object, transform PatchFunc, opts ...client.PatchOption) (kutil.VerbType, error) {
 	return PatchE(ctx, c, obj, func(obj client.Object) (client.Object, error) {
-		transform(obj)
-		return obj, nil
+		return transform(obj), nil
 	}, opts...)
 }
 
@@ -232,8 +230,7 @@ func PatchStatusE(ctx context.Context, c client.Client, obj client.Object, trans
 
 func PatchStatus(ctx context.Context, c client.Client, obj client.Object, transform PatchFunc, opts ...client.SubResourcePatchOption) (kutil.VerbType, error) {
 	return PatchStatusE(ctx, c, obj, func(obj client.Object) (client.Object, error) {
-		transform(obj)
-		return obj, nil
+		return transform(obj), nil
 	}, opts...)
 }
 

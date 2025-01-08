@@ -222,6 +222,8 @@ func getProviderName(kind string) kmapi.CAPIProvider {
 		return kmapi.CAPIProviderCAPG
 	case "HetznerCluster":
 		return kmapi.CAPIProviderCAPH
+	case "KubevirtCluster":
+		return kmapi.CAPIProviderCAPK
 	}
 	return ""
 }
