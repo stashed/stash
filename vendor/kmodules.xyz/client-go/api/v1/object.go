@@ -27,7 +27,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TypedObjectReference represents an typed namespaced object.
+// TypeReference represents an object type.
+type TypeReference struct {
+	APIGroup string `json:"apiGroup,omitempty" protobuf:"bytes,1,opt,name=apiGroup"`
+	Kind     string `json:"kind,omitempty" protobuf:"bytes,2,opt,name=kind"`
+}
+
+// TypedObjectReference represents a typed namespaced object.
 type TypedObjectReference struct {
 	APIGroup string `json:"apiGroup,omitempty" protobuf:"bytes,1,opt,name=apiGroup"`
 	Kind     string `json:"kind,omitempty" protobuf:"bytes,2,opt,name=kind"`

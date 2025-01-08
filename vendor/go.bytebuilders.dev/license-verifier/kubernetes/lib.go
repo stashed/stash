@@ -168,7 +168,7 @@ func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) er
 	}()
 
 	// Log licenseInfo verification failure
-	klog.Errorln("Failed to verify license. Reason: ", licenseErr.Error())
+	klog.Errorf("failed to verify license for cluster %s, reason: %v\n", le.opts.ClusterUID, licenseErr)
 
 	// Read the namespace of current pod
 	namespace := meta.PodNamespace()
@@ -198,7 +198,7 @@ func (le *LicenseEnforcer) handleLicenseVerificationFailure(licenseErr error) er
 		in.Type = core.EventTypeWarning
 		in.Source = core.EventSource{Component: EventSourceLicenseVerifier}
 		in.Reason = EventReasonLicenseVerificationFailed
-		in.Message = fmt.Sprintf("Failed to verify license. Reason: %s", licenseErr.Error())
+		in.Message = fmt.Sprintf("failed to verify license for cluster %s, reason: %v", le.opts.ClusterUID, licenseErr)
 
 		if in.FirstTimestamp.IsZero() {
 			in.FirstTimestamp = metav1.Now()
@@ -285,11 +285,11 @@ func verifyLicensePeriodically(le *LicenseEnforcer, licenseFile string, stopCh <
 			return false, err
 		}
 		// Validate license
-		_, err = verifier.CheckLicense(le.opts)
+		lic, err := verifier.CheckLicense(le.opts)
 		if err != nil {
 			return false, err
 		}
-		klog.Infoln("Successfully verified license!")
+		klog.Infof("Successfully verified license! Valid until: %v", lic.NotAfter.UTC().Format(time.RFC822))
 		// return false so that the loop never ends
 		return false, nil
 	}
@@ -332,11 +332,11 @@ func checkLicenseFile(le *LicenseEnforcer) error {
 		return err
 	}
 	// Validate license
-	_, err = verifier.CheckLicense(le.opts)
+	lic, err := verifier.CheckLicense(le.opts)
 	if err != nil {
 		return err
 	}
-	klog.Infoln("Successfully verified license!")
+	klog.Infof("Successfully verified license! Valid until: %v", lic.NotAfter.UTC().Format(time.RFC822))
 	return nil
 }
 

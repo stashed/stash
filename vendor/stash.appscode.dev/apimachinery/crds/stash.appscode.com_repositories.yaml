@@ -2012,7 +2012,7 @@ spec:
                 description: References holds a list of resource references that using
                   this Repository
                 items:
-                  description: TypedObjectReference represents an typed namespaced
+                  description: TypedObjectReference represents a typed namespaced
                     object.
                   properties:
                     apiGroup:

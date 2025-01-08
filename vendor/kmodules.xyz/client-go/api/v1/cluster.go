@@ -192,7 +192,7 @@ type ClusterInfo struct {
 	CAPI *CAPIClusterInfo `json:"capi" protobuf:"bytes,4,opt,name=capi"`
 }
 
-// +kubebuilder:validation:Enum=capa;capg;capz
+// +kubebuilder:validation:Enum=capa;capg;capz;caph;capk
 type CAPIProvider string
 
 const (
@@ -200,6 +200,7 @@ const (
 	CAPIProviderCAPG CAPIProvider = "capg"
 	CAPIProviderCAPZ CAPIProvider = "capz"
 	CAPIProviderCAPH CAPIProvider = "caph"
+	CAPIProviderCAPK CAPIProvider = "capk"
 )
 
 type ClusterClaimInfo struct {
