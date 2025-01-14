@@ -379,6 +379,49 @@ func (w *ResticWrapper) unlock() ([]byte, error) {
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
 
+func (w *ResticWrapper) migrateToV2() ([]byte, error) {
+	klog.Infoln("Migrating repository to v2")
+	args := w.appendCacheDirFlag([]interface{}{"migrate", "upgrade_repo_v2"})
+	args = w.appendMaxConnectionsFlag(args)
+	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
+
+	return w.run(Command{Name: ResticCMD, Args: args})
+}
+
+func (w *ResticWrapper) prune(pruneOpts PruneOptions) ([]byte, error) {
+	klog.Infoln("Pruning repository")
+
+	args := []interface{}{"prune"}
+	if pruneOpts.DryRun {
+		args = append(args, "--dry-run")
+	}
+	if pruneOpts.RepackCacheableOnly {
+		args = append(args, "--repack-cacheable-only")
+	}
+	if pruneOpts.RepackSmall {
+		args = append(args, "--repack-small")
+	}
+	if pruneOpts.RepackUncompressed {
+		args = append(args, "--repack-uncompressed")
+	}
+	if pruneOpts.MaxUnusedLimit != "" {
+		args = append(args,
+			fmt.Sprintf("--max-unused=%s", pruneOpts.MaxUnusedLimit))
+	}
+	if pruneOpts.MaxRepackSize != "" {
+		args = append(args,
+			fmt.Sprintf("--max-repack-size=%s", pruneOpts.MaxRepackSize))
+	}
+
+	args = w.appendCacheDirFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
+	args = w.appendCaCertFlag(args)
+	args = w.appendInsecureTLSFlag(args)
+
+	return w.run(Command{Name: ResticCMD, Args: args})
+}
+
 func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 	if w.config.EnableCache {
 		cacheDir := filepath.Join(w.config.ScratchDir, resticCacheDir)

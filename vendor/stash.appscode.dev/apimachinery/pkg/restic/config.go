@@ -78,6 +78,15 @@ type DumpOptions struct {
 	StdoutPipeCommands []Command
 }
 
+type PruneOptions struct {
+	MaxUnusedLimit      string
+	MaxRepackSize       string
+	DryRun              bool
+	RepackUncompressed  bool
+	RepackSmall         bool
+	RepackCacheableOnly bool
+}
+
 type SetupOptions struct {
 	Provider       string
 	Bucket         string
