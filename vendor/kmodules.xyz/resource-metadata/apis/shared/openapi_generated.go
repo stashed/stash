@@ -737,6 +737,14 @@ func schema_kmodulesxyz_resource_metadata_apis_shared_RegistryProxies(ref common
 							Format:      "",
 						},
 					},
+					"microsoft": {
+						SchemaProps: spec.SchemaProps{
+							Description: "mcr.microsoft.com",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"appscode": {
 						SchemaProps: spec.SchemaProps{
 							Description: "r.appscode.com",
@@ -767,6 +775,12 @@ func schema_kmodulesxyz_resource_metadata_apis_shared_ResourceLocator(ref common
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
 							Ref:     ref("kmodules.xyz/resource-metadata/apis/shared.ResourceQuery"),
+						},
+					},
+					"impersonate": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
 						},
 					},
 				},

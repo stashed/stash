@@ -43,7 +43,7 @@ func (m *ProxySQLOpsRequest) VolumeExpansionPathMapping() map[OpsReqPath]Referen
 }
 
 func (m *ProxySQLOpsRequest) GetAppRefPath() []string {
-	return []string{"spec", "proxyRef", "referencedDB"}
+	return []string{"spec", "proxyRef"}
 }
 
 func (m *ProxySQLOpsRequest) GroupVersionKind() schema.GroupVersionKind {

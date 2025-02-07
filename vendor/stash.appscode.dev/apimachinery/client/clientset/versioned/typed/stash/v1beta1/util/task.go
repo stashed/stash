@@ -94,7 +94,6 @@ func TryUpdateTask(ctx context.Context, c cs.StashV1beta1Interface, meta metav1.
 		klog.Errorf("Attempt %d failed to update Task %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = fmt.Errorf("failed to update Task %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}

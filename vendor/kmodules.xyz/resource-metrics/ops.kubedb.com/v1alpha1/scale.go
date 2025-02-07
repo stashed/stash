@@ -18,8 +18,9 @@ package v1alpha1
 
 import (
 	"errors"
-	"fmt"
 	"strings"
+
+	"kmodules.xyz/resource-metrics/api"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -69,7 +70,14 @@ func extractReferencedObject(opsObj map[string]interface{}, refDbPath ...string)
 	}
 	dbObj, found, _ := unstructured.NestedMap(opsObj, refDbPath...)
 	if !found {
-		return nil, errors.New("referenced db object not found")
+		return nil, api.ErrMissingRefObject
+	}
+
+	_, foundApiVersion := dbObj["apiVersion"]
+	_, foundKind := dbObj["kind"]
+	_, foundMetadata := dbObj["metadata"]
+	if !foundApiVersion || !foundKind || !foundMetadata {
+		return nil, api.ErrMissingRefObject
 	}
 
 	return dbObj, nil
@@ -106,5 +114,5 @@ func getMapping(opsObj OpsReqObject, opsMapper OpsPathMapper) (map[OpsReqPath]Re
 		return opsMapper.VolumeExpansionPathMapping(), nil
 	}
 
-	return nil, fmt.Errorf("scaling type `%s` not supported", scalingType)
+	return nil, nil
 }

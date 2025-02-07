@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	kmapi "kmodules.xyz/client-go/api/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 	"kmodules.xyz/resource-metadata/apis/shared"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,6 +58,8 @@ type GenericResourceServiceFacilities struct {
 	Backup     GenericResourceServiceFacilitator `json:"backup,omitempty"`
 	Monitoring GenericResourceServiceFacilitator `json:"monitoring,omitempty"`
 	Exec       []ExecServiceFacilitator          `json:"exec,omitempty"`
+	// +optional
+	Gateway *ofst.Gateway `json:"gateway,omitempty"`
 }
 
 type GenericResourceServiceFacilitator struct {

@@ -41,7 +41,7 @@ type JetStreamManager interface {
 	PurgeStream(name string, opts ...JSOpt) error
 
 	// StreamsInfo can be used to retrieve a list of StreamInfo objects.
-	// DEPRECATED: Use Streams() instead.
+	// Deprecated: Use Streams() instead.
 	StreamsInfo(opts ...JSOpt) <-chan *StreamInfo
 
 	// Streams can be used to retrieve a list of StreamInfo objects.
@@ -86,7 +86,7 @@ type JetStreamManager interface {
 	ConsumerInfo(stream, name string, opts ...JSOpt) (*ConsumerInfo, error)
 
 	// ConsumersInfo is used to retrieve a list of ConsumerInfo objects.
-	// DEPRECATED: Use Consumers() instead.
+	// Deprecated: Use Consumers() instead.
 	ConsumersInfo(stream string, opts ...JSOpt) <-chan *ConsumerInfo
 
 	// Consumers is used to retrieve a list of ConsumerInfo objects.
@@ -240,7 +240,7 @@ type StreamConfig struct {
 	// v2.10.0 or later.
 	Metadata map[string]string `json:"metadata,omitempty"`
 
-	// Template identifies the template that manages the Stream. DEPRECATED:
+	// Template identifies the template that manages the Stream. Deprecated:
 	// This feature is no longer supported.
 	Template string `json:"template_owner,omitempty"`
 }
@@ -747,7 +747,7 @@ func (jsc *js) Consumers(stream string, opts ...JSOpt) <-chan *ConsumerInfo {
 }
 
 // ConsumersInfo is used to retrieve a list of ConsumerInfo objects.
-// DEPRECATED: Use Consumers() instead.
+// Deprecated: Use Consumers() instead.
 func (jsc *js) ConsumersInfo(stream string, opts ...JSOpt) <-chan *ConsumerInfo {
 	return jsc.Consumers(stream, opts...)
 }
@@ -1330,11 +1330,11 @@ func convertDirectGetMsgResponseToMsg(name string, r *Msg) (*RawStreamMsg, error
 	// Check for headers that give us the required information to
 	// reconstruct the message.
 	if len(r.Header) == 0 {
-		return nil, fmt.Errorf("nats: response should have headers")
+		return nil, errors.New("nats: response should have headers")
 	}
 	stream := r.Header.Get(JSStream)
 	if stream == _EMPTY_ {
-		return nil, fmt.Errorf("nats: missing stream header")
+		return nil, errors.New("nats: missing stream header")
 	}
 
 	// Mirrors can now answer direct gets, so removing check for name equality.
@@ -1342,7 +1342,7 @@ func convertDirectGetMsgResponseToMsg(name string, r *Msg) (*RawStreamMsg, error
 
 	seqStr := r.Header.Get(JSSequence)
 	if seqStr == _EMPTY_ {
-		return nil, fmt.Errorf("nats: missing sequence header")
+		return nil, errors.New("nats: missing sequence header")
 	}
 	seq, err := strconv.ParseUint(seqStr, 10, 64)
 	if err != nil {
@@ -1350,7 +1350,7 @@ func convertDirectGetMsgResponseToMsg(name string, r *Msg) (*RawStreamMsg, error
 	}
 	timeStr := r.Header.Get(JSTimeStamp)
 	if timeStr == _EMPTY_ {
-		return nil, fmt.Errorf("nats: missing timestamp header")
+		return nil, errors.New("nats: missing timestamp header")
 	}
 	// Temporary code: the server in main branch is sending with format
 	// "2006-01-02 15:04:05.999999999 +0000 UTC", but will be changed
@@ -1365,7 +1365,7 @@ func convertDirectGetMsgResponseToMsg(name string, r *Msg) (*RawStreamMsg, error
 	}
 	subj := r.Header.Get(JSSubject)
 	if subj == _EMPTY_ {
-		return nil, fmt.Errorf("nats: missing subject header")
+		return nil, errors.New("nats: missing subject header")
 	}
 	return &RawStreamMsg{
 		Subject:  subj,
@@ -1617,7 +1617,7 @@ func (jsc *js) Streams(opts ...JSOpt) <-chan *StreamInfo {
 }
 
 // StreamsInfo can be used to retrieve a list of StreamInfo objects.
-// DEPRECATED: Use Streams() instead.
+// Deprecated: Use Streams() instead.
 func (jsc *js) StreamsInfo(opts ...JSOpt) <-chan *StreamInfo {
 	return jsc.Streams(opts...)
 }
