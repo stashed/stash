@@ -115,11 +115,11 @@ func ParseLicense(opts ParserOptions) (v1alpha1.License, error) {
 			license.TierName = parts[1]
 		}
 	}
-	license.FeatureFlags = map[string]string{}
+	license.FeatureFlags = v1alpha1.FeatureFlags{}
 	for _, ff := range cert.Subject.Locality {
 		parts := strings.SplitN(ff, "=", 2)
 		if len(parts) == 2 {
-			license.FeatureFlags[parts[0]] = parts[1]
+			license.FeatureFlags[v1alpha1.FeatureFlag(parts[0])] = parts[1]
 		}
 	}
 

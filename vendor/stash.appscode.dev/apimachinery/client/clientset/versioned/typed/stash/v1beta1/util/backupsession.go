@@ -94,7 +94,6 @@ func TryUpdateBackupSession(ctx context.Context, c cs.StashV1beta1Interface, met
 		klog.Errorf("Attempt %d failed to update BackupSession %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = fmt.Errorf("failed to update BackupSession %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
@@ -148,7 +147,6 @@ func UpdateBackupSessionStatus(
 		}
 		return e2 == nil, nil
 	})
-
 	if err != nil {
 		err = fmt.Errorf("failed to update status of BackupSession %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}

@@ -50,6 +50,9 @@ type RegistryProxies struct {
 	// registry.k8s.io
 	//+optional
 	Kubernetes string `json:"kubernetes"`
+	// mcr.microsoft.com
+	//+optional
+	Microsoft string `json:"microsoft"`
 	// r.appscode.com
 	//+optional
 	AppsCode string `json:"appscode"`

@@ -41,6 +41,7 @@ func (r MSSQLServer) ResourceCalculator() api.ResourceCalculator {
 		AppRoles:               []api.PodRole{api.PodRoleDefault},
 		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleExporter},
 		RoleReplicasFn:         r.roleReplicasFn,
+		ModeFn:                 r.modeFn,
 		UsesTLSFn:              r.usesTLSFn,
 		RoleResourceLimitsFn:   r.roleResourceFn(api.ResourceLimits),
 		RoleResourceRequestsFn: r.roleResourceFn(api.ResourceRequests),
@@ -56,6 +57,17 @@ func (r MSSQLServer) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList
 		return api.ReplicaList{api.PodRoleDefault: 1}, nil
 	}
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
+}
+
+func (r MSSQLServer) modeFn(obj map[string]interface{}) (string, error) {
+	mode, found, err := unstructured.NestedString(obj, "spec", "topology", "mode")
+	if err != nil {
+		return "", err
+	}
+	if found {
+		return mode, nil
+	}
+	return DBModeStandalone, nil
 }
 
 func (r MSSQLServer) usesTLSFn(obj map[string]interface{}) (bool, error) {

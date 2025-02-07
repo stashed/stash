@@ -64,8 +64,9 @@ type SelfSubjectNamespaceAccessReviewSpec struct {
 }
 
 type SubjectAccessNamespaceReviewStatus struct {
-	Namespaces []string            `json:"namespaces,omitempty"`
-	Projects   map[string][]string `json:"projects,omitempty"`
+	AllNamespaces bool                `json:"allNamespaces"`
+	Namespaces    []string            `json:"namespaces,omitempty"`
+	Projects      map[string][]string `json:"projects,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -1,4 +1,4 @@
-// Copyright 2020-2023 The NATS Authors
+// Copyright 2020-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -58,6 +58,19 @@ type JetStream interface {
 	// PublishAsyncComplete returns a channel that will be closed when all outstanding messages are ack'd.
 	PublishAsyncComplete() <-chan struct{}
 
+	// CleanupPublisher will cleanup the publishing side of JetStreamContext.
+	//
+	// This will unsubscribe from the internal reply subject if needed.
+	// All pending async publishes will fail with ErrJetStreamPublisherClosed.
+	//
+	// If an error handler was provided, it will be called for each pending async
+	// publish and PublishAsyncComplete will be closed.
+	//
+	// After completing JetStreamContext is still usable - internal subscription
+	// will be recreated on next publish, but the acks from previous publishes will
+	// be lost.
+	CleanupPublisher()
+
 	// Subscribe creates an async Subscription for JetStream.
 	// The stream and consumer names can be provided with the nats.Bind() option.
 	// For creating an ephemeral (where the consumer name is picked by the server),
@@ -107,6 +120,7 @@ type JetStream interface {
 	// PullSubscribe creates a Subscription that can fetch messages.
 	// See important note in Subscribe(). Additionally, for an ephemeral pull consumer, the "durable" value must be
 	// set to an empty string.
+	// When using PullSubscribe, the messages are fetched using Fetch() and FetchBatch() methods.
 	PullSubscribe(subj, durable string, opts ...SubOpt) (*Subscription, error)
 }
 
@@ -466,6 +480,9 @@ type pubOpts struct {
 
 	// stallWait is the max wait of a async pub ack.
 	stallWait time.Duration
+
+	// internal option to re-use existing paf in case of retry.
+	pafRetry *pubAckFuture
 }
 
 // pubAckResponse is the ack response from the JetStream API when publishing a message.
@@ -531,7 +548,7 @@ func (js *js) PublishMsg(m *Msg, opts ...PubOpt) (*PubAck, error) {
 		o.ttl = js.opts.wait
 	}
 	if o.stallWait > 0 {
-		return nil, fmt.Errorf("nats: stall wait cannot be set to sync publish")
+		return nil, errors.New("nats: stall wait cannot be set to sync publish")
 	}
 
 	if o.id != _EMPTY_ {
@@ -620,13 +637,17 @@ type PubAckFuture interface {
 }
 
 type pubAckFuture struct {
-	js     *js
-	msg    *Msg
-	pa     *PubAck
-	st     time.Time
-	err    error
-	errCh  chan error
-	doneCh chan *PubAck
+	js         *js
+	msg        *Msg
+	pa         *PubAck
+	st         time.Time
+	err        error
+	errCh      chan error
+	doneCh     chan *PubAck
+	retries    int
+	maxRetries int
+	retryWait  time.Duration
+	reply      string
 }
 
 func (paf *pubAckFuture) Ok() <-chan *PubAck {
@@ -719,10 +740,7 @@ func (js *js) resetPendingAcksOnReconnect() {
 				paf.errCh <- paf.err
 			}
 			if errCb != nil {
-				// clear reply subject so that new one is created on republish
-				js.mu.Unlock()
-				errCb(js, paf.msg, ErrDisconnected)
-				js.mu.Lock()
+				defer errCb(js, paf.msg, ErrDisconnected)
 			}
 			delete(js.pafs, id)
 		}
@@ -732,6 +750,38 @@ func (js *js) resetPendingAcksOnReconnect() {
 		}
 		js.mu.Unlock()
 	}
+}
+
+// CleanupPublisher will cleanup the publishing side of JetStreamContext.
+//
+// This will unsubscribe from the internal reply subject if needed.
+// All pending async publishes will fail with ErrJetStreamContextClosed.
+//
+// If an error handler was provided, it will be called for each pending async
+// publish and PublishAsyncComplete will be closed.
+//
+// After completing JetStreamContext is still usable - internal subscription
+// will be recreated on next publish, but the acks from previous publishes will
+// be lost.
+func (js *js) CleanupPublisher() {
+	js.cleanupReplySub()
+	js.mu.Lock()
+	errCb := js.opts.aecb
+	for id, paf := range js.pafs {
+		paf.err = ErrJetStreamPublisherClosed
+		if paf.errCh != nil {
+			paf.errCh <- paf.err
+		}
+		if errCb != nil {
+			defer errCb(js, paf.msg, ErrJetStreamPublisherClosed)
+		}
+		delete(js.pafs, id)
+	}
+	if js.dch != nil {
+		close(js.dch)
+		js.dch = nil
+	}
+	js.mu.Unlock()
 }
 
 func (js *js) cleanupReplySub() {
@@ -806,20 +856,30 @@ func (js *js) handleAsyncReply(m *Msg) {
 		js.mu.Unlock()
 		return
 	}
-	// Remove
-	delete(js.pafs, id)
 
-	// Check on anyone stalled and waiting.
-	if js.stc != nil && len(js.pafs) < js.opts.maxpa {
-		close(js.stc)
-		js.stc = nil
+	closeStc := func() {
+		// Check on anyone stalled and waiting.
+		if js.stc != nil && len(js.pafs) < js.opts.maxpa {
+			close(js.stc)
+			js.stc = nil
+		}
 	}
-	// Check on anyone one waiting on done status.
-	if js.dch != nil && len(js.pafs) == 0 {
-		dch := js.dch
-		js.dch = nil
-		// Defer here so error is processed and can be checked.
-		defer close(dch)
+
+	closeDchFn := func() func() {
+		var dch chan struct{}
+		// Check on anyone one waiting on done status.
+		if js.dch != nil && len(js.pafs) == 0 {
+			dch = js.dch
+			js.dch = nil
+		}
+		// Return function to close done channel which
+		// should be deferred so that error is processed and
+		// can be checked.
+		return func() {
+			if dch != nil {
+				close(dch)
+			}
+		}
 	}
 
 	doErr := func(err error) {
@@ -836,9 +896,38 @@ func (js *js) handleAsyncReply(m *Msg) {
 
 	// Process no responders etc.
 	if len(m.Data) == 0 && m.Header.Get(statusHdr) == noResponders {
+		if paf.retries < paf.maxRetries {
+			paf.retries++
+			time.AfterFunc(paf.retryWait, func() {
+				js.mu.Lock()
+				paf := js.getPAF(id)
+				js.mu.Unlock()
+				if paf == nil {
+					return
+				}
+				_, err := js.PublishMsgAsync(paf.msg, pubOptFn(func(po *pubOpts) error {
+					po.pafRetry = paf
+					return nil
+				}))
+				if err != nil {
+					js.mu.Lock()
+					doErr(err)
+				}
+			})
+			js.mu.Unlock()
+			return
+		}
+		delete(js.pafs, id)
+		closeStc()
+		defer closeDchFn()()
 		doErr(ErrNoResponders)
 		return
 	}
+
+	//remove
+	delete(js.pafs, id)
+	closeStc()
+	defer closeDchFn()()
 
 	var pa pubAckResponse
 	if err := json.Unmarshal(m.Data, &pa); err != nil {
@@ -906,6 +995,10 @@ func (js *js) PublishMsgAsync(m *Msg, opts ...PubOpt) (PubAckFuture, error) {
 		}
 	}
 
+	if o.rnum < 0 {
+		return nil, fmt.Errorf("%w: retry attempts cannot be negative", ErrInvalidArg)
+	}
+
 	// Timeouts and contexts do not make sense for these.
 	if o.ttl != 0 || o.ctx != nil {
 		return nil, ErrContextAndTimeout
@@ -933,30 +1026,42 @@ func (js *js) PublishMsgAsync(m *Msg, opts ...PubOpt) (PubAckFuture, error) {
 	}
 
 	// Reply
-	if m.Reply != _EMPTY_ {
+	paf := o.pafRetry
+	if paf == nil && m.Reply != _EMPTY_ {
 		return nil, errors.New("nats: reply subject should be empty")
 	}
-	reply := m.Reply
-	m.Reply = js.newAsyncReply()
-	defer func() { m.Reply = reply }()
+	var id string
+	var reply string
 
-	if m.Reply == _EMPTY_ {
-		return nil, errors.New("nats: error creating async reply handler")
-	}
+	// register new paf if not retrying
+	if paf == nil {
+		reply = js.newAsyncReply()
 
-	id := m.Reply[js.replyPrefixLen:]
-	paf := &pubAckFuture{msg: m, st: time.Now()}
-	numPending, maxPending := js.registerPAF(id, paf)
-
-	if maxPending > 0 && numPending >= maxPending {
-		select {
-		case <-js.asyncStall():
-		case <-time.After(stallWait):
-			js.clearPAF(id)
-			return nil, errors.New("nats: stalled with too many outstanding async published messages")
+		if reply == _EMPTY_ {
+			return nil, errors.New("nats: error creating async reply handler")
 		}
+
+		id = reply[js.replyPrefixLen:]
+		paf = &pubAckFuture{msg: m, st: time.Now(), maxRetries: o.rnum, retryWait: o.rwait, reply: reply}
+		numPending, maxPending := js.registerPAF(id, paf)
+
+		if maxPending > 0 && numPending > maxPending {
+			select {
+			case <-js.asyncStall():
+			case <-time.After(stallWait):
+				js.clearPAF(id)
+				return nil, errors.New("nats: stalled with too many outstanding async published messages")
+			}
+		}
+	} else {
+		reply = paf.reply
+		id = reply[js.replyPrefixLen:]
 	}
-	if err := js.nc.PublishMsg(m); err != nil {
+	hdr, err := m.headerBytes()
+	if err != nil {
+		return nil, err
+	}
+	if err := js.nc.publish(m.Subject, reply, hdr, m.Data); err != nil {
 		js.clearPAF(id)
 		return nil, err
 	}
@@ -1039,7 +1144,7 @@ func RetryAttempts(num int) PubOpt {
 func StallWait(ttl time.Duration) PubOpt {
 	return pubOptFn(func(opts *pubOpts) error {
 		if ttl <= 0 {
-			return fmt.Errorf("nats: stall wait should be more than 0")
+			return errors.New("nats: stall wait should be more than 0")
 		}
 		opts.stallWait = ttl
 		return nil
@@ -1397,11 +1502,11 @@ func processConsInfo(info *ConsumerInfo, userCfg *ConsumerConfig, isPullMode boo
 		// Prevent an user from attempting to create a queue subscription on
 		// a JS consumer that was not created with a deliver group.
 		if queue != _EMPTY_ {
-			return _EMPTY_, fmt.Errorf("cannot create a queue subscription for a consumer without a deliver group")
+			return _EMPTY_, errors.New("cannot create a queue subscription for a consumer without a deliver group")
 		} else if info.PushBound {
 			// Need to reject a non queue subscription to a non queue consumer
 			// if the consumer is already bound.
-			return _EMPTY_, fmt.Errorf("consumer is already bound to a subscription")
+			return _EMPTY_, errors.New("consumer is already bound to a subscription")
 		}
 	} else {
 		// If the JS consumer has a deliver group, we need to fail a non queue
@@ -1423,7 +1528,7 @@ func processConsInfo(info *ConsumerInfo, userCfg *ConsumerConfig, isPullMode boo
 
 func checkConfig(s, u *ConsumerConfig) error {
 	makeErr := func(fieldName string, usrVal, srvVal any) error {
-		return fmt.Errorf("configuration requests %s to be %v, but consumer's value is %v", fieldName, usrVal, srvVal)
+		return fmt.Errorf("nats: configuration requests %s to be %v, but consumer's value is %v", fieldName, usrVal, srvVal)
 	}
 
 	if u.Durable != _EMPTY_ && u.Durable != s.Durable {
@@ -1503,7 +1608,7 @@ func (js *js) subscribe(subj, queue string, cb MsgHandler, ch chan *Msg, isSync,
 
 	// If no stream name is specified, the subject cannot be empty.
 	if subj == _EMPTY_ && o.stream == _EMPTY_ {
-		return nil, fmt.Errorf("nats: subject required")
+		return nil, errors.New("nats: subject required")
 	}
 
 	// Note that these may change based on the consumer info response we may get.
@@ -1525,7 +1630,7 @@ func (js *js) subscribe(subj, queue string, cb MsgHandler, ch chan *Msg, isSync,
 		// would subscribe to and server would send on.
 		if o.cfg.Heartbeat > 0 || o.cfg.FlowControl {
 			// Not making this a public ErrXXX in case we allow in the future.
-			return nil, fmt.Errorf("nats: queue subscription doesn't support idle heartbeat nor flow control")
+			return nil, errors.New("nats: queue subscription doesn't support idle heartbeat nor flow control")
 		}
 
 		// If this is a queue subscription and no consumer nor durable name was specified,
@@ -1563,31 +1668,31 @@ func (js *js) subscribe(subj, queue string, cb MsgHandler, ch chan *Msg, isSync,
 	if o.ordered {
 		// Make sure we are not durable.
 		if isDurable {
-			return nil, fmt.Errorf("nats: durable can not be set for an ordered consumer")
+			return nil, errors.New("nats: durable can not be set for an ordered consumer")
 		}
 		// Check ack policy.
 		if o.cfg.AckPolicy != ackPolicyNotSet {
-			return nil, fmt.Errorf("nats: ack policy can not be set for an ordered consumer")
+			return nil, errors.New("nats: ack policy can not be set for an ordered consumer")
 		}
 		// Check max deliver.
 		if o.cfg.MaxDeliver != 1 && o.cfg.MaxDeliver != 0 {
-			return nil, fmt.Errorf("nats: max deliver can not be set for an ordered consumer")
+			return nil, errors.New("nats: max deliver can not be set for an ordered consumer")
 		}
 		// No deliver subject, we pick our own.
 		if o.cfg.DeliverSubject != _EMPTY_ {
-			return nil, fmt.Errorf("nats: deliver subject can not be set for an ordered consumer")
+			return nil, errors.New("nats: deliver subject can not be set for an ordered consumer")
 		}
 		// Queue groups not allowed.
 		if queue != _EMPTY_ {
-			return nil, fmt.Errorf("nats: queues not be set for an ordered consumer")
+			return nil, errors.New("nats: queues not be set for an ordered consumer")
 		}
 		// Check for bound consumers.
 		if consumer != _EMPTY_ {
-			return nil, fmt.Errorf("nats: can not bind existing consumer for an ordered consumer")
+			return nil, errors.New("nats: can not bind existing consumer for an ordered consumer")
 		}
 		// Check for pull mode.
 		if isPullMode {
-			return nil, fmt.Errorf("nats: can not use pull mode for an ordered consumer")
+			return nil, errors.New("nats: can not use pull mode for an ordered consumer")
 		}
 		// Setup how we need it to be here.
 		o.cfg.FlowControl = true
@@ -1735,7 +1840,7 @@ func (js *js) subscribe(subj, queue string, cb MsgHandler, ch chan *Msg, isSync,
 		ocb := cb
 		cb = func(m *Msg) { ocb(m); m.Ack() }
 	}
-	sub, err := nc.subscribe(deliver, queue, cb, ch, isSync, jsi)
+	sub, err := nc.subscribe(deliver, queue, cb, ch, nil, isSync, jsi)
 	if err != nil {
 		return nil, err
 	}
@@ -1806,7 +1911,7 @@ func (js *js) subscribe(subj, queue string, cb MsgHandler, ch chan *Msg, isSync,
 				jsi.hbi = info.Config.Heartbeat
 
 				// Recreate the subscription here.
-				sub, err = nc.subscribe(jsi.deliver, queue, cb, ch, isSync, jsi)
+				sub, err = nc.subscribe(jsi.deliver, queue, cb, ch, nil, isSync, jsi)
 				if err != nil {
 					return nil, err
 				}
@@ -2321,7 +2426,7 @@ func Description(description string) SubOpt {
 func Durable(consumer string) SubOpt {
 	return subOptFn(func(opts *subOpts) error {
 		if opts.cfg.Durable != _EMPTY_ {
-			return fmt.Errorf("nats: option Durable set more than once")
+			return errors.New("nats: option Durable set more than once")
 		}
 		if opts.consumer != _EMPTY_ && opts.consumer != consumer {
 			return fmt.Errorf("nats: duplicate consumer names (%s and %s)", opts.consumer, consumer)
@@ -2899,10 +3004,11 @@ func (sub *Subscription) Fetch(batch int, opts ...PullOpt) ([]*Msg, error) {
 			}
 
 			// Make our request expiration a bit shorter than the current timeout.
-			expires := ttl
-			if ttl >= 20*time.Millisecond {
-				expires = ttl - 10*time.Millisecond
+			expiresDiff := time.Duration(float64(ttl) * 0.1)
+			if expiresDiff > 5*time.Second {
+				expiresDiff = 5 * time.Second
 			}
+			expires := ttl - expiresDiff
 
 			nr.Batch = batch - len(msgs)
 			nr.Expires = expires
@@ -3009,20 +3115,27 @@ type MessageBatch interface {
 }
 
 type messageBatch struct {
+	sync.Mutex
 	msgs chan *Msg
 	err  error
 	done chan struct{}
 }
 
 func (mb *messageBatch) Messages() <-chan *Msg {
+	mb.Lock()
+	defer mb.Unlock()
 	return mb.msgs
 }
 
 func (mb *messageBatch) Error() error {
+	mb.Lock()
+	defer mb.Unlock()
 	return mb.err
 }
 
 func (mb *messageBatch) Done() <-chan struct{} {
+	mb.Lock()
+	defer mb.Unlock()
 	return mb.done
 }
 
@@ -3166,10 +3279,11 @@ func (sub *Subscription) FetchBatch(batch int, opts ...PullOpt) (MessageBatch, e
 	ttl = time.Until(deadline)
 
 	// Make our request expiration a bit shorter than the current timeout.
-	expires := ttl
-	if ttl >= 20*time.Millisecond {
-		expires = ttl - 10*time.Millisecond
+	expiresDiff := time.Duration(float64(ttl) * 0.1)
+	if expiresDiff > 5*time.Second {
+		expiresDiff = 5 * time.Second
 	}
+	expires := ttl - expiresDiff
 
 	requestBatch := batch - len(result.msgs)
 	req := nextRequest{
@@ -3196,12 +3310,11 @@ func (sub *Subscription) FetchBatch(batch int, opts ...PullOpt) (MessageBatch, e
 	}
 	var hbTimer *time.Timer
 	var hbErr error
-	hbLock := sync.Mutex{}
 	if o.hb > 0 {
 		hbTimer = time.AfterFunc(2*o.hb, func() {
-			hbLock.Lock()
+			result.Lock()
 			hbErr = ErrNoHeartbeat
-			hbLock.Unlock()
+			result.Unlock()
 			cancel()
 		})
 	}
@@ -3232,21 +3345,25 @@ func (sub *Subscription) FetchBatch(batch int, opts ...PullOpt) (MessageBatch, e
 				break
 			}
 			if usrMsg {
+				result.Lock()
 				result.msgs <- msg
+				result.Unlock()
 				requestMsgs++
 			}
 		}
 		if err != nil {
-			hbLock.Lock()
+			result.Lock()
 			if hbErr != nil {
 				result.err = hbErr
 			} else {
 				result.err = o.checkCtxErr(err)
 			}
-			hbLock.Unlock()
+			result.Unlock()
 		}
 		close(result.msgs)
+		result.Lock()
 		result.done <- struct{}{}
+		result.Unlock()
 	}()
 	return result, nil
 }
@@ -3844,7 +3961,7 @@ func (alg StoreCompression) MarshalJSON() ([]byte, error) {
 	case NoCompression:
 		str = "none"
 	default:
-		return nil, fmt.Errorf("unknown compression algorithm")
+		return nil, errors.New("unknown compression algorithm")
 	}
 	return json.Marshal(str)
 }
@@ -3860,7 +3977,7 @@ func (alg *StoreCompression) UnmarshalJSON(b []byte) error {
 	case "none":
 		*alg = NoCompression
 	default:
-		return fmt.Errorf("unknown compression algorithm")
+		return errors.New("unknown compression algorithm")
 	}
 	return nil
 }

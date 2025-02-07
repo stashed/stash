@@ -113,13 +113,12 @@ func (c *Config) New() (*StashController, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract cluster metadata, reason: %v", err)
 		}
+		nc := auditlib.NewNatsClient(c.ClientConfig, cmeta.UID, c.LicenseFile)
 		fn := auditlib.BillingEventCreator{
 			Mapper:          mapper,
 			ClusterMetadata: cmeta,
 		}
-		auditor = auditlib.NewResilientEventPublisher(func() (*auditlib.NatsConfig, auditlib.LicenseIDGetter, error) {
-			return auditlib.NewNatsConfig(c.ClientConfig, cmeta.UID, c.LicenseFile)
-		}, mapper, fn.CreateEvent)
+		auditor = auditlib.NewEventPublisher(nc, mapper, fn.CreateEvent)
 		err = auditor.SetupSiteInfoPublisher(c.ClientConfig, c.KubeClient, informerFactory)
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup site info publisher, reason: %v", err)

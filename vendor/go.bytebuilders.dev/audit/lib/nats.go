@@ -24,6 +24,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -45,10 +46,8 @@ const (
 )
 
 type NatsConfig struct {
-	// LicenseID string     `json:"licenseID"`
-	Subject string     `json:"natsSubject"`
-	Server  string     `json:"natsServer"`
-	Client  *nats.Conn `json:"-"`
+	Subject string `json:"natsSubject"`
+	Server  string `json:"natsServer"`
 }
 
 // NatsCredential represents the api response of the register licensed user api
@@ -57,79 +56,138 @@ type NatsCredential struct {
 	Credential []byte `json:"credential"`
 }
 
-type LicenseIDGetter interface {
-	GetLicenseID() string
-}
+type NatsClient struct {
+	cfg         *rest.Config
+	clusterID   string
+	LicenseFile string
 
-type LicenseUpdater struct {
-	le      *kubernetes.LicenseEnforcer
-	License v1alpha1.License
+	le *kubernetes.LicenseEnforcer
+	l  *v1alpha1.License
+
+	nc      *nats.Conn
+	Subject string
+	Server  string
 	mu      sync.Mutex
 }
 
-func (lu *LicenseUpdater) GetLicenseID() string {
-	lu.mu.Lock()
-	defer lu.mu.Unlock()
-
-	l := lu.License
-	if l.Status == v1alpha1.LicenseActive && time.Now().After(l.NotAfter.Time) {
-		license, _ := lu.le.LoadLicense()
-		lu.License = license
-		l = license
+func NewNatsClient(cfg *rest.Config, clusterID string, LicenseFile string) *NatsClient {
+	return &NatsClient{
+		cfg:         cfg,
+		clusterID:   clusterID,
+		LicenseFile: LicenseFile,
 	}
-	return l.ID
 }
 
-func NewNatsConfig(cfg *rest.Config, clusterID string, LicenseFile string) (*NatsConfig, LicenseIDGetter, error) {
-	le, err := kubernetes.NewLicenseEnforcer(cfg, LicenseFile)
+func (c *NatsClient) Request(data []byte, timeout time.Duration) (*nats.Msg, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var justConnected bool
+	if c.nc == nil {
+		if err := c.connect(); err != nil {
+			return nil, err
+		}
+		justConnected = true
+	}
+	msg, err := c.nc.Request(c.Subject, data, timeout)
+	if err != nil && !justConnected && isNatsAuthError(err.Error()) {
+		if err := c.connect(); err != nil {
+			return nil, err
+		}
+		msg, err = c.nc.Request(c.Subject, data, timeout)
+	}
+	return msg, err
+}
+
+// src: https://github.com/nats-io/nats.go/blob/main/nats.go#L3693-L3709
+func isNatsAuthError(e string) bool {
+	if strings.HasPrefix(e, nats.AUTHORIZATION_ERR) {
+		return true
+	}
+	if strings.HasPrefix(e, nats.AUTHENTICATION_EXPIRED_ERR) {
+		return true
+	}
+	if strings.HasPrefix(e, nats.AUTHENTICATION_REVOKED_ERR) {
+		return true
+	}
+	if strings.HasPrefix(e, nats.ACCOUNT_AUTHENTICATION_EXPIRED_ERR) {
+		return true
+	}
+	return false
+}
+
+func (c *NatsClient) GetLicenseID() (string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.l == nil {
+		if err := c.connect(); err != nil {
+			return "", err
+		}
+	}
+
+	if c.l.Status == v1alpha1.LicenseActive && time.Now().After(c.l.NotAfter.Time) {
+		license, _ := c.le.LoadLicense()
+		c.l = &license
+	}
+	return c.l.ID, nil
+}
+
+func (c *NatsClient) connect() error {
+	le, err := kubernetes.NewLicenseEnforcer(c.cfg, c.LicenseFile)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	license, licenseBytes := le.LoadLicense()
 	if license.Status != v1alpha1.LicenseActive {
-		return nil, nil, fmt.Errorf("license status is %s", license.Status)
+		return fmt.Errorf("license status is %s", license.Status)
 	}
 
 	opts := verifier.Options{
-		ClusterUID: clusterID,
+		ClusterUID: c.clusterID,
 		Features:   info.ProductName,
 		CACert:     []byte(info.LicenseCA),
 		License:    licenseBytes,
 	}
 	data, err := json.Marshal(opts)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	resp, err := http.Post(info.MustRegistrationAPIEndpoint(), "application/json", bytes.NewReader(data))
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, errors.New(resp.Status + ", " + string(body))
+		return errors.New(resp.Status + ", " + string(body))
 	}
 
 	var natscred NatsCredential
 	err = json.Unmarshal(body, &natscred)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	klog.V(5).InfoS("using event receiver", "address", natscred.Server, "subject", natscred.Subject, "licenseID", license.ID)
 
-	natscred.Client, err = NewConnection(license.ID, natscred)
+	nc, err := NewConnection(license.ID, natscred)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	return &natscred.NatsConfig, &LicenseUpdater{le: le, License: license}, nil
+	c.le = le
+	c.l = &license
+	c.nc = nc
+	c.Subject = natscred.Subject
+	c.Server = natscred.Server
+	return nil
 }
 
 // NewConnection creates a new NATS connection

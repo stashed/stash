@@ -38,8 +38,9 @@ type DeploymentParameters struct {
 }
 
 type ResourceLocator struct {
-	Ref   metav1.GroupKind `json:"ref"`
-	Query ResourceQuery    `json:"query"`
+	Ref         metav1.GroupKind `json:"ref"`
+	Query       ResourceQuery    `json:"query"`
+	Impersonate bool             `json:"impersonate,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=REST;GraphQL

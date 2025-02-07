@@ -16,7 +16,11 @@ limitations under the License.
 
 package api
 
-import core "k8s.io/api/core/v1"
+import (
+	"errors"
+
+	core "k8s.io/api/core/v1"
+)
 
 type PodRole string
 
@@ -55,6 +59,8 @@ const (
 	PodRoleHistoricals      PodRole = "historicals"
 	PodRoleRouters          PodRole = "routers"
 )
+
+var ErrMissingRefObject = errors.New("referenced object not found")
 
 type ReplicaList map[PodRole]int64
 

@@ -18,6 +18,7 @@ package lib
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	gosync "sync"
 	"time"
@@ -27,9 +28,7 @@ import (
 	cloudeventssdk "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding/format"
 	cloudevents "github.com/cloudevents/sdk-go/v2/event"
-	"github.com/nats-io/nats.go"
 	"go.bytebuilders.dev/license-verifier/info"
-	"gomodules.xyz/sync"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -62,11 +61,7 @@ type Informer interface {
 type EventCreator func(obj client.Object) (*api.Event, error)
 
 type EventPublisher struct {
-	once    sync.Once
-	connect func() error
-
-	nats        *NatsConfig
-	lu          LicenseIDGetter
+	c           *NatsClient
 	mapper      discovery.ResourceMapper
 	createEvent EventCreator
 
@@ -75,47 +70,15 @@ type EventPublisher struct {
 }
 
 func NewEventPublisher(
-	nats *NatsConfig,
+	c *NatsClient,
 	mapper discovery.ResourceMapper,
 	fn EventCreator,
 ) *EventPublisher {
-	p := &EventPublisher{
+	return &EventPublisher{
+		c:           c,
 		mapper:      mapper,
 		createEvent: fn,
 	}
-	p.connect = func() error {
-		p.nats = nats
-		return nil
-	}
-	return p
-}
-
-func NewResilientEventPublisher(
-	fnConnect func() (*NatsConfig, LicenseIDGetter, error),
-	mapper discovery.ResourceMapper,
-	fnCreateEvent EventCreator,
-) *EventPublisher {
-	p := &EventPublisher{
-		mapper:      mapper,
-		createEvent: fnCreateEvent,
-	}
-	p.connect = func() error {
-		var err error
-		p.nats, p.lu, err = fnConnect()
-		if err != nil {
-			klog.V(5).InfoS("failed to connect with event receiver", "error", err)
-		}
-		return err
-	}
-	return p
-}
-
-func (p *EventPublisher) NatsClient() (*nats.Conn, error) {
-	p.once.Do(p.connect)
-	if p.nats == nil {
-		return nil, fmt.Errorf("not connected to nats")
-	}
-	return p.nats.Client, nil
 }
 
 func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
@@ -145,7 +108,7 @@ func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
 	defer cancel()
 
 	for {
-		_, err = p.nats.Client.Request(p.nats.Subject, data, natsRequestTimeout)
+		_, err = p.c.Request(data, natsRequestTimeout)
 		if err == nil {
 			cancel()
 		} else {
@@ -154,10 +117,10 @@ func (p *EventPublisher) Publish(ev *api.Event, et api.EventType) error {
 
 		select {
 		case <-ctx.Done():
-			if ctx.Err() == context.DeadlineExceeded {
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 				klog.V(5).Infof("failed to send event : %s", string(data))
-			} else if ctx.Err() == context.Canceled {
-				klog.V(5).Infof("Published event `%s` to channel `%s` and acknowledged", et, p.nats.Subject)
+			} else if errors.Is(ctx.Err(), context.Canceled) {
+				klog.V(5).Infof("Published event `%s` to channel `%s` and acknowledged", et, p.c.Subject)
 			}
 			return nil
 		default:
@@ -183,14 +146,8 @@ func (p *EventPublisher) ForGVK(informer Informer, gvk schema.GroupVersionKind) 
 			if err != nil {
 				return nil, err
 			}
-
-			p.once.Do(p.connect)
-			if p.nats == nil {
-				return nil, fmt.Errorf("not connected to nats")
-			}
-			ev.LicenseID = p.lu.GetLicenseID()
-
-			return ev, nil
+			ev.LicenseID, err = p.c.GetLicenseID()
+			return ev, err
 		},
 	}
 	_, _ = informer.AddEventHandlerWithResyncPeriod(h, eventInterval)
@@ -255,12 +212,10 @@ func (p *EventPublisher) setupSiteInfoPublisher(cfg *rest.Config, kc kubernetes.
 		identitylib.RefreshNodeStats(p.si, nodes)
 		p.siMutex.Unlock()
 
-		p.once.Do(p.connect)
-		if p.nats == nil {
-			return nil, fmt.Errorf("not connected to nats")
+		licenseID, err := p.c.GetLicenseID()
+		if err != nil {
+			return nil, err
 		}
-
-		licenseID := p.lu.GetLicenseID()
 		p.si.Product.LicenseID = licenseID
 		p.si.Name = fmt.Sprintf("%s.%s", licenseID, p.si.Product.ProductName)
 		ev := &api.Event{
