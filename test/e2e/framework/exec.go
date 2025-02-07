@@ -53,7 +53,6 @@ func (f *Framework) ExecOnPod(pod *core.Pod, command ...string) (string, error) 
 		Stdout: &execOut,
 		Stderr: &execErr,
 	})
-
 	if err != nil {
 		return "", fmt.Errorf("could not execute: %v", err)
 	}

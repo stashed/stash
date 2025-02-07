@@ -442,7 +442,6 @@ func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, 
 			in.Data = secret.Data
 			return in
 		}, metav1.PatchOptions{})
-
 		if err != nil {
 			return nil, err
 		}
