@@ -72,7 +72,7 @@ TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
-GO_VERSION       ?= 1.23
+GO_VERSION       ?= 1.24
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)
 TEST_IMAGE       ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)-stash
 
