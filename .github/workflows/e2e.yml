@@ -40,16 +40,18 @@ jobs:
           sudo mv bin/hub /usr/local/bin
           hub pr checkout $PR_NUMBER
 
-      - name: Login Docker
+      - name: Publish to GitHub Container Registry
         env:
-          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REGISTRY: ghcr.io/stashed
+          DOCKER_TOKEN: ${{ secrets.LGTM_GITHUB_TOKEN }}
           USERNAME: 1gtm
         run: |
-          docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
+          docker login ghcr.io --username ${USERNAME} --password ${DOCKER_TOKEN}
+          make release
 
       - name: Build
         env:
-          REGISTRY: appscodeci
+          REGISTRY: ghcr.io/appscodeci
         run: |
           make push
 
@@ -109,19 +111,12 @@ jobs:
 
       - name: Prepare cluster for testing
         id: local-path
-        env:
-          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          USERNAME: 1gtm
-          REGISTRY_SECRET: regcred
         run: |
           echo "waiting for nodes to be ready ..."
           kubectl wait --for=condition=Ready nodes --all --timeout=5m
           kubectl get nodes
           echo
           kubectl version
-          echo
-          echo "create docker-registry secret"
-          kubectl create secret docker-registry ${REGISTRY_SECRET} --namespace=kube-system --docker-server=https://index.docker.io/v1/ --docker-username=${USERNAME} --docker-password=${DOCKER_TOKEN}
 
       - name: Install NFS server dependencies
         run: |
@@ -142,7 +137,7 @@ jobs:
 
       - name: Run e2e tests
         env:
-          REGISTRY: appscodeci
+          REGISTRY: ghcr.io/stashed
           REGISTRY_SECRET: regcred
           TEST_CREDENTIALS: ${{ secrets.TEST_CREDENTIALS }}
           GOOGLE_SERVICE_ACCOUNT_JSON_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON_KEY }}

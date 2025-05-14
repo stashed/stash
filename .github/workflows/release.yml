@@ -42,15 +42,6 @@ jobs:
           docker login ghcr.io --username ${USERNAME} --password ${DOCKER_TOKEN}
           make release
 
-      - name: Publish to Docker Registry
-        env:
-          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          USERNAME: 1gtm
-          APPSCODE_ENV: prod
-        run: |
-          docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
-          make release
-
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
