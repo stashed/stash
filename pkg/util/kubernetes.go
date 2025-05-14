@@ -124,6 +124,9 @@ func UpsertSecurityContext(currentSC, newSC *core.SecurityContext) *core.Securit
 	if newSC.SELinuxOptions != nil {
 		finalSC.SELinuxOptions = newSC.SELinuxOptions
 	}
+	if newSC.WindowsOptions != nil {
+		finalSC.WindowsOptions = newSC.WindowsOptions
+	}
 	if newSC.RunAsUser != nil {
 		finalSC.RunAsUser = newSC.RunAsUser
 	}
@@ -142,7 +145,12 @@ func UpsertSecurityContext(currentSC, newSC *core.SecurityContext) *core.Securit
 	if newSC.ProcMount != nil {
 		finalSC.ProcMount = newSC.ProcMount
 	}
-
+	if newSC.SeccompProfile != nil {
+		finalSC.SeccompProfile = newSC.SeccompProfile
+	}
+	if newSC.AppArmorProfile != nil {
+		finalSC.AppArmorProfile = newSC.AppArmorProfile
+	}
 	return finalSC
 }
 
