@@ -20,11 +20,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	api_v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 )
@@ -240,4 +242,35 @@ type ForgetGroup struct {
 
 type StatsContainer struct {
 	TotalSize uint64 `json:"total_size"`
+}
+
+type LockStats struct {
+	Time      time.Time `json:"time"`
+	Exclusive bool      `json:"exclusive"` // true if the lock is exclusive, false if it is non-exclusive
+	Hostname  string    `json:"hostname"`  // Hostname of the machine where the lock was created, our case PodName
+	Username  string    `json:"username"`
+	PID       int       `json:"pid"`
+	UID       int       `json:"uid"`
+	GID       int       `json:"gid"`
+}
+
+func extractLockStats(raw []byte) (*LockStats, error) {
+	var stats LockStats
+	if err := json.Unmarshal(raw, &stats); err != nil {
+		return nil, fmt.Errorf("cannot decode lock JSON: %w", err)
+	}
+	return &stats, nil
+}
+
+func extractLockIDs(r io.Reader) ([]string, error) {
+	sc := bufio.NewScanner(r)
+	var ids []string
+
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if len(line) >= 64 {
+			ids = append(ids, line[:64])
+		}
+	}
+	return ids, sc.Err()
 }
