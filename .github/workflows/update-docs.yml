@@ -16,10 +16,10 @@ jobs:
     name: Build
     runs-on: ubuntu-24.04
     steps:
-      - name: Set up Go 1.24
+      - name: Set up Go 1.25
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.25'
         id: go
 
       - uses: actions/checkout@v4
