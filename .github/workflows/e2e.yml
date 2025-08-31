@@ -64,7 +64,7 @@ jobs:
       - id: set-matrix
         name: Generate test matrix
         run: |
-          k8s=(v1.28.15 v1.33.2)
+          k8s=(v1.28.15 v1.34.0)
 
           IFS=' '
           read -ra COMMENT <<< "${{ github.event.comment.body }}"
