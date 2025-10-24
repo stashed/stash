@@ -47,7 +47,7 @@ require (
 	kmodules.xyz/prober v0.29.0
 	kmodules.xyz/webhook-runtime v0.29.1
 	sigs.k8s.io/controller-runtime v0.18.4
-	stash.appscode.dev/apimachinery v0.41.0
+	stash.appscode.dev/apimachinery v0.42.0
 )
 
 require (
