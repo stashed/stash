@@ -25,7 +25,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" // nolint: staticcheck
 	"gomodules.xyz/x/arrays"
 	"gomodules.xyz/x/crypto/rand"
 	batch "k8s.io/api/batch/v1"
@@ -101,7 +101,7 @@ func (f *Framework) GetRestoreJobs() ([]batch.Job, error) {
 		return nil, err
 	}
 	for i := range jobs.Items {
-		if strings.HasPrefix(jobs.Items[i].ObjectMeta.Name, apis.PrefixStashRestore) {
+		if strings.HasPrefix(jobs.Items[i].Name, apis.PrefixStashRestore) {
 			restoreJobs = append(restoreJobs, jobs.Items[i])
 		}
 	}

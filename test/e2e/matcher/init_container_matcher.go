@@ -34,7 +34,7 @@ type initContainerMatcher struct {
 	expected string
 }
 
-func (matcher *initContainerMatcher) Match(actual interface{}) (success bool, err error) {
+func (matcher *initContainerMatcher) Match(actual any) (success bool, err error) {
 	switch obj := actual.(type) {
 	case *core.Pod:
 		return matcher.find(obj.Spec.InitContainers)
@@ -47,7 +47,7 @@ func (matcher *initContainerMatcher) Match(actual interface{}) (success bool, er
 	case []core.Container:
 		return matcher.find(obj)
 	default:
-		return false, fmt.Errorf("Unknown object type")
+		return false, fmt.Errorf("unknown object type")
 	}
 }
 
@@ -60,10 +60,10 @@ func (matcher *initContainerMatcher) find(containers []core.Container) (success 
 	return false, nil
 }
 
-func (matcher *initContainerMatcher) FailureMessage(actual interface{}) (message string) {
+func (matcher *initContainerMatcher) FailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\t%#v\n to contain sidecar container \n\t%#v", actual, matcher.expected)
 }
 
-func (matcher *initContainerMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (matcher *initContainerMatcher) NegatedFailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\t%#v\n not to contain the sidecar container\n\t%#v", actual, matcher.expected)
 }

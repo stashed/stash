@@ -87,7 +87,7 @@ func main() {
 	filePrepender := func(filename string) string {
 		filename = filepath.Base(filename)
 		base := strings.TrimSuffix(filename, path.Ext(filename))
-		name := cases.Title(language.English).String(strings.Replace(base, "_", " ", -1))
+		name := cases.Title(language.English).String(strings.ReplaceAll(base, "_", " "))
 		parts := strings.Split(name, " ")
 		if len(parts) > 1 {
 			name = strings.Join(parts[1:], " ")
@@ -97,7 +97,7 @@ func main() {
 			Name    string
 			RootCmd bool
 		}{
-			strings.Replace(base, "_", "-", -1),
+			strings.ReplaceAll(base, "_", "-"),
 			name,
 			!strings.ContainsRune(base, '_'),
 		}

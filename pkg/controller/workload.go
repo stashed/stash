@@ -30,7 +30,6 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	appsv1 "k8s.io/api/apps/v1"
-	core "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +40,6 @@ import (
 	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"kmodules.xyz/client-go/meta"
 	meta_util "kmodules.xyz/client-go/meta"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -416,13 +414,13 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 	return nil
 }
 
-func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, owner *metav1.OwnerReference) ([]core.LocalObjectReference, error) {
-	operatorNamespace := meta.PodNamespace()
+func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, owner *metav1.OwnerReference) ([]corev1.LocalObjectReference, error) {
+	operatorNamespace := meta_util.PodNamespace()
 	if operatorNamespace == "" {
 		operatorNamespace = "kube-system"
 	}
 
-	var imagePullSecrets []core.LocalObjectReference
+	var imagePullSecrets []corev1.LocalObjectReference
 	for i := range c.ImagePullSecrets {
 		// get the respective secret from the operator namespace
 		secret, err := c.kubeClient.CoreV1().Secrets(operatorNamespace).Get(context.TODO(), c.ImagePullSecrets[i], metav1.GetOptions{})
@@ -435,7 +433,7 @@ func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, 
 			Namespace: invokerMeta.Namespace,
 		}
 		// create the image pull secret if not present already
-		_, _, err = core_util.CreateOrPatchSecret(context.TODO(), c.kubeClient, newPullSecret, func(in *core.Secret) *core.Secret {
+		_, _, err = core_util.CreateOrPatchSecret(context.TODO(), c.kubeClient, newPullSecret, func(in *corev1.Secret) *corev1.Secret {
 			// set the invoker as the owner of this secret
 			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 			in.Type = secret.Type
@@ -445,7 +443,7 @@ func (c *StashController) ensureImagePullSecrets(invokerMeta metav1.ObjectMeta, 
 		if err != nil {
 			return nil, err
 		}
-		imagePullSecrets = append(imagePullSecrets, core.LocalObjectReference{
+		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
 			Name: newPullSecret.Name,
 		})
 	}
@@ -582,7 +580,7 @@ func (opt *invokerOptions) handleInitContainerInjectionFailure(inv invoker.Resto
 		opt.ctrl.kubeClient,
 		eventer.EventSourceWorkloadController,
 		opt.workload.Object,
-		core.EventTypeWarning,
+		corev1.EventTypeWarning,
 		eventer.EventReasonInitContainerInjectionFailed,
 		fmt.Sprintf("Failed to inject stash init-container into %s %s/%s. Reason: %v",
 			opt.targetRef.Kind,
@@ -605,7 +603,7 @@ func (opt *invokerOptions) handleInitContainerInjectionSuccess(inv invoker.Resto
 		opt.ctrl.kubeClient,
 		eventer.EventSourceWorkloadController,
 		opt.workload.Object,
-		core.EventTypeNormal,
+		corev1.EventTypeNormal,
 		eventer.EventReasonInitContainerInjectionSucceeded,
 		fmt.Sprintf("Successfully injected stash init-container into %s %s/%s.",
 			opt.targetRef.Kind,
@@ -624,7 +622,7 @@ func (opt *invokerOptions) handleInitContainerDeletionSuccess() error {
 		opt.ctrl.kubeClient,
 		eventer.EventSourceWorkloadController,
 		opt.workload.Object,
-		core.EventTypeNormal,
+		corev1.EventTypeNormal,
 		eventer.EventReasonInitContainerDeletionSucceeded,
 		fmt.Sprintf("Successfully removed stash init-container from %s %s/%s.",
 			opt.targetRef.Kind,

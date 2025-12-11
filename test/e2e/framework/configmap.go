@@ -24,8 +24,8 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" // nolint: staticcheck
+	. "github.com/onsi/gomega"    // nolint: staticcheck
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -79,7 +79,7 @@ func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta, kind string, modif
 	if !ok || annotationValue == "" {
 		return "", fmt.Errorf("key not found: %s", annotationKey)
 	}
-	valueMap := make(map[string]interface{})
+	valueMap := make(map[string]any)
 	if err = json.Unmarshal([]byte(annotationValue), &valueMap); err != nil {
 		return "", err
 	}

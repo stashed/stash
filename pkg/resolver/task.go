@@ -191,7 +191,7 @@ func (tr *taskResolver) getPodSpec() (core.PodSpec, error) {
 	return podSpec, nil
 }
 
-func resolveWithInputs(obj interface{}, inputs map[string]string) error {
+func resolveWithInputs(obj any, inputs map[string]string) error {
 	// convert to JSON, apply replacements and convert back to struct
 	jsonObj, err := json.Marshal(obj)
 	if err != nil {

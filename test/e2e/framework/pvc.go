@@ -26,8 +26,8 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	invoker2 "stash.appscode.dev/apimachinery/pkg/invoker"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" // nolint: staticcheck
+	. "github.com/onsi/gomega"    // nolint: staticcheck
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

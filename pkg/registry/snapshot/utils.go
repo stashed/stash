@@ -56,7 +56,7 @@ func (r *REST) getSnapshotsFromBackend(opt Options) ([]repositories.Snapshot, er
 		return nil, err
 	}
 	// cleanup whole tempDir dir at the end
-	defer os.RemoveAll(tempDir)
+	defer util.RemoveDirWithLogErr(tempDir)
 
 	// configure restic wrapper
 	extraOpt := &util.ExtraOptions{
@@ -135,7 +135,7 @@ func (r *REST) forgetSnapshotsFromBackend(opt Options) error {
 		return err
 	}
 	// cleanup whole tempDir dir at the end
-	defer os.RemoveAll(tempDir)
+	defer util.RemoveDirWithLogErr(tempDir)
 
 	// configure restic wrapper
 	extraOpt := util.ExtraOptions{

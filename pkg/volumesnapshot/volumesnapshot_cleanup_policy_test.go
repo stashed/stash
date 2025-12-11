@@ -131,7 +131,7 @@ func TestCleanupSnapshots(t *testing.T) {
 				return
 			}
 			vsClient := vsfake.NewSimpleClientset(volumeSnasphots...)
-			vsClient.Fake.Resources = []*metav1.APIResourceList{
+			vsClient.Resources = []*metav1.APIResourceList{
 				{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "APIResourceList",

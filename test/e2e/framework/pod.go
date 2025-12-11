@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"strings"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" // nolint: staticcheck
+	. "github.com/onsi/gomega"    // nolint: staticcheck
 	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"

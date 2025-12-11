@@ -21,7 +21,7 @@ import (
 
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" // nolint: staticcheck
 	"gomodules.xyz/blobfs"
 	"gomodules.xyz/cert/certstore"
 	"gomodules.xyz/x/crypto/rand"

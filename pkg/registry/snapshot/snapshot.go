@@ -28,7 +28,6 @@ import (
 
 	core "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -111,7 +110,7 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 
 	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(ctx, repoName, metav1.GetOptions{})
 	if err != nil {
-		if kerr.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
 		}
 		return nil, apierrors.NewInternalError(err)
@@ -119,7 +118,7 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repo.Namespace).Get(context.TODO(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		if kerr.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, apierrors.NewNotFound(core.Resource("secret"), repo.Spec.Backend.StorageSecretName)
 		}
 		return nil, apierrors.NewInternalError(err)
@@ -183,7 +182,7 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 	for _, repo := range selectedRepos {
 		secret, err := r.kubeClient.CoreV1().Secrets(repo.Namespace).Get(context.TODO(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 		if err != nil {
-			if kerr.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return nil, apierrors.NewNotFound(core.Resource("secret"), repo.Spec.Backend.StorageSecretName)
 			}
 			return nil, apierrors.NewInternalError(err)
@@ -233,7 +232,7 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 	}
 	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(ctx, repoName, metav1.GetOptions{})
 	if err != nil {
-		if kerr.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, false, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
 		}
 		return nil, false, apierrors.NewInternalError(err)
@@ -241,7 +240,7 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repo.Namespace).Get(context.TODO(), repo.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		if kerr.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, false, apierrors.NewNotFound(core.Resource("secret"), repo.Spec.Backend.StorageSecretName)
 		}
 		return nil, false, apierrors.NewInternalError(err)

@@ -24,7 +24,6 @@ import (
 	//	test sources
 
 	"stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
-	_ "stash.appscode.dev/apimachinery/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/controller"
 	_ "stash.appscode.dev/stash/test/e2e/backend"
 	"stash.appscode.dev/stash/test/e2e/framework"
@@ -33,9 +32,9 @@ import (
 	_ "stash.appscode.dev/stash/test/e2e/volumes"
 	_ "stash.appscode.dev/stash/test/e2e/workloads"
 
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2" // nolint: staticcheck
 	"github.com/onsi/ginkgo/v2/types"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" // nolint: staticcheck
 	"gomodules.xyz/flags"
 	"gomodules.xyz/logs"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

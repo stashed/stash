@@ -33,7 +33,7 @@ type recoveredDataMatcher struct {
 	sample []string
 }
 
-func (matcher *recoveredDataMatcher) Match(actual interface{}) (success bool, err error) {
+func (matcher *recoveredDataMatcher) Match(actual any) (success bool, err error) {
 	recoveredData := actual.([]string)
 	for _, data := range recoveredData {
 		if !strings.Contains(matcher.sample, data) {
@@ -43,10 +43,10 @@ func (matcher *recoveredDataMatcher) Match(actual interface{}) (success bool, er
 	return true, nil
 }
 
-func (matcher *recoveredDataMatcher) FailureMessage(actual interface{}) (message string) {
+func (matcher *recoveredDataMatcher) FailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\tRecovered data: %v\n to  be same as Sample data:  %v\n\t", actual, matcher.sample)
 }
 
-func (matcher *recoveredDataMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (matcher *recoveredDataMatcher) NegatedFailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\tRecovered data: %v\n not to be same as Sample data:  %v\n\t", actual, matcher.sample)
 }
