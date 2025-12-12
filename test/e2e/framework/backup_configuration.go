@@ -26,7 +26,7 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/apimachinery/pkg/invoker"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" // nolint: staticcheck
 	"gomodules.xyz/x/crypto/rand"
 	batch "k8s.io/api/batch/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"

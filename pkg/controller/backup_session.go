@@ -585,9 +585,9 @@ func (r *backupSessionReconciler) cleanupBackupHistory() error {
 	}
 	// delete the BackupSession that does not fit within the history limit
 	for i := int(historyLimit); i < len(bsList); i++ {
-		if invoker.IsBackupCompleted(bsList[i].Status.Phase) && !(bsList[i].Name == lastCompletedSession && historyLimit > 0) {
+		if invoker.IsBackupCompleted(bsList[i].Status.Phase) && (bsList[i].Name != lastCompletedSession || historyLimit <= 0) {
 			err = r.ctrl.stashClient.StashV1beta1().BackupSessions(r.session.GetObjectMeta().Namespace).Delete(context.TODO(), bsList[i].Name, meta.DeleteInBackground())
-			if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
+			if err != nil && !kerr.IsNotFound(err) && !kerr.IsGone(err) {
 				return err
 			}
 		}

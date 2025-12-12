@@ -35,7 +35,7 @@ type namePrefixMatcher struct {
 	prefix string
 }
 
-func (matcher *namePrefixMatcher) Match(actual interface{}) (success bool, err error) {
+func (matcher *namePrefixMatcher) Match(actual any) (success bool, err error) {
 	snapshotList := actual.(*snap_api.SnapshotList)
 	for _, snap := range snapshotList.Items {
 		if !strings.HasPrefix(snap.Name, matcher.prefix) {
@@ -45,11 +45,11 @@ func (matcher *namePrefixMatcher) Match(actual interface{}) (success bool, err e
 	return true, nil
 }
 
-func (matcher *namePrefixMatcher) FailureMessage(actual interface{}) (message string) {
+func (matcher *namePrefixMatcher) FailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\tSnapshots name\n to  have prefix %v\n\t", matcher.prefix)
 }
 
-func (matcher *namePrefixMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (matcher *namePrefixMatcher) NegatedFailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\tSnapshots name\n not to have prefix %v\n\t", &matcher.prefix)
 }
 
@@ -63,7 +63,7 @@ func ComeFrom(repoName string) types.GomegaMatcher {
 	}
 }
 
-func (matcher *repositoryMatcher) Match(actual interface{}) (success bool, err error) {
+func (matcher *repositoryMatcher) Match(actual any) (success bool, err error) {
 	snapshotList := actual.(*snap_api.SnapshotList)
 	for _, snap := range snapshotList.Items {
 		if snap.Status.Repository != matcher.repoName {
@@ -73,11 +73,11 @@ func (matcher *repositoryMatcher) Match(actual interface{}) (success bool, err e
 	return true, nil
 }
 
-func (matcher *repositoryMatcher) FailureMessage(actual interface{}) (message string) {
+func (matcher *repositoryMatcher) FailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\tSnapshots .status.repository\n to be %v\n\t", matcher.repoName)
 }
 
-func (matcher *repositoryMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (matcher *repositoryMatcher) NegatedFailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\tSnapshots .status.repository\n not to be %v\n\t", matcher.repoName)
 }
 
@@ -91,7 +91,7 @@ func HaveHostname(hostname string) types.GomegaMatcher {
 	}
 }
 
-func (matcher *hostMatcher) Match(actual interface{}) (success bool, err error) {
+func (matcher *hostMatcher) Match(actual any) (success bool, err error) {
 	snapshotList := actual.(*snap_api.SnapshotList)
 	for _, snap := range snapshotList.Items {
 		if snap.Status.Hostname != matcher.hostname {
@@ -101,10 +101,10 @@ func (matcher *hostMatcher) Match(actual interface{}) (success bool, err error) 
 	return true, nil
 }
 
-func (matcher *hostMatcher) FailureMessage(actual interface{}) (message string) {
+func (matcher *hostMatcher) FailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\tSnapshots .status.hostname\n to be %v\n\t", matcher.hostname)
 }
 
-func (matcher *hostMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (matcher *hostMatcher) NegatedFailureMessage(actual any) (message string) {
 	return fmt.Sprintf("Expected\n\tSnapshots .status.hostname\n not to be %v\n\t", matcher.hostname)
 }

@@ -21,7 +21,7 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" // nolint: staticcheck
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	condutil "kmodules.xyz/client-go/conditions"

@@ -248,7 +248,7 @@ func DeleteAllConfigMapLocks(k8sClient kubernetes.Interface, namespace, name, ki
 func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, apis.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		if obj, err := c.AppsV1().Deployments(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
-			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas && obj.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
 	})
@@ -257,7 +257,7 @@ func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, apis.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		if obj, err := kubeClient.AppsV1().DaemonSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
-			return obj.Status.DesiredNumberScheduled == obj.Status.NumberReady && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
+			return obj.Status.DesiredNumberScheduled == obj.Status.NumberReady && obj.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
 	})
@@ -266,7 +266,7 @@ func WaitUntilDaemonSetReady(kubeClient kubernetes.Interface, meta metav1.Object
 func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, apis.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		if obj, err := kubeClient.AppsV1().StatefulSets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
-			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
+			return pointer.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas && obj.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
 	})
@@ -275,7 +275,7 @@ func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.Obje
 func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollUntilContextTimeout(context.Background(), apis.RetryInterval, apis.ReadinessTimeout, true, func(ctx context.Context) (bool, error) {
 		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{}); err == nil {
-			return obj.Spec.Replicas == obj.Status.ReadyReplicas && obj.ObjectMeta.Generation == obj.Status.ObservedGeneration, nil
+			return obj.Spec.Replicas == obj.Status.ReadyReplicas && obj.Generation == obj.Status.ObservedGeneration, nil
 		}
 		return false, nil
 	})

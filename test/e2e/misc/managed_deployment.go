@@ -23,10 +23,10 @@ import (
 	"stash.appscode.dev/apimachinery/apis"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
-	. "stash.appscode.dev/stash/test/e2e/matcher"
+	. "stash.appscode.dev/stash/test/e2e/matcher" // nolint: staticcheck
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" // nolint: staticcheck
+	. "github.com/onsi/gomega"    // nolint: staticcheck
 	"gomodules.xyz/x/crypto/rand"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"

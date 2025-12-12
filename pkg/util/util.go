@@ -38,6 +38,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
@@ -53,7 +54,7 @@ type RepoLabelData struct {
 }
 
 // GetHostName returns hostname for a target
-func GetHostName(target interface{}) (string, error) {
+func GetHostName(target any) (string, error) {
 	// target nil for cluster backup
 	if target == nil {
 		return apis.DefaultHost, nil
@@ -157,7 +158,7 @@ func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string,
 		err = errors.New("invalid snapshot name")
 		return
 	}
-	tokens := strings.SplitN(snapshotName, "-", -1)
+	tokens := strings.Split(snapshotName, "-")
 	if len(tokens) < 2 {
 		err = errors.New("invalid snapshot name")
 		return
@@ -444,5 +445,11 @@ func OwnerWorkload(w *wapi.Workload) (*metav1.OwnerReference, error) {
 		return metav1.NewControllerRef(w, ocapps.GroupVersion.WithKind(w.Kind)), nil
 	default:
 		return nil, fmt.Errorf("failed to set workload as owner. Reason: unknown workload kind")
+	}
+}
+
+func RemoveDirWithLogErr(dir string) {
+	if err := os.RemoveAll(dir); err != nil {
+		klog.Errorf("failed to remove directory %s. Reason: %v", dir, err)
 	}
 }

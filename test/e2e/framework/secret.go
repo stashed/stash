@@ -26,7 +26,6 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"kmodules.xyz/constants/google"
 	googleconsts "kmodules.xyz/constants/google"
 )
 
@@ -80,7 +79,7 @@ func (fi *Invocation) SecretForDOBackend() core.Secret {
 func (fi *Invocation) SecretForGCSBackend() core.Secret {
 	jsonKey := googleconsts.ServiceAccountFromEnv()
 
-	if jsonKey == "" || os.Getenv(google.GOOGLE_PROJECT_ID) == "" {
+	if jsonKey == "" || os.Getenv(googleconsts.GOOGLE_PROJECT_ID) == "" {
 		return core.Secret{}
 	}
 

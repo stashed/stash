@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"net"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" // nolint: staticcheck
 	"gomodules.xyz/cert"
 	"gomodules.xyz/pointer"
 	apps "k8s.io/api/apps/v1"

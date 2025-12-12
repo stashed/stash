@@ -28,7 +28,6 @@ import (
 	vscs "github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 )
 
@@ -90,7 +89,7 @@ func (vs VolumeSnapshots) Len() int {
 }
 
 func (vs VolumeSnapshots) Less(i, j int) bool {
-	return vs[i].VolumeSnap.CreationTimestamp.Time.After(vs[j].VolumeSnap.CreationTimestamp.Time)
+	return vs[i].VolumeSnap.CreationTimestamp.After(vs[j].VolumeSnap.CreationTimestamp.Time)
 }
 
 func (vs VolumeSnapshots) Swap(i, j int) {
@@ -159,7 +158,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 }
 
 func CleanupSnapshots(policy v1alpha1.RetentionPolicy, hostBackupStats []v1beta1.HostBackupStats, namespace string, vsClient vscs.Interface) error {
-	vsList, err := vsClient.SnapshotV1().VolumeSnapshots(namespace).List(context.TODO(), v1.ListOptions{})
+	vsList, err := vsClient.SnapshotV1().VolumeSnapshots(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) || len(vsList.Items) == 0 {
 			return nil

@@ -26,7 +26,7 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
-func SetRepositoryFoundConditionToUnknown(i interface{}, err error) error {
+func SetRepositoryFoundConditionToUnknown(i any, err error) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
@@ -57,7 +57,7 @@ func SetRepositoryFoundConditionToUnknown(i interface{}, err error) error {
 	}
 }
 
-func SetRepositoryFoundConditionToFalse(i interface{}) error {
+func SetRepositoryFoundConditionToFalse(i any) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
@@ -86,7 +86,7 @@ func SetRepositoryFoundConditionToFalse(i interface{}) error {
 	}
 }
 
-func SetRepositoryFoundConditionToTrue(i interface{}) error {
+func SetRepositoryFoundConditionToTrue(i any) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
@@ -115,7 +115,7 @@ func SetRepositoryFoundConditionToTrue(i interface{}) error {
 	}
 }
 
-func SetValidationPassedToTrue(i interface{}) error {
+func SetValidationPassedToTrue(i any) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
@@ -138,7 +138,7 @@ func SetValidationPassedToTrue(i interface{}) error {
 	}
 }
 
-func SetValidationPassedToFalse(i interface{}, err error) error {
+func SetValidationPassedToFalse(i any, err error) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
@@ -161,7 +161,7 @@ func SetValidationPassedToFalse(i interface{}, err error) error {
 	}
 }
 
-func SetBackendSecretFoundConditionToUnknown(i interface{}, secretName string, err error) error {
+func SetBackendSecretFoundConditionToUnknown(i any, secretName string, err error) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
@@ -192,7 +192,7 @@ func SetBackendSecretFoundConditionToUnknown(i interface{}, secretName string, e
 	}
 }
 
-func SetBackendSecretFoundConditionToFalse(i interface{}, secretName string) error {
+func SetBackendSecretFoundConditionToFalse(i any, secretName string) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{
@@ -221,7 +221,7 @@ func SetBackendSecretFoundConditionToFalse(i interface{}, secretName string) err
 	}
 }
 
-func SetBackendSecretFoundConditionToTrue(i interface{}, secretName string) error {
+func SetBackendSecretFoundConditionToTrue(i any, secretName string) error {
 	switch in := i.(type) {
 	case invoker.BackupInvoker:
 		return in.SetCondition(nil, kmapi.Condition{

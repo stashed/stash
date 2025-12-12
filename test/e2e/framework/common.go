@@ -22,13 +22,12 @@ import (
 
 	"stash.appscode.dev/apimachinery/apis"
 	api "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
-	api_v1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	invoker2 "stash.appscode.dev/apimachinery/pkg/invoker"
-	. "stash.appscode.dev/stash/test/e2e/matcher"
+	. "stash.appscode.dev/stash/test/e2e/matcher" // nolint: staticcheck
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" // nolint: staticcheck
+	. "github.com/onsi/gomega"    // nolint: staticcheck
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,7 +68,7 @@ func (fi *Invocation) GenerateBigSampleFile(meta metav1.ObjectMeta, kind string)
 	return sampleData, nil
 }
 
-func (fi *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
+func (fi *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
 	backupConfig, err := fi.CreateBackupConfigForWorkload(objMeta, repo, kind, transformFuncs...)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -95,7 +94,7 @@ func (fi *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v
 	return backupConfig, err
 }
 
-func (fi *Invocation) CreateBackupConfigForWorkload(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
+func (fi *Invocation) CreateBackupConfigForWorkload(objMeta metav1.ObjectMeta, repo *api.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
 	backupConfig := fi.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
 		bc.Spec.Target = &v1beta1.BackupTarget{

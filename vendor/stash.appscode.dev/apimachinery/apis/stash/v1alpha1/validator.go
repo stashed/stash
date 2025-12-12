@@ -36,7 +36,7 @@ func (r Repository) IsValid() error {
 			return fmt.Errorf("\n\t" +
 				"Error: Invalid `mountPath` specification for local backend.\n\t" +
 				"Reason: We have put `stash` binary  in the root directory. Hence, you can not use `/stash` or `/stash/*` as `mountPath` \n\t" +
-				"Hints: Use `/stash-backup` or anything else except the forbidden ones as `mountPath`.")
+				"Hints: Use `/stash-backup` or anything else except the forbidden ones as `mountPath`")
 		}
 	}
 	return nil

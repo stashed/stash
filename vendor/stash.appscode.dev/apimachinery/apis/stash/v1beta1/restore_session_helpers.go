@@ -26,7 +26,7 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
-func (_ RestoreSession) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (RestoreSession) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralRestoreSession))
 }
 
@@ -38,7 +38,7 @@ func (r RestoreSession) GetSpecHash() string {
 
 // OffshootLabels return labels consist of the labels provided by user to BackupConfiguration crd and
 // stash specific generic labels. It overwrites the the user provided labels if it matched with stash specific generic labels.
-func (r RestoreSession) OffshootLabels() map[string]string {
+func (r *RestoreSession) OffshootLabels() map[string]string {
 	overrides := make(map[string]string)
 	overrides[meta_util.ComponentLabelKey] = StashRestoreComponent
 	overrides[meta_util.ManagedByLabelKey] = StashKey

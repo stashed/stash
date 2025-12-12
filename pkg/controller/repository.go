@@ -260,7 +260,7 @@ func (r *repositoryReconciler) updateObservedGeneration() error {
 			r.ctrl.stashClient.StashV1alpha1(),
 			r.repository.ObjectMeta,
 			func(in *api_v1alpha1.RepositoryStatus) (types.UID, *api_v1alpha1.RepositoryStatus) {
-				in.ObservedGeneration = r.repository.ObjectMeta.Generation
+				in.ObservedGeneration = r.repository.Generation
 				return r.repository.UID, in
 			},
 			metav1.UpdateOptions{},

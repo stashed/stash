@@ -80,7 +80,7 @@ func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				newBc := newObj.(*api_v1beta1.BackupConfiguration)
 
-				if newBc.ObjectMeta.DeletionTimestamp != nil {
+				if newBc.DeletionTimestamp != nil {
 					return nil, nil
 				}
 
@@ -116,7 +116,7 @@ func (c *StashController) initBackupConfigurationWatcher() {
 	if c.auditor != nil {
 		c.auditor.ForGVK(c.bcInformer, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 	}
-	_, _ = c.bcInformer.AddEventHandler(queue.NewEventHandler(c.bcQueue.GetQueue(), func(oldObj, newObj interface{}) bool {
+	_, _ = c.bcInformer.AddEventHandler(queue.NewEventHandler(c.bcQueue.GetQueue(), func(oldObj, newObj any) bool {
 		bc := newObj.(*api_v1beta1.BackupConfiguration)
 		desiredPhase := invoker.CalculateBackupInvokerPhase(bc.Spec.Driver, bc.Status.Conditions)
 		return bc.GetDeletionTimestamp() != nil ||
@@ -428,7 +428,7 @@ func (r *backupInvokerReconciler) validateDriverRequirements() (bool, error) {
 	return false, nil
 }
 
-func (c *StashController) checkForResticSnapshotterRequirements(logger klog.Logger, inv interface{}, r repoReferenceHandler) (bool, error) {
+func (c *StashController) checkForResticSnapshotterRequirements(logger klog.Logger, inv any, r repoReferenceHandler) (bool, error) {
 	repository, err := c.checkForRepositoryExistence(inv, r)
 	if err != nil {
 		return false, err
@@ -463,12 +463,12 @@ func (c *StashController) checkForResticSnapshotterRequirements(logger klog.Logg
 	return false, conditions.SetValidationPassedToTrue(inv)
 }
 
-func (c *StashController) checkVolumeSnapshotterRequirements(inv interface{}) error {
+func (c *StashController) checkVolumeSnapshotterRequirements(inv any) error {
 	// nothing to do
 	return conditions.SetValidationPassedToTrue(inv)
 }
 
-func (c *StashController) checkForRepositoryExistence(inv interface{}, r repoReferenceHandler) (*api_v1alpha1.Repository, error) {
+func (c *StashController) checkForRepositoryExistence(inv any, r repoReferenceHandler) (*api_v1alpha1.Repository, error) {
 	repository, err := r.GetRepository()
 	if err != nil {
 		if kerr.IsNotFound(err) {
@@ -477,7 +477,7 @@ func (c *StashController) checkForRepositoryExistence(inv interface{}, r repoRef
 		return nil, conditions.SetRepositoryFoundConditionToUnknown(inv, err)
 	}
 
-	if repository.ObjectMeta.DeletionTimestamp != nil {
+	if repository.DeletionTimestamp != nil {
 		return nil, conditions.SetRepositoryFoundConditionToFalse(inv)
 	}
 
@@ -488,7 +488,7 @@ func (c *StashController) checkForRepositoryExistence(inv interface{}, r repoRef
 	return repository, c.upsertRepositoryReferences(r)
 }
 
-func (c *StashController) checkForBackendSecretExistence(inv interface{}, repository *api_v1alpha1.Repository) (*core.Secret, error) {
+func (c *StashController) checkForBackendSecretExistence(inv any, repository *api_v1alpha1.Repository) (*core.Secret, error) {
 	secret, err := c.kubeClient.CoreV1().Secrets(repository.Namespace).Get(context.TODO(), repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {

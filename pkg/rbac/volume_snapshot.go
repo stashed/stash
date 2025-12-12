@@ -31,14 +31,13 @@ import (
 	storage_api_v1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"kmodules.xyz/client-go/meta"
 	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
 func (opt *Options) EnsureVolumeSnapshotterJobRBAC() error {
 	if opt.serviceAccount.Name == "" {
-		opt.serviceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name, opt.suffix)
+		opt.serviceAccount.Name = meta_util.ValidNameWithPrefixNSuffix(strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name, opt.suffix)
 		err := opt.ensureServiceAccount()
 		if err != nil {
 			return err
@@ -140,7 +139,7 @@ func (opt *Options) ensureVolumeSnapshotterJobRoleBinding() error {
 
 func (opt *Options) EnsureVolumeSnapshotRestorerJobRBAC() error {
 	if opt.serviceAccount.Name == "" {
-		opt.serviceAccount.Name = meta.ValidNameWithPrefixNSuffix(strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name, opt.suffix)
+		opt.serviceAccount.Name = meta_util.ValidNameWithPrefixNSuffix(strings.ToLower(opt.invOpts.Kind), opt.invOpts.Name, opt.suffix)
 		err := opt.ensureServiceAccount()
 		if err != nil {
 			return err

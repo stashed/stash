@@ -136,12 +136,12 @@ func (c *BackupSessionController) initBackupSessionWatcher() error {
 	c.bsInformer = c.StashInformerFactory.Stash().V1beta1().BackupSessions().Informer()
 	c.bsQueue = queue.New(api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.processBackupSession)
 	_, _ = c.bsInformer.AddEventHandler(queue.NewFilteredHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
+		AddFunc: func(obj any) {
 			if backupsession, ok := obj.(*api_v1beta1.BackupSession); ok && c.selectedByLabels(backupsession) {
 				queue.Enqueue(c.bsQueue.GetQueue(), backupsession)
 			}
 		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
+		UpdateFunc: func(oldObj, newObj any) {
 			oldBS, ok := oldObj.(*api_v1beta1.BackupSession)
 			if !ok {
 				klog.Errorf("Invalid BackupSession Object")

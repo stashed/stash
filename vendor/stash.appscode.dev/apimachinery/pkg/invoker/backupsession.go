@@ -73,7 +73,7 @@ func (h *BackupSessionHandler) UpdateStatus(status *v1beta1.BackupSessionStatus)
 				in.NextRetry = status.NextRetry
 			}
 
-			return h.backupSession.ObjectMeta.UID, in
+			return h.backupSession.UID, in
 		},
 		metav1.UpdateOptions{},
 	)

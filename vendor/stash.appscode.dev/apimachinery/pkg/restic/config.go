@@ -42,7 +42,7 @@ type ResticWrapper struct {
 
 type Command struct {
 	Name string
-	Args []interface{}
+	Args []any
 }
 
 // BackupOptions specifies backup information

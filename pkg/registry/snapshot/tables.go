@@ -49,7 +49,7 @@ func (c customTableConvertor) ConvertToTable(ctx context.Context, object runtime
 		}
 		snapshotID := []rune(snapshot.UID)
 		table.Rows = append(table.Rows, metav1.TableRow{
-			Cells: []interface{}{
+			Cells: []any{
 				snapshot.GetName(),
 				string(snapshotID[:8]),
 				snapshot.Status.Repository,

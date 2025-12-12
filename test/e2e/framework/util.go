@@ -28,8 +28,8 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 	cs "stash.appscode.dev/apimachinery/client/clientset/versioned"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" // nolint: staticcheck
+	. "github.com/onsi/gomega"    // nolint: staticcheck
 	shell "gomodules.xyz/go-sh"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -354,7 +354,7 @@ func getGVRAndObjectMeta(obj runtime.Object) (schema.GroupVersionResource, metav
 		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: apis.ResourcePluralAppBinding}, w.ObjectMeta, nil
 	case *v1beta1.BackupConfiguration:
 		w.GetObjectKind().SetGroupVersionKind(v1beta1.SchemeGroupVersion.WithKind(v1beta1.ResourceKindBackupConfiguration))
-		gvk := w.TypeMeta.GroupVersionKind()
+		gvk := w.GroupVersionKind()
 		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: v1beta1.ResourcePluralBackupConfiguration}, w.ObjectMeta, nil
 	case *v1beta1.BackupSession:
 		w.GetObjectKind().SetGroupVersionKind(v1beta1.SchemeGroupVersion.WithKind(v1beta1.ResourceKindBackupSession))
@@ -416,7 +416,7 @@ func (fi *Invocation) PrintDebugHelpers() {
 				}
 
 				fmt.Printf("\n---------------- Log from Pod: %s ------------------\n", pod.Name)
-				logArgs := []interface{}{"logs", "-n", fi.namespace, pod.Name}
+				logArgs := []any{"logs", "-n", fi.namespace, pod.Name}
 				for i := range containerArgs {
 					logArgs = append(logArgs, containerArgs[i])
 				}
