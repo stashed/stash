@@ -94,7 +94,7 @@ func (e *HookExecutor) renderHTTPPostBody() error {
 }
 
 var pool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return new(bytes.Buffer)
 	},
 }

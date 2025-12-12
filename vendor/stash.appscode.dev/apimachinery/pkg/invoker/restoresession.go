@@ -317,7 +317,7 @@ func (inv *RestoreSessionInvoker) UpdateStatus(status RestoreInvokerStatus) erro
 				in.SessionDeadline = status.SessionDeadline
 			}
 
-			return inv.restoreSession.ObjectMeta.UID, in
+			return inv.restoreSession.UID, in
 		},
 		metav1.UpdateOptions{},
 	)

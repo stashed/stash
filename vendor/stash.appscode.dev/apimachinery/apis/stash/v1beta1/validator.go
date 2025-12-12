@@ -42,7 +42,7 @@ func (r RestoreSession) IsValid() error {
 		return fmt.Errorf("\n\t"+
 			"Error: Invalid RestoreSession specification.\n\t"+
 			"Reason: %s.\n\t"+
-			"Hints: There can be at most one rule with empty targetHosts.", multipleRuleWithEmptyTargetHostError(ruleIdx))
+			"Hints: There can be at most one rule with empty targetHosts", multipleRuleWithEmptyTargetHostError(ruleIdx))
 	}
 
 	// ensure that no two rules with non-emtpy targetHosts matches for a host
@@ -54,7 +54,7 @@ func (r RestoreSession) IsValid() error {
 				return fmt.Errorf("\n\t"+
 					"Error: Invalid RestoreSession specification.\n\t"+
 					"Reason: Multiple rules (rule[%d] and rule[%d]) match for host %q.\n\t"+
-					"Hints: There could be only one matching rule for a host.", v, i, host)
+					"Hints: There could be only one matching rule for a host", v, i, host)
 			} else {
 				res[host] = i
 			}
@@ -67,7 +67,7 @@ func (r RestoreSession) IsValid() error {
 			return fmt.Errorf("\n\t"+
 				"Error: Invalid RestoreSession specification.\n\t"+
 				"Reason: Both 'snapshots' and 'paths' fileds are specified in rule[%d].\n\t"+
-				"Hints: A snpashot contains backup data of only one directory. So, you can't specify 'paths' if you specify snapshot field.", i)
+				"Hints: A snpashot contains backup data of only one directory. So, you can't specify 'paths' if you specify snapshot field", i)
 		}
 	}
 	return nil

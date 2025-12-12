@@ -26,7 +26,7 @@ import (
 	"kmodules.xyz/client-go/apiextensions"
 )
 
-func (_ Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralRepository))
 }
 

@@ -336,7 +336,7 @@ func (inv *RestoreBatchInvoker) UpdateStatus(status RestoreInvokerStatus) error 
 				in.SessionDeadline = status.SessionDeadline
 			}
 
-			return inv.restoreBatch.ObjectMeta.UID, in
+			return inv.restoreBatch.UID, in
 		},
 		metav1.UpdateOptions{},
 	)

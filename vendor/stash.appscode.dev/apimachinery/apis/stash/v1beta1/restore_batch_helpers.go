@@ -26,7 +26,7 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
-func (_ RestoreBatch) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (RestoreBatch) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralRestoreBatch))
 }
 

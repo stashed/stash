@@ -26,7 +26,7 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
-func (_ BackupSession) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (BackupSession) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralBackupSession))
 }
 
