@@ -32,6 +32,11 @@ func init() {
 		Version: "v1alpha2",
 		Kind:    "MSSQLServer",
 	}, MSSQLServer{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "MSSQLServer",
+	}, MSSQLServer{}.ResourceCalculator())
 }
 
 type MSSQLServer struct{}
@@ -39,7 +44,7 @@ type MSSQLServer struct{}
 func (r MSSQLServer) ResourceCalculator() api.ResourceCalculator {
 	return &api.ResourceCalculatorFuncs{
 		AppRoles:               []api.PodRole{api.PodRoleDefault},
-		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleExporter},
+		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleSidecar, api.PodRoleExporter},
 		RoleReplicasFn:         r.roleReplicasFn,
 		ModeFn:                 r.modeFn,
 		UsesTLSFn:              r.usesTLSFn,
@@ -48,7 +53,7 @@ func (r MSSQLServer) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r MSSQLServer) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r MSSQLServer) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec.replicas %v: %w", obj, err)
@@ -59,7 +64,7 @@ func (r MSSQLServer) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r MSSQLServer) modeFn(obj map[string]interface{}) (string, error) {
+func (r MSSQLServer) modeFn(obj map[string]any) (string, error) {
 	mode, found, err := unstructured.NestedString(obj, "spec", "topology", "mode")
 	if err != nil {
 		return "", err
@@ -70,7 +75,7 @@ func (r MSSQLServer) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (r MSSQLServer) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r MSSQLServer) usesTLSFn(obj map[string]any) (bool, error) {
 	enabled, found, err := unstructured.NestedBool(obj, "spec", "tls", "clientTLS")
 	if err != nil {
 		return false, err
@@ -82,8 +87,8 @@ func (r MSSQLServer) usesTLSFn(obj map[string]interface{}) (bool, error) {
 	return false, nil
 }
 
-func (r MSSQLServer) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r MSSQLServer) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		container, replicas, err := api.AppNodeResourcesV2(obj, fn, MSSQLServerContainerName, "spec")
 		if err != nil {
 			return nil, err
@@ -93,9 +98,21 @@ func (r MSSQLServer) roleResourceFn(fn func(rr core.ResourceRequirements) core.R
 		if err != nil {
 			return nil, err
 		}
-		return map[api.PodRole]api.PodInfo{
+
+		ret := map[api.PodRole]api.PodInfo{
 			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
 			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
-		}, nil
+		}
+
+		if replicas > 1 {
+			sidecar, err := api.SidecarNodeResourcesV2(obj, fn, MSSQLServerSidecarContainerName, "spec")
+			if err != nil {
+				return nil, err
+			}
+
+			ret[api.PodRoleSidecar] = api.PodInfo{Resource: sidecar, Replicas: replicas}
+		}
+
+		return ret, nil
 	}
 }

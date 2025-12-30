@@ -18,11 +18,14 @@ package lib
 
 import (
 	"context"
+	"strings"
 
 	api "go.bytebuilders.dev/audit/api/v1"
 
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	clustermeta "kmodules.xyz/client-go/cluster"
 	"kmodules.xyz/client-go/discovery"
 	corev1alpha1 "kmodules.xyz/resource-metadata/apis/core/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +35,7 @@ type BillingEventCreator struct {
 	Mapper          discovery.ResourceMapper
 	ClusterMetadata *kmapi.ClusterMetadata
 	ClientBilling   bool
+	NamespaceLister client.Reader
 	PodLister       client.Reader
 	PVCLister       client.Reader
 }
@@ -47,10 +51,43 @@ func (p *BillingEventCreator) CreateEvent(obj client.Object) (*api.Event, error)
 		return nil, err
 	}
 
+	if p.NamespaceLister != nil {
+		var ns core.Namespace
+		err = p.NamespaceLister.Get(context.TODO(), client.ObjectKey{Name: obj.GetNamespace()}, &ns)
+		if err != nil {
+			return nil, err
+		}
+		res.Spec.Namespace = &corev1alpha1.NamespaceInfo{
+			UID:               ns.UID,
+			Name:              ns.Name,
+			CreationTimestamp: ns.CreationTimestamp,
+		}
+		res.Spec.Namespace.EnableResourceTrial = ns.Annotations[kmapi.AceEnableResourceTrialKey] == "true"
+		if ns.Labels[kmapi.ClientOrgKey] == "true" {
+			res.Spec.Namespace.AceOrgID = ns.Annotations[kmapi.AceOrgIDKey]
+
+			orgMetadata := map[string]string{}
+			for k, v := range ns.Annotations {
+				if after, found := strings.CutPrefix(k, kmapi.ClientKeyPrefix); found {
+					orgMetadata[after] = v
+				}
+			}
+			res.Spec.Namespace.AceOrgMetadata = orgMetadata
+		}
+
+		// ensure cluster mode is always up-to-date
+		var ks core.Namespace
+		err = p.NamespaceLister.Get(context.TODO(), client.ObjectKey{Name: metav1.NamespaceSystem}, &ks)
+		if err != nil {
+			return nil, err
+		}
+		res.Spec.Cluster.Mode = clustermeta.DetectClusterMode(&ks)
+	}
+
 	if p.ClientBilling {
-		if r, ok := obj.(Resource); ok {
+		if sel, ok := getOffshootSelectorsIfAny(obj); ok {
 			var podList core.PodList
-			err = p.PodLister.List(context.TODO(), &podList, client.InNamespace(obj.GetNamespace()), client.MatchingLabels(r.OffshootSelectors()))
+			err = p.PodLister.List(context.TODO(), &podList, client.InNamespace(obj.GetNamespace()), client.MatchingLabels(sel))
 			if err != nil {
 				return nil, err
 			}
@@ -82,7 +119,7 @@ func (p *BillingEventCreator) CreateEvent(obj client.Object) (*api.Event, error)
 			res.Spec.Pods = podresources
 
 			var pvcList core.PersistentVolumeClaimList
-			err = p.PVCLister.List(context.TODO(), &pvcList, client.InNamespace(obj.GetNamespace()), client.MatchingLabels(r.OffshootSelectors()))
+			err = p.PVCLister.List(context.TODO(), &pvcList, client.InNamespace(obj.GetNamespace()), client.MatchingLabels(sel))
 			if err != nil {
 				return nil, err
 			}
@@ -107,6 +144,20 @@ func (p *BillingEventCreator) CreateEvent(obj client.Object) (*api.Event, error)
 	}, nil
 }
 
+func getOffshootSelectorsIfAny(obj client.Object) (map[string]string, bool) {
+	if r, ok := obj.(Resource); ok {
+		return r.OffshootSelectors(), true
+	}
+	if r, ok := obj.(ResourceExtra); ok {
+		return r.OffshootSelectors(), true
+	}
+	return nil, false
+}
+
 type Resource interface {
 	OffshootSelectors() map[string]string
+}
+
+type ResourceExtra interface {
+	OffshootSelectors(extraSelectors ...map[string]string) map[string]string
 }

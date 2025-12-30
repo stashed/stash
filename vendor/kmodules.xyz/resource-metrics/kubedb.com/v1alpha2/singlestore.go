@@ -33,6 +33,11 @@ func init() {
 		Version: "v1alpha2",
 		Kind:    "Singlestore",
 	}, Singlestore{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "Singlestore",
+	}, Singlestore{}.ResourceCalculator())
 }
 
 type Singlestore struct{}
@@ -40,7 +45,7 @@ type Singlestore struct{}
 func (r Singlestore) ResourceCalculator() api.ResourceCalculator {
 	return &api.ResourceCalculatorFuncs{
 		AppRoles:               []api.PodRole{api.PodRoleDefault, api.PodRoleAggregator, api.PodRoleLeaf},
-		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleAggregator, api.PodRoleLeaf, api.PodRoleExporter},
+		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleAggregator, api.PodRoleLeaf, api.PodRoleAggregatorSidecar, api.PodRoleLeafSidecar, api.PodRoleExporter},
 		RoleReplicasFn:         r.roleReplicasFn,
 		ModeFn:                 r.modeFn,
 		UsesTLSFn:              r.usesTLSFn,
@@ -49,7 +54,7 @@ func (r Singlestore) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r Singlestore) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r Singlestore) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	result := api.ReplicaList{}
 
 	topology, found, err := unstructured.NestedMap(obj, "spec", "topology")
@@ -60,7 +65,7 @@ func (r Singlestore) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList
 		// dedicated topology mode
 		var replicas int64 = 0
 		for role, roleSpec := range topology {
-			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]interface{}), "replicas")
+			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]any), "replicas")
 			if err != nil {
 				return nil, err
 			}
@@ -84,7 +89,7 @@ func (r Singlestore) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList
 	return result, nil
 }
 
-func (r Singlestore) modeFn(obj map[string]interface{}) (string, error) {
+func (r Singlestore) modeFn(obj map[string]any) (string, error) {
 	topology, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "topology")
 	if err != nil {
 		return "", err
@@ -95,13 +100,13 @@ func (r Singlestore) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeCombined, nil
 }
 
-func (r Singlestore) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r Singlestore) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (r Singlestore) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r Singlestore) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -121,11 +126,21 @@ func (r Singlestore) roleResourceFn(fn func(rr core.ResourceRequirements) core.R
 			if err != nil {
 				return nil, err
 			}
+			aggregatorSidecar, err := api.SidecarNodeResourcesV2(topology, fn, SinglestoreSidecarContainerName, "aggregator")
+			if err != nil {
+				return nil, err
+			}
+			leafSidecar, err := api.SidecarNodeResourcesV2(topology, fn, SinglestoreSidecarContainerName, "leaf")
+			if err != nil {
+				return nil, err
+			}
 
 			return map[api.PodRole]api.PodInfo{
-				api.PodRoleAggregator: {Resource: aggregator, Replicas: aggregatorReplicas},
-				api.PodRoleLeaf:       {Resource: leaf, Replicas: leafReplicas},
-				api.PodRoleExporter:   {Resource: exporter, Replicas: aggregatorReplicas + leafReplicas},
+				api.PodRoleAggregator:        {Resource: aggregator, Replicas: aggregatorReplicas},
+				api.PodRoleLeaf:              {Resource: leaf, Replicas: leafReplicas},
+				api.PodRoleAggregatorSidecar: {Resource: aggregatorSidecar, Replicas: aggregatorReplicas},
+				api.PodRoleLeafSidecar:       {Resource: leafSidecar, Replicas: leafReplicas},
+				api.PodRoleExporter:          {Resource: exporter, Replicas: aggregatorReplicas + leafReplicas},
 			}, nil
 		}
 

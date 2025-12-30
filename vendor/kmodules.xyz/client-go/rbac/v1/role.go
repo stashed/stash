@@ -93,7 +93,6 @@ func TryUpdateRole(ctx context.Context, c kubernetes.Interface, meta metav1.Obje
 		klog.Errorf("Attempt %d failed to update Role %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update Role %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}

@@ -33,6 +33,11 @@ func init() {
 		Version: "v1alpha2",
 		Kind:    "Druid",
 	}, Druid{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "Druid",
+	}, Druid{}.ResourceCalculator())
 }
 
 type Druid struct{}
@@ -49,7 +54,7 @@ func (r Druid) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r Druid) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r Druid) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	result := api.ReplicaList{}
 
 	topology, found, err := unstructured.NestedMap(obj, "spec", "topology")
@@ -59,7 +64,7 @@ func (r Druid) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, erro
 
 	if found && topology != nil {
 		for role, roleSpec := range topology {
-			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]interface{}), "replicas")
+			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]any), "replicas")
 			if err != nil {
 				return nil, err
 			}
@@ -82,7 +87,7 @@ func (r Druid) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, erro
 	return result, nil
 }
 
-func (r Druid) modeFn(obj map[string]interface{}) (string, error) {
+func (r Druid) modeFn(obj map[string]any) (string, error) {
 	topology, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "topology")
 	if err != nil {
 		return "", err
@@ -93,13 +98,13 @@ func (r Druid) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeCombined, nil
 }
 
-func (r Druid) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r Druid) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "enableSSL")
 	return found, err
 }
 
-func (r Druid) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r Druid) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -114,7 +119,7 @@ func (r Druid) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resourc
 			var replicas int64 = 0
 
 			for role, roleSpec := range topology {
-				rolePerReplicaResources, roleReplicas, err := api.AppNodeResourcesV2(roleSpec.(map[string]interface{}), fn, DruidContainerName)
+				rolePerReplicaResources, roleReplicas, err := api.AppNodeResourcesV2(roleSpec.(map[string]any), fn, DruidContainerName)
 				if err != nil {
 					return nil, err
 				}

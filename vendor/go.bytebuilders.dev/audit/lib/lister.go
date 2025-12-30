@@ -26,6 +26,56 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type NamespaceReader struct {
+	delegate corelisters.NamespaceLister
+}
+
+var _ client.Reader = &NamespaceReader{}
+
+func NewNamespaceReader(delegate corelisters.NamespaceLister) NamespaceReader {
+	return NamespaceReader{delegate: delegate}
+}
+
+func (r NamespaceReader) Get(ctx context.Context, key client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+	ns, err := r.delegate.Get(key.Name)
+	if err != nil {
+		return err
+	}
+	assign(obj, ns)
+	return nil
+}
+
+func (r NamespaceReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	var o client.ListOptions
+	o.ApplyOptions(opts)
+
+	var ls labels.Selector
+	if o.LabelSelector != nil {
+		ls = o.LabelSelector
+	} else if o.Raw != nil && o.Raw.LabelSelector != "" {
+		var err error
+		ls, err = labels.Parse(o.Raw.LabelSelector)
+		if err != nil {
+			return err
+		}
+	}
+
+	namespaces, err := r.delegate.List(ls)
+	if err != nil {
+		return err
+	}
+
+	nsList := core.NamespaceList{
+		Items: make([]core.Namespace, 0, len(namespaces)),
+	}
+	for _, pod := range namespaces {
+		nsList.Items = append(nsList.Items, *pod)
+	}
+	assign(list, nsList)
+
+	return nil
+}
+
 type PodReader struct {
 	delegate corelisters.PodLister
 }

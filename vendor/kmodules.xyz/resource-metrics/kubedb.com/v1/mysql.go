@@ -32,6 +32,11 @@ func init() {
 		Version: "v1",
 		Kind:    "MySQL",
 	}, MySQL{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "MySQL",
+	}, MySQL{}.ResourceCalculator())
 }
 
 type MySQL struct{}
@@ -39,7 +44,7 @@ type MySQL struct{}
 func (r MySQL) ResourceCalculator() api.ResourceCalculator {
 	return &api.ResourceCalculatorFuncs{
 		AppRoles:               []api.PodRole{api.PodRoleDefault, api.PodRoleRouter},
-		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleExporter, api.PodRoleRouter},
+		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleSidecar, api.PodRoleExporter, api.PodRoleRouter},
 		RoleReplicasFn:         r.roleReplicasFn,
 		ModeFn:                 r.modeFn,
 		UsesTLSFn:              r.usesTLSFn,
@@ -48,7 +53,7 @@ func (r MySQL) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r MySQL) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r MySQL) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	result := api.ReplicaList{}
 
 	// Standalone or GroupReplication Mode
@@ -82,7 +87,7 @@ func (r MySQL) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, erro
 	return result, nil
 }
 
-func (r MySQL) modeFn(obj map[string]interface{}) (string, error) {
+func (r MySQL) modeFn(obj map[string]any) (string, error) {
 	mode, found, err := unstructured.NestedString(obj, "spec", "topology", "mode")
 	if err != nil {
 		return "", err
@@ -93,13 +98,13 @@ func (r MySQL) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (r MySQL) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r MySQL) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (r MySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r MySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		container, replicas, err := api.AppNodeResourcesV2(obj, fn, MySQLContainerName, "spec")
 		if err != nil {
 			return nil, err
@@ -115,11 +120,20 @@ func (r MySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resourc
 			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
 		}
 
+		if replicas > 1 {
+			sidecar, err := api.SidecarNodeResourcesV2(obj, fn, MySQLSidecarContainerName, "spec")
+			if err != nil {
+				return nil, err
+			}
+			result[api.PodRoleSidecar] = api.PodInfo{Resource: sidecar, Replicas: replicas}
+		}
+
 		// InnoDB Router
 		mode, found, err := unstructured.NestedString(obj, "spec", "topology", "mode")
 		if err != nil {
 			return nil, err
 		}
+
 		if found && mode == "InnoDBCluster" {
 			router, replicas, err := api.AppNodeResourcesV2(obj, fn, MySQLRouterContainerName, "spec", "topology", "innoDBCluster", "router")
 			if err != nil {

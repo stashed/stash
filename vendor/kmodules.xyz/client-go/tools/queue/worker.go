@@ -17,6 +17,7 @@ limitations under the License.
 package queue
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -27,26 +28,28 @@ import (
 )
 
 // Worker continuously runs a Reconcile function against a message Queue
-type Worker struct {
+type Worker[request comparable] struct {
 	name        string
-	queue       workqueue.RateLimitingInterface
+	queue       workqueue.TypedRateLimitingInterface[request]
 	maxRetries  int
 	threadiness int
-	reconcile   func(key string) error
+	reconcile   func(key request) error
 }
 
-func New(name string, maxRetries, threadiness int, fn func(key string) error) *Worker {
-	q := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), name)
-	return &Worker{name, q, maxRetries, threadiness, fn}
+func New[T comparable](name string, maxRetries, threadiness int, fn func(key T) error) *Worker[T] {
+	q := workqueue.NewTypedRateLimitingQueueWithConfig(workqueue.DefaultTypedControllerRateLimiter[T](), workqueue.TypedRateLimitingQueueConfig[T]{
+		Name: name,
+	})
+	return &Worker[T]{name, q, maxRetries, threadiness, fn}
 }
 
-func (w *Worker) GetQueue() workqueue.RateLimitingInterface {
+func (w *Worker[request]) GetQueue() workqueue.TypedRateLimitingInterface[request] {
 	return w.queue
 }
 
 // Run schedules a routine to continuously process Queue messages
 // until shutdown is closed
-func (w *Worker) Run(shutdown <-chan struct{}) {
+func (w *Worker[request]) Run(shutdown <-chan struct{}) {
 	defer runtime.HandleCrash()
 
 	// Every second, process all messages in the Queue until it is time to shutdown
@@ -64,13 +67,13 @@ func (w *Worker) Run(shutdown <-chan struct{}) {
 }
 
 // ProcessAllMessages tries to process all messages in the Queue
-func (w *Worker) processQueue() {
+func (w *Worker[request]) processQueue() {
 	for w.processNextEntry() {
 	}
 }
 
 // ProcessMessage tries to process the next message in the Queue, and requeues on an error
-func (w *Worker) processNextEntry() bool {
+func (w *Worker[request]) processNextEntry() bool {
 	// Wait until there is a new item in the working queue
 	key, quit := w.queue.Get()
 	if quit {
@@ -82,7 +85,7 @@ func (w *Worker) processNextEntry() bool {
 	defer w.queue.Done(key)
 
 	// Invoke the method containing the business logic
-	paniced, err := w.panicSafeReconcile(key.(string))
+	paniced, err := w.panicSafeReconcile(key)
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -107,16 +110,16 @@ func (w *Worker) processNextEntry() bool {
 	if !paniced {
 		runtime.HandleError(err)
 	}
-	klog.Infof("Dropping key %q out of the queue: %v", key, err)
+	klog.Infof("Dropping key %v out of the queue: %v", key, err)
 	return true
 }
 
-func (w *Worker) panicSafeReconcile(key string) (paniced bool, err error) {
+func (w *Worker[request]) panicSafeReconcile(key request) (paniced bool, err error) {
 	// xref: https://github.com/kubernetes-sigs/controller-runtime/blob/v0.10.0/pkg/internal/controller/controller.go#L102-L111
 	defer func() {
 		if r := recover(); r != nil {
 			for _, fn := range runtime.PanicHandlers {
-				fn(r)
+				fn(context.TODO(), r)
 			}
 			paniced = true
 			err = fmt.Errorf("panic: %v [recovered]", r)

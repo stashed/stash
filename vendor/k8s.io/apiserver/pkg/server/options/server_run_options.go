@@ -25,8 +25,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/errors"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/server"
+	"k8s.io/apiserver/pkg/util/compatibility"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	basecompatibility "k8s.io/component-base/compatibility"
 
 	"github.com/spf13/pflag"
 )
@@ -45,16 +48,17 @@ const (
 type ServerRunOptions struct {
 	AdvertiseAddress net.IP
 
-	CorsAllowedOriginList       []string
-	HSTSDirectives              []string
-	ExternalHost                string
-	MaxRequestsInFlight         int
-	MaxMutatingRequestsInFlight int
-	RequestTimeout              time.Duration
-	GoawayChance                float64
-	LivezGracePeriod            time.Duration
-	MinRequestTimeout           int
-	ShutdownDelayDuration       time.Duration
+	CorsAllowedOriginList        []string
+	HSTSDirectives               []string
+	ExternalHost                 string
+	MaxRequestsInFlight          int
+	MaxMutatingRequestsInFlight  int
+	RequestTimeout               time.Duration
+	GoawayChance                 float64
+	LivezGracePeriod             time.Duration
+	MinRequestTimeout            int
+	StorageInitializationTimeout time.Duration
+	ShutdownDelayDuration        time.Duration
 	// We intentionally did not add a flag for this option. Users of the
 	// apiserver library can wire it to a flag.
 	JSONPatchMaxCopyBytes int64
@@ -89,9 +93,34 @@ type ServerRunOptions struct {
 	// This grace period is orthogonal to other grace periods, and
 	// it is not overridden by any other grace period.
 	ShutdownWatchTerminationGracePeriod time.Duration
+
+	// ComponentGlobalsRegistry is the registry where the effective versions and feature gates for all components are stored.
+	ComponentGlobalsRegistry basecompatibility.ComponentGlobalsRegistry
+	// ComponentName is name under which the server's global variabled are registered in the ComponentGlobalsRegistry.
+	ComponentName string
+	// EmulationForwardCompatible is an option to implicitly enable all APIs which are introduced after the emulation version and
+	// have higher priority than APIs of the same group resource enabled at the emulation version.
+	// If true, all APIs that have higher priority than the APIs(beta+) of the same group resource enabled at the emulation version will be installed.
+	// This is needed when a controller implementation migrates to newer API versions, for the binary version, and also uses the newer API versions even when emulation version is set.
+	// Not applicable to alpha APIs.
+	EmulationForwardCompatible bool
+	// RuntimeConfigEmulationForwardCompatible is an option to explicitly enable specific APIs introduced after the emulation version through the runtime-config.
+	// If true, APIs identified by group/version that are enabled in the --runtime-config flag will be installed even if it is introduced after the emulation version. --runtime-config flag values that identify multiple APIs, such as api/all,api/ga,api/beta, are not influenced by this flag and will only enable APIs available at the current emulation version.
+	// If false, error would be thrown if any GroupVersion or GroupVersionResource explicitly enabled in the --runtime-config flag is introduced after the emulation version.
+	RuntimeConfigEmulationForwardCompatible bool
 }
 
 func NewServerRunOptions() *ServerRunOptions {
+	if compatibility.DefaultComponentGlobalsRegistry.EffectiveVersionFor(basecompatibility.DefaultKubeComponent) == nil {
+		featureGate := utilfeature.DefaultMutableFeatureGate
+		effectiveVersion := compatibility.DefaultBuildEffectiveVersion()
+		utilruntime.Must(compatibility.DefaultComponentGlobalsRegistry.Register(basecompatibility.DefaultKubeComponent, effectiveVersion, featureGate))
+	}
+
+	return NewServerRunOptionsForComponent(basecompatibility.DefaultKubeComponent, compatibility.DefaultComponentGlobalsRegistry)
+}
+
+func NewServerRunOptionsForComponent(componentName string, componentGlobalsRegistry basecompatibility.ComponentGlobalsRegistry) *ServerRunOptions {
 	defaults := server.NewConfig(serializer.CodecFactory{})
 	return &ServerRunOptions{
 		MaxRequestsInFlight:                 defaults.MaxRequestsInFlight,
@@ -99,16 +128,22 @@ func NewServerRunOptions() *ServerRunOptions {
 		RequestTimeout:                      defaults.RequestTimeout,
 		LivezGracePeriod:                    defaults.LivezGracePeriod,
 		MinRequestTimeout:                   defaults.MinRequestTimeout,
+		StorageInitializationTimeout:        defaults.StorageInitializationTimeout,
 		ShutdownDelayDuration:               defaults.ShutdownDelayDuration,
 		ShutdownWatchTerminationGracePeriod: defaults.ShutdownWatchTerminationGracePeriod,
 		JSONPatchMaxCopyBytes:               defaults.JSONPatchMaxCopyBytes,
 		MaxRequestBodyBytes:                 defaults.MaxRequestBodyBytes,
 		ShutdownSendRetryAfter:              false,
+		ComponentName:                       componentName,
+		ComponentGlobalsRegistry:            componentGlobalsRegistry,
 	}
 }
 
 // ApplyTo applies the run options to the method receiver and returns self
 func (s *ServerRunOptions) ApplyTo(c *server.Config) error {
+	if err := s.ComponentGlobalsRegistry.SetFallback(); err != nil {
+		return err
+	}
 	c.CorsAllowedOriginList = s.CorsAllowedOriginList
 	c.HSTSDirectives = s.HSTSDirectives
 	c.ExternalAddress = s.ExternalHost
@@ -118,12 +153,17 @@ func (s *ServerRunOptions) ApplyTo(c *server.Config) error {
 	c.RequestTimeout = s.RequestTimeout
 	c.GoawayChance = s.GoawayChance
 	c.MinRequestTimeout = s.MinRequestTimeout
+	c.StorageInitializationTimeout = s.StorageInitializationTimeout
 	c.ShutdownDelayDuration = s.ShutdownDelayDuration
 	c.JSONPatchMaxCopyBytes = s.JSONPatchMaxCopyBytes
 	c.MaxRequestBodyBytes = s.MaxRequestBodyBytes
 	c.PublicAddress = s.AdvertiseAddress
 	c.ShutdownSendRetryAfter = s.ShutdownSendRetryAfter
 	c.ShutdownWatchTerminationGracePeriod = s.ShutdownWatchTerminationGracePeriod
+	c.EffectiveVersion = s.ComponentGlobalsRegistry.EffectiveVersionFor(s.ComponentName)
+	c.FeatureGate = s.ComponentGlobalsRegistry.FeatureGateFor(s.ComponentName)
+	c.EmulationForwardCompatible = s.EmulationForwardCompatible
+	c.RuntimeConfigEmulationForwardCompatible = s.RuntimeConfigEmulationForwardCompatible
 
 	return nil
 }
@@ -173,6 +213,10 @@ func (s *ServerRunOptions) Validate() []error {
 		errors = append(errors, fmt.Errorf("--min-request-timeout can not be negative value"))
 	}
 
+	if s.StorageInitializationTimeout < 0 {
+		errors = append(errors, fmt.Errorf("--storage-initialization-timeout can not be negative value"))
+	}
+
 	if s.ShutdownDelayDuration < 0 {
 		errors = append(errors, fmt.Errorf("--shutdown-delay-duration can not be negative value"))
 	}
@@ -195,6 +239,20 @@ func (s *ServerRunOptions) Validate() []error {
 
 	if err := validateCorsAllowedOriginList(s.CorsAllowedOriginList); err != nil {
 		errors = append(errors, err)
+	}
+	if errs := s.ComponentGlobalsRegistry.Validate(); len(errs) != 0 {
+		errors = append(errors, errs...)
+	}
+	effectiveVersion := s.ComponentGlobalsRegistry.EffectiveVersionFor(s.ComponentName)
+	if effectiveVersion == nil {
+		return errors
+	}
+	notEmulationMode := effectiveVersion.BinaryVersion().WithPatch(0).EqualTo(effectiveVersion.EmulationVersion())
+	if notEmulationMode && s.EmulationForwardCompatible {
+		errors = append(errors, fmt.Errorf("ServerRunOptions.EmulationForwardCompatible cannot be set to true if the emulation version is the same as the binary version"))
+	}
+	if notEmulationMode && s.RuntimeConfigEmulationForwardCompatible {
+		errors = append(errors, fmt.Errorf("ServerRunOptions.RuntimeConfigEmulationForwardCompatible cannot be set to true if the emulation version is the same as the binary version"))
 	}
 	return errors
 }
@@ -323,6 +381,9 @@ func (s *ServerRunOptions) AddUniversalFlags(fs *pflag.FlagSet) {
 		"handler, which picks a randomized value above this number as the connection timeout, "+
 		"to spread out load.")
 
+	fs.DurationVar(&s.StorageInitializationTimeout, "storage-initialization-timeout", s.StorageInitializationTimeout,
+		"Maximum amount of time to wait for storage initialization before declaring apiserver ready. Defaults to 1m.")
+
 	fs.DurationVar(&s.ShutdownDelayDuration, "shutdown-delay-duration", s.ShutdownDelayDuration, ""+
 		"Time to delay the termination. During that time the server keeps serving requests normally. The endpoints /healthz and /livez "+
 		"will return success, but /readyz immediately returns failure. Graceful termination starts after this delay "+
@@ -337,5 +398,17 @@ func (s *ServerRunOptions) AddUniversalFlags(fs *pflag.FlagSet) {
 		"This option, if set, represents the maximum amount of grace period the apiserver will wait "+
 		"for active watch request(s) to drain during the graceful server shutdown window.")
 
-	utilfeature.DefaultMutableFeatureGate.AddFlag(fs)
+	s.ComponentGlobalsRegistry.AddFlags(fs)
+	fs.BoolVar(&s.EmulationForwardCompatible, "emulation-forward-compatible", s.EmulationForwardCompatible, ""+
+		"If true, for any beta+ APIs enabled by default or by --runtime-config at the emulation version, their future versions with higher priority/stability will be auto enabled even if they introduced after the emulation version. "+
+		"Can only be set to true if the emulation version is lower than the binary version.")
+	fs.BoolVar(&s.RuntimeConfigEmulationForwardCompatible, "runtime-config-emulation-forward-compatible", s.RuntimeConfigEmulationForwardCompatible, ""+
+		"If true, APIs identified by group/version that are enabled in the --runtime-config flag will be installed even if it is introduced after the emulation version. "+
+		"If false, server would fail to start if any APIs identified by group/version that are enabled in the --runtime-config flag are introduced after the emulation version. "+
+		"Can only be set to true if the emulation version is lower than the binary version.")
+}
+
+// Complete fills missing fields with defaults.
+func (s *ServerRunOptions) Complete() error {
+	return s.ComponentGlobalsRegistry.SetFallback()
 }

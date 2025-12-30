@@ -99,6 +99,18 @@ message CertificateSpec {
   optional CertificatePrivateKey privateKey = 11;
 }
 
+message ClusterClaimFeatures {
+  repeated string enabledFeatures = 1;
+
+  repeated string externallyManagedFeatures = 2;
+
+  repeated string disabledFeatures = 3;
+}
+
+message ClusterClaimInfo {
+  optional ClusterInfo clusterMetadata = 1;
+}
+
 // ClusterInfo used in ace-installer
 message ClusterInfo {
   optional string uid = 1;
@@ -131,6 +143,10 @@ message ClusterMetadata {
   optional string managerID = 9;
 
   optional string hubClusterID = 10;
+
+  optional string cloudServiceAuthMode = 11;
+
+  optional string mode = 12;
 }
 
 // Condition defines an observation of a object operational state.
@@ -292,7 +308,14 @@ message TLSConfig {
 message TimeOfDay {
 }
 
-// TypedObjectReference represents an typed namespaced object.
+// TypeReference represents an object type.
+message TypeReference {
+  optional string apiGroup = 1;
+
+  optional string kind = 2;
+}
+
+// TypedObjectReference represents a typed namespaced object.
 message TypedObjectReference {
   optional string apiGroup = 1;
 

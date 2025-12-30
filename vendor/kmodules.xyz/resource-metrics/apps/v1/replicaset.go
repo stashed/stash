@@ -42,7 +42,7 @@ func (r ReplicaSet) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (_ ReplicaSet) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (ReplicaSet) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec.replicas %v: %w", obj, err)
@@ -53,8 +53,8 @@ func (_ ReplicaSet) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList,
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r ReplicaSet) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r ReplicaSet) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		rr, err := r.roleReplicasFn(obj)
 		if err != nil {
 			return nil, err

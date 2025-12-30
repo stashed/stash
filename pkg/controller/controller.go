@@ -63,47 +63,47 @@ type StashController struct {
 	stashInformerFactory stashinformers.SharedInformerFactory
 
 	// Repository
-	repoQueue    *queue.Worker
+	repoQueue    *queue.Worker[any]
 	repoInformer cache.SharedIndexInformer
 	repoLister   stash_listers.RepositoryLister
 
 	// Deployment
-	dpQueue    *queue.Worker
+	dpQueue    *queue.Worker[any]
 	dpInformer cache.SharedIndexInformer
 	dpLister   apps_listers.DeploymentLister
 
 	// DaemonSet
-	dsQueue    *queue.Worker
+	dsQueue    *queue.Worker[any]
 	dsInformer cache.SharedIndexInformer
 	dsLister   apps_listers.DaemonSetLister
 
 	// StatefulSet
-	ssQueue    *queue.Worker
+	ssQueue    *queue.Worker[any]
 	ssInformer cache.SharedIndexInformer
 	ssLister   apps_listers.StatefulSetLister
 
 	// Job
-	jobQueue    *queue.Worker
+	jobQueue    *queue.Worker[any]
 	jobInformer cache.SharedIndexInformer
 	jobLister   batch_listers.JobLister
 
 	// BackupConfiguration
-	bcQueue    *queue.Worker
+	bcQueue    *queue.Worker[any]
 	bcInformer cache.SharedIndexInformer
 	bcLister   stash_listers_v1beta1.BackupConfigurationLister
 
 	// BackupSession
-	backupSessionQueue    *queue.Worker
+	backupSessionQueue    *queue.Worker[any]
 	backupSessionInformer cache.SharedIndexInformer
 	backupSessionLister   stash_listers_v1beta1.BackupSessionLister
 
 	// RestoreSession
-	restoreSessionQueue    *queue.Worker
+	restoreSessionQueue    *queue.Worker[any]
 	restoreSessionInformer cache.SharedIndexInformer
 	restoreSessionLister   stash_listers_v1beta1.RestoreSessionLister
 
 	// Openshift DeploymentConfiguration
-	dcQueue    *queue.Worker
+	dcQueue    *queue.Worker[any]
 	dcInformer cache.SharedIndexInformer
 	dcLister   oc_listers.DeploymentConfigLister
 }

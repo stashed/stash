@@ -53,7 +53,7 @@ func DoTCPProbe(addr string, timeout time.Duration) (api.Result, string, error) 
 		// Convert errors to failures to handle timeouts.
 		return api.Failure, err.Error(), nil
 	}
-	err = conn.Close()
+	err = conn.Close() // nolint:errcheck
 	if err != nil {
 		klog.Errorf("Unexpected error closing TCP probe socket: %v (%#v)", err, err)
 	}

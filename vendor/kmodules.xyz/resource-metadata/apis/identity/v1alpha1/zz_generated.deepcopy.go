@@ -368,7 +368,9 @@ func (in *SelfSubjectNamespaceAccessReviewSpec) DeepCopyInto(out *SelfSubjectNam
 	if in.ResourceAttributes != nil {
 		in, out := &in.ResourceAttributes, &out.ResourceAttributes
 		*out = make([]authorizationv1.ResourceAttributes, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.NonResourceAttributes != nil {
 		in, out := &in.NonResourceAttributes, &out.NonResourceAttributes

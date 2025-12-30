@@ -93,7 +93,6 @@ func TryUpdateServiceAccount(ctx context.Context, c kubernetes.Interface, meta m
 		klog.Errorf("Attempt %d failed to update ServiceAccount %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update ServiceAccount %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}

@@ -39,8 +39,8 @@ func HtmlFuncMap() template.FuncMap {
 }
 
 // GenericFuncMap returns a copy of the basic function map as a map[string]interface{}.
-func GenericFuncMap() map[string]interface{} {
-	return map[string]interface{}{
+func GenericFuncMap() map[string]any {
+	return map[string]any{
 		"k8s_resource_replicas":          tplReplicaFn,
 		"k8s_resource_replicas_by_roles": tplRoleReplicaFn,
 		"k8s_resource_mode":              tplModeFn,
@@ -52,7 +52,7 @@ func GenericFuncMap() map[string]interface{} {
 	}
 }
 
-func tplReplicaFn(data interface{}) (int64, error) {
+func tplReplicaFn(data any) (int64, error) {
 	obj, err := toObject(data)
 	if err != nil {
 		return 0, err
@@ -65,7 +65,7 @@ func tplReplicaFn(data interface{}) (int64, error) {
 	return c.Replicas(obj)
 }
 
-func tplRoleReplicaFn(data interface{}) (interface{}, error) {
+func tplRoleReplicaFn(data any) (any, error) {
 	obj, err := toObject(data)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func tplRoleReplicaFn(data interface{}) (interface{}, error) {
 	return replicaList, nil
 }
 
-func tplModeFn(data interface{}) (string, error) {
+func tplModeFn(data any) (string, error) {
 	obj, err := toObject(data)
 	if err != nil {
 		return "", err
@@ -113,7 +113,7 @@ func tplModeFn(data interface{}) (string, error) {
 	return c.Mode(obj)
 }
 
-func tplUsesTLSFn(data interface{}) (bool, error) {
+func tplUsesTLSFn(data any) (bool, error) {
 	obj, err := toObject(data)
 	if err != nil {
 		return false, err
@@ -126,7 +126,7 @@ func tplUsesTLSFn(data interface{}) (bool, error) {
 	return c.UsesTLS(obj)
 }
 
-func tplTotalResourceLimitsFn(data interface{}) (core.ResourceList, error) {
+func tplTotalResourceLimitsFn(data any) (core.ResourceList, error) {
 	obj, err := toObject(data)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func tplTotalResourceLimitsFn(data interface{}) (core.ResourceList, error) {
 	return c.TotalResourceLimits(obj)
 }
 
-func tplTotalResourceRequestsFn(data interface{}) (core.ResourceList, error) {
+func tplTotalResourceRequestsFn(data any) (core.ResourceList, error) {
 	obj, err := toObject(data)
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func tplTotalResourceRequestsFn(data interface{}) (core.ResourceList, error) {
 	return c.TotalResourceRequests(obj)
 }
 
-func tplAppResourceLimitsFn(data interface{}) (core.ResourceList, error) {
+func tplAppResourceLimitsFn(data any) (core.ResourceList, error) {
 	obj, err := toObject(data)
 	if err != nil {
 		return nil, err
@@ -165,7 +165,7 @@ func tplAppResourceLimitsFn(data interface{}) (core.ResourceList, error) {
 	return c.AppResourceLimits(obj)
 }
 
-func tplAppResourceRequestsFn(data interface{}) (core.ResourceList, error) {
+func tplAppResourceRequestsFn(data any) (core.ResourceList, error) {
 	obj, err := toObject(data)
 	if err != nil {
 		return nil, err
@@ -178,9 +178,9 @@ func tplAppResourceRequestsFn(data interface{}) (core.ResourceList, error) {
 	return c.AppResourceRequests(obj)
 }
 
-func toObject(data interface{}) (map[string]interface{}, error) {
-	var obj map[string]interface{}
-	if v, ok := data.(map[string]interface{}); ok {
+func toObject(data any) (map[string]any, error) {
+	var obj map[string]any
+	if v, ok := data.(map[string]any); ok {
 		obj = v
 	} else if str, ok := data.(string); ok {
 		err := json.Unmarshal([]byte(str), &obj)

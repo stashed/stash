@@ -35,7 +35,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/tools/portforward"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	"kmodules.xyz/objectstore-api/osm"
+	"kmodules.xyz/objectstore-api/pkg/osm"
 )
 
 type KindMetaReplicas struct {

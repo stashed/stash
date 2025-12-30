@@ -33,6 +33,11 @@ func init() {
 		Version: "v1alpha2",
 		Kind:    "Solr",
 	}, Solr{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "Solr",
+	}, Solr{}.ResourceCalculator())
 }
 
 type Solr struct{}
@@ -49,7 +54,7 @@ func (r Solr) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r Solr) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r Solr) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	result := api.ReplicaList{}
 
 	topology, found, err := unstructured.NestedMap(obj, "spec", "topology")
@@ -59,7 +64,7 @@ func (r Solr) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error
 
 	if found && topology != nil {
 		for role, roleSpec := range topology {
-			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]interface{}), "replicas")
+			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]any), "replicas")
 			if err != nil {
 				return nil, err
 			}
@@ -83,7 +88,7 @@ func (r Solr) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error
 	return result, nil
 }
 
-func (r Solr) modeFn(obj map[string]interface{}) (string, error) {
+func (r Solr) modeFn(obj map[string]any) (string, error) {
 	topology, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "topology")
 	if err != nil {
 		return "", err
@@ -94,13 +99,13 @@ func (r Solr) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeCombined, nil
 }
 
-func (r Solr) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r Solr) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "enableSSL")
 	return found, err
 }
 
-func (r Solr) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r Solr) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -115,7 +120,7 @@ func (r Solr) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resource
 			result := map[api.PodRole]api.PodInfo{}
 
 			for role, roleSpec := range topology {
-				rolePerReplicaResources, roleReplicas, err := api.AppNodeResourcesV2(roleSpec.(map[string]interface{}), fn, SolrContainerName)
+				rolePerReplicaResources, roleReplicas, err := api.AppNodeResourcesV2(roleSpec.(map[string]any), fn, SolrContainerName)
 				if err != nil {
 					return nil, err
 				}

@@ -24,7 +24,6 @@ import (
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 	"go.bytebuilders.dev/license-verifier/info"
 
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -158,7 +157,7 @@ func ParseLicense(opts ParserOptions) (v1alpha1.License, error) {
 
 	// ref: https://github.com/appscode/gitea/blob/master/models/stripe_license.go#L117-L126
 	if _, err := cert.Verify(crtopts); err != nil {
-		e2 := errors.Wrap(err, "failed to verify certificate")
+		e2 := fmt.Errorf("failed to verify certificate due to %w", err)
 		license.Status = v1alpha1.LicenseInvalid
 		license.Reason = e2.Error()
 		return license, e2
@@ -201,7 +200,7 @@ func VerifyLicense(opts Options) (v1alpha1.License, error) {
 func BadLicense(err error) (v1alpha1.License, error) {
 	if err == nil {
 		// This should never happen
-		panic(err)
+		panic("bad license: expected error")
 	}
 	return v1alpha1.License{
 		TypeMeta: metav1.TypeMeta{

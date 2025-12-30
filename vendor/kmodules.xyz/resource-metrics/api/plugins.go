@@ -35,7 +35,7 @@ func Register(gvk schema.GroupVersionKind, c ResourceCalculator) {
 	lock.Unlock()
 }
 
-func Load(obj map[string]interface{}) (ResourceCalculator, error) {
+func Load(obj map[string]any) (ResourceCalculator, error) {
 	u := unstructured.Unstructured{Object: obj}
 	gvk := u.GroupVersionKind()
 

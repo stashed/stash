@@ -37,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/kubernetes"
@@ -88,13 +87,13 @@ type StashServer struct {
 	Controller       *controller.StashController
 }
 
-func (op *StashServer) Run(stopCh <-chan struct{}) error {
+func (op *StashServer) Run(ctx context.Context) error {
 	if err := op.Controller.MigrateObservedGeneration(); err != nil {
 		return fmt.Errorf("failed  to migrate observedGeneration to int64 for existing objects. Reason: %v", err)
 	}
 	// sync cache
-	go op.Controller.Run(stopCh)
-	return op.GenericAPIServer.PrepareRun().Run(stopCh)
+	go op.Controller.Run(ctx.Done())
+	return op.GenericAPIServer.PrepareRun().RunWithContext(ctx)
 }
 
 type completedConfig struct {
@@ -113,12 +112,6 @@ func (c *StashConfig) Complete() CompletedConfig {
 		c.GenericConfig.Complete(),
 		c.ExtraConfig,
 	}
-
-	completedCfg.GenericConfig.Version = &version.Info{
-		Major: "1",
-		Minor: "1",
-	}
-
 	return CompletedConfig{&completedCfg}
 }
 
@@ -206,7 +199,7 @@ func (c completedConfig) New() (*StashServer, error) {
 		}
 		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
 			func(context genericapiserver.PostStartHookContext) error {
-				return admissionHook.Initialize(c.ExtraConfig.ClientConfig, context.StopCh)
+				return admissionHook.Initialize(c.ExtraConfig.ClientConfig, context.Done())
 			},
 		)
 	}
@@ -237,7 +230,7 @@ func (c completedConfig) New() (*StashServer, error) {
 								},
 							},
 						},
-					}, ctx.StopCh)
+					}, ctx.Done())
 					if err := xray.IsActive(context.TODO()); err != nil {
 						w, _, e2 := dynamic_util.DetectWorkload(
 							context.TODO(),

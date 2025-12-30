@@ -260,7 +260,7 @@ func GetVolumeMountByName(volumeMounts []core.VolumeMount, name string) *core.Vo
 func UpsertVolumeMount(mounts []core.VolumeMount, nv ...core.VolumeMount) []core.VolumeMount {
 	upsert := func(m core.VolumeMount) {
 		for i, vol := range mounts {
-			if vol.Name == m.Name {
+			if vol.MountPath == m.MountPath {
 				mounts[i] = m
 				return
 			}

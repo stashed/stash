@@ -88,7 +88,7 @@ func TrueCondition(t kmapi.ConditionType) *kmapi.Condition {
 }
 
 // FalseCondition returns a condition with Status=False and the given type.
-func FalseCondition(t kmapi.ConditionType, reason string, severity kmapi.ConditionSeverity, messageFormat string, messageArgs ...interface{}) *kmapi.Condition {
+func FalseCondition(t kmapi.ConditionType, reason string, severity kmapi.ConditionSeverity, messageFormat string, messageArgs ...any) *kmapi.Condition {
 	return &kmapi.Condition{
 		Type:     t,
 		Status:   metav1.ConditionFalse,
@@ -99,7 +99,7 @@ func FalseCondition(t kmapi.ConditionType, reason string, severity kmapi.Conditi
 }
 
 // UnknownCondition returns a condition with Status=Unknown and the given type.
-func UnknownCondition(t kmapi.ConditionType, reason string, messageFormat string, messageArgs ...interface{}) *kmapi.Condition {
+func UnknownCondition(t kmapi.ConditionType, reason string, messageFormat string, messageArgs ...any) *kmapi.Condition {
 	return &kmapi.Condition{
 		Type:    t,
 		Status:  metav1.ConditionUnknown,
@@ -114,12 +114,12 @@ func MarkTrue(to Setter, t kmapi.ConditionType) {
 }
 
 // MarkUnknown sets Status=Unknown for the condition with the given type.
-func MarkUnknown(to Setter, t kmapi.ConditionType, reason, messageFormat string, messageArgs ...interface{}) {
+func MarkUnknown(to Setter, t kmapi.ConditionType, reason, messageFormat string, messageArgs ...any) {
 	Set(to, UnknownCondition(t, reason, messageFormat, messageArgs...))
 }
 
 // MarkFalse sets Status=False for the condition with the given type.
-func MarkFalse(to Setter, t kmapi.ConditionType, reason string, severity kmapi.ConditionSeverity, messageFormat string, messageArgs ...interface{}) {
+func MarkFalse(to Setter, t kmapi.ConditionType, reason string, severity kmapi.ConditionSeverity, messageFormat string, messageArgs ...any) {
 	Set(to, FalseCondition(t, reason, severity, messageFormat, messageArgs...))
 }
 

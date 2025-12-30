@@ -19,6 +19,7 @@ package v1
 const (
 	DBModeEnsemble   = "Ensemble"
 	DBModeCluster    = "Cluster"
+	DBModeSentinel   = "Sentinel"
 	DBModeSharded    = "Sharded"
 	DBModeStandalone = "Standalone"
 	DBModeReplicaSet = "ReplicaSet"
@@ -40,4 +41,14 @@ const (
 	MemcachedContainerName     = "memcached"
 	RedisSentinelContainerName = "redissentinel"
 	MySQLRouterContainerName   = "mysql-router"
+
+	// TODO: Update values
+	MongoDBSidecarContainerName       = "replication-mode-detector"
+	MySQLSidecarContainerName         = "mysql-coordinator"
+	PerconaXtraDBSidecarContainerName = "px-coordinator"
+	MariaDBSidecarContainerName       = "md-coordinator"
+	PostgresSidecarContainerName      = "pg-coordinator"
+	RedisSidecarContainerName         = "rd-coordinator"
+	PgBouncerSidecarContainerName     = "pgbouncer"
+	MySQLRouterSidecarContainerName   = "mysql-router"
 )

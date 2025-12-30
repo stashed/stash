@@ -17,6 +17,7 @@ limitations under the License.
 package server
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -30,10 +31,9 @@ import (
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
-	"k8s.io/apiserver/pkg/features"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
-	"k8s.io/apiserver/pkg/util/feature"
+	basecompatibility "k8s.io/component-base/compatibility"
 	"kmodules.xyz/client-go/tools/clientcmd"
 )
 
@@ -48,7 +48,6 @@ type StashOptions struct {
 }
 
 func NewStashOptions(out, errOut io.Writer) *StashOptions {
-	_ = feature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%s=false", features.APIPriorityAndFairness))
 	o := &StashOptions{
 		// TODO we will nil out the etcd storage options.  This requires a later level of k8s.io/apiserver
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
@@ -109,6 +108,8 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 		"/apis/admission.stash.appscode.com/v1beta1/backupconfigurationvalidators",
 	}
 
+	serverConfig.EffectiveVersion = basecompatibility.NewEffectiveVersionFromString("v1.0.0", "", "")
+
 	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(v1alpha1.GetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(server.Scheme))
 	serverConfig.OpenAPIConfig.Info.Title = "stash-webhook-server"
 	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
@@ -131,7 +132,7 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 	return config, nil
 }
 
-func (o StashOptions) Run(stopCh <-chan struct{}) error {
+func (o StashOptions) Run(ctx context.Context) error {
 	config, err := o.Config()
 	if err != nil {
 		return err
@@ -144,7 +145,7 @@ func (o StashOptions) Run(stopCh <-chan struct{}) error {
 
 	// Start periodic license verification
 	//nolint:errcheck
-	go licenseEnforcer.VerifyLicensePeriodically(config.ExtraConfig.ClientConfig, o.ExtraOptions.LicenseFile, stopCh)
+	go licenseEnforcer.VerifyLicensePeriodically(config.ExtraConfig.ClientConfig, o.ExtraOptions.LicenseFile, ctx.Done())
 
-	return s.Run(stopCh)
+	return s.Run(ctx)
 }

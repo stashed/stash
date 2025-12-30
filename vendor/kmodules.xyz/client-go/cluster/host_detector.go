@@ -50,12 +50,12 @@ func TestGKE() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint:errcheck
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
-	content := make(map[string]interface{})
+	content := make(map[string]any)
 	err = yaml.Unmarshal(body, &content)
 	if err != nil {
 		return "", err

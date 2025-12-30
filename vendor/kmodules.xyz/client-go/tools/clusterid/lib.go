@@ -44,7 +44,7 @@ func ClusterMetadata(client kubernetes.Interface) (*kmapi.ClusterMetadata, error
 
 	cm, err := client.CoreV1().ConfigMaps(metav1.NamespacePublic).Get(context.TODO(), kmapi.AceInfoConfigMapName, metav1.GetOptions{})
 	if err == nil {
-		result, err := clustermeta.ClusterMetadataFromConfigMap(cm, string(ns.UID))
+		result, err := clustermeta.ClusterMetadataFromConfigMap(cm, clustermeta.DetectClusterMode(ns), string(ns.UID))
 		if err == nil {
 			return result, nil
 		}

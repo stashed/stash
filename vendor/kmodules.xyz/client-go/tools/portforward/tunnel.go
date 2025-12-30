@@ -136,7 +136,7 @@ func getAvailablePort(preferredPort int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer l.Close()
+	defer l.Close() // nolint:errcheck
 
 	_, p, err := net.SplitHostPort(l.Addr().String())
 	if err != nil {

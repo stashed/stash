@@ -226,6 +226,10 @@ func (d *typedClient) Update(ctx context.Context, obj client.Object, opts ...cli
 	return d.c.Update(ctx, llo, opts...)
 }
 
+func (d *typedClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) error {
+	panic("not implemented")
+}
+
 func (d *typedClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
 	if err != nil {

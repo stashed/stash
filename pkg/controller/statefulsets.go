@@ -81,7 +81,7 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initStatefulSetWatcher() {
 	c.ssInformer = c.kubeInformerFactory.Apps().V1().StatefulSets().Informer()
-	c.ssQueue = queue.New("StatefulSet", c.MaxNumRequeues, c.NumThreads, c.processStatefulSetEvent)
+	c.ssQueue = queue.New[any]("StatefulSet", c.MaxNumRequeues, c.NumThreads, c.processStatefulSetEvent)
 	_, _ = c.ssInformer.AddEventHandler(queue.DefaultEventHandler(c.ssQueue.GetQueue(), core.NamespaceAll))
 	c.ssLister = c.kubeInformerFactory.Apps().V1().StatefulSets().Lister()
 }
@@ -89,7 +89,8 @@ func (c *StashController) initStatefulSetWatcher() {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) processStatefulSetEvent(key string) error {
+func (c *StashController) processStatefulSetEvent(v any) error {
+	key := v.(string)
 	obj, exists, err := c.ssInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

@@ -41,7 +41,7 @@ type ResourceEventPublisher struct {
 
 var _ cache.ResourceEventHandler = &ResourceEventPublisher{}
 
-func (p *ResourceEventPublisher) OnAdd(o interface{}, isInInitialList bool) {
+func (p *ResourceEventPublisher) OnAdd(o any, isInInitialList bool) {
 	obj, ok := o.(client.Object)
 	if !ok {
 		return
@@ -66,7 +66,7 @@ func (p *ResourceEventPublisher) OnAdd(o interface{}, isInInitialList bool) {
 	p.mu.Unlock()
 }
 
-func (p *ResourceEventPublisher) OnUpdate(oldObj, newObj interface{}) {
+func (p *ResourceEventPublisher) OnUpdate(oldObj, newObj any) {
 	uOld, ok := oldObj.(client.Object)
 	if !ok {
 		return
@@ -113,7 +113,7 @@ func (p *ResourceEventPublisher) OnUpdate(oldObj, newObj interface{}) {
 	p.mu.Unlock()
 }
 
-func (p *ResourceEventPublisher) OnDelete(obj interface{}) {
+func (p *ResourceEventPublisher) OnDelete(obj any) {
 	var object client.Object
 	var ok bool
 	if object, ok = obj.(client.Object); !ok {

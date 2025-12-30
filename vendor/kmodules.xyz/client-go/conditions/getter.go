@@ -223,7 +223,7 @@ func mirror(from Getter, targetCondition kmapi.ConditionType, options ...MirrorO
 		case true:
 			condition = TrueCondition(targetCondition)
 		case false:
-			condition = FalseCondition(targetCondition, mirrorOpt.fallbackReason, mirrorOpt.fallbackSeverity, mirrorOpt.fallbackMessage) //nolint:govet
+			condition = FalseCondition(targetCondition, mirrorOpt.fallbackReason, mirrorOpt.fallbackSeverity, "%s", mirrorOpt.fallbackMessage)
 		}
 	}
 

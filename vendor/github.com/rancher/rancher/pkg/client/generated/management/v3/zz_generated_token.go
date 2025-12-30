@@ -19,7 +19,7 @@ const (
 	TokenFieldGroupPrincipals = "groupPrincipals"
 	TokenFieldIsDerived       = "isDerived"
 	TokenFieldLabels          = "labels"
-	TokenFieldLastUpdateTime  = "lastUpdateTime"
+	TokenFieldLastUsedAt      = "lastUsedAt"
 	TokenFieldName            = "name"
 	TokenFieldOwnerReferences = "ownerReferences"
 	TokenFieldProviderInfo    = "providerInfo"
@@ -46,7 +46,7 @@ type Token struct {
 	GroupPrincipals []string          `json:"groupPrincipals,omitempty" yaml:"groupPrincipals,omitempty"`
 	IsDerived       bool              `json:"isDerived,omitempty" yaml:"isDerived,omitempty"`
 	Labels          map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	LastUpdateTime  string            `json:"lastUpdateTime,omitempty" yaml:"lastUpdateTime,omitempty"`
+	LastUsedAt      string            `json:"lastUsedAt,omitempty" yaml:"lastUsedAt,omitempty"`
 	Name            string            `json:"name,omitempty" yaml:"name,omitempty"`
 	OwnerReferences []OwnerReference  `json:"ownerReferences,omitempty" yaml:"ownerReferences,omitempty"`
 	ProviderInfo    map[string]string `json:"providerInfo,omitempty" yaml:"providerInfo,omitempty"`
@@ -78,6 +78,8 @@ type TokenOperations interface {
 	Delete(container *Token) error
 
 	CollectionActionLogout(resource *TokenCollection) error
+
+	CollectionActionLogoutAll(resource *TokenCollection, input *SamlConfigLogoutInput) (*SamlConfigLogoutOutput, error)
 }
 
 func newTokenClient(apiClient *Client) *TokenClient {
@@ -152,4 +154,10 @@ func (c *TokenClient) Delete(container *Token) error {
 func (c *TokenClient) CollectionActionLogout(resource *TokenCollection) error {
 	err := c.apiClient.Ops.DoCollectionAction(TokenType, "logout", &resource.Collection, nil, nil)
 	return err
+}
+
+func (c *TokenClient) CollectionActionLogoutAll(resource *TokenCollection, input *SamlConfigLogoutInput) (*SamlConfigLogoutOutput, error) {
+	resp := &SamlConfigLogoutOutput{}
+	err := c.apiClient.Ops.DoCollectionAction(TokenType, "logoutAll", &resource.Collection, input, resp)
+	return resp, err
 }

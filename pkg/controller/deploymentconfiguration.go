@@ -86,7 +86,7 @@ func (c *StashController) initDeploymentConfigWatcher() {
 		return
 	}
 	c.dcInformer = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Informer()
-	c.dcQueue = queue.New(apis.KindDeploymentConfig, c.MaxNumRequeues, c.NumThreads, c.processDeploymentConfigEvent)
+	c.dcQueue = queue.New[any](apis.KindDeploymentConfig, c.MaxNumRequeues, c.NumThreads, c.processDeploymentConfigEvent)
 	_, _ = c.dcInformer.AddEventHandler(queue.DefaultEventHandler(c.dcQueue.GetQueue(), core.NamespaceAll))
 	c.dcLister = c.ocInformerFactory.Apps().V1().DeploymentConfigs().Lister()
 }
@@ -94,7 +94,8 @@ func (c *StashController) initDeploymentConfigWatcher() {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) processDeploymentConfigEvent(key string) error {
+func (c *StashController) processDeploymentConfigEvent(v any) error {
+	key := v.(string)
 	obj, exists, err := c.dcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

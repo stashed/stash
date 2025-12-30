@@ -36,7 +36,7 @@ func init() {
 var (
 	ErrMissingKind         = errors.New("test object missing kind")
 	ErrMissingVersion      = errors.New("test object missing version")
-	ErrWebhookNotActivated = errors.New("Admission webhooks are not activated. Enable it by configuring --enable-admission-plugins flag of kube-apiserver. For details, visit: https://appsco.de/kube-apiserver-webhooks")
+	ErrWebhookNotActivated = errors.New("admission webhooks are not activated. Enable it by configuring --enable-admission-plugins flag of kube-apiserver. For details, visit: https://appsco.de/kube-apiserver-webhooks")
 )
 
 func BypassValidatingWebhookXray() bool {

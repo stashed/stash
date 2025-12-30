@@ -32,6 +32,11 @@ func init() {
 		Version: "v1",
 		Kind:    "MongoDB",
 	}, MongoDB{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "MongoDB",
+	}, MongoDB{}.ResourceCalculator())
 }
 
 type MongoDB struct{}
@@ -39,7 +44,7 @@ type MongoDB struct{}
 func (r MongoDB) ResourceCalculator() api.ResourceCalculator {
 	return &api.ResourceCalculatorFuncs{
 		AppRoles:               []api.PodRole{api.PodRoleDefault, api.PodRoleTotalShard, api.PodRoleConfigServer, api.PodRoleMongos},
-		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleTotalShard, api.PodRoleConfigServer, api.PodRoleMongos, api.PodRoleExporter},
+		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleTotalShard, api.PodRoleConfigServer, api.PodRoleMongos, api.PodRoleSidecar, api.PodRoleExporter},
 		RoleReplicasFn:         r.roleReplicasFn,
 		ModeFn:                 r.modeFn,
 		UsesTLSFn:              r.usesTLSFn,
@@ -48,7 +53,7 @@ func (r MongoDB) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r MongoDB) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r MongoDB) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	// Sharded MongoDB cluster
 	shardTopology, found, err := unstructured.NestedMap(obj, "spec", "shardTopology")
 	if err != nil {
@@ -91,7 +96,7 @@ func (r MongoDB) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, er
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r MongoDB) modeFn(obj map[string]interface{}) (string, error) {
+func (r MongoDB) modeFn(obj map[string]any) (string, error) {
 	shards, found, err := unstructured.NestedMap(obj, "spec", "shardTopology")
 	if err != nil {
 		return "", err
@@ -109,13 +114,13 @@ func (r MongoDB) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (r MongoDB) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r MongoDB) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -136,6 +141,10 @@ func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resou
 			if err != nil {
 				return nil, err
 			}
+			sidecar, err := api.SidecarNodeResourcesV2(shardTopology, fn, MongoDBSidecarContainerName, "shard")
+			if err != nil {
+				return nil, err
+			}
 
 			// ConfigServer nodes resources
 			configServer, configServerReplicas, err := api.AppNodeResourcesV2(shardTopology, fn, MongoDBContainerName, "configServer")
@@ -153,6 +162,7 @@ func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resou
 				api.PodRoleTotalShard:   {Resource: shard, Replicas: shards * shardReplicas},
 				api.PodRoleConfigServer: {Resource: configServer, Replicas: configServerReplicas},
 				api.PodRoleMongos:       {Resource: mongos, Replicas: mongosReplicas},
+				api.PodRoleSidecar:      {Resource: sidecar, Replicas: shards*shardReplicas + configServerReplicas},
 				api.PodRoleExporter:     {Resource: exporter, Replicas: shards*shardReplicas + configServerReplicas + mongosReplicas},
 			}, nil
 		}
@@ -163,9 +173,20 @@ func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resou
 			return nil, err
 		}
 
-		return map[api.PodRole]api.PodInfo{
+		ret := map[api.PodRole]api.PodInfo{
 			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
 			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
-		}, nil
+		}
+
+		if replicas > 1 {
+			sidecar, err := api.SidecarNodeResourcesV2(obj, fn, MongoDBSidecarContainerName, "spec")
+			if err != nil {
+				return nil, err
+			}
+
+			ret[api.PodRoleSidecar] = api.PodInfo{Resource: sidecar, Replicas: replicas}
+		}
+
+		return ret, nil
 	}
 }

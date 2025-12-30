@@ -33,7 +33,7 @@ type Condition struct {
 	ObservedGeneration int64  `json:"observedGeneration,omitempty"`
 }
 
-func StatusEqual(old, new interface{}) bool {
+func StatusEqual(old, new any) bool {
 	oldStatus, oldExists := extractStatusFromObject(old)
 	newStatus, newExists := extractStatusFromObject(new)
 	if oldExists && newExists {
@@ -48,7 +48,7 @@ func StatusEqual(old, new interface{}) bool {
 	return !oldExists && !newExists
 }
 
-func StatusConditionAwareEqual(old, new interface{}) bool {
+func StatusConditionAwareEqual(old, new any) bool {
 	oldStatus, oldExists := extractStatusFromObject(old)
 	newStatus, newExists := extractStatusFromObject(new)
 	if oldExists && newExists {
@@ -61,7 +61,7 @@ func StatusConditionAwareEqual(old, new interface{}) bool {
 
 		var result bool
 		if oldKind == reflect.Map {
-			result = statusMapEqual(oldStatus.(map[string]interface{}), newStatus.(map[string]interface{}))
+			result = statusMapEqual(oldStatus.(map[string]any), newStatus.(map[string]any))
 		} else {
 			oldStruct := structs.New(oldStatus)
 			oldStruct.TagName = "json"
@@ -81,7 +81,7 @@ func StatusConditionAwareEqual(old, new interface{}) bool {
 	return !oldExists && !newExists
 }
 
-func extractStatusFromObject(o interface{}) (interface{}, bool) {
+func extractStatusFromObject(o any) (any, bool) {
 	switch obj := o.(type) {
 	case *unstructured.Unstructured:
 		v, ok, _ := unstructured.NestedFieldNoCopy(obj.Object, "status")
@@ -114,7 +114,7 @@ func conditionsEqual(old, nu []Condition) bool {
 	return true
 }
 
-func statusMapEqual(old, nu map[string]interface{}) bool {
+func statusMapEqual(old, nu map[string]any) bool {
 	// optimization
 	if len(old) != len(nu) {
 		return false

@@ -38,12 +38,12 @@ func (r Pod) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (_ Pod) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (Pod) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	return api.ReplicaList{api.PodRoleDefault: 1}, nil
 }
 
-func (r Pod) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r Pod) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		containers, err := api.AggregateContainerResources(obj, fn, api.AddResourceList, "spec", "containers")
 		if err != nil {
 			return nil, err

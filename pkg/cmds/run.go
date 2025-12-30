@@ -17,6 +17,7 @@ limitations under the License.
 package cmds
 
 import (
+	"context"
 	"io"
 
 	"stash.appscode.dev/stash/pkg/cmds/server"
@@ -26,7 +27,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func NewCmdRun(out, errOut io.Writer, stopCh <-chan struct{}) *cobra.Command {
+func NewCmdRun(ctx context.Context, out, errOut io.Writer) *cobra.Command {
 	o := server.NewStashOptions(out, errOut)
 
 	cmd := &cobra.Command{
@@ -43,7 +44,7 @@ func NewCmdRun(out, errOut io.Writer, stopCh <-chan struct{}) *cobra.Command {
 			if err := o.Validate(args); err != nil {
 				return err
 			}
-			if err := o.Run(stopCh); err != nil {
+			if err := o.Run(ctx); err != nil {
 				return err
 			}
 			return nil

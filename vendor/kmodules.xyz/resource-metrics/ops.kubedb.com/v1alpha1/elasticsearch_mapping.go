@@ -45,8 +45,8 @@ func (m *ElasticsearchOpsRequest) HorizontalPathMapping() map[OpsReqPath]Referen
 
 func (m *ElasticsearchOpsRequest) VerticalPathMapping() map[OpsReqPath]ReferencedObjPath {
 	return map[OpsReqPath]ReferencedObjPath{
-		"spec.verticalScaling.node":                  "spec.resources",
-		"spec.verticalScaling.exporter":              "spec.topology.exporter.resources",
+		"spec.verticalScaling.node":                  "spec.podTemplate.spec.resources",
+		"spec.verticalScaling.exporter":              "spec.monitor.prometheus.exporter.resources",
 		"spec.verticalScaling.topology.master":       "spec.topology.master.resources",
 		"spec.verticalScaling.topology.ingest":       "spec.topology.ingest.resources",
 		"spec.verticalScaling.topology.data":         "spec.topology.data.resources",

@@ -91,7 +91,7 @@ func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initBackupSessionWatcher() {
 	c.backupSessionInformer = c.stashInformerFactory.Stash().V1beta1().BackupSessions().Informer()
-	c.backupSessionQueue = queue.New(api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.processBackupSessionEvent)
+	c.backupSessionQueue = queue.New[any](api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.processBackupSessionEvent)
 	if c.auditor != nil {
 		c.auditor.ForGVK(c.backupSessionInformer, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession))
 	}
@@ -99,7 +99,8 @@ func (c *StashController) initBackupSessionWatcher() {
 	c.backupSessionLister = c.stashInformerFactory.Stash().V1beta1().BackupSessions().Lister()
 }
 
-func (c *StashController) processBackupSessionEvent(key string) error {
+func (c *StashController) processBackupSessionEvent(v any) error {
+	key := v.(string)
 	obj, exists, err := c.backupSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

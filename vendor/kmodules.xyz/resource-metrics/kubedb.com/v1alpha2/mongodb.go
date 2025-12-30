@@ -48,7 +48,7 @@ func (r MongoDB) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r MongoDB) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r MongoDB) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	// Sharded MongoDB cluster
 	shardTopology, found, err := unstructured.NestedMap(obj, "spec", "shardTopology")
 	if err != nil {
@@ -91,7 +91,7 @@ func (r MongoDB) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, er
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r MongoDB) modeFn(obj map[string]interface{}) (string, error) {
+func (r MongoDB) modeFn(obj map[string]any) (string, error) {
 	shards, found, err := unstructured.NestedMap(obj, "spec", "shardTopology")
 	if err != nil {
 		return "", err
@@ -109,13 +109,13 @@ func (r MongoDB) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (r MongoDB) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r MongoDB) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r MongoDB) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err

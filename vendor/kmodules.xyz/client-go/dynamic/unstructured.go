@@ -143,7 +143,6 @@ func TryUpdate(
 		klog.Errorf("Attempt %d failed to update %s %s/%s due to %v.", attempt, gvr.String(), cur.GetNamespace(), cur.GetName(), e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update %s %s/%s after %d attempts due to %v", gvr.String(), meta.Namespace, meta.Name, attempt, err)
 	}
@@ -187,7 +186,6 @@ func UpdateStatus(
 		}
 		return e2 == nil, nil
 	})
-
 	if err != nil {
 		err = fmt.Errorf("failed to update status of %s %s/%s after %d attempts due to %v", gvr.String(), in.GetNamespace(), in.GetName(), attempt, err)
 	}

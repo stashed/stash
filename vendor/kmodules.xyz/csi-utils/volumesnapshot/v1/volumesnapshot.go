@@ -21,8 +21,8 @@ import (
 	"time"
 
 	jsonpatch "github.com/evanphx/json-patch/v5"
-	api "github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumesnapshot/v1"
-	cs "github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned"
+	api "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
+	cs "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,7 +94,6 @@ func TryUpdateVolumeSnapshot(ctx context.Context, c cs.Interface, meta metav1.Ob
 		klog.Errorf("Attempt %d failed to update VolumeSnapshot %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update VolumeSnapshot %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}

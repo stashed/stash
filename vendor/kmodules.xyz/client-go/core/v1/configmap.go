@@ -93,7 +93,6 @@ func TryUpdateConfigMap(ctx context.Context, c kubernetes.Interface, meta metav1
 		klog.Errorf("Attempt %d failed to update ConfigMap %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update ConfigMap %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}

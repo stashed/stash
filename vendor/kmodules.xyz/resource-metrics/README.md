@@ -6,3 +6,6 @@
 # resource-metrics
 
 Kubernetes resource metrics calculator
+
+**Sample:**
+https://gist.github.com/ArnobKumarSaha/441bffe457865b5d5cb9913e6aeae297

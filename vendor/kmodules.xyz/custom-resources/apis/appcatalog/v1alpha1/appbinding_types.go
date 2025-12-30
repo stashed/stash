@@ -68,7 +68,7 @@ type AppBindingSpec struct {
 
 	// Secret is the name of the secret to create in the AppBinding's
 	// namespace that will hold the credentials associated with the AppBinding.
-	Secret *core.LocalObjectReference `json:"secret,omitempty"`
+	Secret *TypedLocalObjectReference `json:"secret,omitempty"`
 
 	// List of transformations that should be applied to the credentials
 	// associated with the ServiceBinding before they are inserted into the Secret.
@@ -90,7 +90,7 @@ type AppBindingSpec struct {
 
 	// TLSSecret is the name of the secret that will hold
 	// the client certificate and private key associated with the AppBinding.
-	TLSSecret *core.LocalObjectReference `json:"tlsSecret,omitempty"`
+	TLSSecret *TypedLocalObjectReference `json:"tlsSecret,omitempty"`
 }
 
 type AppType string
@@ -173,6 +173,21 @@ type ServiceReference struct {
 	// sent in any request to this service.
 	// +optional
 	Query string `json:"query,omitempty"`
+}
+
+// +structType=atomic
+type TypedLocalObjectReference struct {
+	// APIGroup is the group for the resource being referenced.
+	// If APIGroup is not specified, the specified Kind must be in the core API group.
+	// For any other third-party types, APIGroup is required.
+	// +optional
+	// +kubebuilder:default=""
+	APIGroup string `json:"apiGroup"`
+	// Kind is the type of resource being referenced
+	// +kubebuilder:default="Secret"
+	Kind string `json:"kind"`
+	// Name is the name of resource being referenced
+	Name string `json:"name"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

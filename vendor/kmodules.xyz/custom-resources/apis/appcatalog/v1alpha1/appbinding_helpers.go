@@ -32,7 +32,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func (_ AppBinding) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (AppBinding) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourceApps))
 }
 
@@ -67,7 +67,7 @@ func (a AppBinding) URLTemplate() (string, error) {
 	if i < 0 {
 		return auth + rawurl, nil
 	}
-	return fmt.Sprintf(rawurl[:i+3] + auth + rawurl[i+3:]), nil
+	return rawurl[:i+3] + auth + rawurl[i+3:], nil
 }
 
 func (a AppBinding) Host() (string, error) {

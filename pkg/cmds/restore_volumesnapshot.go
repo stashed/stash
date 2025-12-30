@@ -31,7 +31,7 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 
-	vscs "github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned"
+	vscs "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	"github.com/spf13/cobra"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"

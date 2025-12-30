@@ -65,5 +65,12 @@ func (a *clientAdapter) Add(in map[clientfeatures.Feature]clientfeatures.Feature
 		}
 		out[featuregate.Feature(name)] = converted
 	}
-	return a.mfg.Add(out)
+	return a.mfg.Add(out) //nolint:forbidigo // No need to support versioned feature gates in client adapter
+}
+
+// Set implements the unexported interface that client-go feature gate testing expects for
+// ek8s.io/client-go/features/testing.SetFeatureDuringTest. This is necessary for integration tests
+// to set test overrides for client-go feature gates.
+func (a *clientAdapter) Set(name clientfeatures.Feature, enabled bool) error {
+	return a.mfg.SetFromMap(map[string]bool{string(name): enabled})
 }

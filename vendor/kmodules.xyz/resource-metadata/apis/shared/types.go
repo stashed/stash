@@ -139,9 +139,33 @@ type ActionTemplate struct {
 	DisabledTemplate string                      `json:"disabledTemplate,omitempty"`
 	Editor           *releasesapi.ChartSourceRef `json:"editor,omitempty"`
 	EnforceQuota     bool                        `json:"enforceQuota"`
+	PartOf           string                      `json:"partOf,omitempty"`
 }
 
 type ActionInfo struct {
 	Name        string `json:"name,omitempty"`
+	Icon        string `json:"icon,omitempty"`
 	Description string `json:"description,omitempty"`
 }
+
+/*
+overview -> hugeicons:book-open-01
+insights -> hugeicons:chart-line-data-01
+user -> hugeicons:user-03
+operations ->  hugeicons:dashboard-circle-settings
+    overview-> hugeicons:book-open-02
+    version update -> qlementine-icons:version-control-16
+    restart -> hugeicons:redo
+    reconfigure ->  hugeicons:settings-05
+    vertical+compute -> hugeicons:vertical-resize
+    expand+storage -> hugeicons:arrow-expand
+    horizontal -> hugeicons:horizontal-resize
+    tls configure-> hugeicons:security-check
+    monitoring-> hugeicons:presentation-line-chart-01
+    expose via gateway->  streamline-ultimate:server-share
+backup-> carbon:data-backup
+    overview-> material-symbols-light:backup-table
+    configure backup -> material-symbols-light:backup-outline
+    instant backup-> carbon:ibm-cloud-backup-and-recovery
+    restore-> mdi:backup-restore
+*/

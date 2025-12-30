@@ -32,6 +32,11 @@ func init() {
 		Version: "v1",
 		Kind:    "Redis",
 	}, Redis{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "Redis",
+	}, Redis{}.ResourceCalculator())
 }
 
 type Redis struct{}
@@ -39,7 +44,7 @@ type Redis struct{}
 func (r Redis) ResourceCalculator() api.ResourceCalculator {
 	return &api.ResourceCalculatorFuncs{
 		AppRoles:               []api.PodRole{api.PodRoleDefault},
-		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleExporter},
+		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleSidecar, api.PodRoleExporter},
 		RoleReplicasFn:         r.roleReplicasFn,
 		ModeFn:                 r.modeFn,
 		UsesTLSFn:              r.usesTLSFn,
@@ -48,7 +53,7 @@ func (r Redis) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r Redis) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r Redis) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	mode, found, err := unstructured.NestedString(obj, "spec", "mode")
 	if err != nil {
 		return nil, err
@@ -81,7 +86,7 @@ func (r Redis) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, erro
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r Redis) modeFn(obj map[string]interface{}) (string, error) {
+func (r Redis) modeFn(obj map[string]any) (string, error) {
 	mode, found, err := unstructured.NestedString(obj, "spec", "mode")
 	if err != nil {
 		return "", err
@@ -92,13 +97,13 @@ func (r Redis) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (r Redis) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r Redis) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (r Redis) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r Redis) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -123,15 +128,22 @@ func (r Redis) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resourc
 			if err != nil {
 				return nil, err
 			}
-			// If spec.cluster.replicas = x
-			// That means in each shard there are (x+1) redis replicas
-			shardReplicas += 1
 			replicas = shards * shardReplicas
 		}
 
-		return map[api.PodRole]api.PodInfo{
+		ret := map[api.PodRole]api.PodInfo{
 			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
 			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
-		}, nil
+		}
+
+		if mode == DBModeSentinel {
+			sidecar, err := api.SidecarNodeResourcesV2(obj, fn, RedisSidecarContainerName, "spec")
+			if err != nil {
+				return nil, err
+			}
+			ret[api.PodRoleSidecar] = api.PodInfo{Resource: sidecar, Replicas: replicas}
+		}
+
+		return ret, nil
 	}
 }

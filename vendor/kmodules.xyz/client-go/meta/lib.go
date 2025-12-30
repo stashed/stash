@@ -31,6 +31,7 @@ import (
 // ref: https://github.com/kubernetes-sigs/application/blob/4ead7f1b87048b7717b3e474a21fdc07e6bce636/pkg/controller/application/application_controller.go#L28
 const (
 	NameLabelKey      = "app.kubernetes.io/name"
+	NamespaceLabelKey = "app.kubernetes.io/namespace"
 	VersionLabelKey   = "app.kubernetes.io/version"
 	InstanceLabelKey  = "app.kubernetes.io/instance"
 	PartOfLabelKey    = "app.kubernetes.io/part-of"
@@ -67,7 +68,7 @@ func DeleteInForeground() metav1.DeleteOptions {
 	return metav1.DeleteOptions{PropagationPolicy: &policy}
 }
 
-func GetKind(v interface{}) string {
+func GetKind(v any) string {
 	return reflect.Indirect(reflect.ValueOf(v)).Type().Name()
 }
 

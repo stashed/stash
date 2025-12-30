@@ -112,7 +112,7 @@ func (c *StashController) validateBackupConfiguration(bc *api_v1beta1.BackupConf
 
 func (c *StashController) initBackupConfigurationWatcher() {
 	c.bcInformer = c.stashInformerFactory.Stash().V1beta1().BackupConfigurations().Informer()
-	c.bcQueue = queue.New(api_v1beta1.ResourceKindBackupConfiguration, c.MaxNumRequeues, c.NumThreads, c.runBackupConfigurationProcessor)
+	c.bcQueue = queue.New[any](api_v1beta1.ResourceKindBackupConfiguration, c.MaxNumRequeues, c.NumThreads, c.runBackupConfigurationProcessor)
 	if c.auditor != nil {
 		c.auditor.ForGVK(c.bcInformer, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 	}
@@ -130,7 +130,8 @@ func (c *StashController) initBackupConfigurationWatcher() {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) runBackupConfigurationProcessor(key string) error {
+func (c *StashController) runBackupConfigurationProcessor(v any) error {
+	key := v.(string)
 	obj, exists, err := c.bcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

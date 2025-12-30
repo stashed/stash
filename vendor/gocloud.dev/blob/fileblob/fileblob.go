@@ -15,12 +15,20 @@
 // Package fileblob provides a blob implementation that uses the filesystem.
 // Use OpenBucket to construct a *blob.Bucket.
 //
-// By default fileblob stores blob metadata in 'sidecar files' under the original
-// filename but an additional ".attrs" suffix.
-// That behaviour can be changed via Options.Metadata;
+// To avoid partial writes, fileblob writes to a temporary file and then renames
+// the temporary file to the final path on Close. By default, it creates these
+// temporary files in `os.TempDir`. If `os.TempDir` is on a different mount than
+// your base bucket path, the `os.Rename` will fail with `invalid cross-device link`.
+// To avoid this, either configure the temp dir to use by setting the environment
+// variable `TMPDIR`, or set `Options.NoTempDir` to `true` (fileblob will create
+// the temporary files next to the actual files instead of in a temporary directory).
+//
+// By default fileblob stores blob metadata in "sidecar" files under the original
+// filename with an additional ".attrs" suffix.
+// This behaviour can be changed via `Options.Metadata`;
 // writing of those metadata files can be suppressed by setting it to
-// 'MetadataDontWrite' or its equivalent "metadata=skip" in the URL for the opener.
-// In any case, absent any stored metadata many blob.Attributes fields
+// `MetadataDontWrite` or its equivalent "metadata=skip" in the URL for the opener.
+// In either case, absent any stored metadata many `blob.Attributes` fields
 // will be set to default values.
 //
 // # URLs
@@ -65,7 +73,6 @@ import (
 	"hash"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -102,6 +109,11 @@ const Scheme = "file"
 //
 //   - create_dir: (any non-empty value) the directory is created (using os.MkDirAll)
 //     if it does not already exist.
+//   - dir_file_mode: any directories that are created (the base directory when create_dir
+//     is true, or subdirectories for keys) are created using this os.FileMode, parsed
+//     using os.Parseuint. Defaults to 0777.
+//   - no_tmp_dir: (any non-empty value) temporary files are created next to the final
+//     path instead of in os.TempDir.
 //   - base_url: the base URL to use to construct signed URLs; see URLSignerHMAC
 //   - secret_key_path: path to read for the secret key used to construct signed URLs;
 //     see URLSignerHMAC
@@ -149,6 +161,8 @@ var recognizedParams = map[string]bool{
 	"base_url":        true,
 	"secret_key_path": true,
 	"metadata":        true,
+	"no_tmp_dir":      true,
+	"dir_file_mode":   true,
 }
 
 type metadataOption string // Not exported as subject to change.
@@ -187,17 +201,27 @@ func (o *URLOpener) forParams(ctx context.Context, q url.Values) (*Options, erro
 	if q.Get("create_dir") != "" {
 		opts.CreateDir = true
 	}
+	if fms := q.Get("dir_file_mode"); fms != "" {
+		fm, err := strconv.ParseUint(fms, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("fileblob.OpenBucket: invalid dir_file_mode %q: %v", fms, err)
+		}
+		opts.DirFileMode = os.FileMode(fm)
+	}
+	if q.Get("no_tmp_dir") != "" {
+		opts.NoTempDir = true
+	}
 	baseURL := q.Get("base_url")
 	keyPath := q.Get("secret_key_path")
 	if (baseURL == "") != (keyPath == "") {
-		return nil, errors.New("must supply both base_url and secret_key_path query parameters")
+		return nil, errors.New("fileblob.OpenBucket: must supply both base_url and secret_key_path query parameters")
 	}
 	if baseURL != "" {
 		burl, err := url.Parse(baseURL)
 		if err != nil {
 			return nil, err
 		}
-		sk, err := ioutil.ReadFile(keyPath)
+		sk, err := os.ReadFile(keyPath)
 		if err != nil {
 			return nil, err
 		}
@@ -218,6 +242,19 @@ type Options struct {
 	// (using os.MkdirAll).
 	CreateDir bool
 
+	// The FileMode to use when creating directories for the top-level directory
+	// backing the bucket (when CreateDir is true), and for subdirectories for keys.
+	// Defaults to 0777.
+	DirFileMode os.FileMode
+
+	// If true, don't use os.TempDir for temporary files, but instead place them
+	// next to the actual files. This may result in "stranded" temporary files
+	// (e.g., if the application is killed before the file cleanup runs).
+	//
+	// If your bucket directory is on a different mount than os.TempDir, you will
+	// need to set this to true, as os.Rename will fail across mount points.
+	NoTempDir bool
+
 	// Refers to the strategy for how to deal with metadata (such as blob.Attributes).
 	// For supported values please see the Metadata* constants.
 	// If left unchanged, 'MetadataInSidecar' will be used.
@@ -235,6 +272,10 @@ func openBucket(dir string, opts *Options) (driver.Bucket, error) {
 	if opts == nil {
 		opts = &Options{}
 	}
+	if opts.DirFileMode == 0 {
+		opts.DirFileMode = os.FileMode(0o777)
+	}
+
 	absdir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert %s into an absolute path: %v", dir, err)
@@ -243,7 +284,7 @@ func openBucket(dir string, opts *Options) (driver.Bucket, error) {
 
 	// Optionally, create the directory if it does not already exist.
 	if err != nil && opts.CreateDir && os.IsNotExist(err) {
-		err = os.MkdirAll(absdir, os.FileMode(0777))
+		err = os.MkdirAll(absdir, opts.DirFileMode)
 		if err != nil {
 			return nil, fmt.Errorf("tried to create directory but failed: %v", err)
 		}
@@ -355,7 +396,6 @@ func (b *bucket) forKey(key string) (string, os.FileInfo, *xattrs, error) {
 
 // ListPaged implements driver.ListPaged.
 func (b *bucket) ListPaged(ctx context.Context, opts *driver.ListOptions) (*driver.ListPage, error) {
-
 	var pageToken string
 	if len(opts.PageToken) > 0 {
 		pageToken = string(opts.PageToken)
@@ -437,7 +477,7 @@ func (b *bucket) ListPaged(ctx context.Context, opts *driver.ListOptions) (*driv
 		if err != nil {
 			return err
 		}
-		asFunc := func(i interface{}) bool {
+		asFunc := func(i any) bool {
 			p, ok := i.(*os.FileInfo)
 			if !ok {
 				return false
@@ -514,7 +554,7 @@ func (b *bucket) ListPaged(ctx context.Context, opts *driver.ListOptions) (*driv
 }
 
 // As implements driver.As.
-func (b *bucket) As(i interface{}) bool {
+func (b *bucket) As(i any) bool {
 	p, ok := i.(*os.FileInfo)
 	if !ok {
 		return false
@@ -528,7 +568,7 @@ func (b *bucket) As(i interface{}) bool {
 }
 
 // As implements driver.ErrorAs.
-func (b *bucket) ErrorAs(err error, i interface{}) bool {
+func (b *bucket) ErrorAs(err error, i any) bool {
 	if perr, ok := err.(*os.PathError); ok {
 		if p, ok := i.(**os.PathError); ok {
 			*p = perr
@@ -556,7 +596,7 @@ func (b *bucket) Attributes(ctx context.Context, key string) (*driver.Attributes
 		Size:    info.Size(),
 		MD5:     xa.MD5,
 		ETag:    fmt.Sprintf("\"%x-%x\"", info.ModTime().UnixNano(), info.Size()),
-		AsFunc: func(i interface{}) bool {
+		AsFunc: func(i any) bool {
 			p, ok := i.(*os.FileInfo)
 			if !ok {
 				return false
@@ -578,7 +618,7 @@ func (b *bucket) NewRangeReader(ctx context.Context, key string, offset, length 
 		return nil, err
 	}
 	if opts.BeforeRead != nil {
-		if err := opts.BeforeRead(func(i interface{}) bool {
+		if err := opts.BeforeRead(func(i any) bool {
 			p, ok := i.(**os.File)
 			if !ok {
 				return false
@@ -633,7 +673,7 @@ func (r *reader) Attributes() *driver.ReaderAttributes {
 	return &r.attrs
 }
 
-func (r *reader) As(i interface{}) bool {
+func (r *reader) As(i any) bool {
 	p, ok := i.(*io.Reader)
 	if !ok {
 		return false
@@ -642,21 +682,50 @@ func (r *reader) As(i interface{}) bool {
 	return true
 }
 
+func createTemp(path string, noTempDir bool) (*os.File, error) {
+	// Use a custom createTemp function rather than os.CreateTemp() as
+	// os.CreateTemp() sets the permissions of the tempfile to 0600, rather than
+	// 0666, making it inconsistent with the directories and attribute files.
+	try := 0
+	for {
+		// Append the current time with nanosecond precision and .tmp to the
+		// base path. If the file already exists try again. Nanosecond changes enough
+		// between each iteration to make a conflict unlikely. Using the full
+		// time lowers the chance of a collision with a file using a similar
+		// pattern, but has undefined behavior after the year 2262.
+		var name string
+		if noTempDir {
+			name = path
+		} else {
+			name = filepath.Join(os.TempDir(), filepath.Base(path))
+		}
+		name += "." + strconv.FormatInt(time.Now().UnixNano(), 16) + ".tmp"
+		f, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o666)
+		if os.IsExist(err) {
+			if try++; try < 10000 {
+				continue
+			}
+			return nil, &os.PathError{Op: "createtemp", Path: path + ".*.tmp", Err: os.ErrExist}
+		}
+		return f, err
+	}
+}
+
 // NewTypedWriter implements driver.NewTypedWriter.
-func (b *bucket) NewTypedWriter(ctx context.Context, key string, contentType string, opts *driver.WriterOptions) (driver.Writer, error) {
+func (b *bucket) NewTypedWriter(ctx context.Context, key, contentType string, opts *driver.WriterOptions) (driver.Writer, error) {
 	path, err := b.path(key)
 	if err != nil {
 		return nil, err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), os.FileMode(0777)); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), b.opts.DirFileMode); err != nil {
 		return nil, err
 	}
-	f, err := ioutil.TempFile(filepath.Dir(path), "fileblob")
+	f, err := createTemp(path, b.opts.NoTempDir)
 	if err != nil {
 		return nil, err
 	}
 	if opts.BeforeWrite != nil {
-		if err := opts.BeforeWrite(func(i interface{}) bool {
+		if err := opts.BeforeWrite(func(i any) bool {
 			p, ok := i.(**os.File)
 			if !ok {
 				return false
@@ -766,6 +835,11 @@ type writer struct {
 	path string
 }
 
+func (w *writer) Upload(r io.Reader) error {
+	_, err := w.ReadFrom(r)
+	return err
+}
+
 func (w *writer) Close() error {
 	err := w.File.Close()
 	if err != nil {
@@ -851,7 +925,7 @@ func (b *bucket) SignedURL(ctx context.Context, key string, opts *driver.SignedU
 		return "", gcerr.New(gcerr.Unimplemented, nil, 1, "fileblob.SignedURL: bucket does not have an Options.URLSigner")
 	}
 	if opts.BeforeSign != nil {
-		if err := opts.BeforeSign(func(interface{}) bool { return false }); err != nil {
+		if err := opts.BeforeSign(func(any) bool { return false }); err != nil {
 			return "", err
 		}
 	}

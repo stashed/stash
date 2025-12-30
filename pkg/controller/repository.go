@@ -37,7 +37,7 @@ import (
 	"k8s.io/klog/v2"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
-	"kmodules.xyz/objectstore-api/osm"
+	"kmodules.xyz/objectstore-api/pkg/osm"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
@@ -73,7 +73,7 @@ func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initRepositoryWatcher() {
 	c.repoInformer = c.stashInformerFactory.Stash().V1alpha1().Repositories().Informer()
-	c.repoQueue = queue.New(api_v1alpha1.ResourceKindRepository, c.MaxNumRequeues, c.NumThreads, c.runRepositoryReconciler)
+	c.repoQueue = queue.New[any](api_v1alpha1.ResourceKindRepository, c.MaxNumRequeues, c.NumThreads, c.runRepositoryReconciler)
 	if c.auditor != nil {
 		c.auditor.ForGVK(c.repoInformer, api_v1alpha1.SchemeGroupVersion.WithKind(api_v1alpha1.ResourceKindRepository))
 	}
@@ -81,7 +81,8 @@ func (c *StashController) initRepositoryWatcher() {
 	c.repoLister = c.stashInformerFactory.Stash().V1alpha1().Repositories().Lister()
 }
 
-func (c *StashController) runRepositoryReconciler(key string) error {
+func (c *StashController) runRepositoryReconciler(v any) error {
+	key := v.(string)
 	obj, exist, err := c.repoInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

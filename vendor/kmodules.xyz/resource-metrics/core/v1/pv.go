@@ -26,7 +26,7 @@ import (
 
 type PersistentVolume struct{}
 
-func (_ PersistentVolume) ResourceCalculator() api.ResourceCalculator {
+func (PersistentVolume) ResourceCalculator() api.ResourceCalculator {
 	return &api.ResourceCalculatorFuncs{
 		AppRoles:               []api.PodRole{api.PodRoleDefault},
 		RuntimeRoles:           []api.PodRole{api.PodRoleDefault},
@@ -36,6 +36,6 @@ func (_ PersistentVolume) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (_ PersistentVolume) Replicas(_ map[string]interface{}) int {
+func (PersistentVolume) Replicas(_ map[string]any) int {
 	return 0 // PersistentVolume does not have this field
 }

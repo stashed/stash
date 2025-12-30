@@ -38,7 +38,7 @@ type SiteInfoPublisher struct {
 
 var _ cache.ResourceEventHandler = &SiteInfoPublisher{}
 
-func (p *SiteInfoPublisher) OnAdd(o interface{}, isInInitialList bool) {
+func (p *SiteInfoPublisher) OnAdd(o any, isInInitialList bool) {
 	obj, ok := o.(client.Object)
 	if !ok {
 		return
@@ -58,7 +58,7 @@ func (p *SiteInfoPublisher) OnAdd(o interface{}, isInInitialList bool) {
 	siteEventCounter.Inc()
 }
 
-func (p *SiteInfoPublisher) OnUpdate(oldObj, newObj interface{}) {
+func (p *SiteInfoPublisher) OnUpdate(oldObj, newObj any) {
 	uOld, ok := oldObj.(client.Object)
 	if !ok {
 		return
@@ -95,7 +95,7 @@ func (p *SiteInfoPublisher) OnUpdate(oldObj, newObj interface{}) {
 	siteEventCounter.Inc()
 }
 
-func (p *SiteInfoPublisher) OnDelete(obj interface{}) {
+func (p *SiteInfoPublisher) OnDelete(obj any) {
 	var object client.Object
 	var ok bool
 	if object, ok = obj.(client.Object); !ok {
