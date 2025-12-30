@@ -34,7 +34,7 @@ type ReaderOptions struct {
 	// which case it should not be called at all.
 	// asFunc allows drivers to expose driver-specific types;
 	// see Bucket.As for more details.
-	BeforeRead func(asFunc func(interface{}) bool) error
+	BeforeRead func(asFunc func(any) bool) error
 }
 
 // Reader reads an object from the blob.
@@ -47,12 +47,25 @@ type Reader interface {
 
 	// As allows drivers to expose driver-specific types;
 	// see Bucket.As for more details.
-	As(interface{}) bool
+	As(any) bool
+}
+
+// Downloader has an optional extra method for readers.
+// It is similar to io.WriteTo, but without the count of bytes returned.
+type Downloader interface {
+	// Download is similar to io.WriteTo, but without the count of bytes returned.
+	Download(w io.Writer) error
 }
 
 // Writer writes an object to the blob.
 type Writer interface {
 	io.WriteCloser
+}
+
+// Uploader has an optional extra method for writers.
+type Uploader interface {
+	// Upload is similar to io.ReadFrom, but without the count of bytes returned.
+	Upload(r io.Reader) error
 }
 
 // WriterOptions controls behaviors of Writer.
@@ -87,12 +100,16 @@ type WriterOptions struct {
 	// Metadata holds key/value strings to be associated with the blob.
 	// Keys are guaranteed to be non-empty and lowercased.
 	Metadata map[string]string
+	// When true, the driver should attempt to disable any automatic
+	// content-type detection that the provider applies on writes with an
+	// empty ContentType.
+	DisableContentTypeDetection bool
 	// BeforeWrite is a callback that must be called exactly once before
 	// any data is written, unless NewTypedWriter returns an error, in
 	// which case it should not be called.
 	// asFunc allows drivers to expose driver-specific types;
 	// see Bucket.As for more details.
-	BeforeWrite func(asFunc func(interface{}) bool) error
+	BeforeWrite func(asFunc func(any) bool) error
 }
 
 // CopyOptions controls options for Copy.
@@ -100,7 +117,7 @@ type CopyOptions struct {
 	// BeforeCopy is a callback that must be called before initiating the Copy.
 	// asFunc allows drivers to expose driver-specific types;
 	// see Bucket.As for more details.
-	BeforeCopy func(asFunc func(interface{}) bool) error
+	BeforeCopy func(asFunc func(any) bool) error
 }
 
 // ReaderAttributes contains a subset of attributes about a blob that are
@@ -154,7 +171,7 @@ type Attributes struct {
 	// AsFunc allows drivers to expose driver-specific types;
 	// see Bucket.As for more details.
 	// If not set, no driver-specific types are supported.
-	AsFunc func(interface{}) bool
+	AsFunc func(any) bool
 }
 
 // ListOptions sets options for listing objects in the bucket.
@@ -185,7 +202,7 @@ type ListOptions struct {
 	// before the underlying service's list is executed.
 	// asFunc allows drivers to expose driver-specific types;
 	// see Bucket.As for more details.
-	BeforeList func(asFunc func(interface{}) bool) error
+	BeforeList func(asFunc func(any) bool) error
 }
 
 // ListObject represents a specific blob object returned from ListPaged.
@@ -206,7 +223,7 @@ type ListObject struct {
 	// AsFunc allows drivers to expose driver-specific types;
 	// see Bucket.As for more details.
 	// If not set, no driver-specific types are supported.
-	AsFunc func(interface{}) bool
+	AsFunc func(any) bool
 }
 
 // ListPage represents a page of results return from ListPaged.
@@ -235,12 +252,12 @@ type Bucket interface {
 
 	// As converts i to driver-specific types.
 	// See https://gocloud.dev/concepts/as/ for background information.
-	As(i interface{}) bool
+	As(i any) bool
 
 	// ErrorAs allows drivers to expose driver-specific types for returned
 	// errors.
 	// See https://gocloud.dev/concepts/as/ for background information.
-	ErrorAs(error, interface{}) bool
+	ErrorAs(error, any) bool
 
 	// Attributes returns attributes for the blob. If the specified object does
 	// not exist, Attributes must return an error for which ErrorCode returns
@@ -263,6 +280,11 @@ type Bucket interface {
 	// exist, NewRangeReader must return an error for which ErrorCode returns
 	// gcerrors.NotFound.
 	// opts is guaranteed to be non-nil.
+	//
+	// The returned Reader *may* also implement Downloader if the underlying
+	// implementation can take advantage of that. The Download call is guaranteed
+	// to be the only call to the Reader. For such readers, offset will always
+	// be 0 and length will always be -1.
 	NewRangeReader(ctx context.Context, key string, offset, length int64, opts *ReaderOptions) (Reader, error)
 
 	// NewTypedWriter returns Writer that writes to an object associated with key.
@@ -272,13 +294,17 @@ type Bucket interface {
 	// The object may not be available (and any previous object will remain)
 	// until Close has been called.
 	//
-	// contentType sets the MIME type of the object to be written. It must not be
-	// empty. opts is guaranteed to be non-nil.
+	// contentType sets the MIME type of the object to be written.
+	// opts is guaranteed to be non-nil.
 	//
 	// The caller must call Close on the returned Writer when done writing.
 	//
 	// Implementations should abort an ongoing write if ctx is later canceled,
 	// and do any necessary cleanup in Close. Close should then return ctx.Err().
+	//
+	// The returned Writer *may* also implement Uploader if the underlying
+	// implementation can take advantage of that. The Upload call is guaranteed
+	// to be the only non-Close call to the Writer..
 	NewTypedWriter(ctx context.Context, key, contentType string, opts *WriterOptions) (Writer, error)
 
 	// Copy copies the object associated with srcKey to dstKey.
@@ -342,7 +368,7 @@ type SignedURLOptions struct {
 	// the underlying service's sign functionality.
 	// asFunc converts its argument to driver-specific types.
 	// See https://gocloud.dev/concepts/as/ for background information.
-	BeforeSign func(asFunc func(interface{}) bool) error
+	BeforeSign func(asFunc func(any) bool) error
 }
 
 // prefixedBucket implements Bucket by prepending prefix to all keys.
@@ -358,11 +384,12 @@ func NewPrefixedBucket(b Bucket, prefix string) Bucket {
 }
 
 func (b *prefixedBucket) ErrorCode(err error) gcerrors.ErrorCode { return b.base.ErrorCode(err) }
-func (b *prefixedBucket) As(i interface{}) bool                  { return b.base.As(i) }
-func (b *prefixedBucket) ErrorAs(err error, i interface{}) bool  { return b.base.ErrorAs(err, i) }
+func (b *prefixedBucket) As(i any) bool                          { return b.base.As(i) }
+func (b *prefixedBucket) ErrorAs(err error, i any) bool          { return b.base.ErrorAs(err, i) }
 func (b *prefixedBucket) Attributes(ctx context.Context, key string) (*Attributes, error) {
 	return b.base.Attributes(ctx, b.prefix+key)
 }
+
 func (b *prefixedBucket) ListPaged(ctx context.Context, opts *ListOptions) (*ListPage, error) {
 	var myopts ListOptions
 	if opts != nil {
@@ -378,21 +405,26 @@ func (b *prefixedBucket) ListPaged(ctx context.Context, opts *ListOptions) (*Lis
 	}
 	return page, nil
 }
+
 func (b *prefixedBucket) NewRangeReader(ctx context.Context, key string, offset, length int64, opts *ReaderOptions) (Reader, error) {
 	return b.base.NewRangeReader(ctx, b.prefix+key, offset, length, opts)
 }
+
 func (b *prefixedBucket) NewTypedWriter(ctx context.Context, key, contentType string, opts *WriterOptions) (Writer, error) {
 	if key == "" {
 		return nil, errors.New("invalid key (empty string)")
 	}
 	return b.base.NewTypedWriter(ctx, b.prefix+key, contentType, opts)
 }
+
 func (b *prefixedBucket) Copy(ctx context.Context, dstKey, srcKey string, opts *CopyOptions) error {
 	return b.base.Copy(ctx, b.prefix+dstKey, b.prefix+srcKey, opts)
 }
+
 func (b *prefixedBucket) Delete(ctx context.Context, key string) error {
 	return b.base.Delete(ctx, b.prefix+key)
 }
+
 func (b *prefixedBucket) SignedURL(ctx context.Context, key string, opts *SignedURLOptions) (string, error) {
 	return b.base.SignedURL(ctx, b.prefix+key, opts)
 }
@@ -410,26 +442,32 @@ func NewSingleKeyBucket(b Bucket, key string) Bucket {
 }
 
 func (b *singleKeyBucket) ErrorCode(err error) gcerrors.ErrorCode { return b.base.ErrorCode(err) }
-func (b *singleKeyBucket) As(i interface{}) bool                  { return b.base.As(i) }
-func (b *singleKeyBucket) ErrorAs(err error, i interface{}) bool  { return b.base.ErrorAs(err, i) }
+func (b *singleKeyBucket) As(i any) bool                          { return b.base.As(i) }
+func (b *singleKeyBucket) ErrorAs(err error, i any) bool          { return b.base.ErrorAs(err, i) }
 func (b *singleKeyBucket) Attributes(ctx context.Context, _ string) (*Attributes, error) {
 	return b.base.Attributes(ctx, b.key)
 }
+
 func (b *singleKeyBucket) ListPaged(ctx context.Context, opts *ListOptions) (*ListPage, error) {
 	return nil, errors.New("List not supported for SingleKey buckets")
 }
+
 func (b *singleKeyBucket) NewRangeReader(ctx context.Context, _ string, offset, length int64, opts *ReaderOptions) (Reader, error) {
 	return b.base.NewRangeReader(ctx, b.key, offset, length, opts)
 }
+
 func (b *singleKeyBucket) NewTypedWriter(ctx context.Context, _, contentType string, opts *WriterOptions) (Writer, error) {
 	return b.base.NewTypedWriter(ctx, b.key, contentType, opts)
 }
+
 func (b *singleKeyBucket) Copy(ctx context.Context, dstKey, _ string, opts *CopyOptions) error {
 	return b.base.Copy(ctx, dstKey, b.key, opts)
 }
+
 func (b *singleKeyBucket) Delete(ctx context.Context, _ string) error {
 	return b.base.Delete(ctx, b.key)
 }
+
 func (b *singleKeyBucket) SignedURL(ctx context.Context, _ string, opts *SignedURLOptions) (string, error) {
 	return b.base.SignedURL(ctx, b.key, opts)
 }

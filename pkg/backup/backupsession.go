@@ -70,7 +70,7 @@ type BackupSessionController struct {
 	InvokerName string
 	Namespace   string
 	// Backup Session
-	bsQueue    *queue.Worker
+	bsQueue    *queue.Worker[any]
 	bsInformer cache.SharedIndexInformer
 	bsLister   v1beta1.BackupSessionLister
 
@@ -134,7 +134,7 @@ func (c *BackupSessionController) runBackupSessionController(invokerRef *core.Ob
 
 func (c *BackupSessionController) initBackupSessionWatcher() error {
 	c.bsInformer = c.StashInformerFactory.Stash().V1beta1().BackupSessions().Informer()
-	c.bsQueue = queue.New(api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.processBackupSession)
+	c.bsQueue = queue.New[any](api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.processBackupSession)
 	_, _ = c.bsInformer.AddEventHandler(queue.NewFilteredHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj any) {
 			if backupsession, ok := obj.(*api_v1beta1.BackupSession); ok && c.selectedByLabels(backupsession) {
@@ -164,7 +164,8 @@ func (c *BackupSessionController) initBackupSessionWatcher() error {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *BackupSessionController) processBackupSession(key string) error {
+func (c *BackupSessionController) processBackupSession(v any) error {
+	key := v.(string)
 	obj, exists, err := c.bsInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.Errorf("Fetching object with key %s from store failed with %v", key, err)

@@ -69,10 +69,22 @@ type GenericResourceSpec struct {
 	// +optional
 	RoleResourceRequests map[api.PodRole]core.ResourceList `json:"roleResourceRequests,omitempty"`
 
-	Pods    []ComputeResource `json:"pods,omitempty"`
-	Storage []StorageResource `json:"storage,omitempty"`
+	Namespace *NamespaceInfo    `json:"namespace,omitempty"`
+	Pods      []ComputeResource `json:"pods,omitempty"`
+	Storage   []StorageResource `json:"storage,omitempty"`
 
 	Status GenericResourceStatus `json:"status"`
+}
+
+type NamespaceInfo struct {
+	// +optional
+	UID  types.UID `json:"uid,omitempty"`
+	Name string    `json:"name"`
+	// +optional
+	CreationTimestamp   metav1.Time       `json:"creationTimestamp,omitempty"`
+	AceOrgID            string            `json:"aceOrgID,omitempty"`
+	AceOrgMetadata      map[string]string `json:"aceOrgMetadata,omitempty"`
+	EnableResourceTrial bool              `json:"enableResourceTrial,omitempty"`
 }
 
 type ComputeResource struct {

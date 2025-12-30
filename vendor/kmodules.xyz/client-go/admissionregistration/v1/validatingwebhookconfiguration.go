@@ -103,7 +103,6 @@ func TryUpdateValidatingWebhookConfiguration(ctx context.Context, c kubernetes.I
 		klog.Errorf("Attempt %d failed to update ValidatingWebhookConfiguration %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update ValidatingWebhookConfiguration %s after %d attempts due to %v", name, attempt, err)
 	}

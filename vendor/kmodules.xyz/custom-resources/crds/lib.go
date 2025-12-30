@@ -29,7 +29,7 @@ import (
 //go:embed *.yaml
 var fs embed.FS
 
-func load(filename string, o interface{}) error {
+func load(filename string, o any) error {
 	data, err := fs.ReadFile(filename)
 	if err != nil {
 		return err

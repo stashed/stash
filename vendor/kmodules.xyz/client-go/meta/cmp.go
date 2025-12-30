@@ -40,11 +40,11 @@ var cmpOptions = []cmp.Option{
 	}),
 }
 
-func Diff(x, y interface{}) string {
+func Diff(x, y any) string {
 	return cmp.Diff(x, y, cmpOptions...)
 }
 
-func Equal(x, y interface{}) bool {
+func Equal(x, y any) bool {
 	return cmp.Equal(x, y, cmpOptions...)
 }
 
@@ -75,7 +75,7 @@ func EqualAnnotation(x, y map[string]string) bool {
 	return true
 }
 
-func JsonDiff(old, new interface{}) (string, error) {
+func JsonDiff(old, new any) (string, error) {
 	json := jsoniter.ConfigFastest
 	oldBytes, err := json.Marshal(old)
 	if err != nil {
@@ -94,7 +94,7 @@ func JsonDiff(old, new interface{}) (string, error) {
 		return "", err
 	}
 
-	var aJson map[string]interface{}
+	var aJson map[string]any
 	if err := json.Unmarshal(oldBytes, &aJson); err != nil {
 		return "", err
 	}

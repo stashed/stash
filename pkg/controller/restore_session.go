@@ -129,7 +129,7 @@ func (c *StashController) NewRestoreSessionMutator() hooks.AdmissionHook {
 // process only add events
 func (c *StashController) initRestoreSessionWatcher() {
 	c.restoreSessionInformer = c.stashInformerFactory.Stash().V1beta1().RestoreSessions().Informer()
-	c.restoreSessionQueue = queue.New(api_v1beta1.ResourceKindRestoreSession, c.MaxNumRequeues, c.NumThreads, c.processRestoreSessionEvent)
+	c.restoreSessionQueue = queue.New[any](api_v1beta1.ResourceKindRestoreSession, c.MaxNumRequeues, c.NumThreads, c.processRestoreSessionEvent)
 	if c.auditor != nil {
 		c.auditor.ForGVK(c.restoreSessionInformer, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindRestoreSession))
 	}
@@ -137,7 +137,8 @@ func (c *StashController) initRestoreSessionWatcher() {
 	c.restoreSessionLister = c.stashInformerFactory.Stash().V1beta1().RestoreSessions().Lister()
 }
 
-func (c *StashController) processRestoreSessionEvent(key string) error {
+func (c *StashController) processRestoreSessionEvent(v any) error {
+	key := v.(string)
 	obj, exists, err := c.restoreSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

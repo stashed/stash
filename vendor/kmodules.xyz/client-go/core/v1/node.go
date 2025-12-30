@@ -101,7 +101,6 @@ func TryUpdateNode(ctx context.Context, c kubernetes.Interface, meta metav1.Obje
 		klog.Errorf("Attempt %d failed to update Node %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update Node %s after %d attempts due to %v", meta.Name, attempt, err)
 	}

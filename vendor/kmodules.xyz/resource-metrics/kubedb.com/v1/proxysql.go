@@ -32,6 +32,11 @@ func init() {
 		Version: "v1",
 		Kind:    "ProxySQL",
 	}, ProxySQL{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "ProxySQL",
+	}, ProxySQL{}.ResourceCalculator())
 }
 
 type ProxySQL struct{}
@@ -48,7 +53,7 @@ func (r ProxySQL) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r ProxySQL) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r ProxySQL) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec.replicas %v: %w", obj, err)
@@ -59,7 +64,7 @@ func (r ProxySQL) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, e
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r ProxySQL) modeFn(obj map[string]interface{}) (string, error) {
+func (r ProxySQL) modeFn(obj map[string]any) (string, error) {
 	replicas, _, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return "", err
@@ -70,13 +75,13 @@ func (r ProxySQL) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (r ProxySQL) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r ProxySQL) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (r ProxySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r ProxySQL) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		container, replicas, err := api.AppNodeResourcesV2(obj, fn, ProxySQLContainerName, "spec")
 		if err != nil {
 			return nil, err

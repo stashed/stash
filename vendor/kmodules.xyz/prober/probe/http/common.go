@@ -41,7 +41,7 @@ func doHTTPProbe(req *http.Request, url *url.URL, headers http.Header, client HT
 		// Convert errors into failures to catch timeouts.
 		return api.Failure, err.Error(), nil
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() // nolint:errcheck
 	b, err := utilio.ReadAtMost(res.Body, maxRespBodyLength)
 	if err != nil {
 		if err == utilio.ErrLimitReached {

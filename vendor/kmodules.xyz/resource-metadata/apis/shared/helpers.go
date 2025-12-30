@@ -37,14 +37,15 @@ const (
 )
 
 var pool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return new(bytes.Buffer)
 	},
 }
 
-func (r ResourceLocator) GraphQuery(oid kmapi.OID) (string, map[string]interface{}, error) {
-	if r.Query.Type == GraphQLQuery {
-		vars := map[string]interface{}{
+func (r ResourceLocator) GraphQuery(oid kmapi.OID) (string, map[string]any, error) {
+	switch r.Query.Type {
+	case GraphQLQuery:
+		vars := map[string]any{
 			GraphQueryVarSource:      string(oid),
 			GraphQueryVarTargetGroup: r.Ref.Group,
 			GraphQueryVarTargetKind:  r.Ref.Kind,
@@ -61,7 +62,7 @@ func (r ResourceLocator) GraphQuery(oid kmapi.OID) (string, map[string]interface
     }
   }
 }`, r.Query.ByLabel), vars, nil
-	} else if r.Query.Type == RESTQuery {
+	case RESTQuery:
 		if r.Query.Raw == "" || !strings.Contains(r.Query.Raw, "{{") {
 			return r.Query.Raw, nil, nil
 		}

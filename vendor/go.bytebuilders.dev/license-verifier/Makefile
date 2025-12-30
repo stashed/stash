@@ -21,7 +21,7 @@ COMPRESS ?= no
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS          ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,allowDangerousTypes=true"
-CODE_GENERATOR_IMAGE ?= ghcr.io/appscode/gengo:release-1.29
+CODE_GENERATOR_IMAGE ?= ghcr.io/appscode/gengo:release-1.32
 API_GROUPS           ?= licenses:v1alpha1
 
 # Where to push the docker image.
@@ -64,7 +64,7 @@ ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian12
 BASEIMAGE_DBG    ?= debian:12
 
-GO_VERSION       ?= 1.23
+GO_VERSION       ?= 1.25
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)
 
 OUTBIN = bin/$(OS)_$(ARCH)/$(BIN)
@@ -201,8 +201,6 @@ unit-tests: $(BUILD_DIRS)
 	        ./hack/test.sh $(SRC_PKGS)                          \
 	    "
 
-ADDTL_LINTERS   := goconst,gofmt,goimports,unparam
-
 .PHONY: lint
 lint: $(BUILD_DIRS)
 	@echo "running linter"
@@ -220,7 +218,7 @@ lint: $(BUILD_DIRS)
 	    --env GO111MODULE=on                                    \
 	    --env GOFLAGS="-mod=vendor"                             \
 	    $(BUILD_IMAGE)                                          \
-	    golangci-lint run --enable $(ADDTL_LINTERS) --deadline=10m --skip-files="generated.*\.go$\" --skip-dirs-use-default --skip-dirs=client,vendor
+	    golangci-lint run
 
 $(BUILD_DIRS):
 	@mkdir -p $@
@@ -256,7 +254,7 @@ add-license:
 		--env HTTP_PROXY=$(HTTP_PROXY)                   \
 		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
 		$(BUILD_IMAGE)                                   \
-		ltag -t "./hack/license" --excludes "vendor contrib libbuild" -v
+		ltag -t "./hack/license" --excludes ".go vendor contrib libbuild" -v
 
 .PHONY: check-license
 check-license:
@@ -269,7 +267,7 @@ check-license:
 		--env HTTP_PROXY=$(HTTP_PROXY)                   \
 		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
 		$(BUILD_IMAGE)                                   \
-		ltag -t "./hack/license" --excludes "vendor contrib libbuild" --check -v
+		ltag -t "./hack/license" --excludes ".go vendor contrib libbuild" --check -v
 
 .PHONY: ci
 ci: verify check-license lint build unit-tests #cover

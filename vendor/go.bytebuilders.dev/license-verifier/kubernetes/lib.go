@@ -19,6 +19,7 @@ package kubernetes
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,7 +32,6 @@ import (
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 	"go.bytebuilders.dev/license-verifier/info"
 
-	"github.com/pkg/errors"
 	proxyserver "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	proxyclient "go.bytebuilders.dev/license-proxyserver/client/clientset/versioned"
 	verifier "go.bytebuilders.dev/license-verifier"
@@ -41,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/mux"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	clientscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -48,7 +49,7 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"kmodules.xyz/client-go/discovery"
+	disco "kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/dynamic"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clusterid"
@@ -109,15 +110,18 @@ func (le *LicenseEnforcer) getLicense() ([]byte, error) {
 		}
 		pc, err := proxyclient.NewForConfig(le.config)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed create client for license-proxyserver")
+			return nil, fmt.Errorf("failed to instantiate proxy client, err: %w", err)
 		}
 		resp, err := pc.ProxyserverV1alpha1().LicenseRequests().Create(context.TODO(), &req, metav1.CreateOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read license")
+			return nil, fmt.Errorf("failed to read license from proxy, err: %w", err)
+		}
+		if resp.Response.License == "" {
+			return nil, errors.New("missing license from proxy")
 		}
 		licenseBytes = []byte(resp.Response.License)
 	} else if err != nil {
-		return nil, errors.Wrap(err, "failed to read license")
+		return nil, fmt.Errorf("failed to read license from file, err: %w", err)
 	}
 	return licenseBytes, nil
 }
@@ -258,13 +262,13 @@ func VerifyLicensePeriodically(config *rest.Config, licenseFile string, stopCh <
 	if err != nil {
 		return le.handleLicenseVerificationFailure(err)
 	}
-	if err := verifyLicensePeriodically(le, licenseFile, stopCh); err != nil {
+	if err := verifyLicensePeriodically(le, stopCh); err != nil {
 		return le.handleLicenseVerificationFailure(err)
 	}
 	return nil
 }
 
-func verifyLicensePeriodically(le *LicenseEnforcer, licenseFile string, stopCh <-chan struct{}) error {
+func verifyLicensePeriodically(le *LicenseEnforcer, stopCh <-chan struct{}) error {
 	// Create Kubernetes client
 	err := le.createClients()
 	if err != nil {
@@ -374,7 +378,7 @@ func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, features [
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint:errcheck
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -398,13 +402,20 @@ func CheckLicenseEndpoint(config *rest.Config, apiServiceName string, features [
 }
 
 func LicenseProvided(cfg *rest.Config, licenseFile string) bool {
+	var client discovery.DiscoveryInterface
+	if cfg != nil {
+		client = kubernetes.NewForConfigOrDie(cfg).Discovery()
+	}
+	return LicenseProvidedForClient(client, licenseFile)
+}
+
+func LicenseProvidedForClient(client discovery.DiscoveryInterface, licenseFile string) bool {
 	if licenseFile != "" {
 		return true
 	}
-
-	if cfg != nil {
-		ok, _ := discovery.HasGVK(
-			kubernetes.NewForConfigOrDie(cfg).Discovery(),
+	if client != nil {
+		ok, _ := disco.HasGVK(
+			client,
 			proxyserver.SchemeGroupVersion.String(),
 			proxyserver.ResourceKindLicenseRequest)
 		return ok

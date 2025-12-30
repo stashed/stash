@@ -115,7 +115,6 @@ func TryUpdateCustomResourceDefinition(
 		klog.Errorf("Attempt %d failed to update CustomResourceDefinition %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update CustomResourceDefinition %s after %d attempts due to %v", name, attempt, err)
 	}

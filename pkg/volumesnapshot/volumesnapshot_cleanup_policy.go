@@ -24,8 +24,8 @@ import (
 	"stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
 	"stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 
-	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v7/apis/volumesnapshot/v1"
-	vscs "github.com/kubernetes-csi/external-snapshotter/client/v7/clientset/versioned"
+	vsapi "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
+	vscs "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"

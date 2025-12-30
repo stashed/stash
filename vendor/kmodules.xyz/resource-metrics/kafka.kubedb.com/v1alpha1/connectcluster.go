@@ -47,7 +47,7 @@ func (r ConnectCluster) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r ConnectCluster) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r ConnectCluster) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec.replicas %v: %w", obj, err)
@@ -58,7 +58,7 @@ func (r ConnectCluster) roleReplicasFn(obj map[string]interface{}) (api.ReplicaL
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r ConnectCluster) modeFn(obj map[string]interface{}) (string, error) {
+func (r ConnectCluster) modeFn(obj map[string]any) (string, error) {
 	replicas, _, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return "", err
@@ -69,13 +69,13 @@ func (r ConnectCluster) modeFn(obj map[string]interface{}) (string, error) {
 	return ConnectClusterModeStandalone, nil
 }
 
-func (r ConnectCluster) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r ConnectCluster) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "enableSSL")
 	return found, err
 }
 
-func (r ConnectCluster) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r ConnectCluster) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err

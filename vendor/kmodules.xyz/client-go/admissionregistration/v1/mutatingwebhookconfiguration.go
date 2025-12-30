@@ -103,7 +103,6 @@ func TryUpdateMutatingWebhookConfiguration(ctx context.Context, c kubernetes.Int
 		klog.Errorf("Attempt %d failed to update MutatingWebhookConfiguration %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update MutatingWebhookConfiguration %s after %d attempts due to %v", name, attempt, err)
 	}

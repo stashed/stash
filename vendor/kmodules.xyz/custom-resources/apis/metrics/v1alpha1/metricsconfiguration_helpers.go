@@ -21,6 +21,6 @@ import (
 	"kmodules.xyz/custom-resources/crds"
 )
 
-func (_ MetricsConfiguration) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (MetricsConfiguration) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourceMetricsConfigurations))
 }

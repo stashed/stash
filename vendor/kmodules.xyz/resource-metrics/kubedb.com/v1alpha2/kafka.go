@@ -51,7 +51,7 @@ func (r Kafka) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r Kafka) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r Kafka) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	result := api.ReplicaList{}
 
 	topology, found, err := unstructured.NestedMap(obj, "spec", "topology")
@@ -61,7 +61,7 @@ func (r Kafka) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, erro
 	if found && topology != nil {
 		// dedicated topology mode
 		for role, roleSpec := range topology {
-			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]interface{}), "replicas")
+			roleReplicas, found, err := unstructured.NestedInt64(roleSpec.(map[string]any), "replicas")
 			if err != nil {
 				return nil, err
 			}
@@ -84,7 +84,7 @@ func (r Kafka) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, erro
 	return result, nil
 }
 
-func (r Kafka) modeFn(obj map[string]interface{}) (string, error) {
+func (r Kafka) modeFn(obj map[string]any) (string, error) {
 	topology, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "topology")
 	if err != nil {
 		return "", err
@@ -95,13 +95,13 @@ func (r Kafka) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeCombined, nil
 }
 
-func (r Kafka) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r Kafka) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "enableSSL")
 	return found, err
 }
 
-func (r Kafka) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r Kafka) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err
@@ -116,7 +116,7 @@ func (r Kafka) roleResourceFn(fn func(rr core.ResourceRequirements) core.Resourc
 			result := map[api.PodRole]api.PodInfo{}
 
 			for role, roleSpec := range topology {
-				rolePerReplicaResources, roleReplicas, err := KafkaNodeResources(roleSpec.(map[string]interface{}), fn)
+				rolePerReplicaResources, roleReplicas, err := KafkaNodeResources(roleSpec.(map[string]any), fn)
 				if err != nil {
 					return nil, err
 				}
@@ -148,7 +148,7 @@ type KafkaNode struct {
 }
 
 func KafkaNodeResources(
-	obj map[string]interface{},
+	obj map[string]any,
 	fn func(rr core.ResourceRequirements) core.ResourceList,
 	fields ...string,
 ) (core.ResourceList, int64, error) {
@@ -158,7 +158,7 @@ func KafkaNodeResources(
 	}
 
 	var node KafkaNode
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(val.(map[string]interface{}), &node)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(val.(map[string]any), &node)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to parse node %#v: %w", node, err)
 	}

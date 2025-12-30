@@ -32,6 +32,11 @@ func init() {
 		Version: "v1",
 		Kind:    "Postgres",
 	}, Postgres{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "Postgres",
+	}, Postgres{}.ResourceCalculator())
 }
 
 type Postgres struct{}
@@ -39,7 +44,7 @@ type Postgres struct{}
 func (r Postgres) ResourceCalculator() api.ResourceCalculator {
 	return &api.ResourceCalculatorFuncs{
 		AppRoles:               []api.PodRole{api.PodRoleDefault},
-		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleExporter},
+		RuntimeRoles:           []api.PodRole{api.PodRoleDefault, api.PodRoleSidecar, api.PodRoleExporter},
 		RoleReplicasFn:         r.roleReplicasFn,
 		ModeFn:                 r.modeFn,
 		UsesTLSFn:              r.usesTLSFn,
@@ -48,7 +53,7 @@ func (r Postgres) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r Postgres) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r Postgres) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	v, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec.replicas %v: %w", obj, err)
@@ -59,7 +64,7 @@ func (r Postgres) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, e
 	return api.ReplicaList{api.PodRoleDefault: v}, nil
 }
 
-func (r Postgres) modeFn(obj map[string]interface{}) (string, error) {
+func (r Postgres) modeFn(obj map[string]any) (string, error) {
 	mode, found, err := unstructured.NestedString(obj, "spec", "mode")
 	if err == nil && found {
 		return mode, nil
@@ -71,13 +76,13 @@ func (r Postgres) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (r Postgres) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r Postgres) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (r Postgres) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r Postgres) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		container, replicas, err := api.AppNodeResourcesV2(obj, fn, PostgresContainerName, "spec")
 		if err != nil {
 			return nil, err
@@ -87,9 +92,18 @@ func (r Postgres) roleResourceFn(fn func(rr core.ResourceRequirements) core.Reso
 		if err != nil {
 			return nil, err
 		}
-		return map[api.PodRole]api.PodInfo{
+
+		ret := map[api.PodRole]api.PodInfo{
 			api.PodRoleDefault:  {Resource: container, Replicas: replicas},
 			api.PodRoleExporter: {Resource: exporter, Replicas: replicas},
-		}, nil
+		}
+		if replicas > 1 {
+			sidecar, err := api.SidecarNodeResourcesV2(obj, fn, PostgresSidecarContainerName, "spec")
+			if err != nil {
+				return nil, err
+			}
+			ret[api.PodRoleSidecar] = api.PodInfo{Resource: sidecar, Replicas: replicas}
+		}
+		return ret, nil
 	}
 }

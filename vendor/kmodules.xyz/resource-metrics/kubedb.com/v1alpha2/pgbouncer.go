@@ -48,7 +48,7 @@ func (r PgBouncer) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r PgBouncer) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r PgBouncer) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec.replicas %v: %w", obj, err)
@@ -59,7 +59,7 @@ func (r PgBouncer) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, 
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r PgBouncer) modeFn(obj map[string]interface{}) (string, error) {
+func (r PgBouncer) modeFn(obj map[string]any) (string, error) {
 	replicas, _, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return "", err
@@ -70,13 +70,13 @@ func (r PgBouncer) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (r PgBouncer) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (r PgBouncer) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (r PgBouncer) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r PgBouncer) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		container, replicas, err := api.AppNodeResources(obj, fn, "spec")
 		if err != nil {
 			return nil, err

@@ -23,26 +23,26 @@ import (
 )
 
 type ResourceCalculator interface {
-	GetRoleResourceLimitsFn() func(obj map[string]interface{}) (map[PodRole]PodInfo, error)
-	GetRoleResourceRequestsFn() func(obj map[string]interface{}) (map[PodRole]PodInfo, error)
+	GetRoleResourceLimitsFn() func(obj map[string]any) (map[PodRole]PodInfo, error)
+	GetRoleResourceRequestsFn() func(obj map[string]any) (map[PodRole]PodInfo, error)
 
-	Replicas(obj map[string]interface{}) (int64, error)
-	RoleReplicas(obj map[string]interface{}) (ReplicaList, error)
+	Replicas(obj map[string]any) (int64, error)
+	RoleReplicas(obj map[string]any) (ReplicaList, error)
 
-	Mode(obj map[string]interface{}) (string, error)
-	UsesTLS(obj map[string]interface{}) (bool, error)
+	Mode(obj map[string]any) (string, error)
+	UsesTLS(obj map[string]any) (bool, error)
 
-	TotalResourceLimits(obj map[string]interface{}) (core.ResourceList, error)
-	TotalResourceRequests(obj map[string]interface{}) (core.ResourceList, error)
+	TotalResourceLimits(obj map[string]any) (core.ResourceList, error)
+	TotalResourceRequests(obj map[string]any) (core.ResourceList, error)
 
-	AppResourceLimits(obj map[string]interface{}) (core.ResourceList, error)
-	AppResourceRequests(obj map[string]interface{}) (core.ResourceList, error)
+	AppResourceLimits(obj map[string]any) (core.ResourceList, error)
+	AppResourceRequests(obj map[string]any) (core.ResourceList, error)
 
-	RoleResourceLimits(obj map[string]interface{}) (map[PodRole]core.ResourceList, error)
-	RoleResourceRequests(obj map[string]interface{}) (map[PodRole]core.ResourceList, error)
+	RoleResourceLimits(obj map[string]any) (map[PodRole]core.ResourceList, error)
+	RoleResourceRequests(obj map[string]any) (map[PodRole]core.ResourceList, error)
 
-	PodResourceRequests(obj map[string]interface{}) (core.ResourceList, error)
-	PodResourceLimits(obj map[string]interface{}) (core.ResourceList, error)
+	PodResourceRequests(obj map[string]any) (core.ResourceList, error)
+	PodResourceLimits(obj map[string]any) (core.ResourceList, error)
 }
 
 type ResourceCalculatorFuncs struct {
@@ -53,24 +53,24 @@ type ResourceCalculatorFuncs struct {
 	// Must NOT include init container resources
 	RuntimeRoles []PodRole
 
-	RoleReplicasFn         func(obj map[string]interface{}) (ReplicaList, error)
-	ModeFn                 func(obj map[string]interface{}) (string, error)
-	UsesTLSFn              func(obj map[string]interface{}) (bool, error)
-	RoleResourceLimitsFn   func(obj map[string]interface{}) (map[PodRole]PodInfo, error)
-	RoleResourceRequestsFn func(obj map[string]interface{}) (map[PodRole]PodInfo, error)
+	RoleReplicasFn         func(obj map[string]any) (ReplicaList, error)
+	ModeFn                 func(obj map[string]any) (string, error)
+	UsesTLSFn              func(obj map[string]any) (bool, error)
+	RoleResourceLimitsFn   func(obj map[string]any) (map[PodRole]PodInfo, error)
+	RoleResourceRequestsFn func(obj map[string]any) (map[PodRole]PodInfo, error)
 }
 
 var _ ResourceCalculator = &ResourceCalculatorFuncs{}
 
-func (c ResourceCalculatorFuncs) GetRoleResourceLimitsFn() func(obj map[string]interface{}) (map[PodRole]PodInfo, error) {
+func (c ResourceCalculatorFuncs) GetRoleResourceLimitsFn() func(obj map[string]any) (map[PodRole]PodInfo, error) {
 	return c.RoleResourceLimitsFn
 }
 
-func (c ResourceCalculatorFuncs) GetRoleResourceRequestsFn() func(obj map[string]interface{}) (map[PodRole]PodInfo, error) {
+func (c ResourceCalculatorFuncs) GetRoleResourceRequestsFn() func(obj map[string]any) (map[PodRole]PodInfo, error) {
 	return c.RoleResourceRequestsFn
 }
 
-func (c ResourceCalculatorFuncs) Replicas(obj map[string]interface{}) (int64, error) {
+func (c ResourceCalculatorFuncs) Replicas(obj map[string]any) (int64, error) {
 	replicas, err := c.RoleReplicas(obj)
 	if err != nil {
 		return 0, err
@@ -82,25 +82,25 @@ func (c ResourceCalculatorFuncs) Replicas(obj map[string]interface{}) (int64, er
 	return cnt, nil
 }
 
-func (c ResourceCalculatorFuncs) RoleReplicas(obj map[string]interface{}) (ReplicaList, error) {
+func (c ResourceCalculatorFuncs) RoleReplicas(obj map[string]any) (ReplicaList, error) {
 	return c.RoleReplicasFn(obj)
 }
 
-func (c ResourceCalculatorFuncs) Mode(obj map[string]interface{}) (string, error) {
+func (c ResourceCalculatorFuncs) Mode(obj map[string]any) (string, error) {
 	if c.ModeFn != nil {
 		return c.ModeFn(obj)
 	}
 	return "", nil
 }
 
-func (c ResourceCalculatorFuncs) UsesTLS(obj map[string]interface{}) (bool, error) {
+func (c ResourceCalculatorFuncs) UsesTLS(obj map[string]any) (bool, error) {
 	if c.UsesTLSFn != nil {
 		return c.UsesTLSFn(obj)
 	}
 	return false, nil
 }
 
-func (c ResourceCalculatorFuncs) TotalResourceLimits(obj map[string]interface{}) (core.ResourceList, error) {
+func (c ResourceCalculatorFuncs) TotalResourceLimits(obj map[string]any) (core.ResourceList, error) {
 	rr, err := c.RoleResourceLimits(obj)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (c ResourceCalculatorFuncs) TotalResourceLimits(obj map[string]interface{})
 	), nil
 }
 
-func (c ResourceCalculatorFuncs) TotalResourceRequests(obj map[string]interface{}) (core.ResourceList, error) {
+func (c ResourceCalculatorFuncs) TotalResourceRequests(obj map[string]any) (core.ResourceList, error) {
 	rr, err := c.RoleResourceRequests(obj)
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (c ResourceCalculatorFuncs) TotalResourceRequests(obj map[string]interface{
 	), nil
 }
 
-func (c ResourceCalculatorFuncs) AppResourceLimits(obj map[string]interface{}) (core.ResourceList, error) {
+func (c ResourceCalculatorFuncs) AppResourceLimits(obj map[string]any) (core.ResourceList, error) {
 	rr, err := c.RoleResourceLimits(obj)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (c ResourceCalculatorFuncs) AppResourceLimits(obj map[string]interface{}) (
 	return ResourceListForRoles(rr, c.AppRoles), nil
 }
 
-func (c ResourceCalculatorFuncs) AppResourceRequests(obj map[string]interface{}) (core.ResourceList, error) {
+func (c ResourceCalculatorFuncs) AppResourceRequests(obj map[string]any) (core.ResourceList, error) {
 	rr, err := c.RoleResourceRequests(obj)
 	if err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func (c ResourceCalculatorFuncs) AppResourceRequests(obj map[string]interface{})
 	return ResourceListForRoles(rr, c.AppRoles), nil
 }
 
-func (c ResourceCalculatorFuncs) RoleResourceLimits(obj map[string]interface{}) (map[PodRole]core.ResourceList, error) {
+func (c ResourceCalculatorFuncs) RoleResourceLimits(obj map[string]any) (map[PodRole]core.ResourceList, error) {
 	ret := make(map[PodRole]core.ResourceList)
 	rr, err := c.RoleResourceLimitsFn(obj)
 	if err != nil {
@@ -150,7 +150,7 @@ func (c ResourceCalculatorFuncs) RoleResourceLimits(obj map[string]interface{}) 
 	return ret, nil
 }
 
-func (c ResourceCalculatorFuncs) RoleResourceRequests(obj map[string]interface{}) (map[PodRole]core.ResourceList, error) {
+func (c ResourceCalculatorFuncs) RoleResourceRequests(obj map[string]any) (map[PodRole]core.ResourceList, error) {
 	ret := make(map[PodRole]core.ResourceList)
 	rr, err := c.RoleResourceRequestsFn(obj)
 	if err != nil {
@@ -162,7 +162,7 @@ func (c ResourceCalculatorFuncs) RoleResourceRequests(obj map[string]interface{}
 	return ret, nil
 }
 
-func (c ResourceCalculatorFuncs) PodResourceLimits(obj map[string]interface{}) (core.ResourceList, error) {
+func (c ResourceCalculatorFuncs) PodResourceLimits(obj map[string]any) (core.ResourceList, error) {
 	rl, err := c.RoleResourceLimitsFn(obj)
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func (c ResourceCalculatorFuncs) PodResourceLimits(obj map[string]interface{}) (
 	return c.calcForPod(rl), nil
 }
 
-func (c ResourceCalculatorFuncs) PodResourceRequests(obj map[string]interface{}) (core.ResourceList, error) {
+func (c ResourceCalculatorFuncs) PodResourceRequests(obj map[string]any) (core.ResourceList, error) {
 	rr, err := c.RoleResourceRequestsFn(obj)
 	if err != nil {
 		return nil, err

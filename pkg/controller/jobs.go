@@ -49,12 +49,13 @@ func (c *StashController) initJobWatcher() {
 			},
 		)
 	})
-	c.jobQueue = queue.New("Job", c.MaxNumRequeues, c.NumThreads, c.runJobInjector)
+	c.jobQueue = queue.New[any]("Job", c.MaxNumRequeues, c.NumThreads, c.runJobInjector)
 	_, _ = c.jobInformer.AddEventHandler(queue.DefaultEventHandler(c.jobQueue.GetQueue(), core.NamespaceAll))
 	c.jobLister = c.kubeInformerFactory.Batch().V1().Jobs().Lister()
 }
 
-func (c *StashController) runJobInjector(key string) error {
+func (c *StashController) runJobInjector(v any) error {
+	key := v.(string)
 	obj, exists, err := c.jobInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

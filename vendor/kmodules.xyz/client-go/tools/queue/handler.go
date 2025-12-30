@@ -65,16 +65,16 @@ func logLevel(apiGroup string) klog.Level {
 
 // QueueingEventHandler queues the key for the object on add and update events
 type QueueingEventHandler struct {
-	queue               workqueue.RateLimitingInterface
-	enqueueAdd          func(obj interface{}) bool
-	enqueueUpdate       func(oldObj, newObj interface{}) bool
+	queue               workqueue.TypedRateLimitingInterface[any]
+	enqueueAdd          func(obj any) bool
+	enqueueUpdate       func(oldObj, newObj any) bool
 	enqueueDelete       bool
 	restrictToNamespace string
 }
 
 var _ cache.ResourceEventHandler = &QueueingEventHandler{}
 
-func DefaultEventHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
+func DefaultEventHandler(queue workqueue.TypedRateLimitingInterface[any], restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:               queue,
 		enqueueAdd:          nil,
@@ -84,7 +84,7 @@ func DefaultEventHandler(queue workqueue.RateLimitingInterface, restrictToNamesp
 	}
 }
 
-func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(oldObj, newObj interface{}) bool, restrictToNamespace string) cache.ResourceEventHandler {
+func NewEventHandler(queue workqueue.TypedRateLimitingInterface[any], enqueueUpdate func(oldObj, newObj any) bool, restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:               queue,
 		enqueueAdd:          nil,
@@ -94,7 +94,7 @@ func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(o
 	}
 }
 
-func NewUpsertHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
+func NewUpsertHandler(queue workqueue.TypedRateLimitingInterface[any], restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:               queue,
 		enqueueAdd:          nil,
@@ -104,23 +104,23 @@ func NewUpsertHandler(queue workqueue.RateLimitingInterface, restrictToNamespace
 	}
 }
 
-func NewDeleteHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
+func NewDeleteHandler(queue workqueue.TypedRateLimitingInterface[any], restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:               queue,
-		enqueueAdd:          func(_ interface{}) bool { return false },
-		enqueueUpdate:       func(_, _ interface{}) bool { return false },
+		enqueueAdd:          func(_ any) bool { return false },
+		enqueueUpdate:       func(_, _ any) bool { return false },
 		enqueueDelete:       true,
 		restrictToNamespace: restrictToNamespace,
 	}
 }
 
-func NewReconcilableHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
+func NewReconcilableHandler(queue workqueue.TypedRateLimitingInterface[any], restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue: queue,
-		enqueueAdd: func(o interface{}) bool {
+		enqueueAdd: func(o any) bool {
 			return !meta_util.MustAlreadyReconciled(o)
 		},
-		enqueueUpdate: func(old, nu interface{}) bool {
+		enqueueUpdate: func(old, nu any) bool {
 			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil || !meta_util.MustAlreadyReconciled(nu)
 		},
 		enqueueDelete:       true,
@@ -128,11 +128,11 @@ func NewReconcilableHandler(queue workqueue.RateLimitingInterface, restrictToNam
 	}
 }
 
-func NewChangeHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
+func NewChangeHandler(queue workqueue.TypedRateLimitingInterface[any], restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:      queue,
 		enqueueAdd: nil,
-		enqueueUpdate: func(old, nu interface{}) bool {
+		enqueueUpdate: func(old, nu any) bool {
 			oldObj := old.(metav1.Object)
 			nuObj := nu.(metav1.Object)
 			return nuObj.GetDeletionTimestamp() != nil ||
@@ -146,11 +146,11 @@ func NewChangeHandler(queue workqueue.RateLimitingInterface, restrictToNamespace
 	}
 }
 
-func NewSpecStatusChangeHandler(queue workqueue.RateLimitingInterface, restrictToNamespace string) cache.ResourceEventHandler {
+func NewSpecStatusChangeHandler(queue workqueue.TypedRateLimitingInterface[any], restrictToNamespace string) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:      queue,
 		enqueueAdd: nil,
-		enqueueUpdate: func(old, nu interface{}) bool {
+		enqueueUpdate: func(old, nu any) bool {
 			nuObj := nu.(metav1.Object)
 			return nuObj.GetDeletionTimestamp() != nil ||
 				!meta_util.MustAlreadyReconciled(nu) ||
@@ -161,7 +161,7 @@ func NewSpecStatusChangeHandler(queue workqueue.RateLimitingInterface, restrictT
 	}
 }
 
-func Enqueue(queue workqueue.RateLimitingInterface, obj interface{}) {
+func Enqueue(queue workqueue.TypedRateLimitingInterface[any], obj any) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		klog.Errorf("Couldn't get key for object %+v: %v", obj, err)
@@ -170,7 +170,7 @@ func Enqueue(queue workqueue.RateLimitingInterface, obj interface{}) {
 	queue.Add(key)
 }
 
-func EnqueueAfter(queue workqueue.RateLimitingInterface, obj interface{}, duration time.Duration) {
+func EnqueueAfter(queue workqueue.TypedRateLimitingInterface[any], obj any, duration time.Duration) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		klog.Errorf("Couldn't get key for object %+v: %v", obj, err)
@@ -179,7 +179,7 @@ func EnqueueAfter(queue workqueue.RateLimitingInterface, obj interface{}, durati
 	queue.AddAfter(key, duration)
 }
 
-func (h *QueueingEventHandler) OnAdd(obj interface{}, isInInitialList bool) {
+func (h *QueueingEventHandler) OnAdd(obj any, isInInitialList bool) {
 	klog.V(6).Infof("Add event for %+v\n", obj)
 	if h.enqueueAdd == nil || h.enqueueAdd(obj) {
 		if h.restrictToNamespace != core.NamespaceAll {
@@ -202,7 +202,7 @@ func (h *QueueingEventHandler) OnAdd(obj interface{}, isInInitialList bool) {
 	}
 }
 
-func (h *QueueingEventHandler) OnUpdate(oldObj, newObj interface{}) {
+func (h *QueueingEventHandler) OnUpdate(oldObj, newObj any) {
 	klog.V(6).Infof("Update event for %+v\n", newObj)
 	if h.enqueueUpdate == nil || h.enqueueUpdate(oldObj, newObj) {
 		if h.restrictToNamespace != core.NamespaceAll {
@@ -225,7 +225,7 @@ func (h *QueueingEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	}
 }
 
-func (h *QueueingEventHandler) OnDelete(obj interface{}) {
+func (h *QueueingEventHandler) OnDelete(obj any) {
 	klog.V(6).Infof("Delete event for %+v\n", obj)
 	if h.enqueueDelete {
 		if h.restrictToNamespace != core.NamespaceAll {
@@ -270,7 +270,7 @@ type versionedEventHandler struct {
 	gvk   schema.GroupVersionKind
 }
 
-func (w versionedEventHandler) setGroupVersionKind(obj interface{}) interface{} {
+func (w versionedEventHandler) setGroupVersionKind(obj any) any {
 	if r, ok := obj.(runtime.Object); ok {
 		r = r.DeepCopyObject()
 		r.GetObjectKind().SetGroupVersionKind(w.gvk)
@@ -279,15 +279,15 @@ func (w versionedEventHandler) setGroupVersionKind(obj interface{}) interface{} 
 	return obj
 }
 
-func (w versionedEventHandler) OnAdd(obj interface{}, isInInitialList bool) {
+func (w versionedEventHandler) OnAdd(obj any, isInInitialList bool) {
 	w.inner.OnAdd(w.setGroupVersionKind(obj), isInInitialList)
 }
 
-func (w versionedEventHandler) OnUpdate(oldObj, newObj interface{}) {
+func (w versionedEventHandler) OnUpdate(oldObj, newObj any) {
 	w.inner.OnUpdate(w.setGroupVersionKind(oldObj), w.setGroupVersionKind(newObj))
 }
 
-func (w versionedEventHandler) OnDelete(obj interface{}) {
+func (w versionedEventHandler) OnDelete(obj any) {
 	w.inner.OnDelete(w.setGroupVersionKind(obj))
 }
 
@@ -302,24 +302,24 @@ type filteredEventHandler struct {
 	sel   labels.Selector
 }
 
-func (w filteredEventHandler) matches(obj interface{}) bool {
+func (w filteredEventHandler) matches(obj any) bool {
 	accessor, err := meta.Accessor(obj)
 	return err == nil && w.sel.Matches(labels.Set(accessor.GetLabels()))
 }
 
-func (w filteredEventHandler) OnAdd(obj interface{}, isInInitialList bool) {
+func (w filteredEventHandler) OnAdd(obj any, isInInitialList bool) {
 	if w.matches(obj) {
 		w.inner.OnAdd(obj, isInInitialList)
 	}
 }
 
-func (w filteredEventHandler) OnUpdate(oldObj, newObj interface{}) {
+func (w filteredEventHandler) OnUpdate(oldObj, newObj any) {
 	if w.matches(oldObj) && w.matches(newObj) {
 		w.inner.OnUpdate(oldObj, newObj)
 	}
 }
 
-func (w filteredEventHandler) OnDelete(obj interface{}) {
+func (w filteredEventHandler) OnDelete(obj any) {
 	if w.matches(obj) {
 		w.inner.OnDelete(obj)
 	}

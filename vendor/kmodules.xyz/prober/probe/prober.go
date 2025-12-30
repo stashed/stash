@@ -26,14 +26,13 @@ import (
 	"strings"
 	"time"
 
-	api "kmodules.xyz/prober/api"
+	"kmodules.xyz/prober/api"
 	api_v1 "kmodules.xyz/prober/api/v1"
 	execprobe "kmodules.xyz/prober/probe/exec"
 	httpprobe "kmodules.xyz/prober/probe/http"
 	tcpprobe "kmodules.xyz/prober/probe/tcp"
 
 	core "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -173,7 +172,7 @@ func toValues(formEntry []api_v1.FormEntry) url.Values {
 
 // buildHeaderMap takes a list of HTTPHeader <name, value> string
 // pairs and returns a populated string->[]string http.Header map.
-func buildHeader(headerList []v1.HTTPHeader) http.Header {
+func buildHeader(headerList []core.HTTPHeader) http.Header {
 	headers := make(http.Header)
 	for _, header := range headerList {
 		headers[header.Name] = append(headers[header.Name], header.Value)
@@ -257,7 +256,7 @@ func formatURL(scheme string, host string, port int, path string) *url.URL {
 
 // formatPod returns a string representing a pod in a consistent human readable format,
 // with pod UID as part of the string.
-func formatPod(pod *v1.Pod) string {
+func formatPod(pod *core.Pod) string {
 	return podDesc(pod.Name, pod.Namespace, pod.UID)
 }
 

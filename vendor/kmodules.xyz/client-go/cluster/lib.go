@@ -56,7 +56,7 @@ func ClusterMetadata(c client.Reader) (*kmapi.ClusterMetadata, error) {
 	var cm core.ConfigMap
 	err = c.Get(context.TODO(), client.ObjectKey{Name: kmapi.AceInfoConfigMapName, Namespace: metav1.NamespacePublic}, &cm)
 	if err == nil {
-		result, err := ClusterMetadataFromConfigMap(&cm, string(ns.UID))
+		result, err := ClusterMetadataFromConfigMap(&cm, DetectClusterMode(&ns), string(ns.UID))
 		if err == nil {
 			return result, nil
 		}
@@ -65,6 +65,14 @@ func ClusterMetadata(c client.Reader) (*kmapi.ClusterMetadata, error) {
 	}
 
 	return LegacyClusterMetadataFromNamespace(&ns)
+}
+
+func DetectClusterMode(ns *core.Namespace) kmapi.ClusterMode {
+	v := ns.Annotations[kmapi.ClusterModeKey]
+	if mode, err := kmapi.ParseClusterMode(v); err == nil {
+		return mode
+	}
+	return kmapi.ClusterModeProd
 }
 
 func LegacyClusterMetadataFromNamespace(ns *core.Namespace) (*kmapi.ClusterMetadata, error) {
@@ -80,24 +88,26 @@ func LegacyClusterMetadataFromNamespace(ns *core.Namespace) (*kmapi.ClusterMetad
 		Name:        name,
 		DisplayName: ns.Annotations[kmapi.ClusterDisplayNameKey],
 		Provider:    kmapi.HostingProvider(ns.Annotations[kmapi.ClusterProviderNameKey]),
+		Mode:        DetectClusterMode(ns),
 	}
 	return md, nil
 }
 
-func ClusterMetadataFromConfigMap(cm *core.ConfigMap, clusterUIDVerifier string) (*kmapi.ClusterMetadata, error) {
+func ClusterMetadataFromConfigMap(cm *core.ConfigMap, mode kmapi.ClusterMode, clusterUIDVerifier string) (*kmapi.ClusterMetadata, error) {
 	if cm.Name != kmapi.AceInfoConfigMapName || cm.Namespace != metav1.NamespacePublic {
 		return nil, fmt.Errorf("expected configmap %s/%s, found %s/%s", metav1.NamespacePublic, kmapi.AceInfoConfigMapName, cm.Namespace, cm.Name)
 	}
 
 	md := &kmapi.ClusterMetadata{
-		UID:         cm.Data["uid"],
-		Name:        cm.Data["name"],
-		DisplayName: cm.Data["displayName"],
-		Provider:    kmapi.HostingProvider(cm.Data["provider"]),
-		OwnerID:     cm.Data["ownerID"],
-		OwnerType:   cm.Data["ownerType"],
-		APIEndpoint: cm.Data["apiEndpoint"],
-		CABundle:    cm.Data["ca.crt"],
+		UID:                  cm.Data["uid"],
+		Name:                 cm.Data["name"],
+		DisplayName:          cm.Data["displayName"],
+		Provider:             kmapi.HostingProvider(cm.Data["provider"]),
+		OwnerID:              cm.Data["ownerID"],
+		OwnerType:            cm.Data["ownerType"],
+		APIEndpoint:          cm.Data["apiEndpoint"],
+		CABundle:             cm.Data["ca.crt"],
+		CloudServiceAuthMode: cm.Data["cloudServiceAuthMode"],
 	}
 
 	data, err := json.Marshal(md)
@@ -115,6 +125,7 @@ func ClusterMetadataFromConfigMap(cm *core.ConfigMap, clusterUIDVerifier string)
 	if md.Name == "" {
 		md.Name = ClusterName()
 	}
+	md.Mode = mode
 	return md, nil
 }
 
@@ -148,6 +159,7 @@ func UpsertClusterMetadata(kc client.Client, md *kmapi.ClusterMetadata) error {
 		cm.Data["ownerType"] = md.OwnerType
 		cm.Data["apiEndpoint"] = md.APIEndpoint
 		cm.Data["ca.crt"] = md.CABundle
+		cm.Data["cloudServiceAuthMode"] = md.CloudServiceAuthMode
 
 		cm.BinaryData = map[string][]byte{
 			"mac": messageMAC,
@@ -178,6 +190,10 @@ func DetectCAPICluster(kc client.Reader) (*kmapi.CAPIClusterInfo, error) {
 	capiProvider, clusterName, ns, err := getCAPIValues(obj)
 	if err != nil {
 		return nil, err
+	}
+
+	if getProviderName(capiProvider) == "" {
+		return nil, nil
 	}
 
 	return &kmapi.CAPIClusterInfo{

@@ -149,7 +149,7 @@ func UnmarshalFromJSON(data []byte, gv schema.GroupVersion) (runtime.Object, err
 //
 // WARNING: `json` tags are not respected when struct converted to map[string]interface{}
 // WARNING: Embedded structs are not decoded properly: https://github.com/mitchellh/mapstructure/pull/80
-func Decode(input interface{}, output interface{}) error {
+func Decode(input any, output any) error {
 	config := &mapstructure.DecoderConfig{
 		DecodeHook: StringToQuantityHookFunc(),
 		Metadata:   nil,
@@ -169,8 +169,8 @@ func StringToQuantityHookFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}

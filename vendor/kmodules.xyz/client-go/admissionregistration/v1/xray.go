@@ -256,7 +256,8 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	if d.op == v1.Create {
+	switch d.op {
+	case v1.Create:
 		_, err := ri.Create(ctx, &u, metav1.CreateOptions{})
 		if kutil.AdmissionWebhookDeniedRequest(err) {
 			klog.V(10).Infof("failed to create invalid test object as expected with error: %s", err)
@@ -267,7 +268,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 
 		_ = dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
 		return false, admreg.ErrWebhookNotActivated
-	} else if d.op == v1.Update {
+	case v1.Update:
 		_, err := ri.Create(ctx, &u, metav1.CreateOptions{})
 		if err != nil {
 			return false, err
@@ -296,7 +297,7 @@ func (d ValidatingWebhookXray) check(ctx context.Context) (bool, error) {
 		}
 
 		return false, admreg.ErrWebhookNotActivated
-	} else if d.op == v1.Delete {
+	case v1.Delete:
 		_, err := ri.Create(ctx, &u, metav1.CreateOptions{})
 		if err != nil {
 			return false, err

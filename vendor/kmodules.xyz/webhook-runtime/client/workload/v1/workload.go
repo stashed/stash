@@ -270,48 +270,48 @@ func (c *workloads) Update(ctx context.Context, w *v1.Workload, opts metav1.Upda
 func (c *workloads) Delete(ctx context.Context, obj runtime.Object, options metav1.DeleteOptions) error {
 	switch t := obj.(type) {
 	case *core.Pod:
-		return c.kc.CoreV1().Pods(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.CoreV1().Pods(c.ns).Delete(ctx, t.Name, options)
 		// ReplicationController
 	case *core.ReplicationController:
-		return c.kc.CoreV1().ReplicationControllers(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.CoreV1().ReplicationControllers(c.ns).Delete(ctx, t.Name, options)
 		// Deployment
 	case *extensions.Deployment:
-		return c.kc.ExtensionsV1beta1().Deployments(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.ExtensionsV1beta1().Deployments(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1beta1.Deployment:
-		return c.kc.AppsV1beta1().Deployments(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1beta1().Deployments(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1beta2.Deployment:
-		return c.kc.AppsV1beta2().Deployments(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1beta2().Deployments(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1.Deployment:
-		return c.kc.AppsV1().Deployments(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1().Deployments(c.ns).Delete(ctx, t.Name, options)
 		// DaemonSet
 	case *extensions.DaemonSet:
-		return c.kc.ExtensionsV1beta1().DaemonSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.ExtensionsV1beta1().DaemonSets(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1beta2.DaemonSet:
-		return c.kc.AppsV1beta2().DaemonSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1beta2().DaemonSets(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1.DaemonSet:
-		return c.kc.AppsV1().DaemonSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1().DaemonSets(c.ns).Delete(ctx, t.Name, options)
 		// ReplicaSet
 	case *extensions.ReplicaSet:
-		return c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1beta2.ReplicaSet:
-		return c.kc.AppsV1beta2().ReplicaSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1beta2().ReplicaSets(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1.ReplicaSet:
-		return c.kc.AppsV1().ReplicaSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1().ReplicaSets(c.ns).Delete(ctx, t.Name, options)
 		// StatefulSet
 	case *appsv1beta1.StatefulSet:
-		return c.kc.AppsV1beta1().StatefulSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1beta1().StatefulSets(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1beta2.StatefulSet:
-		return c.kc.AppsV1beta2().StatefulSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1beta2().StatefulSets(c.ns).Delete(ctx, t.Name, options)
 	case *appsv1.StatefulSet:
-		return c.kc.AppsV1().StatefulSets(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.AppsV1().StatefulSets(c.ns).Delete(ctx, t.Name, options)
 		// Job
 	case *batchv1.Job:
-		return c.kc.BatchV1().Jobs(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.BatchV1().Jobs(c.ns).Delete(ctx, t.Name, options)
 		// CronJob
 	case *batchv1beta1.CronJob:
-		return c.kc.BatchV1beta1().CronJobs(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.kc.BatchV1beta1().CronJobs(c.ns).Delete(ctx, t.Name, options)
 	case *ocapps.DeploymentConfig:
-		return c.oc.AppsV1().DeploymentConfigs(c.ns).Delete(ctx, t.ObjectMeta.Name, options)
+		return c.oc.AppsV1().DeploymentConfigs(c.ns).Delete(ctx, t.Name, options)
 	default:
 		return fmt.Errorf("the object is not a pod or does not have a pod template")
 	}
@@ -322,48 +322,48 @@ func (c *workloads) Get(ctx context.Context, obj runtime.Object, opts metav1.Get
 	var err error
 	switch t := obj.(type) {
 	case *core.Pod:
-		out, err = c.kc.CoreV1().Pods(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.CoreV1().Pods(c.ns).Get(ctx, t.Name, opts)
 		// ReplicationController
 	case *core.ReplicationController:
-		out, err = c.kc.CoreV1().ReplicationControllers(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.CoreV1().ReplicationControllers(c.ns).Get(ctx, t.Name, opts)
 		// Deployment
 	case *extensions.Deployment:
-		out, err = c.kc.ExtensionsV1beta1().Deployments(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.ExtensionsV1beta1().Deployments(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1beta1.Deployment:
-		out, err = c.kc.AppsV1beta1().Deployments(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1beta1().Deployments(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1beta2.Deployment:
-		out, err = c.kc.AppsV1beta2().Deployments(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1beta2().Deployments(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1.Deployment:
-		out, err = c.kc.AppsV1().Deployments(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1().Deployments(c.ns).Get(ctx, t.Name, opts)
 		// DaemonSet
 	case *extensions.DaemonSet:
-		out, err = c.kc.ExtensionsV1beta1().DaemonSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.ExtensionsV1beta1().DaemonSets(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1beta2.DaemonSet:
-		out, err = c.kc.AppsV1beta2().DaemonSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1beta2().DaemonSets(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1.DaemonSet:
-		out, err = c.kc.AppsV1().DaemonSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1().DaemonSets(c.ns).Get(ctx, t.Name, opts)
 		// ReplicaSet
 	case *extensions.ReplicaSet:
-		out, err = c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1beta2.ReplicaSet:
-		out, err = c.kc.AppsV1beta2().ReplicaSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1beta2().ReplicaSets(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1.ReplicaSet:
-		out, err = c.kc.AppsV1().ReplicaSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1().ReplicaSets(c.ns).Get(ctx, t.Name, opts)
 		// StatefulSet
 	case *appsv1beta1.StatefulSet:
-		out, err = c.kc.AppsV1beta1().StatefulSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1beta1().StatefulSets(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1beta2.StatefulSet:
-		out, err = c.kc.AppsV1beta2().StatefulSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1beta2().StatefulSets(c.ns).Get(ctx, t.Name, opts)
 	case *appsv1.StatefulSet:
-		out, err = c.kc.AppsV1().StatefulSets(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.AppsV1().StatefulSets(c.ns).Get(ctx, t.Name, opts)
 		// Job
 	case *batchv1.Job:
-		out, err = c.kc.BatchV1().Jobs(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.BatchV1().Jobs(c.ns).Get(ctx, t.Name, opts)
 		// CronJob
 	case *batchv1beta1.CronJob:
-		out, err = c.kc.BatchV1beta1().CronJobs(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.kc.BatchV1beta1().CronJobs(c.ns).Get(ctx, t.Name, opts)
 	case *ocapps.DeploymentConfig:
-		out, err = c.oc.AppsV1().DeploymentConfigs(c.ns).Get(ctx, t.ObjectMeta.Name, opts)
+		out, err = c.oc.AppsV1().DeploymentConfigs(c.ns).Get(ctx, t.Name, opts)
 	default:
 		err = fmt.Errorf("the object is not a pod or does not have a pod template")
 	}

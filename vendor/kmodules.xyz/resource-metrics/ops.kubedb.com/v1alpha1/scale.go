@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func GetScaledObject(opsObj map[string]interface{}) (ScaledObject, error) {
+func GetScaledObject(opsObj map[string]any) (ScaledObject, error) {
 	opsPathMapper, err := LoadOpsPathMapper(opsObj)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func splitPathToSlice(path string) []string {
 	return strings.Split(path, ".")
 }
 
-func extractReferencedObject(opsObj map[string]interface{}, refDbPath ...string) (map[string]interface{}, error) {
+func extractReferencedObject(opsObj map[string]any, refDbPath ...string) (map[string]any, error) {
 	if len(refDbPath) == 0 {
 		return nil, errors.New("refDbPath is empty")
 	}
@@ -83,14 +83,14 @@ func extractReferencedObject(opsObj map[string]interface{}, refDbPath ...string)
 	return dbObj, nil
 }
 
-func getGVK(obj map[string]interface{}) schema.GroupVersionKind {
+func getGVK(obj map[string]any) schema.GroupVersionKind {
 	var unObj unstructured.Unstructured
 	unObj.SetUnstructuredContent(obj)
 
 	return unObj.GroupVersionKind()
 }
 
-func getScalingType(opsObj map[string]interface{}) (string, error) {
+func getScalingType(opsObj map[string]any) (string, error) {
 	tp, found, _ := unstructured.NestedString(opsObj, "spec", "type")
 	if !found {
 		return "", errors.New("scaling type not found")

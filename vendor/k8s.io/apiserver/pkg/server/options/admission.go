@@ -31,6 +31,7 @@ import (
 	"k8s.io/apiserver/pkg/admission/initializer"
 	admissionmetrics "k8s.io/apiserver/pkg/admission/metrics"
 	"k8s.io/apiserver/pkg/admission/plugin/namespace/lifecycle"
+	mutatingadmissionpolicy "k8s.io/apiserver/pkg/admission/plugin/policy/mutating"
 	validatingadmissionpolicy "k8s.io/apiserver/pkg/admission/plugin/policy/validating"
 	mutatingwebhook "k8s.io/apiserver/pkg/admission/plugin/webhook/mutating"
 	validatingwebhook "k8s.io/apiserver/pkg/admission/plugin/webhook/validating"
@@ -59,7 +60,7 @@ type AdmissionOptions struct {
 	// RecommendedPluginOrder holds an ordered list of plugin names we recommend to use by default
 	RecommendedPluginOrder []string
 	// DefaultOffPlugins is a set of plugin names that is disabled by default
-	DefaultOffPlugins sets.String
+	DefaultOffPlugins sets.Set[string]
 
 	// EnablePlugins indicates plugins to be enabled passed through `--enable-admission-plugins`.
 	EnablePlugins []string
@@ -90,8 +91,8 @@ func NewAdmissionOptions() *AdmissionOptions {
 		// admission plugins. The apiserver always runs the validating ones
 		// after all the mutating ones, so their relative order in this list
 		// doesn't matter.
-		RecommendedPluginOrder: []string{lifecycle.PluginName, mutatingwebhook.PluginName, validatingadmissionpolicy.PluginName, validatingwebhook.PluginName},
-		DefaultOffPlugins:      sets.NewString(),
+		RecommendedPluginOrder: []string{lifecycle.PluginName, mutatingadmissionpolicy.PluginName, mutatingwebhook.PluginName, validatingadmissionpolicy.PluginName, validatingwebhook.PluginName},
+		DefaultOffPlugins:      sets.Set[string]{},
 	}
 	server.RegisterAllAdmissionPlugins(options.Plugins)
 	return options
@@ -139,6 +140,9 @@ func (a *AdmissionOptions) ApplyTo(
 	if informers == nil {
 		return fmt.Errorf("admission depends on a Kubernetes core API shared informer, it cannot be nil")
 	}
+	if kubeClient == nil || dynamicClient == nil {
+		return fmt.Errorf("admission depends on a Kubernetes core API client, it cannot be nil")
+	}
 
 	pluginNames := a.enabledPluginNames()
 
@@ -154,9 +158,9 @@ func (a *AdmissionOptions) ApplyTo(
 	initializersChain := admission.PluginInitializers{genericInitializer}
 	initializersChain = append(initializersChain, pluginInitializers...)
 
-	admissionPostStartHook := func(context server.PostStartHookContext) error {
+	admissionPostStartHook := func(hookContext server.PostStartHookContext) error {
 		discoveryRESTMapper.Reset()
-		go utilwait.Until(discoveryRESTMapper.Reset, 30*time.Second, context.StopCh)
+		go utilwait.Until(discoveryRESTMapper.Reset, 30*time.Second, hookContext.Done())
 		return nil
 	}
 
@@ -223,7 +227,7 @@ func (a *AdmissionOptions) Validate() []error {
 // EnablePlugins, DisablePlugins fields
 // to prepare a list of ordered plugin names that are enabled.
 func (a *AdmissionOptions) enabledPluginNames() []string {
-	allOffPlugins := append(a.DefaultOffPlugins.List(), a.DisablePlugins...)
+	allOffPlugins := append(sets.List[string](a.DefaultOffPlugins), a.DisablePlugins...)
 	disabledPlugins := sets.NewString(allOffPlugins...)
 	enabledPlugins := sets.NewString(a.EnablePlugins...)
 	disabledPlugins = disabledPlugins.Difference(enabledPlugins)

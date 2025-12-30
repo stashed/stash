@@ -81,12 +81,13 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initDeploymentWatcher() {
 	c.dpInformer = c.kubeInformerFactory.Apps().V1().Deployments().Informer()
-	c.dpQueue = queue.New("Deployment", c.MaxNumRequeues, c.NumThreads, c.processDeploymentEvent)
+	c.dpQueue = queue.New[any]("Deployment", c.MaxNumRequeues, c.NumThreads, c.processDeploymentEvent)
 	_, _ = c.dpInformer.AddEventHandler(queue.DefaultEventHandler(c.dpQueue.GetQueue(), core.NamespaceAll))
 	c.dpLister = c.kubeInformerFactory.Apps().V1().Deployments().Lister()
 }
 
-func (c *StashController) processDeploymentEvent(key string) error {
+func (c *StashController) processDeploymentEvent(v any) error {
+	key := v.(string)
 	obj, exists, err := c.dpInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

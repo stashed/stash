@@ -132,7 +132,6 @@ const (
 	// This is an action which might be taken on a pod failure - mark the
 	// Job's index as failed to avoid restarts within this index. This action
 	// can only be used when backoffLimitPerIndex is set.
-	// This value is beta-level.
 	PodFailurePolicyActionFailIndex PodFailurePolicyAction = "FailIndex"
 
 	// This is an action which might be taken on a pod failure - the counter towards
@@ -226,8 +225,6 @@ type PodFailurePolicyRule struct {
 	//   running pods are terminated.
 	// - FailIndex: indicates that the pod's index is marked as Failed and will
 	//   not be restarted.
-	//   This value is alpha-level. It can be used when the
-	//   `JobBackoffLimitPerIndex` feature gate is enabled (disabled by default).
 	// - Ignore: indicates that the counter towards the .backoffLimit is not
 	//   incremented and a replacement pod is created.
 	// - Count: indicates that the pod is handled in the default way - the
@@ -263,7 +260,7 @@ type PodFailurePolicy struct {
 type SuccessPolicy struct {
 	// rules represents the list of alternative rules for the declaring the Jobs
 	// as successful before `.status.succeeded >= .spec.completions`. Once any of the rules are met,
-	// the "SucceededCriteriaMet" condition is added, and the lingering pods are removed.
+	// the "SuccessCriteriaMet" condition is added, and the lingering pods are removed.
 	// The terminal state for such a Job has the "Complete" condition.
 	// Additionally, these rules are evaluated in order; Once the Job meets one of the rules,
 	// other rules are ignored. At most 20 elements are allowed.
@@ -330,8 +327,6 @@ type JobSpec struct {
 	// checked against the backoffLimit. This field cannot be used in combination
 	// with .spec.podTemplate.spec.restartPolicy=OnFailure.
 	//
-	// This field is beta-level. It can be used when the `JobPodFailurePolicy`
-	// feature gate is enabled (enabled by default).
 	// +optional
 	PodFailurePolicy *PodFailurePolicy
 
@@ -341,8 +336,6 @@ type JobSpec struct {
 	// When the field is specified, it must be immutable and works only for the Indexed Jobs.
 	// Once the Job meets the SuccessPolicy, the lingering pods are terminated.
 	//
-	// This field  is alpha-level. To use this field, you must enable the
-	// `JobSuccessPolicy` feature gate (disabled by default).
 	// +optional
 	SuccessPolicy *SuccessPolicy
 
@@ -354,8 +347,9 @@ type JobSpec struct {
 	// +optional
 	ActiveDeadlineSeconds *int64
 
-	// Optional number of retries before marking this job failed.
-	// Defaults to 6
+	// Specifies the number of retries before marking this job failed.
+	// Defaults to 6, unless backoffLimitPerIndex (only Indexed Job) is specified.
+	// When backoffLimitPerIndex is specified, backoffLimit defaults to 2147483647.
 	// +optional
 	BackoffLimit *int32
 
@@ -365,8 +359,6 @@ type JobSpec struct {
 	// batch.kubernetes.io/job-index-failure-count annotation. It can only
 	// be set when Job's completionMode=Indexed, and the Pod's restart
 	// policy is Never. The field is immutable.
-	// This field is beta-level. It can be used when the `JobBackoffLimitPerIndex`
-	// feature gate is enabled (enabled by default).
 	// +optional
 	BackoffLimitPerIndex *int32
 
@@ -378,8 +370,6 @@ type JobSpec struct {
 	// It can only be specified when backoffLimitPerIndex is set.
 	// It can be null or up to completions. It is required and must be
 	// less than or equal to 10^4 when is completions greater than 10^5.
-	// This field is beta-level. It can be used when the `JobBackoffLimitPerIndex`
-	// feature gate is enabled (enabled by default).
 	// +optional
 	MaxFailedIndexes *int32
 
@@ -464,8 +454,6 @@ type JobSpec struct {
 	//
 	// When using podFailurePolicy, Failed is the the only allowed value.
 	// TerminatingOrFailed and Failed are allowed values when podFailurePolicy is not in use.
-	// This is an beta field. To use this, enable the JobPodReplacementPolicy feature toggle.
-	// This is on by default.
 	// +optional
 	PodReplacementPolicy *PodReplacementPolicy
 
@@ -476,10 +464,11 @@ type JobSpec struct {
 	// The value must be a valid domain-prefixed path (e.g. acme.io/foo) -
 	// all characters before the first "/" must be a valid subdomain as defined
 	// by RFC 1123. All characters trailing the first "/" must be valid HTTP Path
-	// characters as defined by RFC 3986. The value cannot exceed 64 characters.
+	// characters as defined by RFC 3986. The value cannot exceed 63 characters.
+	// This field is immutable.
 	//
-	// This field is alpha-level. The job controller accepts setting the field
-	// when the feature gate JobManagedBy is enabled (disabled by default).
+	// This field is beta-level. The job controller accepts setting the field
+	// when the feature gate JobManagedBy is enabled (enabled by default).
 	// +optional
 	ManagedBy *string
 }
@@ -536,7 +525,8 @@ type JobStatus struct {
 	// +optional
 	Terminating *int32
 
-	// The number of active pods which have a Ready condition.
+	// The number of active pods which have a Ready condition and are not
+	// terminating (without a deletionTimestamp).
 	// +optional
 	Ready *int32
 
@@ -571,8 +561,6 @@ type JobStatus struct {
 	// represented as "1,3-5,7".
 	// The set of failed indexes cannot overlap with the set of completed indexes.
 	//
-	// This field is beta-level. It can be used when the `JobBackoffLimitPerIndex`
-	// feature gate is enabled (enabled by default).
 	// +optional
 	FailedIndexes *string
 

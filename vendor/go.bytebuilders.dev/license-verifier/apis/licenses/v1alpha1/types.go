@@ -73,9 +73,18 @@ const (
 	FeatureDisableAnalytics    FeatureFlag = "DisableAnalytics"
 	FeatureRestrictions        FeatureFlag = "Restrictions"
 	FeatureEnableClientBilling FeatureFlag = "EnableClientBilling"
+	FeatureActivationMode      FeatureFlag = "ActivationMode"
 )
 
-var knownFlags = sets.New[FeatureFlag](FeatureDisableAnalytics, FeatureRestrictions, FeatureEnableClientBilling)
+// +kubebuilder:validation:Enum=full;certification
+type ActivationMode string
+
+const (
+	ActivationModeFull          ActivationMode = "full"
+	ActivationModeCertification ActivationMode = "certification"
+)
+
+var knownFlags = sets.New[FeatureFlag](FeatureDisableAnalytics, FeatureRestrictions, FeatureEnableClientBilling, FeatureActivationMode)
 
 type FeatureFlags map[FeatureFlag]string
 

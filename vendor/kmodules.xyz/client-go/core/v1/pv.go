@@ -93,7 +93,6 @@ func TryUpdatePV(ctx context.Context, c kubernetes.Interface, meta metav1.Object
 		klog.Errorf("Attempt %d failed to update PersistentVolume %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update PersistentVolume %s after %d attempts due to %v", meta.Name, attempt, err)
 	}

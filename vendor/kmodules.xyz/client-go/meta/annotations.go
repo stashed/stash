@@ -23,7 +23,7 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-type ParserFunc func(map[string]string, string) (interface{}, error)
+type ParserFunc func(map[string]string, string) (any, error)
 
 var (
 	_ ParserFunc = GetBool
@@ -35,7 +35,7 @@ var (
 	_ ParserFunc = GetDuration
 )
 
-func GetBool(m map[string]string, key string) (interface{}, error) {
+func GetBool(m map[string]string, key string) (any, error) {
 	if m == nil {
 		return false, kutil.ErrNotFound
 	}
@@ -51,7 +51,7 @@ func GetBoolValue(m map[string]string, key string) (bool, error) {
 	return v.(bool), err
 }
 
-func GetInt(m map[string]string, key string) (interface{}, error) {
+func GetInt(m map[string]string, key string) (any, error) {
 	if m == nil {
 		return 0, kutil.ErrNotFound
 	}
@@ -67,7 +67,7 @@ func GetIntValue(m map[string]string, key string) (int, error) {
 	return v.(int), err
 }
 
-func GetString(m map[string]string, key string) (interface{}, error) {
+func GetString(m map[string]string, key string) (any, error) {
 	if m == nil {
 		return "", kutil.ErrNotFound
 	}
@@ -99,7 +99,7 @@ func RemoveKey(m map[string]string, key string) map[string]string {
 	return m
 }
 
-func GetList(m map[string]string, key string) (interface{}, error) {
+func GetList(m map[string]string, key string) (any, error) {
 	if m == nil {
 		return []string{}, kutil.ErrNotFound
 	}
@@ -117,7 +117,7 @@ func GetListValue(m map[string]string, key string) ([]string, error) {
 	return v.([]string), err
 }
 
-func GetMap(m map[string]string, key string) (interface{}, error) {
+func GetMap(m map[string]string, key string) (any, error) {
 	if m == nil {
 		return map[string]string{}, kutil.ErrNotFound
 	}
@@ -135,7 +135,7 @@ func GetMapValue(m map[string]string, key string) (map[string]string, error) {
 	return v.(map[string]string), err
 }
 
-func GetFloat(m map[string]string, key string) (interface{}, error) {
+func GetFloat(m map[string]string, key string) (any, error) {
 	if m == nil {
 		return 0.0, kutil.ErrNotFound
 	}
@@ -152,7 +152,7 @@ func GetFloatValue(m map[string]string, key string) (float64, error) {
 	return v.(float64), err
 }
 
-func GetDuration(m map[string]string, key string) (interface{}, error) {
+func GetDuration(m map[string]string, key string) (any, error) {
 	if m == nil {
 		return time.Duration(0), kutil.ErrNotFound
 	}
@@ -169,10 +169,10 @@ func GetDurationValue(m map[string]string, key string) (time.Duration, error) {
 	return v.(time.Duration), err
 }
 
-type GetFunc func(map[string]string) (interface{}, error)
+type GetFunc func(map[string]string) (any, error)
 
 func ParseFor(key string, fn ParserFunc) GetFunc {
-	return func(m map[string]string) (interface{}, error) {
+	return func(m map[string]string) (any, error) {
 		return fn(m, key)
 	}
 }

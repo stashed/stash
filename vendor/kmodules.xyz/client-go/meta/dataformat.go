@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func DecodeObject(in interface{}, out interface{}) error {
+func DecodeObject(in any, out any) error {
 	config := &mapstructure.DecoderConfig{
 		Metadata: nil,
 		TagName:  "json",
@@ -56,10 +56,11 @@ func NewDataFormat(format string, def DataFormat) DataFormat {
 	}
 }
 
-func Marshal(v interface{}, format DataFormat) ([]byte, error) {
-	if format == JsonFormat {
+func Marshal(v any, format DataFormat) ([]byte, error) {
+	switch format {
+	case JsonFormat:
 		return json.Marshal(v)
-	} else if format == YAMLFormat {
+	case YAMLFormat:
 		return yaml.Marshal(v)
 	}
 	return nil, fmt.Errorf("unknonw format: %v", format)

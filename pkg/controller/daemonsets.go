@@ -81,7 +81,7 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 
 func (c *StashController) initDaemonSetWatcher() {
 	c.dsInformer = c.kubeInformerFactory.Apps().V1().DaemonSets().Informer()
-	c.dsQueue = queue.New("DaemonSet", c.MaxNumRequeues, c.NumThreads, c.processDaemonSetEvent)
+	c.dsQueue = queue.New[any]("DaemonSet", c.MaxNumRequeues, c.NumThreads, c.processDaemonSetEvent)
 	_, _ = c.dsInformer.AddEventHandler(queue.DefaultEventHandler(c.dsQueue.GetQueue(), core.NamespaceAll))
 	c.dsLister = c.kubeInformerFactory.Apps().V1().DaemonSets().Lister()
 }
@@ -89,7 +89,8 @@ func (c *StashController) initDaemonSetWatcher() {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the daemonset to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) processDaemonSetEvent(key string) error {
+func (c *StashController) processDaemonSetEvent(v any) error {
+	key := v.(string)
 	obj, exists, err := c.dsInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch object from indexer",

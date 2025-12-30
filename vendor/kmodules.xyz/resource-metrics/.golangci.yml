@@ -1,0 +1,28 @@
+version: "2"
+linters:
+  default: standard
+  enable:
+    - unparam
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+
+issues:
+  max-same-issues: 100
+
+  exclude-files:
+    - generated.*\\.go
+
+  exclude-dirs:
+    - client
+    - vendor
+
+run:
+  timeout: 10m

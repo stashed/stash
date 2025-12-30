@@ -25,8 +25,8 @@ import (
 )
 
 // EvalFuncs for https://github.com/gomodules/eval
-func EvalFuncs() map[string]func(arguments ...interface{}) (interface{}, error) {
-	return map[string]func(arguments ...interface{}) (interface{}, error){
+func EvalFuncs() map[string]func(arguments ...any) (any, error) {
+	return map[string]func(arguments ...any) (any, error){
 		"resource_replicas":       resourceReplicas,
 		"resource_mode":           resourceMode,
 		"resource_uses_tls":       resourceUsesTLS,
@@ -38,23 +38,23 @@ func EvalFuncs() map[string]func(arguments ...interface{}) (interface{}, error) 
 }
 
 // resourceReplicas(resource_obj)
-func resourceReplicas(args ...interface{}) (interface{}, error) {
-	return Replicas(args[0].(map[string]interface{}))
+func resourceReplicas(args ...any) (any, error) {
+	return Replicas(args[0].(map[string]any))
 }
 
 // resourceMode(resource_obj)
-func resourceMode(args ...interface{}) (interface{}, error) {
-	return Mode(args[0].(map[string]interface{}))
+func resourceMode(args ...any) (any, error) {
+	return Mode(args[0].(map[string]any))
 }
 
 // resourceUsesTLS(resource_obj)
-func resourceUsesTLS(args ...interface{}) (interface{}, error) {
-	return UsesTLS(args[0].(map[string]interface{}))
+func resourceUsesTLS(args ...any) (any, error) {
+	return UsesTLS(args[0].(map[string]any))
 }
 
 // totalResourceLimits(resource_obj, resource_type) => cpu cores (float64)
-func totalResourceLimits(args ...interface{}) (interface{}, error) {
-	rr, err := TotalResourceLimits(args[0].(map[string]interface{}))
+func totalResourceLimits(args ...any) (any, error) {
+	rr, err := TotalResourceLimits(args[0].(map[string]any))
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +62,8 @@ func totalResourceLimits(args ...interface{}) (interface{}, error) {
 }
 
 // totalResourceRequests(resource_obj, resource_type)
-func totalResourceRequests(args ...interface{}) (interface{}, error) {
-	rr, err := TotalResourceRequests(args[0].(map[string]interface{}))
+func totalResourceRequests(args ...any) (any, error) {
+	rr, err := TotalResourceRequests(args[0].(map[string]any))
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +71,8 @@ func totalResourceRequests(args ...interface{}) (interface{}, error) {
 }
 
 // appResourceLimits(resource_obj, resource_type)
-func appResourceLimits(args ...interface{}) (interface{}, error) {
-	rr, err := AppResourceLimits(args[0].(map[string]interface{}))
+func appResourceLimits(args ...any) (any, error) {
+	rr, err := AppResourceLimits(args[0].(map[string]any))
 	if err != nil {
 		return nil, err
 	}
@@ -80,15 +80,15 @@ func appResourceLimits(args ...interface{}) (interface{}, error) {
 }
 
 // appResourceRequests(resource_obj, resource_type)
-func appResourceRequests(args ...interface{}) (interface{}, error) {
-	rr, err := AppResourceRequests(args[0].(map[string]interface{}))
+func appResourceRequests(args ...any) (any, error) {
+	rr, err := AppResourceRequests(args[0].(map[string]any))
 	if err != nil {
 		return nil, err
 	}
 	return resourceQuantity(rr, args[1])
 }
 
-func resourceQuantity(rr core.ResourceList, resourceName interface{}) (interface{}, error) {
+func resourceQuantity(rr core.ResourceList, resourceName any) (any, error) {
 	var name core.ResourceName
 
 	switch u := resourceName.(type) {

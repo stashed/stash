@@ -32,6 +32,11 @@ func init() {
 		Version: "v1alpha2",
 		Kind:    "ZooKeeper",
 	}, ZooKeeper{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "ZooKeeper",
+	}, ZooKeeper{}.ResourceCalculator())
 }
 
 type ZooKeeper struct{}
@@ -48,7 +53,7 @@ func (z ZooKeeper) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (z ZooKeeper) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (z ZooKeeper) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec.replicas %v: %w", obj, err)
@@ -59,7 +64,7 @@ func (z ZooKeeper) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, 
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (z ZooKeeper) modeFn(obj map[string]interface{}) (string, error) {
+func (z ZooKeeper) modeFn(obj map[string]any) (string, error) {
 	replicas, _, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return "", err
@@ -70,13 +75,13 @@ func (z ZooKeeper) modeFn(obj map[string]interface{}) (string, error) {
 	return DBModeStandalone, nil
 }
 
-func (z ZooKeeper) usesTLSFn(obj map[string]interface{}) (bool, error) {
+func (z ZooKeeper) usesTLSFn(obj map[string]any) (bool, error) {
 	_, found, err := unstructured.NestedFieldNoCopy(obj, "spec", "tls")
 	return found, err
 }
 
-func (z ZooKeeper) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (z ZooKeeper) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		container, replicas, err := api.AppNodeResourcesV2(obj, fn, ZooKeeperContainerName, "spec")
 		if err != nil {
 			return nil, err

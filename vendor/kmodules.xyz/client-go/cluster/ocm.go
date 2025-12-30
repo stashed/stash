@@ -18,10 +18,18 @@ package cluster
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	kmapi "kmodules.xyz/client-go/api/v1"
+
+	core "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/authentication/user"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -40,7 +48,38 @@ func IsOpenClusterSpoke(kc client.Reader) bool {
 	list.SetAPIVersion("operator.open-cluster-management.io/v1")
 	list.SetKind("Klusterlet")
 	err := kc.List(context.TODO(), &list)
-	return err == nil && len(list.Items) > 0
+	if err != nil {
+		if !meta.IsNoMatchError(err) && !apierrors.IsNotFound(err) {
+			panic(err) // panic if 403 (missing rbac)
+		}
+	}
+	return len(list.Items) > 0
+}
+
+func IsACEManagedSpoke(kc client.Reader) bool {
+	if !IsOpenClusterSpoke(kc) {
+		return false
+	}
+
+	var list unstructured.UnstructuredList
+	list.SetAPIVersion("cluster.open-cluster-management.io/v1alpha1")
+	list.SetKind("ClusterClaim")
+	err := kc.List(context.TODO(), &list)
+	if err != nil {
+		klog.Errorln(err)
+	}
+
+	n := 0
+	for _, item := range list.Items {
+		if item.GetName() == kmapi.ClusterClaimKeyID ||
+			item.GetName() == kmapi.ClusterClaimKeyInfo {
+			n++
+		}
+		if n == 2 {
+			return true
+		}
+	}
+	return false
 }
 
 func IsOpenClusterMulticlusterControlplane(mapper meta.RESTMapper) bool {
@@ -52,4 +91,43 @@ func IsOpenClusterMulticlusterControlplane(mapper meta.RESTMapper) bool {
 		missingDeployment = true
 	}
 	return IsOpenClusterHub(mapper) && missingDeployment
+}
+
+type ClientOrgResult struct {
+	IsClientOrg bool
+	OrgID       string
+	Namespace   core.Namespace
+}
+
+func IsClientOrgMember(kc client.Client, user user.Info) (*ClientOrgResult, error) {
+	orgs, exists := user.GetExtra()[kmapi.AceOrgIDKey]
+	if !exists || len(orgs) == 0 {
+		return &ClientOrgResult{}, nil
+	}
+	if len(orgs) > 1 {
+		return nil, fmt.Errorf("user %s associated with multiple orgs %v", user.GetName(), orgs)
+	}
+
+	var list core.NamespaceList
+	if err := kc.List(context.TODO(), &list, client.MatchingLabels{
+		kmapi.ClientOrgKey: "true",
+	}); err != nil {
+		return nil, err
+	}
+
+	for _, ns := range list.Items {
+		if ns.Annotations[kmapi.AceOrgIDKey] == orgs[0] {
+			return &ClientOrgResult{
+				IsClientOrg: true,
+				OrgID:       orgs[0],
+				Namespace:   ns,
+			}, nil
+		}
+	}
+	return &ClientOrgResult{}, nil
+}
+
+func ClientDashboardTitle(title string) string {
+	title = strings.TrimPrefix(title, "KubeDB /")
+	return strings.TrimSpace(title)
 }

@@ -32,6 +32,11 @@ func init() {
 		Version: "v1",
 		Kind:    "RedisSentinel",
 	}, RedisSentinel{}.ResourceCalculator())
+	api.Register(schema.GroupVersionKind{
+		Group:   "gitops.kubedb.com",
+		Version: "v1alpha1",
+		Kind:    "RedisSentinel",
+	}, RedisSentinel{}.ResourceCalculator())
 }
 
 type RedisSentinel struct{}
@@ -47,7 +52,7 @@ func (r RedisSentinel) ResourceCalculator() api.ResourceCalculator {
 	}
 }
 
-func (r RedisSentinel) roleReplicasFn(obj map[string]interface{}) (api.ReplicaList, error) {
+func (r RedisSentinel) roleReplicasFn(obj map[string]any) (api.ReplicaList, error) {
 	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec.replicas %v: %w", obj, err)
@@ -58,12 +63,20 @@ func (r RedisSentinel) roleReplicasFn(obj map[string]interface{}) (api.ReplicaLi
 	return api.ReplicaList{api.PodRoleDefault: replicas}, nil
 }
 
-func (r RedisSentinel) modeFn(obj map[string]interface{}) (string, error) {
-	return DBModeCluster, nil
+func (r RedisSentinel) modeFn(obj map[string]any) (string, error) {
+	mode, found, err := unstructured.NestedString(obj, "spec", "mode")
+	if err == nil && found {
+		return mode, nil
+	}
+	replicas, found, err := unstructured.NestedInt64(obj, "spec", "replicas")
+	if err == nil && found && replicas > 1 {
+		return DBModeCluster, nil
+	}
+	return DBModeStandalone, nil
 }
 
-func (r RedisSentinel) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
-	return func(obj map[string]interface{}) (map[api.PodRole]api.PodInfo, error) {
+func (r RedisSentinel) roleResourceFn(fn func(rr core.ResourceRequirements) core.ResourceList) func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
+	return func(obj map[string]any) (map[api.PodRole]api.PodInfo, error) {
 		exporter, err := api.ContainerResources(obj, fn, "spec", "monitor", "prometheus", "exporter")
 		if err != nil {
 			return nil, err

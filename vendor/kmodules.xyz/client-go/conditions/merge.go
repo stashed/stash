@@ -32,9 +32,9 @@ type localizedCondition struct {
 }
 
 // merge a list of condition into a single one.
-// This operation is designed to ensure visibility of the most relevant util for defining the
+// This operation is designed to ensure visibility of the most relevant conditions for defining the
 // operational state of a component. E.g. If there is one error in the condition list, this one takes
-// priority over the other util, and it should be reflected in the target condition.
+// priority over the other conditions and it is should be reflected in the target condition.
 //
 // More specifically:
 // 1. Conditions are grouped by status, severity
@@ -63,11 +63,10 @@ func merge(conditions []localizedCondition, targetCondition kmapi.ConditionType,
 
 	targetReason := getReason(g, options)
 	targetMessage := getMessage(g, options)
-
 	if g.TopGroup().status == metav1.ConditionFalse {
-		return FalseCondition(targetCondition, targetReason, g.TopGroup().severity, targetMessage) //nolint:govet
+		return FalseCondition(targetCondition, targetReason, g.TopGroup().severity, "%s", targetMessage)
 	}
-	return UnknownCondition(targetCondition, targetReason, targetMessage) //nolint:govet
+	return UnknownCondition(targetCondition, targetReason, "%s", targetMessage)
 }
 
 // getConditionGroups groups a list of conditions according to status, severity values.

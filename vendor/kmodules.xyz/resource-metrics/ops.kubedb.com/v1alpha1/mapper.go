@@ -36,8 +36,8 @@ type OpsPathMapper interface {
 type (
 	OpsReqPath        string
 	ReferencedObjPath string
-	ScaledObject      map[string]interface{}
-	OpsReqObject      map[string]interface{}
+	ScaledObject      map[string]any
+	OpsReqObject      map[string]any
 )
 
 var (

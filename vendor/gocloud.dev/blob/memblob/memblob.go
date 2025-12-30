@@ -195,10 +195,10 @@ func (b *bucket) ListPaged(ctx context.Context, opts *driver.ListOptions) (*driv
 }
 
 // As implements driver.As.
-func (b *bucket) As(i interface{}) bool { return false }
+func (b *bucket) As(i any) bool { return false }
 
 // As implements driver.ErrorAs.
-func (b *bucket) ErrorAs(err error, i interface{}) bool { return false }
+func (b *bucket) ErrorAs(err error, i any) bool { return false }
 
 // Attributes implements driver.Attributes.
 func (b *bucket) Attributes(ctx context.Context, key string) (*driver.Attributes, error) {
@@ -223,7 +223,7 @@ func (b *bucket) NewRangeReader(ctx context.Context, key string, offset, length 
 	}
 
 	if opts.BeforeRead != nil {
-		if err := opts.BeforeRead(func(interface{}) bool { return false }); err != nil {
+		if err := opts.BeforeRead(func(any) bool { return false }); err != nil {
 			return nil, err
 		}
 	}
@@ -256,6 +256,14 @@ func (r *reader) Read(p []byte) (int, error) {
 	return r.r.Read(p)
 }
 
+func (r *reader) Download(w io.Writer) error {
+	// This should always work because r.r was created from a bytes.Reader.
+	// It's only not a WriterTo when we wrap it with a LimitReader,
+	// which is guaranteed not to happen by the driver interface.
+	_, err := r.r.(io.WriterTo).WriteTo(w)
+	return err
+}
+
 func (r *reader) Close() error {
 	return nil
 }
@@ -264,10 +272,10 @@ func (r *reader) Attributes() *driver.ReaderAttributes {
 	return &r.attrs
 }
 
-func (r *reader) As(i interface{}) bool { return false }
+func (r *reader) As(i any) bool { return false }
 
 // NewTypedWriter implements driver.NewTypedWriter.
-func (b *bucket) NewTypedWriter(ctx context.Context, key string, contentType string, opts *driver.WriterOptions) (driver.Writer, error) {
+func (b *bucket) NewTypedWriter(ctx context.Context, key, contentType string, opts *driver.WriterOptions) (driver.Writer, error) {
 	if key == "" {
 		return nil, errors.New("invalid key (empty string)")
 	}
@@ -275,7 +283,7 @@ func (b *bucket) NewTypedWriter(ctx context.Context, key string, contentType str
 	defer b.mu.Unlock()
 
 	if opts.BeforeWrite != nil {
-		if err := opts.BeforeWrite(func(interface{}) bool { return false }); err != nil {
+		if err := opts.BeforeWrite(func(any) bool { return false }); err != nil {
 			return nil, err
 		}
 	}
@@ -312,6 +320,11 @@ func (w *writer) Write(p []byte) (n int, err error) {
 		return 0, err
 	}
 	return w.buf.Write(p)
+}
+
+func (w *writer) Upload(r io.Reader) error {
+	_, err := w.buf.ReadFrom(r)
+	return err
 }
 
 func (w *writer) Close() error {
@@ -354,7 +367,9 @@ func (b *bucket) Copy(ctx context.Context, dstKey, srcKey string, opts *driver.C
 	defer b.mu.Unlock()
 
 	if opts.BeforeCopy != nil {
-		return opts.BeforeCopy(func(interface{}) bool { return false })
+		if err := opts.BeforeCopy(func(any) bool { return false }); err != nil {
+			return err
+		}
 	}
 	v := b.blobs[srcKey]
 	if v == nil {

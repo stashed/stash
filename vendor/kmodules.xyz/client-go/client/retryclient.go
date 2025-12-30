@@ -111,6 +111,16 @@ func (r *retryClient) Update(ctx context.Context, obj client.Object, opts ...cli
 	return
 }
 
+func (r *retryClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) (apierror error) {
+	_ = wait.PollUntilContextTimeout(ctx, r.interval, r.timeout, true, func(ctx context.Context) (done bool, err error) {
+		apierror = r.d.Apply(ctx, obj, opts...)
+		err = apierror
+		done = err == nil || !errors.Is(err, io.EOF)
+		return
+	})
+	return
+}
+
 func (r *retryClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) (apierror error) {
 	_ = wait.PollUntilContextTimeout(ctx, r.interval, r.timeout, true, func(ctx context.Context) (done bool, err error) {
 		apierror = r.d.Patch(ctx, obj, patch, opts...)

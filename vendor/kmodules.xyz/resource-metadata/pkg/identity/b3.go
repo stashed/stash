@@ -117,7 +117,7 @@ func (c *Client) Identify(clusterUID string) (*kmapi.ClusterMetadata, error) {
 		}
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint:errcheck
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -185,7 +185,7 @@ func (c *Client) GetToken() (*identityapi.InboxTokenRequestResponse, error) {
 		}
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint:errcheck
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
