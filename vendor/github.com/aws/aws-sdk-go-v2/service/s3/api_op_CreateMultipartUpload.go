@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+// End of support notice: As of October 1, 2025, Amazon S3 has discontinued
+// support for Email Grantee Access Control Lists (ACLs). If you attempt to use an
+// Email Grantee ACL in a request after October 1, 2025, the request will receive
+// an HTTP 405 (Method Not Allowed) error.
+//
+// This change affects the following Amazon Web Services Regions: US East (N.
+// Virginia), US West (N. California), US West (Oregon), Asia Pacific (Singapore),
+// Asia Pacific (Sydney), Asia Pacific (Tokyo), Europe (Ireland), and South America
+// (São Paulo).
+//
 // This action initiates a multipart upload and returns an upload ID. This upload
 // ID is used to associate all of the parts in the specific multipart upload. You
 // specify this upload ID in each of your subsequent upload part requests (see [UploadPart]).
@@ -202,6 +212,10 @@ import (
 //
 // [ListMultipartUploads]
 //
+// You must URL encode any signed header values that contain spaces. For example,
+// if your header value is my file.txt , containing two spaces after my , you must
+// URL encode this value to my%20%20file.txt .
+//
 // [Concepts for directory buckets in Local Zones]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html
 // [ListParts]: https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html
 // [UploadPart]: https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html
@@ -252,17 +266,18 @@ type CreateMultipartUploadInput struct {
 	// amzn-s3-demo-bucket--usw2-az1--x-s3 ). For information about bucket naming
 	// restrictions, see [Directory bucket naming rules]in the Amazon S3 User Guide.
 	//
-	// Access points - When you use this action with an access point, you must provide
-	// the alias of the access point in place of the bucket name or specify the access
-	// point ARN. When using the access point ARN, you must direct requests to the
-	// access point hostname. The access point hostname takes the form
+	// Access points - When you use this action with an access point for general
+	// purpose buckets, you must provide the alias of the access point in place of the
+	// bucket name or specify the access point ARN. When you use this action with an
+	// access point for directory buckets, you must provide the access point name in
+	// place of the bucket name. When using the access point ARN, you must direct
+	// requests to the access point hostname. The access point hostname takes the form
 	// AccessPointName-AccountId.s3-accesspoint.Region.amazonaws.com. When using this
 	// action with an access point through the Amazon Web Services SDKs, you provide
 	// the access point ARN in place of the bucket name. For more information about
 	// access point ARNs, see [Using access points]in the Amazon S3 User Guide.
 	//
-	// Access points and Object Lambda access points are not supported by directory
-	// buckets.
+	// Object Lambda access points are not supported by directory buckets.
 	//
 	// S3 on Outposts - When you use this action with S3 on Outposts, you must direct
 	// requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes the
@@ -606,9 +621,8 @@ type CreateMultipartUploadInput struct {
 	// Confirms that the requester knows that they will be charged for the request.
 	// Bucket owners need not specify this parameter in their requests. If either the
 	// source or destination S3 bucket has Requester Pays enabled, the requester will
-	// pay for corresponding charges to copy the object. For information about
-	// downloading objects from Requester Pays buckets, see [Downloading Objects in Requester Pays Buckets]in the Amazon S3 User
-	// Guide.
+	// pay for the corresponding charges. For information about downloading objects
+	// from Requester Pays buckets, see [Downloading Objects in Requester Pays Buckets]in the Amazon S3 User Guide.
 	//
 	// This functionality is not supported for directory buckets.
 	//
@@ -673,7 +687,7 @@ type CreateMultipartUploadInput struct {
 	SSEKMSKeyId *string
 
 	// The server-side encryption algorithm used when you store this object in Amazon
-	// S3 (for example, AES256 , aws:kms ).
+	// S3 or Amazon FSx.
 	//
 	//   - Directory buckets - For directory buckets, there are only two supported
 	//   options for server-side encryption: server-side encryption with Amazon S3
@@ -706,6 +720,13 @@ type CreateMultipartUploadInput struct {
 	//   request headers must match the default encryption configuration of the directory
 	//   bucket.
 	//
+	//   - S3 access points for Amazon FSx - When accessing data stored in Amazon FSx
+	//   file systems using S3 access points, the only valid server side encryption
+	//   option is aws:fsx . All Amazon FSx file systems have encryption configured by
+	//   default and are encrypted at rest. Data is automatically encrypted before being
+	//   written to the file system, and automatically decrypted as it is read. These
+	//   processes are handled transparently by Amazon FSx.
+	//
 	// [Specifying server-side encryption with KMS for new object uploads]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-specifying-kms-encryption.html
 	// [Protecting data with server-side encryption]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-serv-side-encryption.html
 	// [CopyObject]: https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html
@@ -717,8 +738,9 @@ type CreateMultipartUploadInput struct {
 	// availability. Depending on performance needs, you can specify a different
 	// Storage Class. For more information, see [Storage Classes]in the Amazon S3 User Guide.
 	//
-	//   - For directory buckets, only the S3 Express One Zone storage class is
-	//   supported to store newly created objects.
+	//   - Directory buckets only support EXPRESS_ONEZONE (the S3 Express One Zone
+	//   storage class) in Availability Zones and ONEZONE_IA (the S3 One
+	//   Zone-Infrequent Access storage class) in Dedicated Local Zones.
 	//
 	//   - Amazon S3 on Outposts only uses the OUTPOSTS Storage Class.
 	//
@@ -793,9 +815,12 @@ type CreateMultipartUploadOutput struct {
 	Key *string
 
 	// If present, indicates that the requester was successfully charged for the
-	// request.
+	// request. For more information, see [Using Requester Pays buckets for storage transfers and usage]in the Amazon Simple Storage Service user
+	// guide.
 	//
 	// This functionality is not supported for directory buckets.
+	//
+	// [Using Requester Pays buckets for storage transfers and usage]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/RequesterPaysBuckets.html
 	RequestCharged types.RequestCharged
 
 	// If server-side encryption with a customer-provided encryption key was
@@ -821,7 +846,10 @@ type CreateMultipartUploadOutput struct {
 	SSEKMSKeyId *string
 
 	// The server-side encryption algorithm used when you store this object in Amazon
-	// S3 (for example, AES256 , aws:kms ).
+	// S3 or Amazon FSx.
+	//
+	// When accessing data stored in Amazon FSx file systems using S3 access points,
+	// the only valid server side encryption option is aws:fsx .
 	ServerSideEncryption types.ServerSideEncryption
 
 	// ID for the initiated multipart upload.
@@ -867,7 +895,7 @@ func (c *Client) addOperationCreateMultipartUploadMiddlewares(stack *middleware.
 	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetry(stack, options); err != nil {
+	if err = addRetry(stack, options, c); err != nil {
 		return err
 	}
 	if err = addRawResponseToMetadata(stack); err != nil {
@@ -892,9 +920,6 @@ func (c *Client) addOperationCreateMultipartUploadMiddlewares(stack *middleware.
 		return err
 	}
 	if err = addPutBucketContextMiddleware(stack); err != nil {
-		return err
-	}
-	if err = addTimeOffsetBuild(stack, c); err != nil {
 		return err
 	}
 	if err = addUserAgentRetryMode(stack, options); err != nil {
@@ -942,16 +967,13 @@ func (c *Client) addOperationCreateMultipartUploadMiddlewares(stack *middleware.
 	if err = addSetCreateMPUChecksumAlgorithm(stack); err != nil {
 		return err
 	}
-	if err = addSpanInitializeStart(stack); err != nil {
+	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
 		return err
 	}
-	if err = addSpanInitializeEnd(stack); err != nil {
+	if err = addInterceptAttempt(stack, options); err != nil {
 		return err
 	}
-	if err = addSpanBuildRequestStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestEnd(stack); err != nil {
+	if err = addInterceptors(stack, options); err != nil {
 		return err
 	}
 	return nil

@@ -78,6 +78,10 @@ import (
 //
 // [CreateBucket]
 //
+// You must URL encode any signed header values that contain spaces. For example,
+// if your header value is my file.txt , containing two spaces after my , you must
+// URL encode this value to my%20%20file.txt .
+//
 // [ListObjects]: https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html
 // [Concepts for directory buckets in Local Zones]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html
 // [Permissions Related to Bucket Subresource Operations]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-with-s3-actions.html#using-with-s3-actions-related-to-bucket-subresources
@@ -115,17 +119,18 @@ type ListObjectsV2Input struct {
 	// amzn-s3-demo-bucket--usw2-az1--x-s3 ). For information about bucket naming
 	// restrictions, see [Directory bucket naming rules]in the Amazon S3 User Guide.
 	//
-	// Access points - When you use this action with an access point, you must provide
-	// the alias of the access point in place of the bucket name or specify the access
-	// point ARN. When using the access point ARN, you must direct requests to the
-	// access point hostname. The access point hostname takes the form
+	// Access points - When you use this action with an access point for general
+	// purpose buckets, you must provide the alias of the access point in place of the
+	// bucket name or specify the access point ARN. When you use this action with an
+	// access point for directory buckets, you must provide the access point name in
+	// place of the bucket name. When using the access point ARN, you must direct
+	// requests to the access point hostname. The access point hostname takes the form
 	// AccessPointName-AccountId.s3-accesspoint.Region.amazonaws.com. When using this
 	// action with an access point through the Amazon Web Services SDKs, you provide
 	// the access point ARN in place of the bucket name. For more information about
 	// access point ARNs, see [Using access points]in the Amazon S3 User Guide.
 	//
-	// Access points and Object Lambda access points are not supported by directory
-	// buckets.
+	// Object Lambda access points are not supported by directory buckets.
 	//
 	// S3 on Outposts - When you use this action with S3 on Outposts, you must direct
 	// requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes the
@@ -147,6 +152,9 @@ type ListObjectsV2Input struct {
 	ContinuationToken *string
 
 	// A delimiter is a character that you use to group keys.
+	//
+	// CommonPrefixes is filtered out from results if it is not lexicographically
+	// greater than the StartAfter value.
 	//
 	//   - Directory buckets - For directory buckets, / is the only supported delimiter.
 	//
@@ -262,8 +270,7 @@ type ListObjectsV2Output struct {
 
 	//  If ContinuationToken was sent with the request, it is included in the
 	// response. You can use the returned ContinuationToken for pagination of the list
-	// response. You can use this ContinuationToken for pagination of the list
-	// results.
+	// response.
 	ContinuationToken *string
 
 	// Causes keys that contain the same string between the prefix and the first
@@ -315,9 +322,12 @@ type ListObjectsV2Output struct {
 	Prefix *string
 
 	// If present, indicates that the requester was successfully charged for the
-	// request.
+	// request. For more information, see [Using Requester Pays buckets for storage transfers and usage]in the Amazon Simple Storage Service user
+	// guide.
 	//
 	// This functionality is not supported for directory buckets.
+	//
+	// [Using Requester Pays buckets for storage transfers and usage]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/RequesterPaysBuckets.html
 	RequestCharged types.RequestCharged
 
 	// If StartAfter was sent with the request, it is included in the response.
@@ -365,7 +375,7 @@ func (c *Client) addOperationListObjectsV2Middlewares(stack *middleware.Stack, o
 	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetry(stack, options); err != nil {
+	if err = addRetry(stack, options, c); err != nil {
 		return err
 	}
 	if err = addRawResponseToMetadata(stack); err != nil {
@@ -390,9 +400,6 @@ func (c *Client) addOperationListObjectsV2Middlewares(stack *middleware.Stack, o
 		return err
 	}
 	if err = addPutBucketContextMiddleware(stack); err != nil {
-		return err
-	}
-	if err = addTimeOffsetBuild(stack, c); err != nil {
 		return err
 	}
 	if err = addUserAgentRetryMode(stack, options); err != nil {
@@ -437,16 +444,13 @@ func (c *Client) addOperationListObjectsV2Middlewares(stack *middleware.Stack, o
 	if err = addSerializeImmutableHostnameBucketMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addSpanInitializeStart(stack); err != nil {
+	if err = addInterceptBeforeRetryLoop(stack, options); err != nil {
 		return err
 	}
-	if err = addSpanInitializeEnd(stack); err != nil {
+	if err = addInterceptAttempt(stack, options); err != nil {
 		return err
 	}
-	if err = addSpanBuildRequestStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestEnd(stack); err != nil {
+	if err = addInterceptors(stack, options); err != nil {
 		return err
 	}
 	return nil
