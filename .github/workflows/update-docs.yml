@@ -31,8 +31,8 @@ jobs:
 
       - name: Clone charts repository
         env:
-          GITHUB_USER: 1gtm
-          GITHUB_TOKEN: ${{ secrets.LGTM_GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCS_REPOSITORY: ${{ secrets.DOCS_REPOSITORY }}
         run: |
           url="https://${GITHUB_USER}:${GITHUB_TOKEN}@${DOCS_REPOSITORY}.git"
@@ -44,8 +44,8 @@ jobs:
 
       - name: Update docs
         env:
-          GITHUB_USER: 1gtm
-          GITHUB_TOKEN: ${{ secrets.LGTM_GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCS_REPOSITORY: ${{ secrets.DOCS_REPOSITORY }}
         run: |
           export DOCS_ROOT=$RUNNER_WORKSPACE/$(basename $DOCS_REPOSITORY)
