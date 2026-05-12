@@ -17,7 +17,10 @@ concurrency:
 
 jobs:
   build:
-    if: contains(github.event.issue.html_url, '/pull/') && startsWith(github.event.comment.body, '/ok-to-test')
+    if: |
+      contains(github.event.issue.html_url, '/pull/') &&
+      startsWith(github.event.comment.body, '/ok-to-test') &&
+      (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
