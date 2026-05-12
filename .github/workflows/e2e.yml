@@ -43,13 +43,17 @@ jobs:
           sudo mv bin/hub /usr/local/bin
           hub pr checkout $PR_NUMBER
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: 1gtm
+          password: ${{ secrets.LGTM_GITHUB_TOKEN }}
+
       - name: Publish to GitHub Container Registry
         env:
           REGISTRY: ghcr.io/stashed
-          DOCKER_TOKEN: ${{ secrets.LGTM_GITHUB_TOKEN }}
-          USERNAME: 1gtm
         run: |
-          docker login ghcr.io --username ${USERNAME} --password ${DOCKER_TOKEN}
           make release
 
       - name: Build
