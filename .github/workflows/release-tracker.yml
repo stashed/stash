@@ -33,12 +33,24 @@ jobs:
           curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
           sudo mv bin/hub /usr/local/bin
 
+      - name: Generate GitHub App token
+        id: app-token
+        if: |
+          github.event.action == 'closed' &&
+          github.event.pull_request.merged == true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.LGTM_APP_CLIENT_ID }}
+          private-key: ${{ secrets.LGTM_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: CHANGELOG
+
       - name: Update release tracker
         if: |
           github.event.action == 'closed' &&
           github.event.pull_request.merged == true
         env:
           GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           ./hack/scripts/update-release-tracker.sh
