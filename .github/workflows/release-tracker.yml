@@ -19,8 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Generate GitHub App token
-        id: app-token
+      - name: Generate LGTM App token
+        id: lgtm-app-token
         if: |
           github.event.action == 'closed' &&
           github.event.pull_request.merged == true
@@ -37,6 +37,6 @@ jobs:
           github.event.pull_request.merged == true
         env:
           GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.lgtm-app-token.outputs.token }}
         run: |
           ./hack/scripts/update-release-tracker.sh
