@@ -110,11 +110,11 @@ jobs:
 
       - name: Create Kubernetes ${{ matrix.k8s }} cluster
         id: kind
-        uses: engineerd/setup-kind@aa272fe2a7309878ffc2a81c56cfe3ef108ae7d0 # v0.5.0
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
         with:
           version: v0.29.0
           config: hack/kubernetes/kind.yaml
-          image: kindest/node:${{ matrix.k8s }}
+          node_image: kindest/node:${{ matrix.k8s }}
 
       - name: Prepare cluster for testing
         id: local-path

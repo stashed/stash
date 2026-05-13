@@ -28,11 +28,6 @@ jobs:
           git config --global user.email "${GITHUB_USER}@appscode.com"
           git remote set-url origin https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
 
-      - name: Install GitHub CLI
-        run: |
-          curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
-          sudo mv bin/hub /usr/local/bin
-
       - name: Generate GitHub App token
         id: app-token
         if: |
