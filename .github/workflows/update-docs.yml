@@ -56,8 +56,8 @@ jobs:
           cd $RUNNER_WORKSPACE
           git clone $url
           cd $(basename $DOCS_REPOSITORY)
-          git config user.name "${GITHUB_USER}"
-          git config user.email "${GITHUB_USER}@appscode.com"
+          git config user.name "1gtm"
+          git config user.email "1gtm@appscode.com"
 
       - name: Update docs
         env:
