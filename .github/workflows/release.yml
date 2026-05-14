@@ -36,14 +36,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
+      - name: Log in to the GitHub Container registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: 1gtm
+          password: ${{ secrets.LGTM_GITHUB_TOKEN }}
+
       - name: Publish to GitHub Container Registry
         env:
           REGISTRY: ghcr.io/stashed
-          DOCKER_TOKEN: ${{ secrets.LGTM_GITHUB_TOKEN }}
-          USERNAME: 1gtm
           APPSCODE_ENV: prod
         run: |
-          docker login ghcr.io --username ${USERNAME} --password ${DOCKER_TOKEN}
           make release
 
       - name: Release
