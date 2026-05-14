@@ -15,4 +15,4 @@ strip_html_comments = true # default: false
 always = true # default: false
 
 [approve]
-auto_approve_usernames = ["1gtm", "tamalsaha"]
+auto_approve_usernames = ["1gtm", "tamalsaha", "1gtm-app[bot]"]
