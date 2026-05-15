@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}-docs
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -17,35 +17,52 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Set up Go 1.25
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: '1.25'
         id: go
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Install GitHub CLI
+
+      - name: Parse docs repository
+        id: docs-repo
+        env:
+          DOCS_REPOSITORY: ${{ secrets.DOCS_REPOSITORY }}
         run: |
-          curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
-          sudo mv bin/hub /usr/local/bin
+          # DOCS_REPOSITORY is expected to be of the form: <host>/<owner>/<name>
+          path="${DOCS_REPOSITORY#*/}"
+          echo "owner=${path%%/*}" >> "$GITHUB_OUTPUT"
+          echo "name=${path##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate LGTM App token
+        id: lgtm-app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.LGTM_APP_CLIENT_ID }}
+          private-key: ${{ secrets.LGTM_APP_PRIVATE_KEY }}
+          owner: ${{ steps.docs-repo.outputs.owner }}
+          repositories: ${{ steps.docs-repo.outputs.name }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Clone charts repository
         env:
-          GITHUB_USER: 1gtm
-          GITHUB_TOKEN: ${{ secrets.LGTM_GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ steps.lgtm-app-token.outputs.token }}
           DOCS_REPOSITORY: ${{ secrets.DOCS_REPOSITORY }}
         run: |
-          url="https://${GITHUB_USER}:${GITHUB_TOKEN}@${DOCS_REPOSITORY}.git"
+          url="https://x-access-token:${GITHUB_TOKEN}@${DOCS_REPOSITORY}.git"
           cd $RUNNER_WORKSPACE
           git clone $url
           cd $(basename $DOCS_REPOSITORY)
-          git config user.name "${GITHUB_USER}"
-          git config user.email "${GITHUB_USER}@appscode.com"
+          git config user.name "1gtm"
+          git config user.email "1gtm@appscode.com"
 
       - name: Update docs
         env:
-          GITHUB_USER: 1gtm
-          GITHUB_TOKEN: ${{ secrets.LGTM_GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ steps.lgtm-app-token.outputs.token }}
           DOCS_REPOSITORY: ${{ secrets.DOCS_REPOSITORY }}
         run: |
           export DOCS_ROOT=$RUNNER_WORKSPACE/$(basename $DOCS_REPOSITORY)
