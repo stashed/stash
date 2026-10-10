@@ -207,7 +207,6 @@ func newSnapshot(snapMeta snapInfo) (*vsapi.VolumeSnapshot, error) {
 			Namespace:         testNamespace,
 			UID:               types.UID(snapMeta.name),
 			ResourceVersion:   "1",
-			SelfLink:          "/apis/snapshot.storage.k8s.io/v1alpha1/namespaces/" + testNamespace + "/volumesnapshots/" + snapMeta.name,
 			CreationTimestamp: metav1.Time{Time: creationTimestamp},
 		},
 		Spec: vsapi.VolumeSnapshotSpec{
