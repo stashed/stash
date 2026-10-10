@@ -88,7 +88,8 @@ func NewCmdRestore() *cobra.Command {
 
 					err := opt.Restore(inv, targetInfo)
 					if err != nil {
-						klog.Errorf("Failed to complete restore process for %s %s/%s. Reason: %v",
+						klog.Errorf(
+							"Failed to complete restore process for %s %s/%s. Reason: %v",
 							inv.GetTypeMeta().Kind,
 							inv.GetObjectMeta().Namespace,
 							inv.GetObjectMeta().Name,
@@ -96,7 +97,8 @@ func NewCmdRestore() *cobra.Command {
 						)
 						return err
 					}
-					klog.Infof("Restore completed successfully for %s %s/%s",
+					klog.Infof(
+						"Restore completed successfully for %s %s/%s",
 						inv.GetTypeMeta().Kind,
 						inv.GetObjectMeta().Namespace,
 						inv.GetObjectMeta().Name,

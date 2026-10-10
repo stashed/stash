@@ -152,5 +152,6 @@ func (f *Framework) EventuallyBackupInvokerPhase(invoker invoker.BackupInvoker) 
 			default:
 				return ""
 			}
-		}, WaitTimeOut, PullInterval)
+		}, WaitTimeOut, PullInterval,
+	)
 }

@@ -134,14 +134,16 @@ func (c *StashController) runBackupConfigurationProcessor(v any) error {
 	key := v.(string)
 	obj, exists, err := c.bcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.ErrorS(err, "Failed to fetch object from indexer",
+		klog.ErrorS(
+			err, "Failed to fetch object from indexer",
 			apis.ObjectKind, api_v1beta1.ResourceKindBackupConfiguration,
 			apis.ObjectKey, key,
 		)
 		return err
 	}
 	if !exists {
-		klog.V(4).InfoS("Object does not exit anymore",
+		klog.V(4).InfoS(
+			"Object does not exit anymore",
 			apis.ObjectKind, api_v1beta1.ResourceKindBackupConfiguration,
 			apis.ObjectKey, key,
 		)
@@ -205,7 +207,8 @@ func (r *backupInvokerReconciler) reconcile() error {
 			tref := targetInfo.Target.Ref
 			targetExist, err := util.IsTargetExist(r.ctrl.clientConfig, tref)
 			if err != nil {
-				r.logger.Error(err, "Failed to check target existence",
+				r.logger.Error(
+					err, "Failed to check target existence",
 					apis.KeyTargetKind, tref.Kind,
 					apis.KeyTargetName, tref.Name,
 					apis.KeyTargetNamespace, tref.Namespace,
@@ -216,7 +219,8 @@ func (r *backupInvokerReconciler) reconcile() error {
 			if !targetExist {
 				// Target does not exist. Log the information.
 				someTargetMissing = true
-				r.logger.Info("Backup target does not exist.",
+				r.logger.Info(
+					"Backup target does not exist.",
 					apis.KeyTargetKind, tref.Kind,
 					apis.KeyTargetName, tref.Name,
 					apis.KeyTargetNamespace, tref.Namespace,
@@ -337,7 +341,8 @@ func (r *backupInvokerReconciler) handleCronJobCreationFailure(invRef *core.Obje
 		invRef,
 		core.EventTypeWarning,
 		eventer.EventReasonCronJobCreationFailed,
-		fmt.Sprintf("failed to ensure CronJob for %s  %s/%s. Reason: %v", invRef.Kind, invRef.Namespace, invRef.Name, err))
+		fmt.Sprintf("failed to ensure CronJob for %s  %s/%s. Reason: %v", invRef.Kind, invRef.Namespace, invRef.Name, err),
+	)
 	return errors.NewAggregate([]error{err, err2})
 }
 
@@ -353,7 +358,8 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(logger klog.Log
 		eventSource = eventer.EventSourceRestoreSessionController
 	}
 
-	logger.Error(err, "Failed to trigger workload controller",
+	logger.Error(
+		err, "Failed to trigger workload controller",
 		apis.KeyTargetKind, tref.Kind,
 		apis.KeyTargetName, tref.Name,
 		apis.KeyTargetNamespace, tref.Namespace,
@@ -377,7 +383,8 @@ func (r *backupInvokerReconciler) requeue() error {
 	case api_v1beta1.ResourceKindBackupConfiguration:
 		r.ctrl.bcQueue.GetQueue().AddAfter(r.key, requeueTimeInterval)
 	default:
-		return fmt.Errorf("unable to requeue. Reason: Backup invoker %s  %s is not supported",
+		return fmt.Errorf(
+			"unable to requeue. Reason: Backup invoker %s  %s is not supported",
 			r.invoker.GetTypeMeta().APIVersion,
 			r.invoker.GetTypeMeta().Kind,
 		)
@@ -436,7 +443,8 @@ func (c *StashController) checkForResticSnapshotterRequirements(logger klog.Logg
 	}
 
 	if repository == nil {
-		logger.Info("Repository does not exist",
+		logger.Info(
+			"Repository does not exist",
 			apis.KeyRepositoryName, r.GetRepoRef().Name,
 			apis.KeyRepositoryNamespace, r.GetRepoRef().Namespace,
 		)
@@ -448,7 +456,8 @@ func (c *StashController) checkForResticSnapshotterRequirements(logger klog.Logg
 		return false, err
 	}
 	if secret == nil {
-		klog.InfoS("Secret does not exist",
+		klog.InfoS(
+			"Secret does not exist",
 			"secret_name", repository.Spec.Backend.StorageSecretName,
 			"secret_namespace", repository.Namespace,
 			apis.KeyRepositoryName, repository.Name,

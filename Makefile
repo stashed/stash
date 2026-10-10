@@ -63,7 +63,7 @@ OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
 BASEIMAGE_PROD   ?= busybox:latest
-BASEIMAGE_DBG    ?= debian:12
+BASEIMAGE_DBG    ?= debian:13
 
 IMAGE            := $(REGISTRY)/$(BIN)
 VERSION_PROD     := $(VERSION)
@@ -72,7 +72,7 @@ TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
-GO_VERSION       ?= 1.25
+GO_VERSION       ?= 1.27
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)
 TEST_IMAGE       ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)-stash
 

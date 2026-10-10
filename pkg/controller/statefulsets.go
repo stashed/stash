@@ -93,7 +93,8 @@ func (c *StashController) processStatefulSetEvent(v any) error {
 	key := v.(string)
 	obj, exists, err := c.ssInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.ErrorS(err, "Failed to fetch object from indexer",
+		klog.ErrorS(
+			err, "Failed to fetch object from indexer",
 			apis.ObjectKind, apis.KindStatefulSet,
 			apis.ObjectKey, key,
 		)
@@ -101,7 +102,8 @@ func (c *StashController) processStatefulSetEvent(v any) error {
 	}
 
 	if !exists {
-		klog.V(4).InfoS("Object doesn't exist anymore",
+		klog.V(4).InfoS(
+			"Object doesn't exist anymore",
 			apis.ObjectKind, apis.KindStatefulSet,
 			apis.ObjectKey, key,
 		)

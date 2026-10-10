@@ -126,7 +126,8 @@ func (opt *hookOptions) executeBackupHook() error {
 
 	targetInfo := opt.getBackupTargetInfo(inv)
 	if targetInfo == nil {
-		return fmt.Errorf("backup target %s/%s did not matched with any target of the %s %s/%s",
+		return fmt.Errorf(
+			"backup target %s/%s did not matched with any target of the %s %s/%s",
 			opt.targetRef.Kind,
 			opt.targetRef.Name,
 			opt.invokerKind,
@@ -181,7 +182,8 @@ func (opt *hookOptions) executeRestoreHook() error {
 
 	targetInfo := opt.getRestoreTargetInfo(inv)
 	if targetInfo == nil {
-		return fmt.Errorf("restore target %s/%s did not matched with any target of the %s %s/%s",
+		return fmt.Errorf(
+			"restore target %s/%s did not matched with any target of the %s %s/%s",
 			opt.targetRef.Kind,
 			opt.targetRef.Name,
 			opt.invokerKind,

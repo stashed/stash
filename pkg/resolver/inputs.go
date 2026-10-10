@@ -40,7 +40,8 @@ func (r *TaskOptions) setVariables() error {
 	if r.Repository != nil {
 		err := r.setRepositoryVariables()
 		if err != nil {
-			return fmt.Errorf("failed to populate variables for Repository %s/%s, Reason: %v",
+			return fmt.Errorf(
+				"failed to populate variables for Repository %s/%s, Reason: %v",
 				r.Repository.Namespace,
 				r.Repository.Name,
 				err,
@@ -50,7 +51,8 @@ func (r *TaskOptions) setVariables() error {
 	if r.Backup != nil {
 		err := r.setBackupInvokerVariables()
 		if err != nil {
-			return fmt.Errorf("cannot resolve implicit inputs for backup invoker  %s %s/%s, Reason: %v",
+			return fmt.Errorf(
+				"cannot resolve implicit inputs for backup invoker  %s %s/%s, Reason: %v",
 				r.Backup.Invoker.GetTypeMeta().Kind,
 				r.Backup.Invoker.GetObjectMeta().Namespace,
 				r.Backup.Invoker.GetObjectMeta().Name,

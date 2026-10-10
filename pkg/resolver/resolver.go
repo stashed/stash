@@ -99,7 +99,8 @@ func (r *TaskOptions) Resolve() (core.PodSpec, error) {
 
 	podSpec, err := tr.getPodSpec()
 	if err != nil {
-		return core.PodSpec{}, fmt.Errorf("can't get PodSpec for backup invoker %s/%s, Reason: %v",
+		return core.PodSpec{}, fmt.Errorf(
+			"can't get PodSpec for backup invoker %s/%s, Reason: %v",
 			r.invoker.GetObjectMeta().Namespace,
 			r.invoker.GetObjectMeta().Name,
 			err,

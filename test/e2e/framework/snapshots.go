@@ -31,7 +31,8 @@ func (fi *Invocation) ListSnapshots(selector string) (*snap_v1alpha1.SnapshotLis
 		metav1.ListOptions{
 			LabelSelector:  selector,
 			TimeoutSeconds: pointer.Int64P(600),
-		})
+		},
+	)
 }
 
 func (fi *Invocation) GetSnapshot(name string) (*snap_v1alpha1.Snapshot, error) {

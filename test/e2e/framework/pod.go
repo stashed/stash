@@ -194,25 +194,26 @@ func (fi *Invocation) DeletePod(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) EventuallyAllPodsAccessible(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() bool {
-		labelSelector := fields.SelectorFromSet(meta.Labels)
-		podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector.String()})
-		Expect(err).NotTo(HaveOccurred())
+	return Eventually(
+		func() bool {
+			labelSelector := fields.SelectorFromSet(meta.Labels)
+			podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector.String()})
+			Expect(err).NotTo(HaveOccurred())
 
-		if len(podList.Items) == 0 {
-			return false
-		}
-
-		allPodAccessible := true
-		for _, pod := range podList.Items {
-			_, err := f.ExecOnPod(&pod, "ls", "-R")
-			if err != nil {
-				allPodAccessible = false
-				break
+			if len(podList.Items) == 0 {
+				return false
 			}
-		}
-		return allPodAccessible
-	},
+
+			allPodAccessible := true
+			for _, pod := range podList.Items {
+				_, err := f.ExecOnPod(&pod, "ls", "-R")
+				if err != nil {
+					allPodAccessible = false
+					break
+				}
+			}
+			return allPodAccessible
+		},
 		WaitTimeOut,
 		PullInterval,
 	)

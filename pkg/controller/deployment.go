@@ -90,7 +90,8 @@ func (c *StashController) processDeploymentEvent(v any) error {
 	key := v.(string)
 	obj, exists, err := c.dpInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.ErrorS(err, "Failed to fetch object from indexer",
+		klog.ErrorS(
+			err, "Failed to fetch object from indexer",
 			apis.ObjectKind, apis.KindDeployment,
 			apis.ObjectKey, key,
 		)
@@ -98,7 +99,8 @@ func (c *StashController) processDeploymentEvent(v any) error {
 	}
 
 	if !exists {
-		klog.V(4).InfoS("Object doesn't exist anymore",
+		klog.V(4).InfoS(
+			"Object doesn't exist anymore",
 			apis.ObjectKind, apis.KindDeployment,
 			apis.ObjectKey, key,
 		)

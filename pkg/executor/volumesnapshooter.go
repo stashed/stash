@@ -86,7 +86,8 @@ func (e *CSISnapshooter) getName(targetRef api_v1beta1.TargetRef) string {
 	suffix := parts[len(parts)-1]
 	return meta_util.ValidNameWithPrefix(
 		apis.PrefixStashVolumeSnapshot,
-		fmt.Sprintf("%s-%s-%s",
+		fmt.Sprintf(
+			"%s-%s-%s",
 			apis.ResourceShortForm(targetRef.Kind),
 			targetRef.Name,
 			suffix,

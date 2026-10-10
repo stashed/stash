@@ -58,14 +58,16 @@ func (c *StashController) runJobInjector(v any) error {
 	key := v.(string)
 	obj, exists, err := c.jobInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.ErrorS(err, "Failed to fetch object from indexer",
+		klog.ErrorS(
+			err, "Failed to fetch object from indexer",
 			apis.ObjectKind, apis.KindJob,
 			apis.ObjectKey, key,
 		)
 		return err
 	}
 	if !exists {
-		klog.InfoS("Object doesn't exist anymore",
+		klog.InfoS(
+			"Object doesn't exist anymore",
 			apis.ObjectKind, apis.KindJob,
 			apis.ObjectKey, key,
 		)

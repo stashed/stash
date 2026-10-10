@@ -89,7 +89,8 @@ func (c Config) LicenseProvided() bool {
 	ok, _ := discovery.HasGVK(
 		c.KubeClient.Discovery(),
 		proxyserver.SchemeGroupVersion.String(),
-		proxyserver.ResourceKindLicenseRequest)
+		proxyserver.ResourceKindLicenseRequest,
+	)
 	return ok
 }
 
