@@ -219,7 +219,8 @@ func (opt *Options) runRestore(inv invoker.RestoreInvoker, targetInfo invoker.Re
 
 	// if already restored for this host then don't process further
 	if opt.isRestoredForThisHost(inv, targetInfo, opt.Host) {
-		klog.Infof("Skipping restore for %s %s/%s. Reason: restore already completed for host %q.",
+		klog.Infof(
+			"Skipping restore for %s %s/%s. Reason: restore already completed for host %q.",
 			inv.GetTypeMeta().Kind,
 			inv.GetObjectMeta().Namespace,
 			inv.GetObjectMeta().Name,

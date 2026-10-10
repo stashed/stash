@@ -85,7 +85,8 @@ func (c *StashController) runRepositoryReconciler(v any) error {
 	key := v.(string)
 	obj, exist, err := c.repoInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.ErrorS(err, "Failed to fetch object from indexer",
+		klog.ErrorS(
+			err, "Failed to fetch object from indexer",
 			apis.ObjectKind, api_v1alpha1.ResourceKindRepository,
 			apis.ObjectKey, key,
 		)
@@ -93,7 +94,8 @@ func (c *StashController) runRepositoryReconciler(v any) error {
 	}
 
 	if !exist {
-		klog.V(4).InfoS("Object doesn't exist anymore",
+		klog.V(4).InfoS(
+			"Object doesn't exist anymore",
 			apis.ObjectKind, api_v1alpha1.ResourceKindRepository,
 			apis.ObjectKey, key,
 		)

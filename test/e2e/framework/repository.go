@@ -45,13 +45,14 @@ type KindMetaReplicas struct {
 }
 
 func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() bool {
-		_, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
-		if err == nil && !kerr.IsNotFound(err) {
-			return true
-		}
-		return false
-	},
+	return Eventually(
+		func() bool {
+			_, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
+			if err == nil && !kerr.IsNotFound(err) {
+				return true
+			}
+			return false
+		},
 		WaitTimeOut,
 		PullInterval,
 	)

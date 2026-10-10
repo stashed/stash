@@ -141,14 +141,16 @@ func (c *StashController) processRestoreSessionEvent(v any) error {
 	key := v.(string)
 	obj, exists, err := c.restoreSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.ErrorS(err, "Failed to fetch object from indexer",
+		klog.ErrorS(
+			err, "Failed to fetch object from indexer",
 			apis.ObjectKind, api_v1beta1.ResourceKindRestoreSession,
 			apis.ObjectKey, key,
 		)
 		return err
 	}
 	if !exists {
-		klog.V(4).InfoS("Object does not exit anymore",
+		klog.V(4).InfoS(
+			"Object does not exit anymore",
 			apis.ObjectKind, api_v1beta1.ResourceKindRestoreSession,
 			apis.ObjectKey, key,
 		)
@@ -206,7 +208,8 @@ func (r *restoreInvokerReconciler) reconcile() error {
 	}
 
 	if r.isAlreadyInFinalPhase() {
-		r.logger.V(4).Info("Skipping processing event",
+		r.logger.V(4).Info(
+			"Skipping processing event",
 			apis.KeyReason, fmt.Sprintf("Restore has been completed already with phase %q", r.invoker.GetStatus().Phase),
 		)
 		return nil
@@ -241,7 +244,8 @@ func (r *restoreInvokerReconciler) reconcile() error {
 	}
 
 	if r.isDeadlineExceeded() {
-		r.logger.Info("Cancelling restore process",
+		r.logger.Info(
+			"Cancelling restore process",
 			apis.KeyReason, "Time limit exceeded",
 		)
 		return conditions.SetRestoreDeadlineExceededConditionToTrue(r.invoker, *r.invoker.GetTimeOut())
@@ -273,7 +277,8 @@ func (r *restoreInvokerReconciler) reconcile() error {
 
 			// Skip processing if the target is not in next in order
 			if !r.nextInOrder(targetInfo) {
-				r.logger.Info("Skipping restoring for target",
+				r.logger.Info(
+					"Skipping restoring for target",
 					apis.KeyReason, "Previous targets hasn't been executed",
 					apis.KeyTargetKind, targetInfo.Target.Ref.Kind,
 					apis.KeyTargetName, targetInfo.Target.Ref.Name,
@@ -288,7 +293,8 @@ func (r *restoreInvokerReconciler) reconcile() error {
 			tref := targetInfo.Target.Ref
 			shouldRequeue, err := r.checkForTargetExistence(tref, i)
 			if err != nil {
-				r.logger.Error(err, "Failed to check target existence",
+				r.logger.Error(
+					err, "Failed to check target existence",
 					apis.KeyTargetKind, tref.Kind,
 					apis.KeyTargetName, tref.Name,
 					apis.KeyTargetNamespace, tref.Namespace,
@@ -300,7 +306,8 @@ func (r *restoreInvokerReconciler) reconcile() error {
 			}
 
 			if err := r.ensureRestoreExecutor(targetInfo, i); err != nil {
-				r.logger.Error(err, "Failed to ensure restore executor",
+				r.logger.Error(
+					err, "Failed to ensure restore executor",
 					apis.KeyTargetKind, tref.Kind,
 					apis.KeyTargetName, tref.Name,
 					apis.KeyTargetNamespace, tref.Namespace,
@@ -381,7 +388,8 @@ func (r *restoreInvokerReconciler) requeue(requeueTimeInterval time.Duration) er
 	case api_v1beta1.ResourceKindRestoreSession:
 		r.ctrl.restoreSessionQueue.GetQueue().AddAfter(r.key, requeueTimeInterval)
 	default:
-		return fmt.Errorf("unable to requeue. Reason: Restore invoker %s %s is not supported",
+		return fmt.Errorf(
+			"unable to requeue. Reason: Restore invoker %s %s is not supported",
 			invTypeMeta.APIVersion,
 			invTypeMeta.Kind,
 		)
@@ -478,7 +486,8 @@ func (r *restoreInvokerReconciler) executeGlobalPostRestoreHook() error {
 	}
 
 	if !stashHooks.IsAllowedByExecutionPolicy(executionPolicy, hookExecutor.Summary) {
-		reason := fmt.Sprintf("Skipping executing %s. Reason: executionPolicy is %q but phase is %q.",
+		reason := fmt.Sprintf(
+			"Skipping executing %s. Reason: executionPolicy is %q but phase is %q.",
 			apis.PostRestoreHook,
 			executionPolicy,
 			hookExecutor.Summary.Status.Phase,
@@ -567,9 +576,11 @@ func (r *restoreInvokerReconciler) sendRestoreMetrics() error {
 	metricsOpt := &metrics.MetricsOptions{
 		Enabled:        true,
 		PushgatewayURL: metrics.GetPushgatewayURL(),
-		JobName: fmt.Sprintf("%s-%s-%s",
+		JobName: fmt.Sprintf(
+			"%s-%s-%s",
 			strings.ToLower(
-				r.invoker.GetTypeMeta().Kind),
+				r.invoker.GetTypeMeta().Kind,
+			),
 			r.invoker.GetObjectMeta().Namespace,
 			r.invoker.GetObjectMeta().Name,
 		),
@@ -599,7 +610,8 @@ func (r *restoreInvokerReconciler) checkForTargetExistence(tref api_v1beta1.Targ
 	}
 
 	if !targetExist {
-		r.logger.Info("Restore target does not exist",
+		r.logger.Info(
+			"Restore target does not exist",
 			apis.KeyTargetKind, tref.Kind,
 			apis.KeyTargetName, tref.Name,
 			apis.KeyTargetNamespace, tref.Namespace,
@@ -657,7 +669,8 @@ func (r *restoreInvokerReconciler) ensureRestoreExecutor(targetInfo invoker.Rest
 	}
 
 	if verb != kutil.VerbUnchanged {
-		r.logger.Info("Successfully ensured restore executor",
+		r.logger.Info(
+			"Successfully ensured restore executor",
 			apis.KeyTargetKind, tref.Kind,
 			apis.KeyTargetName, tref.Name,
 			apis.KeyTargetNamespace, tref.Namespace,

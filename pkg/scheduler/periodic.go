@@ -104,7 +104,8 @@ func (s *PeriodicScheduler) Ensure() error {
 			}
 
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-				in.Spec.JobTemplate.Spec.Template.Spec.Containers, container)
+				in.Spec.JobTemplate.Spec.Template.Spec.Containers, container,
+			)
 			in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
 			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = s.RBACOptions.GetServiceAccountName()
 			in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = s.ImagePullSecrets

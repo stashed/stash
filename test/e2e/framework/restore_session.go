@@ -87,7 +87,8 @@ func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta, in
 				return true
 			}
 			return false
-		}, WaitTimeOut, PullInterval)
+		}, WaitTimeOut, PullInterval,
+	)
 }
 
 func (f *Framework) GetRestoreJobs() ([]batch.Job, error) {
@@ -162,7 +163,8 @@ func (f *Framework) EventuallyRestoreInvokerPhase(invoker invoker.RestoreInvoker
 			default:
 				return ""
 			}
-		}, WaitTimeOut, PullInterval)
+		}, WaitTimeOut, PullInterval,
+	)
 }
 
 func (fi *Invocation) TargetRestoreExecuted(inv invoker.RestoreInvoker) bool {

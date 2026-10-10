@@ -140,14 +140,16 @@ func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interfac
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
 		context.TODO(),
 		getRestoreInitContainerRoleBindingName(w.Kind, w.Name),
-		metav1.DeleteOptions{})
+		metav1.DeleteOptions{},
+	)
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	logger.Info(fmt.Sprintf("RoleBinding %s/%s has been deleted",
+	logger.Info(fmt.Sprintf(
+		"RoleBinding %s/%s has been deleted",
 		w.Namespace,
 		getRestoreInitContainerRoleBindingName(w.Kind, w.Name),
 	))

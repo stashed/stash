@@ -67,7 +67,8 @@ func init() {
 
 	// TODO: keep the generic API server from wanting this
 	unversioned := schema.GroupVersion{Group: "", Version: "v1"}
-	Scheme.AddUnversionedTypes(unversioned,
+	Scheme.AddUnversionedTypes(
+		unversioned,
 		&metav1.Status{},
 		&metav1.APIVersions{},
 		&metav1.APIGroupList{},
@@ -131,7 +132,8 @@ func (c completedConfig) New() (*StashServer, error) {
 
 	var admissionHooks []hooks.AdmissionHook
 	if c.ExtraConfig.EnableValidatingWebhook {
-		admissionHooks = append(admissionHooks,
+		admissionHooks = append(
+			admissionHooks,
 			ctrl.NewRepositoryWebhook(),
 			// ctrl.NewBackupSessionWebhook(),
 			ctrl.NewRestoreSessionWebhook(),
@@ -139,7 +141,8 @@ func (c completedConfig) New() (*StashServer, error) {
 		)
 	}
 	if c.ExtraConfig.EnableMutatingWebhook {
-		admissionHooks = append(admissionHooks,
+		admissionHooks = append(
+			admissionHooks,
 			ctrl.NewDeploymentWebhook(),
 			ctrl.NewDaemonSetWebhook(),
 			ctrl.NewStatefulSetWebhook(),
@@ -197,7 +200,8 @@ func (c completedConfig) New() (*StashServer, error) {
 		if len(postStartName) == 0 {
 			continue
 		}
-		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
+		s.GenericAPIServer.AddPostStartHookOrDie(
+			postStartName,
 			func(context genericapiserver.PostStartHookContext) error {
 				return admissionHook.Initialize(c.ExtraConfig.ClientConfig, context.Done())
 			},
@@ -205,7 +209,8 @@ func (c completedConfig) New() (*StashServer, error) {
 	}
 
 	if c.ExtraConfig.EnableValidatingWebhook {
-		s.GenericAPIServer.AddPostStartHookOrDie("validating-webhook-xray",
+		s.GenericAPIServer.AddPostStartHookOrDie(
+			"validating-webhook-xray",
 			func(ctx genericapiserver.PostStartHookContext) error {
 				go func() {
 					xray := reg_util.NewCreateValidatingWebhookXray(c.ExtraConfig.ClientConfig, apiserviceName, &api.Repository{
@@ -237,7 +242,8 @@ func (c completedConfig) New() (*StashServer, error) {
 							c.ExtraConfig.ClientConfig,
 							core.SchemeGroupVersion.WithResource("pods"),
 							meta.PodNamespace(),
-							meta.PodName())
+							meta.PodName(),
+						)
 						if e2 == nil {
 							eventer.CreateEventWithLog(
 								kubernetes.NewForConfigOrDie(c.ExtraConfig.ClientConfig),
@@ -245,7 +251,8 @@ func (c completedConfig) New() (*StashServer, error) {
 								w,
 								core.EventTypeWarning,
 								eventer.EventReasonAdmissionWebhookNotActivated,
-								err.Error())
+								err.Error(),
+							)
 						}
 						panic(err)
 					}

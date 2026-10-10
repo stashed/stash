@@ -122,5 +122,6 @@ func (e *BackupJob) resolveTask(jobMeta metav1.ObjectMeta, owner *metav1.OwnerRe
 func (e *BackupJob) getBackupJobName() string {
 	return metautil.ValidNameWithPrefixNSuffix(
 		apis.PrefixStashBackup,
-		strings.ReplaceAll(e.Session.GetObjectMeta().Name, ".", "-"), strconv.Itoa(e.Index))
+		strings.ReplaceAll(e.Session.GetObjectMeta().Name, ".", "-"), strconv.Itoa(e.Index),
+	)
 }

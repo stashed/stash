@@ -66,7 +66,8 @@ func (r *workloadReconciler) reconcile(caller string) error {
 	var err error
 
 	if r.workload.DeletionTimestamp != nil {
-		r.logger.V(4).Info("Skipping processing event",
+		r.logger.V(4).Info(
+			"Skipping processing event",
 			apis.KeyReason, "Resource is being deleted",
 		)
 		return nil
@@ -498,7 +499,8 @@ func (opt *invokerOptions) handleSidecarInjectionFailure(inv invoker.BackupInvok
 		opt.workload.Object,
 		corev1.EventTypeWarning,
 		eventer.EventReasonSidecarInjectionFailed,
-		fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v",
+		fmt.Sprintf(
+			"Failed to inject stash sidecar into %s %s/%s. Reason: %v",
 			opt.targetRef.Kind,
 			opt.targetRef.Namespace,
 			opt.targetRef.Name,
@@ -521,7 +523,8 @@ func (opt *invokerOptions) handleSidecarInjectionSuccess(inv invoker.BackupInvok
 		opt.workload.Object,
 		corev1.EventTypeNormal,
 		eventer.EventReasonSidecarInjectionSucceeded,
-		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.",
+		fmt.Sprintf(
+			"Successfully injected stash sidecar into %s %s/%s.",
 			opt.targetRef.Kind,
 			opt.targetRef.Namespace,
 			opt.targetRef.Name,
@@ -540,7 +543,8 @@ func (opt *invokerOptions) handleSidecarDeletionSuccess() error {
 		opt.workload.Object,
 		corev1.EventTypeNormal,
 		eventer.EventReasonSidecarDeletionSucceeded,
-		fmt.Sprintf("Successfully removed stash sidecar from %s %s/%s.",
+		fmt.Sprintf(
+			"Successfully removed stash sidecar from %s %s/%s.",
 			opt.targetRef.Kind,
 			opt.targetRef.Namespace,
 			opt.targetRef.Name,
@@ -559,7 +563,8 @@ func (opt *invokerOptions) handleSidecarDeletionFailure(err error) error {
 		opt.workload.Object,
 		corev1.EventTypeWarning,
 		eventer.EventReasonSidecarDeletionFailed,
-		fmt.Sprintf("Failed to remove stash sidecar from %s %s/%s. Reason: %v",
+		fmt.Sprintf(
+			"Failed to remove stash sidecar from %s %s/%s. Reason: %v",
 			opt.targetRef.Kind,
 			opt.targetRef.Namespace,
 			opt.targetRef.Name,
@@ -582,7 +587,8 @@ func (opt *invokerOptions) handleInitContainerInjectionFailure(inv invoker.Resto
 		opt.workload.Object,
 		corev1.EventTypeWarning,
 		eventer.EventReasonInitContainerInjectionFailed,
-		fmt.Sprintf("Failed to inject stash init-container into %s %s/%s. Reason: %v",
+		fmt.Sprintf(
+			"Failed to inject stash init-container into %s %s/%s. Reason: %v",
 			opt.targetRef.Kind,
 			opt.targetRef.Namespace,
 			opt.targetRef.Name,
@@ -605,7 +611,8 @@ func (opt *invokerOptions) handleInitContainerInjectionSuccess(inv invoker.Resto
 		opt.workload.Object,
 		corev1.EventTypeNormal,
 		eventer.EventReasonInitContainerInjectionSucceeded,
-		fmt.Sprintf("Successfully injected stash init-container into %s %s/%s.",
+		fmt.Sprintf(
+			"Successfully injected stash init-container into %s %s/%s.",
 			opt.targetRef.Kind,
 			opt.targetRef.Namespace,
 			opt.targetRef.Name,
@@ -624,7 +631,8 @@ func (opt *invokerOptions) handleInitContainerDeletionSuccess() error {
 		opt.workload.Object,
 		corev1.EventTypeNormal,
 		eventer.EventReasonInitContainerDeletionSucceeded,
-		fmt.Sprintf("Successfully removed stash init-container from %s %s/%s.",
+		fmt.Sprintf(
+			"Successfully removed stash init-container from %s %s/%s.",
 			opt.targetRef.Kind,
 			opt.targetRef.Namespace,
 			opt.targetRef.Name,
@@ -643,7 +651,8 @@ func (opt *invokerOptions) handleInitContainerDeletionFailure(err error) error {
 		opt.workload.Object,
 		corev1.EventTypeWarning,
 		eventer.EventReasonSidecarDeletionFailed,
-		fmt.Sprintf("Failed to remove stash-init init-container from %s %s/%s. Reason: %v",
+		fmt.Sprintf(
+			"Failed to remove stash-init init-container from %s %s/%s. Reason: %v",
 			opt.targetRef.Kind,
 			opt.targetRef.Namespace,
 			opt.targetRef.Name,

@@ -103,14 +103,16 @@ func (c *StashController) processBackupSessionEvent(v any) error {
 	key := v.(string)
 	obj, exists, err := c.backupSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
-		klog.ErrorS(err, "Failed to fetch object from indexer",
+		klog.ErrorS(
+			err, "Failed to fetch object from indexer",
 			apis.ObjectKind, api_v1beta1.ResourceKindBackupSession,
 			apis.ObjectKey, key,
 		)
 		return err
 	}
 	if !exists {
-		klog.V(4).InfoS("Object does not exist anymore",
+		klog.V(4).InfoS(
+			"Object does not exist anymore",
 			apis.ObjectKind, api_v1beta1.ResourceKindBackupSession,
 			apis.ObjectKey, key,
 		)
@@ -153,7 +155,8 @@ func (r *backupSessionReconciler) reconcile() error {
 			return r.requeueAfterRetryDelay()
 		}
 
-		r.logger.V(4).Info("Skipping processing event",
+		r.logger.V(4).Info(
+			"Skipping processing event",
 			apis.KeyReason, fmt.Sprintf("Backup has been completed already with phase %q", r.session.GetStatus().Phase),
 		)
 		return nil
@@ -161,7 +164,8 @@ func (r *backupSessionReconciler) reconcile() error {
 
 	if r.isSessionCompleted() {
 		if r.shouldWaitForTargetPostBackupHookExecution() {
-			r.logger.Info("Waiting for target specific postBackup hook to be executed",
+			r.logger.Info(
+				"Waiting for target specific postBackup hook to be executed",
 				apis.KeyInvokerKind, r.invoker.GetTypeMeta().Kind,
 				apis.KeyInvokerName, r.invoker.GetObjectMeta().Name,
 				apis.KeyInvokerNamespace, r.invoker.GetObjectMeta().Namespace,
@@ -245,7 +249,8 @@ func (r *backupSessionReconciler) reconcile() error {
 				return err
 			}
 			if pendingReason != "" {
-				r.logger.Info("Keeping backup pending",
+				r.logger.Info(
+					"Keeping backup pending",
 					apis.KeyReason, pendingReason,
 					apis.KeyTargetKind, targetInfo.Target.Ref.Kind,
 					apis.KeyTargetName, targetInfo.Target.Ref.Name,
@@ -259,7 +264,8 @@ func (r *backupSessionReconciler) reconcile() error {
 			}
 
 			if err := r.ensureBackupExecutor(targetInfo, i); err != nil {
-				r.logger.Error(err, "Failed to ensure backup executor",
+				r.logger.Error(
+					err, "Failed to ensure backup executor",
 					apis.KeyTargetKind, targetInfo.Target.Ref.Kind,
 					apis.KeyTargetName, targetInfo.Target.Ref.Name,
 					apis.KeyTargetNamespace, targetInfo.Target.Ref.Namespace,
@@ -383,7 +389,8 @@ func (r *backupSessionReconciler) ensureBackupExecutor(targetInfo invoker.Backup
 		return err
 	}
 	if verb != kutil.VerbUnchanged {
-		r.logger.Info("Successfully ensured backup executor",
+		r.logger.Info(
+			"Successfully ensured backup executor",
 			apis.KeyTargetKind, targetInfo.Target.Ref.Kind,
 			apis.KeyTargetName, targetInfo.Target.Ref.Name,
 			apis.KeyTargetNamespace, targetInfo.Target.Ref.Namespace,
@@ -523,7 +530,8 @@ func (r *backupSessionReconciler) initiateTargetBackup(index int) error {
 		}
 	}
 	if r.session.GetStatus().Phase != api_v1beta1.BackupSessionRunning {
-		r.logger.Info("Initiating target backup",
+		r.logger.Info(
+			"Initiating target backup",
 			apis.KeyTargetKind, target.Ref.Kind,
 			apis.KeyTargetName, target.Ref.Name,
 			apis.KeyTargetNamespace, target.Ref.Namespace,
@@ -681,7 +689,8 @@ func (r *backupSessionReconciler) executeGlobalPostBackupHook() error {
 	}
 
 	if !stashHooks.IsAllowedByExecutionPolicy(executionPolicy, summary) {
-		reason := fmt.Sprintf("Skipping executing %s. Reason: executionPolicy is %q but phase is %q.",
+		reason := fmt.Sprintf(
+			"Skipping executing %s. Reason: executionPolicy is %q but phase is %q.",
 			apis.PostBackupHook,
 			executionPolicy,
 			summary.Status.Phase,
@@ -724,7 +733,8 @@ func (r *backupSessionReconciler) executeGlobalPreBackupHook() error {
 func (r *backupSessionReconciler) checkIfBackupShouldBeSkipped() (string, error) {
 	// Skip if the respective backup invoker is not in ready state
 	if r.invoker.GetPhase() != api_v1beta1.BackupInvokerReady {
-		return fmt.Sprintf("Skipped taking backup. Reason: %s %s/%s is not ready.",
+		return fmt.Sprintf(
+			"Skipped taking backup. Reason: %s %s/%s is not ready.",
 			r.invoker.GetTypeMeta().Kind,
 			r.invoker.GetObjectMeta().Namespace,
 			r.invoker.GetObjectMeta().Name,
@@ -737,7 +747,8 @@ func (r *backupSessionReconciler) checkIfBackupShouldBeSkipped() (string, error)
 		return "", err
 	}
 	if r.isBackupPending() && runningBS != nil {
-		return fmt.Sprintf("Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
+		return fmt.Sprintf(
+			"Skipped taking new backup. Reason: Previous BackupSession: %s is %q.",
 			runningBS.Name,
 			runningBS.Status.Phase,
 		), nil
@@ -769,7 +780,8 @@ func (r *backupSessionReconciler) checkIfBackupShouldBePending(targetRef api_v1b
 	}
 
 	if shouldKeepCurrentSessionPending(r.session.GetBackupSession(), otherSession) {
-		return fmt.Sprintf("Found another incomplete BackupSession %s/%s invoked by %s/%s",
+		return fmt.Sprintf(
+			"Found another incomplete BackupSession %s/%s invoked by %s/%s",
 			otherSession.Namespace,
 			otherSession.Name,
 			otherSession.Spec.Invoker.Kind,

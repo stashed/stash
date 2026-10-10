@@ -167,7 +167,8 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			eventMessage,
 		)
 		if err != nil {
-			klog.Errorf("failed to create event for %s %s/%s. Reason: %v",
+			klog.Errorf(
+				"failed to create event for %s %s/%s. Reason: %v",
 				inv.GetTypeMeta().Kind,
 				inv.GetObjectMeta().Namespace,
 				inv.GetObjectMeta().Name,
@@ -192,7 +193,8 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	}
 	// add or update entry for each host in restore invoker status
 	var err error
-	klog.Infof("Updating hosts status for restore target %s %s/%s.",
+	klog.Infof(
+		"Updating hosts status for restore target %s %s/%s.",
 		targetInfo.Target.Ref.Kind,
 		inv.GetObjectMeta().Namespace,
 		targetInfo.Target.Ref.Name,
@@ -222,7 +224,8 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 		}
 		err = inv.CreateEvent(eventType, eventer.EventSourceStatusUpdater, eventReason, eventMessage)
 		if err != nil {
-			klog.Errorf("failed to create event for %s %s/%s. Reason: %v",
+			klog.Errorf(
+				"failed to create event for %s %s/%s. Reason: %v",
 				inv.GetTypeMeta().Kind,
 				inv.GetObjectMeta().Namespace,
 				inv.GetObjectMeta().Name,
@@ -370,7 +373,8 @@ func (o *UpdateStatusOptions) updateRepositoryStatus(inv invoker.BackupInvoker, 
 				in.TotalSize = repoStats.Size
 				in.LastBackupTime = &startTime
 				return repo.UID, in
-			}, metav1.UpdateOptions{})
+			}, metav1.UpdateOptions{},
+		)
 		return err
 	}
 	return nil

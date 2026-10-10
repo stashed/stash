@@ -72,11 +72,12 @@ func (f *Framework) CreateDeployment(obj apps.Deployment) (*apps.Deployment, err
 }
 
 func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() *apps.Deployment {
-		obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
-		Expect(err).NotTo(HaveOccurred())
-		return obj
-	},
+	return Eventually(
+		func() *apps.Deployment {
+			obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			return obj
+		},
 		WaitTimeOut,
 		PullInterval,
 	)
