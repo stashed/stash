@@ -1,6 +1,6 @@
 module stash.appscode.dev/stash
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/go-sql-driver/mysql v1.9.3
@@ -15,7 +15,7 @@ require (
 	go.bytebuilders.dev/license-proxyserver v0.0.24
 	go.bytebuilders.dev/license-verifier v0.14.10
 	go.bytebuilders.dev/license-verifier/kubernetes v0.14.10
-	golang.org/x/text v0.32.0
+	golang.org/x/text v0.37.0
 	gomodules.xyz/blobfs v0.2.2
 	gomodules.xyz/cert v1.6.0
 	gomodules.xyz/encoding v0.0.8
@@ -220,15 +220,15 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	gocloud.dev v0.41.0 // indirect
-	golang.org/x/crypto v0.46.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
-	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.33.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.39.0 // indirect
-	golang.org/x/term v0.38.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/time v0.13.0 // indirect
-	golang.org/x/tools v0.39.0 // indirect
+	golang.org/x/tools v0.44.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
 	gomodules.xyz/counter v0.0.1 // indirect
