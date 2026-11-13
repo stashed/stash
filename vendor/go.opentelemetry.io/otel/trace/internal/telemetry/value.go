@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package telemetry // import "go.opentelemetry.io/otel/trace/internal/telemetry"
+package telemetry
 
 import (
 	"bytes"
@@ -257,10 +257,10 @@ func (v Value) Kind() ValueKind {
 	}
 }
 
-// Empty returns if v does not hold any value.
+// Empty reports whether v does not hold any value.
 func (v Value) Empty() bool { return v.Kind() == ValueKindEmpty }
 
-// Equal returns if v is equal to w.
+// Equal reports whether v is equal to w.
 func (v Value) Equal(w Value) bool {
 	k1 := v.Kind()
 	k2 := w.Kind()
@@ -327,7 +327,7 @@ func (v Value) String() string {
 		// Try to handle this as gracefully as possible.
 		//
 		// Don't panic here. The goal here is to have developers find this
-		// first if a slog.Kind is is not handled. It is
+		// first if a slog.Kind is not handled. It is
 		// preferable to have user's open issue asking why their attributes
 		// have a "unhandled: " prefix than say that their code is panicking.
 		return fmt.Sprintf("<unhandled telemetry.ValueKind: %s>", v.Kind())
